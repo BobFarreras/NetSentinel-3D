@@ -1,0 +1,29 @@
+[package]
+name = "netsentinel-rust"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "netsentinel_rust_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] } # Motor asíncron potent
+local-ip-address = "0.6" # Per saber la nostra IP
+directories = "5.0"  # 👈 Aquesta màgia troba les rutes del sistema
+# Per ara farem servir comandes de sistema per l'ARP inicial per assegurar estabilitat
+# Més endavant afegirem 'pnet' per l'atac.
