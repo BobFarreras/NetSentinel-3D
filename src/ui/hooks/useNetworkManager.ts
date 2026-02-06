@@ -99,6 +99,8 @@ export const useNetworkManager = () => {
 
   // 3. JAMMER
   const toggleJammer = async (targetIp: string, gatewayIp: string) => {
+    // 👇 AFEGEIX AQUESTA LÍNIA PER UTILITZAR LA VARIABLE I CALLAR L'ERROR
+    console.log(`💀 KILL-SWITCH: Targeting ${targetIp} via Gateway ${gatewayIp}`);
 
     setJammedDevices(prev => prev.includes(targetIp)
       ? prev.filter(ip => ip !== targetIp)

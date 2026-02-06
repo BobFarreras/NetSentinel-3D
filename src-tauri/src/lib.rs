@@ -4,6 +4,7 @@
 mod models;
 mod network_commands;
 mod history_commands; // 👈 AQUESTA LÍNIA ÉS LA QUE ET FALTAVA O FALLAVA
+mod intel;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

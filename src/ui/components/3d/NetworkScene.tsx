@@ -17,21 +17,16 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
 }) => {
   
   const { centerNode, orbitingNodes } = useMemo(() => {
-    // 1. Busquem el Router (Gateway .1)
-    const gateway = devices.find(d => d.ip.endsWith('.1'));
-    const others = devices.filter(d => !d.ip.endsWith('.1'));
-
-    // 2. Creem el teu node (NETSENTINEL)
-    const myPc: DeviceDTO = {
-      ip: 'LOCALHOST', 
-      mac: 'MY_MAC_ADDR',
-      vendor: 'NETSENTINEL (ME)', 
-      ping: 0
-    };
+    // 1. Busquem el Router (Gateway) - Normalment la .1 o marcat com isGateway
+    const gateway = devices.find(d => d.ip.endsWith('.1') || d.isGateway);
+    
+    // 2. La resta són els altres (excloent el router)
+    // 🛑 NETEJA: Ja no creem manualment cap 'myPc'. Confiem en Rust.
+    const others = devices.filter(d => !d.ip.endsWith('.1') && !d.isGateway);
 
     return {
       centerNode: gateway,
-      orbitingNodes: [myPc, ...others] // Tu + Els altres
+      orbitingNodes: others 
     };
   }, [devices]);
 
@@ -75,16 +70,21 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           const x = Math.cos(angle) * radius;
           const z = Math.sin(angle) * radius;
 
-          // 🔥 LÒGICA DE COLORS SIMPLIFICADA 🔥
+          // 🔥 LÒGICA DE COLORS
           let nodeColor = "#ff0000"; // PER DEFECTE: VERMELL (AMENAÇA)
 
-          if (device.vendor === 'NETSENTINEL (ME)') {
+          // Si Rust diu que sóc jo (perquè ha detectat MAC 00:00 o el vendor especial)
+          if (device.vendor.includes('NETSENTINEL') || device.vendor.includes('(ME)')) {
             nodeColor = "#00ff00"; // VERD (SÓC JO / ALIAT)
+          }
+          // Si és un dispositiu conegut (Ex: Xiaomi)
+          else if (device.vendor.includes('Xiaomi') || device.vendor.includes('Redmi')) {
+            nodeColor = "#0088ff"; // BLAU (Neutre/Conegut)
           }
 
           return (
             <NetworkNode 
-              key={device.mac + index} 
+              key={device.ip + index} 
               position={[x, 0, z]} 
               color={nodeColor} 
               name={device.ip}
