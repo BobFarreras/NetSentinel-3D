@@ -55,6 +55,17 @@ Assegura't de tenir instal·lat:
     * *rust-analyzer*
     * *ESLint*
 
+
+### 1. Prerequisits (Development Environment)
+Per compilar el codi font necessites les següents eines:
+
+* **Rust & Cargo** (El nucli): Necessari per compilar el Backend.
+    * [Instruccions d'instal·lació](https://rustup.rs/)
+* **Node.js & npm** (Les eines): Necessari **només** per gestionar les llibreries de React i executar Vite.
+    * *Nota: L'usuari final de l'app no necessitarà tenir Node instal·lat.*
+    * [Descarregar LTS](https://nodejs.org/)
+* **VS Code** (Recomanat) amb extensions: `Tauri`, `rust-analyzer`.
+
 ### 2. Clonat del Repositori (Jack In)
 ```bash
 git clone [https://github.com/EL_TEU_USUARI/netsentinel.git](https://github.com/EL_TEU_USUARI/netsentinel.git)

@@ -1,168 +1,160 @@
-use crate::models::{Device, SecurityReport, OpenPort, Vulnerability};
+use crate::models::{Device, SecurityReport, OpenPort};
+use crate::intel; // 👈 IMPRESCINDIBLE: Ha d'existir intel.rs i estar declarat a lib.rs
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::process::Command; // 👈 CORREGIT: Import necessari
+use std::collections::HashMap;
 
-// Llista de ports que volem comprovar (Els més habituals)
-const COMMON_PORTS: [u16; 12] = [
-    21,   // FTP
-    22,   // SSH
-    23,   // Telnet (Molt perillós)
-    25,   // SMTP
-    53,   // DNS
-    80,   // HTTP
-    110,  // POP3
-    139,  // NetBIOS
-    443,  // HTTPS
-    445,  // SMB (WannaCry)
-    3389, // RDP (Escriptori Remot)
-    8080  // Web Alternatiu
-];
+const COMMON_PORTS: [u16; 12] = [21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 3389, 8080];
 
-// --- COMANDA 1: SCAN NETWORK (Simulat per estabilitat inicial) ---
+// --- COMANDA 1: SCAN NETWORK ---
 #[tauri::command]
-pub async fn scan_network(range: Option<String>) -> Vec<Device> {
-    println!("🦀 RUST: Scan requested. Range: {:?}", range);
-    
-    // Simulem retard de xarxa per realisme
-    thread::sleep(Duration::from_millis(500));
+pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
+    println!("🦀 RUST: Scan Network (Ping Sweep + Intel)...");
 
-    // Dades Mock (simulades) per veure el mapa 3D
-    let router = Device {
-        ip: "192.168.1.1".to_string(),
-        mac: "AA:BB:CC:DD:EE:FF".to_string(),
-        vendor: "Gateway Router".to_string(),
-        name: Some("Router".to_string()),
-        is_gateway: true,
-        ping: Some(2),
-    };
-
-    let my_pc = Device {
-        ip: "192.168.1.33".to_string(),
-        mac: "11:22:33:44:55:66".to_string(),
-        vendor: "NetSentinel Host".to_string(),
-        name: Some("My Workstation".to_string()),
-        is_gateway: false,
-        ping: Some(0),
-    };
-    
-    let smart_tv = Device {
-        ip: "192.168.1.50".to_string(),
-        mac: "AA:11:BB:22:CC:33".to_string(),
-        vendor: "Smart TV Samsung".to_string(),
-        name: Some("Living Room".to_string()),
-        is_gateway: false,
-        ping: Some(45),
-    };
-
-    vec![router, my_pc, smart_tv]
-}
-
-// --- COMANDA 2: AUDIT TARGET (REAL TCP CONNECT + INTEL) ---
-#[tauri::command]
-pub async fn audit_target(ip: String) -> SecurityReport {
-    println!("🦀 RUST: Iniciant auditoria real a {}...", ip);
-    
-    // Vector segur per compartir entre fils (Threads)
-    let open_ports = Arc::new(Mutex::new(Vec::new()));
+    let detected_ips = Arc::new(Mutex::new(Vec::new()));
     let mut handles = vec![];
+    let base_ip = "192.168.1";
 
-    // Per cada port, llancem un fil paral·lel
-    for &port in COMMON_PORTS.iter() {
-        let ip_clone = ip.clone();
-        let results_clone = Arc::clone(&open_ports);
+    // 1. FASE DE PING
+    for i in 1..255 {
+        let ip_target = format!("{}.{}", base_ip, i);
+        let ips_clone = Arc::clone(&detected_ips);
 
         let handle = thread::spawn(move || {
-            let address = format!("{}:{}", ip_clone, port);
+            #[cfg(target_os = "windows")]
+            let output = Command::new("ping").args(["-n", "1", "-w", "200", &ip_target]).output();
             
-            // Intentem resoldre l'adreça
-            if let Ok(socket_addrs) = address.to_socket_addrs() {
-                for addr in socket_addrs {
-                    // Intent de connexió real (Timeout 400ms)
-                    if let Ok(_stream) = TcpStream::connect_timeout(&addr, Duration::from_millis(400)) {
-                        
-                        println!("🔓 PORT OBERT: {}", port);
-
-                        // 🧠 CIBER-INTEL·LIGÈNCIA: Assignem vulnerabilitats segons el port
-                        let (service, risk, desc, vuln) = match port {
-                            21 => ("FTP", "HIGH", "File Transfer Protocol", Some(Vulnerability {
-                                id: "FTP-PLAIN".to_string(),
-                                description: "Traffic is not encrypted. Passwords sent in cleartext.".to_string(),
-                                severity: "HIGH".to_string(),
-                                recommendation: "Switch to SFTP (Port 22).".to_string()
-                            })),
-                            22 => ("SSH", "SAFE", "Secure Shell", None),
-                            23 => ("TELNET", "CRITICAL", "Obsolete Remote Access", Some(Vulnerability {
-                                id: "TELNET-LEGACY".to_string(),
-                                description: "Completely insecure protocol. Easy to sniff.".to_string(),
-                                severity: "CRITICAL".to_string(),
-                                recommendation: "DISABLE IMMEDIATELY. Use SSH.".to_string()
-                            })),
-                            53 => ("DNS", "SAFE", "Domain Name Service", None),
-                            80 => ("HTTP", "MEDIUM", "World Wide Web HTTP", Some(Vulnerability {
-                                id: "HTTP-NO-SSL".to_string(),
-                                description: "Web traffic is unencrypted.".to_string(),
-                                severity: "MEDIUM".to_string(),
-                                recommendation: "Migrate to HTTPS (Port 443).".to_string()
-                            })),
-                            443 => ("HTTPS", "SAFE", "Secure HTTP", None),
-                            445 => ("SMB", "HIGH", "Windows File Sharing", Some(Vulnerability {
-                                id: "SMB-EXPOSED".to_string(),
-                                description: "Potential EternalBlue vulnerability target.".to_string(),
-                                severity: "HIGH".to_string(),
-                                recommendation: "Block external access. Update Windows.".to_string()
-                            })),
-                            3389 => ("RDP", "HIGH", "Remote Desktop", Some(Vulnerability {
-                                id: "RDP-PUBLIC".to_string(),
-                                description: "Exposed RDP is a prime target for brute-force.".to_string(),
-                                severity: "HIGH".to_string(),
-                                recommendation: "Use VPN access only.".to_string()
-                            })),
-                            _ => ("UNKNOWN", "POTENTIAL", "Unknown TCP Service", None),
-                        };
-
-                        let port_info = OpenPort {
-                            port,
-                            status: "Open".to_string(),
-                            service: service.to_string(),
-                            risk_level: risk.to_string(),
-                            description: Some(desc.to_string()),
-                            vulnerability: vuln, 
-                        };
-
-                        // Guardem el resultat de forma segura
-                        let mut ports = results_clone.lock().unwrap();
-                        ports.push(port_info);
-                        break; // Si connecta, sortim del bucle d'aquest port
-                    }
+            #[cfg(not(target_os = "windows"))]
+            let output = Command::new("ping").args(["-c", "1", "-W", "1", &ip_target]).output();
+            
+            if let Ok(result) = output {
+                let stdout = String::from_utf8_lossy(&result.stdout);
+                // Si respon i no és "Unreachable"
+                if result.status.success() && !stdout.contains("Unreachable") && !stdout.contains("inaccesible") {
+                    ips_clone.lock().unwrap().push(ip_target);
                 }
             }
         });
         handles.push(handle);
     }
-
-    // Esperem que acabin tots els escàners
     for handle in handles { let _ = handle.join(); }
 
-    // Extraiem els resultats finals
-    let final_ports = Arc::try_unwrap(open_ports).unwrap().into_inner().unwrap();
-    
-    // Calculem el risc global basat en el pitjor port trobat
-    let mut risk_level = "LOW";
-    if final_ports.is_empty() {
-        risk_level = "SAFE"; // Mode Stealth
-    } else {
-        for p in &final_ports {
-            if p.risk_level == "CRITICAL" { risk_level = "CRITICAL"; break; }
-            if p.risk_level == "HIGH" { risk_level = "HIGH"; }
-            if risk_level != "HIGH" && p.risk_level == "MEDIUM" { risk_level = "MEDIUM"; }
+    // 2. FASE ARP + INTEL
+    let arp_table = get_arp_table();
+    let active_ips = detected_ips.lock().unwrap();
+    let mut final_devices = Vec::new();
+
+    for ip in active_ips.iter() {
+        // Busquem la MAC a la taula ARP. Si no hi és, posem 00:00...
+        let mac = arp_table.get(ip).cloned().unwrap_or("00:00:00:00:00:00".to_string());
+        
+        // ✨ INTEL VENDOR i HOSTNAME
+        let mut vendor = intel::resolve_vendor(&mac); 
+        let hostname = intel::resolve_hostname(ip);
+
+        // Lògica de noms
+        let mut name = hostname.or_else(|| Some(format!("Host {}", ip.split('.').last().unwrap())));
+        let mut is_gateway = false;
+
+        // 🚨 AUTO-DETECCIÓ: Si la MAC és buida, ETS TU
+        if mac == "00:00:00:00:00:00" {
+            vendor = "NETSENTINEL HOST (ME)".to_string();
+            name = Some("My Computer".to_string());
         }
+
+        if ip.ends_with(".1") {
+            name = Some("GATEWAY / ROUTER".to_string());
+            vendor = "Network Infrastructure".to_string(); // Opcional, queda millor
+            is_gateway = true;
+        }
+
+        final_devices.push(Device {
+            ip: ip.clone(),
+            mac,
+            vendor,
+            name,
+            is_gateway,
+            ping: Some(5), // Ping fictici ràpid
+        });
     }
 
-    SecurityReport {
-        target_ip: ip,
-        open_ports: final_ports,
-        risk_level: risk_level.to_string(),
+    // Ordenem per IP perquè la llista es vegi ordenada (1, 2, ... 131)
+    final_devices.sort_by(|a, b| {
+        let a_last: u8 = a.ip.split('.').last().unwrap_or("0").parse().unwrap_or(0);
+        let b_last: u8 = b.ip.split('.').last().unwrap_or("0").parse().unwrap_or(0);
+        a_last.cmp(&b_last)
+    });
+
+    final_devices
+}
+
+// Helper: ARP Table
+fn get_arp_table() -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let output = Command::new("arp").arg("-a").output();
+    if let Ok(result) = output {
+        let stdout = String::from_utf8_lossy(&result.stdout);
+        for line in stdout.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let ip = parts[0];
+                let mac = parts[1].replace("-", ":").to_uppercase();
+                if ip.starts_with("192.168.") {
+                    map.insert(ip.to_string(), mac);
+                }
+            }
+        }
     }
+    map
+}
+
+// --- COMANDA 2: AUDIT TARGET ---
+#[tauri::command]
+pub async fn audit_target(ip: String) -> SecurityReport {
+    println!("🦀 RUST: Audit {}...", ip);
+    let open_ports = Arc::new(Mutex::new(Vec::new()));
+    let mut handles = vec![];
+
+    for &port in COMMON_PORTS.iter() {
+        let ip_c = ip.clone();
+        let res_c = Arc::clone(&open_ports);
+
+        handles.push(thread::spawn(move || {
+            let addr = format!("{}:{}", ip_c, port);
+            if let Ok(socket_addrs) = addr.to_socket_addrs() {
+                for sa in socket_addrs {
+                    if TcpStream::connect_timeout(&sa, Duration::from_millis(400)).is_ok() {
+                        
+                        // ✨ US DE INTEL PER PORTS
+                        let (service, risk, desc, vuln) = intel::get_port_intel(port);
+
+                        res_c.lock().unwrap().push(OpenPort {
+                            port,
+                            status: "Open".to_string(),
+                            service,
+                            risk_level: risk,
+                            description: Some(desc),
+                            vulnerability: vuln,
+                        });
+                        break;
+                    }
+                }
+            }
+        }));
+    }
+
+    for h in handles { let _ = h.join(); }
+    let final_ports = Arc::try_unwrap(open_ports).unwrap().into_inner().unwrap();
+    
+    let mut risk_level = "SAFE";
+    if !final_ports.is_empty() { risk_level = "LOW"; } 
+    for p in &final_ports {
+        if p.risk_level == "CRITICAL" { risk_level = "CRITICAL"; break; }
+        if p.risk_level == "HIGH" { risk_level = "HIGH"; }
+    }
+
+    SecurityReport { target_ip: ip, open_ports: final_ports, risk_level: risk_level.to_string() }
 }
