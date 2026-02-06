@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "netsentinel-rust",
+  "productName": "NetSentinel 3D",
   "version": "0.1.0",
-  "identifier": "com.netsentinel.app",
+  "identifier": "com.netsentinel.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,9 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "netsentinel-rust",
-        "width": 800,
-        "height": 600
+        "title": "NetSentinel 3D // Tactical Interface",
+        "width": 1000,
+        "height": 700,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false
       }
     ],
     "security": {
@@ -30,6 +34,24 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "Catalan",
+          "Spanish",
+          "English"
+        ],
+        "displayLanguageSelector": true,
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp"
+       
+      }
+    }
   }
 }

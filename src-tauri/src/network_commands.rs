@@ -1,18 +1,24 @@
 use crate::models::{Device, SecurityReport, OpenPort};
-use crate::intel; // 👈 IMPRESCINDIBLE: Ha d'existir intel.rs i estar declarat a lib.rs
+use crate::intel;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::process::Command; // 👈 CORREGIT: Import necessari
+use std::process::Command;
 use std::collections::HashMap;
 
+// 👇 IMPORT NECESSARI PER AMAGAR FINESTRES A WINDOWS
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 const COMMON_PORTS: [u16; 12] = [21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 3389, 8080];
+// Codi màgic de Windows per "No creïs finestra"
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // --- COMANDA 1: SCAN NETWORK ---
 #[tauri::command]
 pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
-    println!("🦀 RUST: Scan Network (Ping Sweep + Intel)...");
+    println!("🦀 RUST: Scan Network (Stealth Mode)...");
 
     let detected_ips = Arc::new(Mutex::new(Vec::new()));
     let mut handles = vec![];
@@ -24,15 +30,23 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
         let ips_clone = Arc::clone(&detected_ips);
 
         let handle = thread::spawn(move || {
+            let mut cmd = Command::new("ping");
+            
+            // Arguments segons el sistema
             #[cfg(target_os = "windows")]
-            let output = Command::new("ping").args(["-n", "1", "-w", "200", &ip_target]).output();
+            cmd.args(["-n", "1", "-w", "200", &ip_target]);
             
             #[cfg(not(target_os = "windows"))]
-            let output = Command::new("ping").args(["-c", "1", "-W", "1", &ip_target]).output();
+            cmd.args(["-c", "1", "-W", "1", &ip_target]);
+
+            // 🛑 FIX: APLIQUEM EL MODE SILENCIÓS (NOMÉS WINDOWS)
+            #[cfg(target_os = "windows")]
+            cmd.creation_flags(CREATE_NO_WINDOW);
+
+            let output = cmd.output();
             
             if let Ok(result) = output {
                 let stdout = String::from_utf8_lossy(&result.stdout);
-                // Si respon i no és "Unreachable"
                 if result.status.success() && !stdout.contains("Unreachable") && !stdout.contains("inaccesible") {
                     ips_clone.lock().unwrap().push(ip_target);
                 }
@@ -48,18 +62,14 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
     let mut final_devices = Vec::new();
 
     for ip in active_ips.iter() {
-        // Busquem la MAC a la taula ARP. Si no hi és, posem 00:00...
         let mac = arp_table.get(ip).cloned().unwrap_or("00:00:00:00:00:00".to_string());
         
-        // ✨ INTEL VENDOR i HOSTNAME
         let mut vendor = intel::resolve_vendor(&mac); 
         let hostname = intel::resolve_hostname(ip);
-
-        // Lògica de noms
         let mut name = hostname.or_else(|| Some(format!("Host {}", ip.split('.').last().unwrap())));
         let mut is_gateway = false;
 
-        // 🚨 AUTO-DETECCIÓ: Si la MAC és buida, ETS TU
+        // Auto-detecció
         if mac == "00:00:00:00:00:00" {
             vendor = "NETSENTINEL HOST (ME)".to_string();
             name = Some("My Computer".to_string());
@@ -67,7 +77,7 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
 
         if ip.ends_with(".1") {
             name = Some("GATEWAY / ROUTER".to_string());
-            vendor = "Network Infrastructure".to_string(); // Opcional, queda millor
+            vendor = "Network Infrastructure".to_string();
             is_gateway = true;
         }
 
@@ -77,11 +87,11 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
             vendor,
             name,
             is_gateway,
-            ping: Some(5), // Ping fictici ràpid
+            ping: Some(5),
         });
     }
 
-    // Ordenem per IP perquè la llista es vegi ordenada (1, 2, ... 131)
+    // Ordenar
     final_devices.sort_by(|a, b| {
         let a_last: u8 = a.ip.split('.').last().unwrap_or("0").parse().unwrap_or(0);
         let b_last: u8 = b.ip.split('.').last().unwrap_or("0").parse().unwrap_or(0);
@@ -91,10 +101,19 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
     final_devices
 }
 
-// Helper: ARP Table
+// Helper: ARP Table (També en mode silenciós!)
 fn get_arp_table() -> HashMap<String, String> {
     let mut map = HashMap::new();
-    let output = Command::new("arp").arg("-a").output();
+    
+    let mut cmd = Command::new("arp");
+    cmd.arg("-a");
+    
+    // 🛑 FIX: AMAGUEM TAMBÉ LA FINESTRA DE L'ARP
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd.output();
+
     if let Ok(result) = output {
         let stdout = String::from_utf8_lossy(&result.stdout);
         for line in stdout.lines() {
@@ -127,10 +146,7 @@ pub async fn audit_target(ip: String) -> SecurityReport {
             if let Ok(socket_addrs) = addr.to_socket_addrs() {
                 for sa in socket_addrs {
                     if TcpStream::connect_timeout(&sa, Duration::from_millis(400)).is_ok() {
-                        
-                        // ✨ US DE INTEL PER PORTS
                         let (service, risk, desc, vuln) = intel::get_port_intel(port);
-
                         res_c.lock().unwrap().push(OpenPort {
                             port,
                             status: "Open".to_string(),

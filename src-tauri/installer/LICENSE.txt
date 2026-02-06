@@ -1,0 +1,14 @@
+NETSENTINEL 3D - END USER LICENSE AGREEMENT (EULA)
+
+PER FAVOR, LLEGIU ATENTAMENT AQUEST ACORD ABANS D'INSTAL·LAR EL SOFTWARE.
+
+1. CONCESSIÓ DE LLICÈNCIA
+NetSentinel us concedeix una llicència no exclusiva per utilitzar aquest programari únicament per a fins personals i educatius de ciberseguretat defensiva.
+
+2. RESTRICCIONS
+No està permès utilitzar aquesta eina per a activitats il·lícites, atacs a xarxes de tercers sense autorització o enginyeria inversa del codi binari compilat (Rust).
+
+3. EXEMPCIO DE RESPONSABILITAT
+El programari es proporciona "tal qual". L'autor no es fa responsable dels danys derivats de l'ús incorrecte de les funcions de bloqueig de xarxa (Kill Switch).
+
+Copyright (c) 2024 NetSentinel Security Corp.

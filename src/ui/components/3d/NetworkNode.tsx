@@ -10,9 +10,9 @@ interface NetworkNodeProps {
   name?: string; // Afegim el nom/IP per identificar-lo al log
 }
 
-export const NetworkNode: React.FC<NetworkNodeProps> = ({ 
-  position, 
-  color = '#00ff00', 
+export const NetworkNode: React.FC<NetworkNodeProps> = ({
+  position,
+  color = '#00ff00',
   onClick,
   isSelected = false,
   name = 'Unknown'
@@ -20,7 +20,7 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
   const meshRef = useRef<Mesh>(null);
   const [hovered, setHover] = useState(false);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (meshRef.current) {
       const speed = isSelected ? 2 : 0.5;
       meshRef.current.rotation.x += delta * speed;
@@ -50,9 +50,9 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
       scale={isSelected ? 1.5 : (hovered ? 1.2 : 1)}
     >
       <icosahedronGeometry args={[1, 1]} />
-      <meshStandardMaterial 
-        color={isSelected ? '#ffd700' : (hovered ? '#ffffff' : color)} 
-        wireframe={true} 
+      <meshStandardMaterial
+        color={isSelected ? '#ffd700' : (hovered ? '#ffffff' : color)}
+        wireframe={true}
         emissive={isSelected ? '#ffd700' : color}
         emissiveIntensity={isSelected ? 2 : 0.5}
       />

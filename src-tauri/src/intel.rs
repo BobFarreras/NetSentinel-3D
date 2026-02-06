@@ -2,14 +2,22 @@
 use crate::models::Vulnerability;
 use std::process::Command;
 
-// 1. INTEL·LIGÈNCIA DE NOMS (NSLOOKUP)
-// Intenta esbrinar el nom real del dispositiu (ex: DESKTOP-55, iPhone-de-Joan)
+// 👇 IMPORT NECESSARI PER AMAGAR FINESTRES (WINDOWS)
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+// 1. INTEL·LIGÈNCIA DE NOMS (NSLOOKUP) - ARA SILENCIÓS 🤫
 pub fn resolve_hostname(ip: &str) -> Option<String> {
-    // Executem 'nslookup IP' per veure si el dispositiu té nom a la xarxa
-    let output = Command::new("nslookup")
-        .arg(ip)
-        .output()
-        .ok()?;
+    let mut cmd = Command::new("nslookup");
+    cmd.arg(ip);
+
+    // 🛑 APLICAR SILENCIADOR
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd.output().ok()?;
 
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -30,25 +38,20 @@ pub fn resolve_hostname(ip: &str) -> Option<String> {
 pub fn resolve_vendor(mac: &str) -> String {
     if mac == "00:00:00:00:00:00" { return "Unknown".to_string(); }
     
-    // Netejem la MAC per comparar millor
-    let clean_mac = mac.replace(":", "").replace("-", "").to_uppercase(); // AABBCC...
+    let clean_mac = mac.replace(":", "").replace("-", "").to_uppercase();
 
-    // 🛑 DETECCIÓ DE PRIVACITAT (MAC RANDOMITZADA)
-    // Android i iPhone moderns canvien la MAC per privacitat. 
-    // Si el segon caràcter és 2, 6, A o E, és una MAC falsa generada per software.
+    // 🛑 DETECCIÓ DE PRIVACITAT
     let second_char = clean_mac.chars().nth(1).unwrap_or('0');
     if ['2', '6', 'A', 'E'].contains(&second_char) {
         return "Private / Randomized MAC".to_string();
     }
 
-    // BASE DE DADES DE PREFIXOS (OUI)
-    // Pots afegir-ne més mirant: https://maclookup.app/
+    // BASE DE DADES (Simplified)
     if clean_mac.starts_with("ACF7") || clean_mac.starts_with("646E") || clean_mac.starts_with("50EC") { return "Xiaomi / Redmi".to_string(); }
     if clean_mac.starts_with("BCD0") || clean_mac.starts_with("00E0") { return "Intel (PC)".to_string(); }
-    if clean_mac.starts_with("D850") || clean_mac.starts_with("F4F5") { return "Google (Nest/Chromecast)".to_string(); }
+    if clean_mac.starts_with("D850") || clean_mac.starts_with("F4F5") { return "Google".to_string(); }
     if clean_mac.starts_with("7C04") || clean_mac.starts_with("80E6") { return "Samsung".to_string(); }
     if clean_mac.starts_with("F018") || clean_mac.starts_with("3C22") { return "Apple".to_string(); }
-    if clean_mac.starts_with("B827") || clean_mac.starts_with("DCA6") { return "Raspberry Pi".to_string(); }
     
     "Generic Device".to_string()
 }
