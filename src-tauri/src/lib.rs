@@ -5,6 +5,7 @@ mod models;
 mod network_commands;
 mod history_commands; // 👈 AQUESTA LÍNIA ÉS LA QUE ET FALTAVA O FALLAVA
 mod intel;
+mod router_audit;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,8 +15,11 @@ pub fn run() {
             // 2. Registrem les funcions perquè el Frontend les pugui cridar
             network_commands::scan_network,
             network_commands::audit_target,
+            
             history_commands::save_scan,
-            history_commands::get_history
+            history_commands::get_history,
+            
+            router_audit::audit_router
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

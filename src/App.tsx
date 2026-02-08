@@ -4,6 +4,7 @@ import { NetworkScene } from './ui/components/3d/NetworkScene';
 import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
+import { DangerModal } from './ui/components/DangerModal';
 
 function App() {
   // 1. Invoquem el nostre Hook de lògica (Connectat a Rust)
@@ -11,19 +12,26 @@ function App() {
     devices, selectedDevice, scanning, auditing,
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    toggleJammer
+    // 👇 AFEGIT: 'routerRisk' AQUI (Abans te'l deixaves)
+    toggleJammer, checkRouterSecurity, dismissRisk, routerRisk 
   } = useNetworkManager();
 
   // 2. Estat local per la UI
   const [showHistory, setShowHistory] = useState(false);
-  
+
   // Suposem que el router és la IP acabada en .1
   const gatewayIp = devices.find(d => d.ip.endsWith('.1'))?.ip || '192.168.1.1';
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
+      
+      {/* 🛑 LAYER DE PERILL (Z-INDEX SUPERIOR) */}
+      {/* Ara routerRisk ja existeix i funcionarà */}
+      <DangerModal result={routerRisk} onClose={dismissRisk} />
+
       {/* 1. HUD ESQUERRE */}
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
+
         <h2 style={{ color: '#0f0', fontFamily: 'monospace', margin: '0 0 10px 0', textShadow: '0 0 5px #0f0' }}>
           NETSENTINEL /// RUST_CORE
         </h2>
@@ -82,6 +90,7 @@ function App() {
           onAudit={() => startAudit(selectedDevice.ip)}
           isJammed={jammedDevices.includes(selectedDevice.ip)}
           onToggleJam={() => toggleJammer(selectedDevice.ip, gatewayIp)}
+          onRouterAudit={checkRouterSecurity}
         />
       )}
 
@@ -91,7 +100,7 @@ function App() {
         onDeviceSelect={selectDevice}
         selectedIp={selectedDevice?.ip}
       />
-    </>
+    </div>
   );
 }
 

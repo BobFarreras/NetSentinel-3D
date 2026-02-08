@@ -11,10 +11,11 @@ interface Props {
   onAudit: () => void;
   isJammed: boolean;
   onToggleJam: () => void;
+  onRouterAudit: (ip: string) => void;
 }
 
-export const DeviceDetailPanel: React.FC<Props> = ({ 
-    device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam 
+export const DeviceDetailPanel: React.FC<Props> = ({
+  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit
 }) => {
   return (
     <>
@@ -47,7 +48,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         position: 'absolute', top: 20, right: 20, width: '340px',
         padding: '20px', color: '#0f0', fontFamily: 'Consolas, monospace', zIndex: 10
       }}>
-        
+
         {/* HEADER */}
         <h3 style={{ borderBottom: '2px solid #004400', paddingBottom: 10, marginTop: 0, display: 'flex', justifyContent: 'space-between' }}>
           <span>TARGET_ANALYSIS</span>
@@ -80,15 +81,24 @@ export const DeviceDetailPanel: React.FC<Props> = ({
             {isJammed ? '⚫ DISCONNECTING' : '☠ KILL NET'}
           </button>
         </div>
-
+        {/* Només mostrar si és el Gateway */}
+        {/* 👇 AQUI ESTAVA L'ERROR: Ara fem servir la Prop 'onRouterAudit' */}
+        {device.isGateway && (
+          <button
+            onClick={() => onRouterAudit(device.ip)}
+            style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: 'Consolas', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            ☠️ AUDIT GATEWAY SECURITY
+          </button>
+        )}
         {/* 👇 COMPONENT 1: TERMINAL */}
-        <ConsoleDisplay logs={consoleLogs} />
+        <ConsoleDisplay logs={consoleLogs} isBusy={auditing} />
 
         {/* 👇 COMPONENT 2: RESULTATS */}
-        <PortResults 
-            results={auditResults} 
-            isAuditing={auditing} 
-            hasLogs={consoleLogs.length > 0} 
+        <PortResults
+          results={auditResults}
+          isAuditing={auditing}
+          hasLogs={consoleLogs.length > 0}
         />
 
       </div>
