@@ -17,11 +17,10 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
 }) => {
   
   const { centerNode, orbitingNodes } = useMemo(() => {
-    // 1. Busquem el Router (Gateway) - Normalment la .1 o marcat com isGateway
+    // 1. Busquem el Router (Gateway)
     const gateway = devices.find(d => d.ip.endsWith('.1') || d.isGateway);
     
-    // 2. La resta són els altres (excloent el router)
-    // 🛑 NETEJA: Ja no creem manualment cap 'myPc'. Confiem en Rust.
+    // 2. La resta són els altres
     const others = devices.filter(d => !d.ip.endsWith('.1') && !d.isGateway);
 
     return {
@@ -39,15 +38,15 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
         
-        {/* Fons d'estrelles vermelloses per donar ambient hacker */}
+        {/* Fons d'estrelles */}
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
-        {/* 🌞 CENTRE: EL ROUTER (GATEWAY) */}
+        {/* 🌞 CENTRE: EL ROUTER (GATEWAY) - BLAU */}
         {centerNode ? (
           <>
             <NetworkNode 
               position={[0, 0, 0]} 
-              color="#0088ff" // BLAU CIÈNCIA FICCIÓ (Router)
+              color="#0088ff" 
               name={`ROUTER (${centerNode.ip})`}
               onClick={() => onDeviceSelect && onDeviceSelect(centerNode)}
               isSelected={selectedIp === centerNode.ip}
@@ -73,13 +72,13 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           // 🔥 LÒGICA DE COLORS
           let nodeColor = "#ff0000"; // PER DEFECTE: VERMELL (AMENAÇA)
 
-          // Si Rust diu que sóc jo (perquè ha detectat MAC 00:00 o el vendor especial)
-          if (device.vendor.includes('NETSENTINEL') || device.vendor.includes('(ME)')) {
-            nodeColor = "#00ff00"; // VERD (SÓC JO / ALIAT)
+          // 1. SI SÓC JO (VERD)
+          if (device.vendor.includes('NETSENTINEL') || device.vendor.includes('(ME)') || device.mac === "00:00:00:00:00:00") {
+            nodeColor = "#00ff00"; 
           }
-          // Si és un dispositiu conegut (Ex: Xiaomi)
-          else if (device.vendor.includes('Xiaomi') || device.vendor.includes('Redmi')) {
-            nodeColor = "#0088ff"; // BLAU (Neutre/Conegut)
+          // 2. SI TÉ WIFI (MAGENTA) - Per diferenciar del router blau
+          else if (device.wifi_band || device.signal_strength) {
+            nodeColor = "#ff00ff"; 
           }
 
           return (

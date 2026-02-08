@@ -1,4 +1,4 @@
-use crate::models::{ScanSession, Device};
+use crate::models::{ScanSession, DeviceDTO};
 use std::fs;
 use std::path::PathBuf; // Necessari per gestionar rutes de fitxers
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -37,7 +37,7 @@ fn read_history_file() -> Vec<ScanSession> {
 
 // --- COMANDA 1: GUARDAR SESSIÓ ---
 #[tauri::command]
-pub async fn save_scan(devices: Vec<Device>) -> Result<String, String> {
+pub async fn save_scan(devices: Vec<DeviceDTO>) -> Result<String, String> {
     // 1. Creem la sessió
     let start = SystemTime::now();
     let timestamp = start.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;

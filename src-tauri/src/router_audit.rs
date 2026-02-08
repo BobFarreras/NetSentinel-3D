@@ -1,36 +1,29 @@
-use serde::{Serialize, Deserialize};
-use std::sync::{Arc, Mutex};
+use crate::models::{DeviceDTO, RouterAuditResult}; 
 use headless_chrome::{Browser, LaunchOptions};
-use std::time::Duration;
-use std::thread;
-use tauri::{Emitter, Window}; 
 use std::ffi::OsStr;
-
-#[derive(Serialize, Deserialize)]
-pub struct RouterAuditResult {
-    pub vulnerable: bool,
-    pub credentials_found: Option<String>,
-    pub message: String,
-}
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use tauri::{Emitter, Window};
 
 const COMMON_CREDS: &[(&str, &str)] = &[
-
+    ("1234", "1234"), 
     ("admin", "1234"),
     ("admin", "admin"),
-    ("1234", "1234"), 
     ("user", "user"),
     ("root", "admin"),
     ("admin", "password"),
 ];
 
 fn log(window: &Window, msg: &str) {
-    println!("{}", msg); 
-    let _ = window.emit("audit-log", msg); 
+    println!("{}", msg);
+    let _ = window.emit("audit-log", msg);
 }
 
+// COMANDA 1: HACKEIG (BRUTE FORCE)
 #[tauri::command]
 pub async fn audit_router(window: Window, gateway_ip: String) -> RouterAuditResult {
-    log(&window, &format!("⚔️ ROUTER AUDIT: Iniciant INJECCIÓ QUIRÚRGICA a {}...", gateway_ip));
+    log(&window, &format!("⚔️ ROUTER AUDIT: Iniciant BRUTE-FORCE a {}...", gateway_ip));
 
     let found_creds = Arc::new(Mutex::new(None));
     let is_vulnerable = Arc::new(Mutex::new(false));
@@ -43,111 +36,81 @@ pub async fn audit_router(window: Window, gateway_ip: String) -> RouterAuditResu
     thread::spawn(move || {
         let mut successful_pair: Option<(String, String)> = None;
 
-        // FASE 1: ESCANEIG (HEADLESS)
-        { 
-            let args: Vec<&OsStr> = vec![
-                OsStr::new("--window-size=1920,1080"),
-                OsStr::new("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-            ];
-            
-            let options = LaunchOptions {
-                headless: true, // 👻 FANTASMA
-                idle_browser_timeout: Duration::from_secs(60),
-                args: args, 
-                ..Default::default()
-            };
+        let options = LaunchOptions {
+            headless: true, // Aquest el deixem ocult per velocitat
+            idle_browser_timeout: Duration::from_secs(60),
+            args: vec![OsStr::new("--window-size=1920,1080")],
+            ..Default::default()
+        };
 
-            if let Ok(browser) = Browser::new(options) {
-                if let Ok(tab) = browser.new_tab() {
-                    let url = format!("http://{}/", ip_target);
+        if let Ok(browser) = Browser::new(options) {
+            if let Ok(tab) = browser.new_tab() {
+                let url = format!("http://{}/", ip_target);
 
-                    for (user, pass) in COMMON_CREDS {
-                        if *vul_clone.lock().unwrap() { break; }
+                for (user, pass) in COMMON_CREDS {
+                    if *vul_clone.lock().unwrap() { break; }
 
-                        log(&window_clone, "------------------------------------------------");
-                        log(&window_clone, &format!("👉 PROVANT: {} / {}", user, pass));
+                    log(&window_clone, "------------------------------------------------");
+                    log(&window_clone, &format!("👉 PROVANT: {} / {}", user, pass));
 
-                        // 1. HARD RESET (about:blank) per netejar l'Angular
-                        let _ = tab.navigate_to("about:blank");
-                        let _ = tab.wait_until_navigated();
-                        thread::sleep(Duration::from_millis(100));
+                    let _ = tab.navigate_to("about:blank");
+                    let _ = tab.wait_until_navigated();
+                    thread::sleep(Duration::from_millis(100));
 
-                        // 2. CARREGAR ROUTER
-                        if tab.navigate_to(&url).is_err() {
-                            let _ = tab.reload(true, None);
-                        }
-                        let _ = tab.wait_until_navigated();
-                        thread::sleep(Duration::from_millis(2000)); 
+                    if tab.navigate_to(&url).is_err() { let _ = tab.reload(true, None); }
+                    let _ = tab.wait_until_navigated();
+                    thread::sleep(Duration::from_millis(2000));
 
-                        // 3. INJECCIÓ DE CREDENCIALS (JS PUR)
-                        let js_fill = format!(r#"
-                            (function() {{
-                                var u = document.getElementById('name') || document.querySelector("input[ng-model='username']") || document.querySelector("input[id='user']");
-                                if(u) {{
-                                    u.value = '{}';
-                                    u.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                                    u.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                                }} else {{ return "NO_USER"; }}
+                    let js_fill = format!(r#"
+                        (function() {{
+                            var u = document.getElementById('name') || document.querySelector("input[ng-model='username']") || document.querySelector("input[id='user']");
+                            if(u) {{ u.value = '{}'; u.dispatchEvent(new Event('input', {{bubbles:true}})); u.dispatchEvent(new Event('change', {{bubbles:true}})); }} 
+                            else {{ return "NO_USER"; }}
 
-                                var p = document.getElementById('password') || document.querySelector("input[type='password']");
-                                if(p) {{
-                                    p.value = '{}';
-                                    p.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                                    p.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                                }} else {{ return "NO_PASS"; }}
-                                
-                                return "OK";
-                            }})()
-                        "#, user, pass);
-
-                        let fill_result = tab.evaluate(&js_fill, false);
-                        
-                        // 🛑 CORRECCIÓ DE L'ERROR DE COMPILACIÓ AQUÍ:
-                        if let Ok(res) = fill_result {
-                            // Utilitzem .as_ref().and_then() per accedir al valor opcional de forma segura
-                            let val = res.value.as_ref().and_then(|v| v.as_str()).unwrap_or("ERR");
+                            var p = document.getElementById('password') || document.querySelector("input[type='password']");
+                            if(p) {{ p.value = '{}'; p.dispatchEvent(new Event('input', {{bubbles:true}})); p.dispatchEvent(new Event('change', {{bubbles:true}})); }} 
+                            else {{ return "NO_PASS"; }}
                             
-                            if val == "NO_USER" {
-                                log(&window_clone, "   ⚠️ JS: No trobo camp Usuari. Possiblement ja dins?");
-                                let check_url = tab.get_url();
-                                if !check_url.contains("login") && check_url.len() > url.len() + 5 {
-                                    log(&window_clone, "🔓 EUREKA! JA SOM A DINS!");
-                                    successful_pair = Some(("UNKNOWN".to_string(), "UNKNOWN".to_string()));
-                                    break;
-                                }
-                                continue;
-                            }
-                        }
+                            return "OK";
+                        }})()
+                    "#, user, pass);
 
-                        // 4. DISPARAR (JS CLICK)
-                        log(&window_clone, "   ⚡ Injectant Clic...");
-                        thread::sleep(Duration::from_millis(500)); 
-                        let _ = tab.evaluate(r#"
-                            var btn = document.querySelector(".submit button") || document.querySelector("button[type='submit']");
-                            if(btn) btn.click();
-                            else {
-                                var e = new KeyboardEvent('keydown', {bubbles:true, keyCode:13});
-                                document.querySelector("input[type='password']").dispatchEvent(e);
-                            }
-                        "#, false);
-
-                        // 5. VALIDACIÓ DE L'ÈXIT
-                        for _ in 0..6 { 
-                            thread::sleep(Duration::from_millis(500));
-                            let post_url = tab.get_url();
-                            if !post_url.contains("login") && post_url != url {
-                                log(&window_clone, &format!("🔓 BOOM! ACCÉS CONFIRMAT: {}/{}", user, pass));
-                                successful_pair = Some((user.to_string(), pass.to_string()));
-                                break;
-                            }
+                    let fill_result = tab.evaluate(&js_fill, false);
+                    if let Ok(res) = fill_result {
+                        let val = res.value.as_ref().and_then(|v| v.as_str()).unwrap_or("ERR");
+                        if val == "NO_USER" {
+                             let check_url = tab.get_url();
+                             if !check_url.contains("login") && check_url.len() > url.len() + 5 {
+                                 log(&window_clone, "🔓 EUREKA! JA SOM A DINS!");
+                                 successful_pair = Some(("UNKNOWN".to_string(), "UNKNOWN".to_string()));
+                                 break;
+                             }
+                             continue;
                         }
-                        if successful_pair.is_some() { break; }
                     }
+
+                    log(&window_clone, "   ⚡ Injectant Clic...");
+                    thread::sleep(Duration::from_millis(500));
+                    let _ = tab.evaluate(r#"
+                        var btn = document.querySelector(".submit button") || document.querySelector("button[type='submit']");
+                        if(btn) btn.click();
+                        else { var e = new KeyboardEvent('keydown', {bubbles:true, keyCode:13}); document.querySelector("input[type='password']").dispatchEvent(e); }
+                    "#, false);
+
+                    for _ in 0..6 {
+                        thread::sleep(Duration::from_millis(500));
+                        let post_url = tab.get_url();
+                        if !post_url.contains("login") && post_url != url {
+                            log(&window_clone, &format!("🔓 BOOM! ACCÉS CONFIRMAT: {}/{}", user, pass));
+                            successful_pair = Some((user.to_string(), pass.to_string()));
+                            break;
+                        }
+                    }
+                    if successful_pair.is_some() { break; }
                 }
             }
-        } 
+        }
 
-        // FASE 2: VICTORY MODE (OBRIR NAVEGADOR VISIBLE)
         if let Some((user, pass)) = successful_pair {
             {
                 let mut vul = vul_clone.lock().unwrap();
@@ -155,55 +118,131 @@ pub async fn audit_router(window: Window, gateway_ip: String) -> RouterAuditResu
                 *vul = true;
                 *creds = Some(format!("{}:{}", user, pass));
             }
-
-            log(&window_clone, "🚀 ACCÉS ACONSEGUIT. OBRINT CONTROL TOTAL...");
-            
-            let options_visible = LaunchOptions {
-                headless: false,
-                idle_browser_timeout: Duration::from_secs(3600), 
-                ..Default::default()
-            };
-
-            if let Ok(browser_viz) = Browser::new(options_visible) {
-                if let Ok(tab_viz) = browser_viz.new_tab() {
-                    let url = format!("http://{}/", ip_target);
-                    let _ = tab_viz.navigate_to(&url);
-                    let _ = tab_viz.wait_until_navigated();
-                    thread::sleep(Duration::from_secs(2));
-
-                    let js_login = format!(r#"
-                        document.getElementById('name').value = '{}';
-                        document.getElementById('name').dispatchEvent(new Event('input'));
-                        document.getElementById('password').value = '{}';
-                        document.getElementById('password').dispatchEvent(new Event('input'));
-                        setTimeout(() => document.querySelector('.submit button').click(), 500);
-                    "#, user, pass);
-                    let _ = tab_viz.evaluate(&js_login, false);
-
-                    log(&window_clone, "✅ SESSIÓ OBERTA.");
-                    loop { thread::sleep(Duration::from_secs(1)); }
-                }
-            }
+            log(&window_clone, "🚀 CREDS VÀLIDES. TANCANT AUDITORIA PER INICIAR ESCÀNER...");
         } else {
             log(&window_clone, "❌ FINALITZAT: El router resisteix.");
         }
 
-    }).join().unwrap(); 
+    }).join().unwrap();
 
     let vulnerable = *is_vulnerable.lock().unwrap();
     let credentials = found_creds.lock().unwrap().clone();
 
     if vulnerable {
-        RouterAuditResult {
-            vulnerable: true,
-            credentials_found: credentials.clone(),
-            message: format!("⚠️ CRITICAL: ACCÉS ACONSEGUIT: {}", credentials.unwrap_or_default()),
-        }
+        RouterAuditResult { vulnerable: true, credentials_found: credentials.clone(), message: format!("ACCÉS: {}", credentials.unwrap_or_default()) }
     } else {
-        RouterAuditResult {
-            vulnerable: false,
-            credentials_found: None,
-            message: "✅ SEGUR: No s'han trobat credencials vàlides.".to_string(),
+        RouterAuditResult { vulnerable: false, credentials_found: None, message: "SEGUR.".to_string() }
+    }
+}
+
+// COMANDA 2: LLEGIR DISPOSITIUS (ARA VISIBLE I PARLAIRE)
+#[tauri::command]
+pub async fn fetch_router_devices(window: Window, gateway_ip: String, user: String, pass: String) -> Vec<DeviceDTO> {
+    log(&window, &format!("📡 SYNC: Obrint Chrome Visible a {}...", gateway_ip));
+    
+    let options = LaunchOptions {
+        headless: false, // 👁️ ARA ÉS VISIBLE (El veuràs obrir-se)
+        args: vec![OsStr::new("--window-size=1200,800")], // Mida còmoda
+        ..Default::default()
+    };
+
+    if let Ok(browser) = Browser::new(options) {
+        if let Ok(tab) = browser.new_tab() {
+            let url = format!("http://{}/", gateway_ip);
+
+            // LOGIN
+            let _ = tab.navigate_to(&url);
+            let _ = tab.wait_until_navigated();
+            thread::sleep(Duration::from_secs(1));
+
+            log(&window, "   🔑 Autenticant-se...");
+            let js_login = format!(r#"
+                document.getElementById('name').value = '{}'; document.getElementById('name').dispatchEvent(new Event('input'));
+                document.getElementById('password').value = '{}'; document.getElementById('password').dispatchEvent(new Event('input'));
+                setTimeout(() => document.querySelector('.submit button').click(), 500);
+            "#, user, pass);
+            let _ = tab.evaluate(&js_login, false);
+            
+            log(&window, "   ⏳ Esperant càrrega de llista (6s)...");
+            thread::sleep(Duration::from_secs(6)); // Temps per veure-ho amb els teus ulls
+
+            log(&window, "   📄 Extraient dades del DOM...");
+            if let Ok(text_obj) = tab.evaluate("document.body.innerText", false) {
+                let full_text = text_obj.value.as_ref().and_then(|v| v.as_str()).unwrap_or("");
+                
+                // Cridem al parser passant-li la finestra per fer logs
+                let devices = parse_router_text(&window, full_text);
+                
+                log(&window, "   ✅ Dades capturades. Tancant navegador.");
+                return devices;
+            } else {
+                log(&window, "❌ ERROR: No s'ha pogut llegir el text.");
+            }
         }
     }
+    Vec::new()
+}
+
+// PARSING AMB LOGS A LA CONSOLA
+fn parse_router_text(window: &Window, text: &str) -> Vec<DeviceDTO> {
+    let mut devices = Vec::new();
+    let lines: Vec<&str> = text.split('\n').collect();
+    let mut current_band = "2.4 GHz".to_string();
+    
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        
+        if line.contains("5 GHz") { current_band = "5 GHz".to_string(); }
+        if line.contains("2.4 GHz") { current_band = "2.4 GHz".to_string(); }
+
+        if line.starts_with("IP:") {
+            let ip = line.replace("IP:", "").trim().to_string();
+            
+            let mut name_found = "Unknown".to_string();
+            let mut k = 1;
+            while i >= k {
+                let candidate = lines[i-k].trim();
+                if !candidate.is_empty() && !candidate.starts_with("Signal") && !candidate.contains("GHz") && candidate != "Radio:" && !candidate.contains("connected devices") {
+                    name_found = candidate.to_string();
+                    break;
+                }
+                k += 1;
+                if k > 8 { break; }
+            }
+
+            let mut signal = "-".to_string();
+            let mut rate = "-".to_string();
+            
+            for j in 1..6 {
+                if i + j < lines.len() {
+                    let next_line = lines[i+j].trim();
+                    if next_line.starts_with("Signal strength:") {
+                        signal = next_line.replace("Signal strength:", "").trim().to_string();
+                    }
+                    if next_line.starts_with("Signal rate:") {
+                        rate = next_line.replace("Signal rate:", "").trim().to_string();
+                    }
+                }
+            }
+
+            // Aquest log sortirà a la pantalla negra!
+            log(window, &format!("   ✨ DETECTAT: {} ({})", name_found, ip));
+
+            devices.push(DeviceDTO {
+                ip,
+                mac: "ROUTER_AUTH".to_string(),
+                vendor: name_found.clone(),
+                hostname: Some(name_found.clone()),
+                name: Some(name_found),
+                is_gateway: false,
+                ping: None,
+                signal_strength: Some(signal),
+                signal_rate: Some(rate),
+                wifi_band: Some(current_band.clone()),
+            });
+        }
+        i += 1;
+    }
+    devices
 }

@@ -21,7 +21,7 @@ const TypewriterLine = ({ text, onComplete, isActive }: { text: string; onComple
         clearInterval(intervalId);
         if (onComplete) onComplete();
       }
-    }, 30); 
+    }, 15); 
 
     return () => clearInterval(intervalId);
   }, [text]);

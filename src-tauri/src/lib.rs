@@ -19,7 +19,8 @@ pub fn run() {
             history_commands::save_scan,
             history_commands::get_history,
             
-            router_audit::audit_router
+            router_audit::audit_router,
+            router_audit::fetch_router_devices
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

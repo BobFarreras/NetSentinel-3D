@@ -28,5 +28,7 @@ local-ip-address = "0.6" # Per saber la nostra IP
 directories = "5.0"  # 👈 Aquesta màgia troba les rutes del sistema
 headless_chrome = "1.0"
 anyhow = "1.0" # Per gestionar errors fàcilment
+regex = "1"
+
 # Per ara farem servir comandes de sistema per l'ARP inicial per assegurar estabilitat
 # Més endavant afegirem 'pnet' per l'atac.
