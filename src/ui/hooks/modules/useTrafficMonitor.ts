@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { TrafficPacket } from '../../../shared/dtos/NetworkDTOs';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand, listenEvent } from '../../../shared/tauri/bridge';
 
 export interface UITrafficPacket extends TrafficPacket {
   _uiId: string;
@@ -29,7 +28,7 @@ export const useTrafficMonitor = () => {
   const toggleMonitoring = async () => {
     try {
       if (isActive) {
-        await invoke('stop_traffic_sniffing');
+        await invokeCommand('stop_traffic_sniffing');
         setIsActive(false);
       } else {
         // RESET TOTAL
@@ -37,7 +36,7 @@ export const useTrafficMonitor = () => {
         jammedBufferRef.current = [];
         setData({ all: [], jammed: [] });
         seqRef.current = 0; 
-        await invoke('start_traffic_sniffing');
+        await invokeCommand('start_traffic_sniffing');
         setIsActive(true);
       }
     } catch (e) {
@@ -50,7 +49,7 @@ export const useTrafficMonitor = () => {
     let unlisten: (() => void) | null = null;
 
     const setup = async () => {
-      unlisten = await listen<TrafficPacket>('traffic-event', (event) => {
+      unlisten = await listenEvent<TrafficPacket>('traffic-event', (event) => {
         seqRef.current++;
         
         const newPacket: UITrafficPacket = {

@@ -117,10 +117,6 @@ impl NetworkScannerPort for SystemScanner {
         devices
     }
 
-    fn resolve_vendor(&self, mac: &str) -> String {
-        VendorResolver::resolve(mac)
-    }
-
     async fn scan_ports(&self, ip: &str) -> Vec<OpenPort> {
         let common_ports = [21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 3389, 8080];
         let mut open_ports = Vec::new();

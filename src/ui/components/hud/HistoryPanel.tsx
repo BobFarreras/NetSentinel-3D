@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { invoke } from "@tauri-apps/api/core"; // Importem invoke
+import { networkAdapter } from '../../../adapters/networkAdapter';
 
 interface HistoryPanelProps {
   onLoadSession: (devices: any[]) => void;
@@ -11,7 +11,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClo
 
   useEffect(() => {
     // 👇 CRIDA REAL A RUST
-    invoke('get_history')
+    networkAdapter.getHistory()
         .then((data: any) => setSessions(data))
         .catch(err => console.error("History Error:", err));
   }, []);

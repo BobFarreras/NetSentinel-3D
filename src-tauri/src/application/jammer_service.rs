@@ -1,12 +1,7 @@
 use crate::infrastructure::network::packet_injector::PacketInjector;
 use crate::infrastructure::repositories::local_intelligence;
 use pnet::datalink;
-// 👇 IMPORTANTS: AFEGIR AQUESTS IMPORTS QUE FALTAVEN
-use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
-use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, MutableArpPacket};
-use pnet::packet::{MutablePacket, Packet};
 use pnet::util::MacAddr;
-// 👆 
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::str::FromStr;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { DeviceDTO } from '../../../shared/dtos/NetworkDTOs';
+import { invokeCommand } from '../../../shared/tauri/bridge';
 
 // 👇 CORRECCIÓ 1: Definim que addLog necessita (ip, msg)
 export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: string) => void) => {
@@ -26,7 +26,7 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
         if (jammedDevices.includes(ip)) {
             // ATURAR JAMMER
             try {
-                await invoke('stop_jamming', { ip });
+                await invokeCommand('stop_jamming', { ip });
                 setJammedDevices(prev => prev.filter(d => d !== ip));
                 // 👇 CORRECCIÓ 3: Passem la IP
                 addLog(ip, `🏳️ JAMMER STOPPED: ${ip}`);
@@ -36,7 +36,7 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
         } else {
             // INICIAR JAMMER
             try {
-                await invoke('start_jamming', { 
+                await invokeCommand('start_jamming', { 
                     ip: target.ip, 
                     mac: target.mac, 
                     gatewayIp: gateway.ip 

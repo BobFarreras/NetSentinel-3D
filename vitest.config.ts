@@ -1,5 +1,5 @@
 // vite.config.ts
-import { defineConfig } from 'vitest/config'; // 👈 AQUEST ÉS EL TRUC (vitest/config en lloc de vite)
+import { configDefaults, defineConfig } from 'vitest/config'; // 👈 AQUEST ÉS EL TRUC (vitest/config en lloc de vite)
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -9,5 +9,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: false,
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });

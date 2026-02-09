@@ -7,9 +7,6 @@ use crate::domain::entities::{Device, RouterAuditResult, ScanSession, OpenPort};
 pub trait NetworkScannerPort: Send + Sync {
     // Escaneja un rang i retorna dispositius
     async fn scan_network(&self, subnet: &str) -> Vec<Device>;
-    
-    // Resol el nom del fabricant (MAC Vendor)
-    fn resolve_vendor(&self, mac: &str) -> String;
 
     // 👇 Aquest és el mètode que faltava, integrat en la mateixa definició
     async fn scan_ports(&self, ip: &str) -> Vec<OpenPort>;

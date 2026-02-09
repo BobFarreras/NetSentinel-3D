@@ -124,10 +124,6 @@ mod tests {
             ]
         }
 
-        fn resolve_vendor(&self, _mac: &str) -> String {
-            "MockVendor".to_string()
-        }
-
         async fn scan_ports(&self, ip: &str) -> Vec<OpenPort> {
             if ip == "192.168.1.1" {
                 vec![OpenPort {
