@@ -121,6 +121,12 @@ Controles recomendados en CI o rutina semanal:
 - Mantener DTOs Rust/TS coherentes para evitar errores de parseo y bypass de validacion.
 - Mantener comentarios y documentacion en castellano tecnico y accionable.
 
+Validaciones backend actualmente aplicadas:
+- IPv4 en comandos de auditoria y jamming (`audit_target`, `audit_router`, `fetch_router_devices`, `start_jamming`, `stop_jamming`).
+- Rango de escaneo en formato IPv4 o CIDR valido (`scan_network`).
+- Credenciales no vacias y con longitud acotada en `fetch_router_devices`.
+- Formato de MAC address validado en `start_jamming`.
+
 ## 7. Checklist Minimo Antes de Release
 - [ ] `npm test -- --run` en verde.
 - [ ] `npm run build` en verde.

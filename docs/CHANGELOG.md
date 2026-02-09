@@ -2,6 +2,32 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.5.9] - Validacion Defensiva de Inputs en Comandos Rust (2026-02-09)
+### 🔐 Hardening backend
+- Añadido modulo de validadores:
+  - `src-tauri/src/api/validators.rs`
+- Aplicadas validaciones en comandos API:
+  - `scan_network`: rango IPv4/CIDR valido.
+  - `audit_target`: IPv4 valida.
+  - `audit_router`: IPv4 valida.
+  - `fetch_router_devices`: IPv4 valida + `user/pass` no vacios y con longitud maxima.
+- Aplicadas validaciones en comandos de jamming:
+  - `start_jamming`: valida `ip`, `mac`, `gateway_ip` y bloquea `ip == gateway_ip`.
+  - `stop_jamming`: valida `ip`.
+
+### 🧪 Tests añadidos
+- Tests unitarios de validadores en `src-tauri/src/api/validators.rs`.
+- Tests unitarios de validacion en:
+  - `src-tauri/src/api/commands.rs`
+  - `src-tauri/src/lib.rs`
+
+### 📚 Documentacion
+- Actualizado `docs/SECURITY.md` con el estado actual de validacion de inputs.
+
+### ✅ Verificacion
+- `cargo check --tests` en verde.
+- `npm test -- --run` en verde.
+
 ## [v0.5.8] - Hardening CSP en Tauri (2026-02-09)
 ### 🔐 Seguridad runtime
 - Sustituida configuracion insegura `csp: null` por una politica CSP explicita en:
