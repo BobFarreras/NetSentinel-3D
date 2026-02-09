@@ -3,6 +3,7 @@ import { TopBar } from './ui/components/layout/TopBar';
 import { NetworkScene } from './ui/components/3d/NetworkScene';
 import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
+import { ConsoleLogs } from './ui/components/panels/ConsoleLogs'; // 👈 IMPORT NOU
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
 import { DangerModal } from './ui/components/DangerModal';
 
@@ -12,7 +13,7 @@ function App() {
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
     toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
-    intruders
+    intruders, identity
   } = useNetworkManager();
 
   const [showHistory, setShowHistory] = useState(false);
@@ -25,7 +26,7 @@ function App() {
       height: '100vh',
       background: '#050505',
       color: '#0f0',
-      overflow: 'hidden', // Evitem scrolls globals
+      overflow: 'hidden',
       fontFamily: "'Consolas', 'Courier New', monospace",
       fontSize: '16px'
     }}>
@@ -34,7 +35,7 @@ function App() {
       <DangerModal result={routerRisk} onClose={dismissRisk} />
 
       {/* =================================================================================
-          COLUMNA ESQUERRA: TOPBAR + MAPA (FLEX 1)
+          COLUMNA ESQUERRA: TOPBAR + MAPA + CONSOLA (FLEX 1)
          ================================================================================= */}
       <div style={{
         flex: 1,
@@ -42,18 +43,21 @@ function App() {
         flexDirection: 'column',
         position: 'relative',
         height: '100%',
-        minWidth: 0, // 👈 ⚠️ TRUC MÀGIC: Permet que la columna s'encongeixi sense trencar-se
-        overflow: 'hidden' // Assegura que res surti de mare
+        minWidth: 0,
+        overflow: 'hidden'
       }}>
 
+        {/* 1. BARRA SUPERIOR */}
         <TopBar
           scanning={scanning}
           activeNodes={devices.length}
           onScan={startScan}
           onHistoryToggle={() => setShowHistory(!showHistory)}
           showHistory={showHistory}
+          identity={identity}
         />
 
+        {/* 2. MAPA 3D (Ocupa l'espai restant) */}
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
           {showHistory && (
             <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 20 }}>
@@ -71,15 +75,26 @@ function App() {
             intruders={intruders}
           />
         </div>
+
+        {/* 3. 👇 CONSOLA / SNIFFER (NOU) - SOTA EL MAPA */}
+        <div style={{ 
+            height: '250px', // Alçada fixa per al panell inferior
+            zIndex: 10,
+            boxShadow: '0 -5px 20px rgba(0,0,0,0.5)'
+        }}>
+            {/* Passem tots els logs, el component ja gestiona el trànsit internament */}
+            <ConsoleLogs logs={consoleLogs} devices={devices}/>
+        </div>
+
       </div>
 
       {/* =================================================================================
-          COLUMNA DRETA: SIDEBAR (FIXA PERÒ SEGURA)
+          COLUMNA DRETA: SIDEBAR (FIXA)
          ================================================================================= */}
       <div style={{
-        width: '400px',      // ⬇️ Una mica més estret per seguretat (era 450)
-        minWidth: '400px',   // 👈 Assegura que mai sigui menys de 400
-        flexShrink: 0,       // 👈 ⚠️ TRUC MÀGIC 2: Prohibit aixafar la sidebar
+        width: '400px',
+        minWidth: '400px',
+        flexShrink: 0,
         height: '100vh',
         background: '#020202',
         borderLeft: '2px solid #004400',
@@ -102,7 +117,7 @@ function App() {
             <DeviceDetailPanel
               device={selectedDevice}
               auditResults={auditResults}
-              consoleLogs={consoleLogs}
+              consoleLogs={consoleLogs} // Aquests són els logs específics del dispositiu
               auditing={auditing}
               onAudit={() => startAudit(selectedDevice.ip)}
               isJammed={jammedDevices.includes(selectedDevice.ip)}

@@ -1,15 +1,16 @@
 import React from 'react';
-
+import { HostIdentity } from '../../../shared/dtos/NetworkDTOs';
 interface TopBarProps {
   scanning: boolean;
   activeNodes: number;
   onScan: () => void;
   onHistoryToggle: () => void;
   showHistory: boolean;
+  identity: HostIdentity | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ 
-  scanning, activeNodes, onScan, onHistoryToggle, showHistory 
+  scanning, activeNodes, onScan, onHistoryToggle, showHistory , identity
 }) => {
   return (
     <div style={{
@@ -36,6 +37,25 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}>
           NETSENTINEL 
         </h2>
+
+        {/* 👇 VISUALITZACIÓ DE LA IDENTITAT */}
+        {identity && (
+          <div style={{ 
+            display: 'flex', gap: '15px', fontSize: '0.85rem', fontFamily: 'monospace',
+            borderLeft: '1px solid #004400', paddingLeft: '15px', color: '#88ff88'
+          }}>
+            <span title="Local IP">
+              IP: <b style={{ color: '#fff' }}>{identity.ip}</b>
+            </span>
+            <span title="Interface Name" style={{ opacity: 0.7 }}>
+              [{identity.interfaceName}]
+            </span>
+            {/* Opcional: Gateway */}
+            <span title="Gateway" style={{ opacity: 0.5 }}>
+              GW: {identity.gatewayIp}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* CENTER: CONTROLS */}
