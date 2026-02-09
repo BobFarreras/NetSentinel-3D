@@ -159,7 +159,7 @@ impl ChromeAuditor {
                 devices.push(Device {
                     ip, mac: "ROUTER_AUTH".to_string(), vendor: name_found.clone(),
                     hostname: Some(name_found.clone()), name: Some(name_found), is_gateway: false,
-                    ping: None, signal_strength: Some(signal), signal_rate: Some(rate), wifi_band: Some(current_band.clone()),
+                    ping: None, signal_strength: Some(signal), signal_rate: Some(rate), wifi_band: Some(current_band.clone()),open_ports: None,
                 });
             }
             i += 1;

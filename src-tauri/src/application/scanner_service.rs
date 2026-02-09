@@ -1,5 +1,9 @@
-use crate::domain::{ports::NetworkScannerPort, entities::{Device, OpenPort}};
-use crate::application::intel;
+
+use crate::domain::{
+    entities::{Device, OpenPort},
+    ports::NetworkScannerPort,
+};
+use crate::infrastructure::network::service_dictionary::ServiceDictionary;
 use std::sync::Arc;
 
 pub struct ScannerService {
@@ -14,10 +18,10 @@ impl ScannerService {
     pub async fn run_network_scan(&self, subnet: Option<String>) -> Vec<Device> {
         // 1. Obtenim l'entrada bruta (Ex: "192.168.1.0/24" o "192.168.1")
         let raw_target = subnet.unwrap_or("192.168.1".to_string());
-        
+
         // 2. NETEJA: Traiem la màscara CIDR (/24)
         let clean_cidr = raw_target.split('/').next().unwrap_or(&raw_target);
-        
+
         // 3. EXTRACCIÓ: Agafem només els 3 primers octets (192.168.1)
         let parts: Vec<&str> = clean_cidr.split('.').collect();
         let final_base = if parts.len() >= 3 {
@@ -26,36 +30,56 @@ impl ScannerService {
             "192.168.1".to_string() // Fallback segur
         };
 
-        println!("🧠 APP: Escanejant Base '{}' (Original: '{}')", final_base, raw_target);
-        
+        println!(
+            "🧠 APP: Escanejant Base '{}' (Original: '{}')",
+            final_base, raw_target
+        );
+
         self.scanner_port.scan_network(&final_base).await
     }
 
     pub async fn audit_ip(&self, ip: String) -> (Vec<OpenPort>, String) {
         println!("🧠 APP: Analitzant ports de {}", ip);
-        
-        let raw_ports = self.scanner_port.scan_ports(&ip).await;
-        
-        let enriched_ports: Vec<OpenPort> = raw_ports.into_iter().map(|mut p| {
-            let (service, risk, desc, vuln) = intel::enrich_port_data(p.port);
-            p.service = service;
-            p.risk_level = risk;
-            p.description = Some(desc);
-            p.vulnerability = vuln;
-            p
-        }).collect();
 
+        let raw_ports = self.scanner_port.scan_ports(&ip).await;
+
+        // Enriquim les dades usant el ServiceDictionary
+        let enriched_ports: Vec<OpenPort> = raw_ports
+            .into_iter()
+            .map(|mut p| {
+                let info = ServiceDictionary::lookup(p.port);
+
+                p.service = info.name.to_string();
+                p.risk_level = info.risk.to_string();
+                p.description = Some(info.description.to_string());
+
+                // Si el risc és crític, afegim una "vulnerabilitat" automàtica
+                if info.risk == "CRITICAL" || info.risk == "HIGH" {
+                    // Aquí podries connectar amb una BD de CVEs en el futur
+                }
+                p
+            })
+            .collect();
+
+        // Calculem el risc global del dispositiu
         let mut global_risk = "SAFE";
-        if !enriched_ports.is_empty() { global_risk = "LOW"; }
+        if !enriched_ports.is_empty() {
+            global_risk = "LOW";
+        }
+
         for p in &enriched_ports {
-            if p.risk_level == "CRITICAL" { global_risk = "CRITICAL"; break; }
-            if p.risk_level == "HIGH" && global_risk != "CRITICAL" { global_risk = "HIGH"; }
+            if p.risk_level == "CRITICAL" {
+                global_risk = "CRITICAL";
+                break;
+            }
+            if p.risk_level == "HIGH" && global_risk != "CRITICAL" {
+                global_risk = "HIGH";
+            }
         }
 
         (enriched_ports, global_risk.to_string())
     }
 }
-
 
 // 👇 AFEGEIX AIXÒ AL FINAL DEL FITXER
 #[cfg(test)]
@@ -80,7 +104,10 @@ mod tests {
                     name: Some("Router".to_string()),
                     is_gateway: true,
                     ping: Some(2),
-                    signal_strength: None, signal_rate: None, wifi_band: None,
+                    signal_strength: None,
+                    signal_rate: None,
+                    wifi_band: None,
+                    open_ports: None,
                 },
                 Device {
                     ip: "192.168.1.50".to_string(),
@@ -90,12 +117,17 @@ mod tests {
                     name: None,
                     is_gateway: false,
                     ping: Some(15),
-                    signal_strength: None, signal_rate: None, wifi_band: None,
-                }
+                    signal_strength: None,
+                    signal_rate: None,
+                    wifi_band: None,
+                    open_ports: None,
+                },
             ]
         }
 
-        fn resolve_vendor(&self, _mac: &str) -> String { "MockVendor".to_string() }
+        fn resolve_vendor(&self, _mac: &str) -> String {
+            "MockVendor".to_string()
+        }
 
         async fn scan_ports(&self, ip: &str) -> Vec<OpenPort> {
             if ip == "192.168.1.1" {
@@ -107,7 +139,9 @@ mod tests {
                     description: None,
                     vulnerability: None,
                 }]
-            } else { vec![] }
+            } else {
+                vec![]
+            }
         }
     }
 
@@ -119,7 +153,9 @@ mod tests {
         let service = ScannerService::new(mock_infra);
 
         // Provem que neteja la IP (treu el /24)
-        let devices = service.run_network_scan(Some("192.168.1.0/24".to_string())).await;
+        let devices = service
+            .run_network_scan(Some("192.168.1.0/24".to_string()))
+            .await;
 
         assert_eq!(devices.len(), 2);
         assert_eq!(devices[0].vendor, "MockRouter");
@@ -134,7 +170,7 @@ mod tests {
 
         // Verifiquem que la lògica de negoci detecta el perill
         assert_eq!(ports.len(), 1);
-        assert_eq!(ports[0].service, "TELNET"); 
+        assert_eq!(ports[0].service, "TELNET");
         assert_eq!(risk_global, "CRITICAL");
     }
 }

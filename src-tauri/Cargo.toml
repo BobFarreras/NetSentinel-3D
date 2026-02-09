@@ -30,6 +30,7 @@ headless_chrome = "1.0"
 anyhow = "1.0" # Per gestionar errors fàcilment
 regex = "1"
 async-trait = "0.1"
+pnet = "0.34"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

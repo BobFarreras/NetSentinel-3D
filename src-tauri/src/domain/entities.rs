@@ -14,6 +14,7 @@ pub struct Device {
     pub signal_strength: Option<String>, 
     pub signal_rate: Option<String>,     
     pub wifi_band: Option<String>,       
+    pub open_ports: Option<Vec<OpenPort>>,
 }
 
 // 2. VULNERABILITAT
@@ -56,4 +57,27 @@ pub struct ScanSession {
     pub timestamp: u64,   
     pub devices: Vec<Device>, 
     pub label: String,    
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HostIdentity {
+    pub ip: String,
+    pub mac: String,
+    pub netmask: String,
+    pub gateway_ip: String,
+    pub interface_name: String, // Ex: "Wi-Fi" o "Ethernet"
+    pub dns_servers: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrafficPacket {
+    pub id: usize, // ID seqüencial per a llistes React (key)
+    pub timestamp: u64,
+    pub source_ip: String,
+    pub destination_ip: String,
+    pub protocol: String, // TCP, UDP, ICMP
+    pub length: usize,
+    pub info: String,     // Ex: "HTTPS Traffic" o "DNS Query"
 }

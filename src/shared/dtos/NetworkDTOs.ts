@@ -64,3 +64,22 @@ export interface ScanSession {
   devices: DeviceDTO[];
   label: string;
 }
+
+export interface HostIdentity {
+  ip: string;
+  mac: string;
+  netmask: string;
+  gatewayIp: string;
+  interfaceName: string;
+  dnsServers: string[];
+}
+
+export interface TrafficPacket {
+  id: number;
+  timestamp: number;
+  sourceIp: string;
+  destinationIp: string;
+  protocol: string;
+  length: number;
+  info: string;
+}

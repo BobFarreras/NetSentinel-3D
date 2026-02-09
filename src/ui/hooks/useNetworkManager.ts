@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
 
 // Importem els mòduls petits
@@ -6,6 +6,8 @@ import { useSocketLogs } from './modules/useSocketLogs';
 import { useScanner } from './modules/useScanner';
 import { usePortAuditor } from './modules/usePortAuditor';
 import { useRouterHacker } from './modules/useRouterHacker';
+import { HostIdentity } from '../../shared/dtos/NetworkDTOs';
+import { networkAdapter } from '../../adapters/networkAdapter'; // 👈 Importem l'adaptador
 
 export const useNetworkManager = () => {
   // 1. Logs (Base)
@@ -24,6 +26,9 @@ export const useNetworkManager = () => {
   const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
   const [jammedDevices, setJammedDevices] = useState<string[]>([]);
 
+
+  const [identity, setIdentity] = useState<HostIdentity | null>(null);
+  
   // Helpers UI
   const selectDevice = (d: DeviceDTO | null) => {
     setSelectedDevice(d);
@@ -38,21 +43,35 @@ export const useNetworkManager = () => {
   };
 
   const dismissRisk = () => setRouterRisk(null);
-  const fetchHistory = async () => {}; // Ja ho fa el scanner al init, però pots exposar-ho si vols
-
+  const fetchHistory = async () => { }; // Ja ho fa el scanner al init, però pots exposar-ho si vols
+  // 2. CÀRREGA INICIAL
+  useEffect(() => {
+    let mounted = true;
+    const loadIdentity = async () => {
+      try {
+        const id = await networkAdapter.getHostIdentity();
+        if (mounted) setIdentity(id);
+      } catch (e) {
+        console.error("Identity error:", e);
+      }
+    };
+    loadIdentity();
+    return () => { mounted = false; };
+  }, []);
   return {
     // Dades
     devices, selectedDevice, history, intruders,
     auditResults, routerRisk, jammedDevices,
     consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
-    
+
+    identity,
     // Estats
     scanning, auditing,
-    
+
     // Accions
     startScan, startAudit, checkRouterSecurity,
     selectDevice, loadSession, toggleJammer,
     dismissRisk, clearLogs: () => selectedDevice && clearLogs(selectedDevice.ip),
-    fetchHistory
+    fetchHistory,
   };
 };
