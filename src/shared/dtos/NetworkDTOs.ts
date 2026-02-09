@@ -56,3 +56,11 @@ export interface RouterAuditResult {
   credentials_found?: string;
   message: string;
 }
+
+
+export interface ScanSession {
+  id: string;
+  timestamp: number;
+  devices: DeviceDTO[];
+  label: string;
+}
