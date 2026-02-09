@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { TopBar } from './ui/components/layout/TopBar';
 import { NetworkScene } from './ui/components/3d/NetworkScene';
 import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
-import { ConsoleLogs } from './ui/components/panels/ConsoleLogs'; // 👈 IMPORT NOU
+import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
 import { DangerModal } from './ui/components/DangerModal';
 
@@ -18,6 +18,53 @@ function App() {
 
   const [showHistory, setShowHistory] = useState(false);
 
+  // --- ESTATS DE MIDA (RESIZABLE) ---
+  const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
+  const [consoleHeight, setConsoleHeight] = useState(250); // Alçada inicial Consola
+  
+  // Refs per gestionar l'arrossegament sense lag
+  const isResizingSidebar = useRef(false);
+  const isResizingConsole = useRef(false);
+
+  // --- GESTIÓ DEL RESIZE ---
+  const startResizingSidebar = useCallback(() => { isResizingSidebar.current = true; }, []);
+  const startResizingConsole = useCallback(() => { isResizingConsole.current = true; }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizingSidebar.current = false;
+    isResizingConsole.current = false;
+    document.body.style.cursor = 'default'; // Restaurar cursor
+  }, []);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (isResizingSidebar.current) {
+      // Calculem la nova amplada (des de la dreta)
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 300 && newWidth < 800) { // Límits mínim i màxim
+        setSidebarWidth(newWidth);
+        document.body.style.cursor = 'col-resize';
+      }
+    }
+    if (isResizingConsole.current) {
+      // Calculem la nova alçada (des de baix)
+      const newHeight = window.innerHeight - e.clientY;
+      if (newHeight > 100 && newHeight < window.innerHeight - 100) { // Límits
+        setConsoleHeight(newHeight);
+        document.body.style.cursor = 'row-resize';
+      }
+    }
+  }, []);
+
+  // Listeners globals per al ratolí
+  useEffect(() => {
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('mouseup', stopResizing);
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [resize, stopResizing]);
+
   return (
     // CONTENIDOR PRINCIPAL
     <div style={{
@@ -28,7 +75,8 @@ function App() {
       color: '#0f0',
       overflow: 'hidden',
       fontFamily: "'Consolas', 'Courier New', monospace",
-      fontSize: '16px'
+      fontSize: '16px',
+      userSelect: (isResizingSidebar.current || isResizingConsole.current) ? 'none' : 'auto' // Evitar seleccionar text mentre arrosseguem
     }}>
 
       {/* 🚨 MODAL */}
@@ -76,28 +124,56 @@ function App() {
           />
         </div>
 
-        {/* 3. 👇 CONSOLA / SNIFFER (NOU) - SOTA EL MAPA */}
+        {/* 🤏 RESIZER HORITZONTAL (Barra verda per arrossegar la consola) */}
+        <div 
+            onMouseDown={startResizingConsole}
+            style={{
+                height: '2px',
+                background: '#004400',
+                cursor: 'row-resize',
+                zIndex: 15,
+                transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
+        />
+
+        {/* 3. CONSOLA / SNIFFER - ALÇADA DINÀMICA */}
         <div style={{ 
-            height: '250px', // Alçada fixa per al panell inferior
+            height: `${consoleHeight}px`, 
             zIndex: 10,
-            boxShadow: '0 -5px 20px rgba(0,0,0,0.5)'
+            boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
+            background: '#000'
         }}>
-            {/* Passem tots els logs, el component ja gestiona el trànsit internament */}
             <ConsoleLogs logs={consoleLogs} devices={devices}/>
         </div>
 
       </div>
 
+      {/* 🤏 RESIZER VERTICAL (Barra lateral per arrossegar el sidebar) */}
+      <div 
+        onMouseDown={startResizingSidebar}
+        style={{
+            width: '2px',
+            background: '#004400',
+            cursor: 'col-resize',
+            zIndex: 40,
+            transition: 'background 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
+        onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
+      />
+
       {/* =================================================================================
-          COLUMNA DRETA: SIDEBAR (FIXA)
+          COLUMNA DRETA: SIDEBAR (AMPLADA DINÀMICA)
          ================================================================================= */}
       <div style={{
-        width: '400px',
-        minWidth: '400px',
+        width: `${sidebarWidth}px`, 
+        minWidth: '300px',
         flexShrink: 0,
         height: '100vh',
         background: '#020202',
-        borderLeft: '2px solid #004400',
+        // borderLeft: '2px solid #004400', // Ja no cal, fem servir el resizer com a vora
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '-10px 0 30px rgba(0, 50, 0, 0.2)',
@@ -117,7 +193,7 @@ function App() {
             <DeviceDetailPanel
               device={selectedDevice}
               auditResults={auditResults}
-              consoleLogs={consoleLogs} // Aquests són els logs específics del dispositiu
+              consoleLogs={consoleLogs}
               auditing={auditing}
               onAudit={() => startAudit(selectedDevice.ip)}
               isJammed={jammedDevices.includes(selectedDevice.ip)}

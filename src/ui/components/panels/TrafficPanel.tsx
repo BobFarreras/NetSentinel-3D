@@ -5,122 +5,100 @@ interface TrafficPanelProps {
   isActive: boolean;
   speed: number;
   packets: TrafficPacket[];
-  devices: DeviceDTO[]; // 👈 AFEGIT: Necessitem saber qui són els dispositius
+  devices: DeviceDTO[];
   onToggle: () => void;
+  compactMode?: boolean;
 }
 
-export const TrafficPanel: React.FC<TrafficPanelProps> = ({ isActive, speed, packets, devices, onToggle }) => {
+export const TrafficPanel: React.FC<TrafficPanelProps> = ({ isActive, packets, devices, compactMode = false }) => {
   
-  // FUNCIÓ DE TRADUCCIÓ: IP -> NOM HUMÀ
   const resolveName = (ip: string) => {
-    // 1. Busquem si és un dispositiu conegut del nostre escàner
-    const device = devices.find(d => d.ip === ip);
-    if (device) {
-        // Retornem el Vendor o el Hostname si el tenim
-        return device.hostname && device.hostname !== "Unknown" 
-            ? `💻 ${device.hostname}` 
-            : `📱 ${device.vendor} (.${ip.split('.').pop()})`;
-    }
-
-    // 2. Adreces especials
-    if (ip === "255.255.255.255") return "📢 TOTS (Broadcast)";
-    if (ip.startsWith("224.0") || ip.startsWith("239.")) return "📡 MULTICAST (IoT)";
-    if (ip === "8.8.8.8") return "🔍 GOOGLE DNS";
-
-    // 3. Si és externa, la deixem igual però més discreta
-    return ip;
-  };
-
-  const formatSpeed = (bytes: number) => {
-    if (bytes > 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB/s`;
-    if (bytes > 1024) return `${(bytes / 1024).toFixed(1)} KB/s`;
-    return `${bytes} B/s`;
+      const device = devices.find(d => d.ip === ip);
+      // Retallem el nom si és massa llarg per a la columna
+      if (device) {
+          const name = device.hostname && device.hostname !== "Unknown" ? `💻 ${device.hostname}` : `📱 ${device.vendor}`;
+          return name;
+      }
+      if (ip === "255.255.255.255") return "📢 BROADCAST";
+      if (ip.startsWith("224.0") || ip.startsWith("239.")) return "📡 MULTICAST";
+      if (ip === "8.8.8.8") return "🔍 GOOGLE DNS";
+      return ip;
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       
-      {/* HEADER ... (igual que abans) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
-        <button 
-          onClick={onToggle}
-          style={{
-            background: isActive ? '#440000' : '#004400',
-            color: isActive ? '#ff8888' : '#88ff88',
-            border: `1px solid ${isActive ? '#ff0000' : '#00ff00'}`,
-            padding: '5px 15px', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 'bold'
-          }}
-        >
-          {isActive ? '⏹ STOP MONITOR' : '▶ START LIVE MONITOR'}
-        </button>
-
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '0.7rem', color: '#888' }}>NET SPEED</div>
-          <div style={{ fontSize: '1.2rem', color: '#00ffff', fontFamily: 'monospace', textShadow: '0 0 10px #00ffff' }}>
-            {formatSpeed(speed)}
-          </div>
-        </div>
+      {/* CAPÇALERA DE LA TAULA (Labels) */}
+      <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '40px 1fr 20px 1fr 180px', // 👈 GRID MÀGIC: Columnes fixes
+          gap: '10px', 
+          padding: '5px 0', 
+          borderBottom: '1px solid #333',
+          color: '#444', fontWeight: 'bold', fontSize: '0.7rem'
+      }}>
+          <span>PROT</span>
+          <span>SOURCE</span>
+          <span></span>
+          <span>DESTINATION</span>
+          <span style={{textAlign: 'right'}}>INFO</span>
       </div>
 
-      {/* LLISTA DE PAQUETS HUMANA */}
+      {/* LLISTA DE PAQUETS */}
       <div style={{ 
         flex: 1, overflowY: 'auto', background: '#050505', 
-        border: '1px solid #222', padding: '5px', fontFamily: 'monospace', fontSize: '0.8rem' 
+        paddingRight: '5px', // Espai per no tapar el text amb el scrollbar
+        fontFamily: 'monospace', fontSize: '0.75rem' 
       }}>
         {packets.length === 0 ? (
-          <div style={{ color: '#444', textAlign: 'center', marginTop: '20px' }}>
-            {isActive ? 'Analyzing traffic patterns...' : 'Monitor offline.'}
+          <div style={{ color: '#444', textAlign: 'center', marginTop: '20px', fontStyle: 'italic' }}>
+            {isActive ? 'Scanning neural network...' : 'Monitor offline.'}
           </div>
         ) : (
           packets.map((pkt) => {
-            // Calculem noms
             const srcName = resolveName(pkt.sourceIp);
             const dstName = resolveName(pkt.destinationIp);
-            
-            // Color especial per trànsit local
             const isLocal = srcName.includes('📱') || srcName.includes('💻');
 
             return (
               <div key={pkt.id} style={{ 
                 display: 'grid', 
-                gridTemplateColumns: '50px 1fr 20px 1fr 150px', // Grid per alinear bé
+                gridTemplateColumns: '40px 1fr 20px 1fr 180px', // 👈 MATEIX GRID QUE AL HEADER
                 gap: '10px', 
-                padding: '4px 0', 
+                padding: '3px 0', 
                 borderBottom: '1px solid #111',
                 alignItems: 'center',
                 color: pkt.protocol === 'TCP' ? '#aaaaff' : pkt.protocol === 'UDP' ? '#ffffaa' : '#888'
               }}>
-                <span style={{ fontWeight: 'bold', fontSize:'0.7rem' }}>{pkt.protocol}</span>
+                <span style={{ fontWeight: 'bold' }}>{pkt.protocol}</span>
                 
                 {/* ORIGEN */}
                 <span style={{ 
-                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     color: isLocal ? '#0f0' : '#aaa' 
-                }}>
-                    {srcName}
-                </span>
+                }} title={pkt.sourceIp}>{srcName}</span>
                 
-                <span style={{ color: '#444' }}>&rarr;</span>
+                <span style={{ color: '#444', fontSize: '0.7rem' }}>▶</span>
                 
                 {/* DESTÍ */}
                 <span style={{ 
-                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-                    color: dstName.includes('DNS') ? '#0ff' : '#ddd'
-                }}>
-                    {dstName}
-                </span>
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    color: dstName.includes('DNS') ? '#0ff' : '#ddd' 
+                }} title={pkt.destinationIp}>{dstName}</span>
                 
-                {/* INFO (Web Segura, etc) */}
+                {/* INFO */}
                 <span style={{ 
-                    color: '#fff', opacity: 0.7, fontStyle: 'italic', fontSize: '0.75rem', 
-                    textAlign: 'right', overflow:'hidden', whiteSpace:'nowrap' 
-                }}>
+                    color: '#fff', opacity: 0.6, textAlign: 'right', 
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                }} title={pkt.info}>
                     {pkt.info}
                 </span>
               </div>
             );
           })
         )}
+        {/* Div invisible al final per a l'autoscroll si el programessim */}
+        <div style={{ float:"left", clear: "both" }}></div>
       </div>
     </div>
   );

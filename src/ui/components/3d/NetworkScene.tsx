@@ -75,6 +75,8 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
     <div style={{ width: '100%', height: '100%', background: '#000000' }}>
       <Canvas 
         camera={{ position: [0, 20, 25], fov: 50 }} 
+        resize={{ scroll: false, debounce: 0 }} 
+        style={{ background: '#050505' }}
         onPointerMissed={() => onDeviceSelect && onDeviceSelect(null)}
       >
         <AutoFitCamera devices={devices} />
