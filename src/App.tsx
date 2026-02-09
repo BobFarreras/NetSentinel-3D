@@ -12,8 +12,8 @@ function App() {
     devices, selectedDevice, scanning, auditing,
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    // 👇 AFEGIT: 'routerRisk' AQUI (Abans te'l deixaves)
-    toggleJammer, checkRouterSecurity, dismissRisk, routerRisk 
+    toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
+    intruders 
   } = useNetworkManager();
 
   // 2. Estat local per la UI
@@ -24,7 +24,7 @@ function App() {
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
-      
+
       {/* 🛑 LAYER DE PERILL (Z-INDEX SUPERIOR) */}
       {/* Ara routerRisk ja existeix i funcionarà */}
       <DangerModal result={routerRisk} onClose={dismissRisk} />
@@ -99,6 +99,7 @@ function App() {
         devices={devices}
         onDeviceSelect={selectDevice}
         selectedIp={selectedDevice?.ip}
+        intruders={intruders}
       />
     </div>
   );

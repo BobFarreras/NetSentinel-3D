@@ -1,33 +1,23 @@
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 
-// 1. DISPOSITIU (Model Unificat)
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct DeviceDTO {
+// 1. DISPOSITIU
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")] // 👈 AQUESTA LÍNIA ÉS CLAU!
+pub struct Device {
     pub ip: String,
     pub mac: String,
     pub vendor: String,
+    pub hostname: Option<String>,
     pub name: Option<String>,
     pub is_gateway: bool,
-    pub hostname: Option<String>,
     pub ping: Option<u16>, 
-    
-    // Camps opcionals per Wifi (poden ser null)
     pub signal_strength: Option<String>, 
     pub signal_rate: Option<String>,     
     pub wifi_band: Option<String>,       
 }
 
-// 2. AUDITORIA ROUTER
-#[derive(Serialize, Deserialize, Clone)]
-pub struct RouterAuditResult {
-    pub vulnerable: bool,
-    pub credentials_found: Option<String>,
-    pub message: String,
-}
-
-// 3. VULNERABILITAT
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// 2. VULNERABILITAT
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Vulnerability {
     pub id: String,
@@ -36,8 +26,8 @@ pub struct Vulnerability {
     pub recommendation: String,
 }
 
-// 4. PORT OBERT
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// 3. PORT OBERT
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenPort {
     pub port: u16,
@@ -48,21 +38,22 @@ pub struct OpenPort {
     pub vulnerability: Option<Vulnerability>,
 }
 
-// 5. REPORT FINAL
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// 4. RESULTAT D'AUDITORIA
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SecurityReport {
+pub struct RouterAuditResult {
     pub target_ip: String,
-    pub open_ports: Vec<OpenPort>,
-    pub risk_level: String,
+    pub vulnerable: bool,
+    pub credentials_found: Option<String>,
+    pub message: String,
 }
 
-// 6. SESSIÓ
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// 5. SESSIÓ D'ESCANEIG
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanSession {
     pub id: String,       
     pub timestamp: u64,   
-    pub devices: Vec<DeviceDTO>, // Usem DeviceDTO aquí també
+    pub devices: Vec<Device>, 
     pub label: String,    
 }
