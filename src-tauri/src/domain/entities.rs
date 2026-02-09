@@ -80,4 +80,5 @@ pub struct TrafficPacket {
     pub protocol: String, // TCP, UDP, ICMP
     pub length: usize,
     pub info: String,     // Ex: "HTTPS Traffic" o "DNS Query"
+    pub is_intercepted: bool,
 }

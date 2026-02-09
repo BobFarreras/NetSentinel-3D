@@ -13,6 +13,7 @@ function App() {
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
     toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
+    clearLogs,
     intruders, identity
   } = useNetworkManager();
 
@@ -21,7 +22,7 @@ function App() {
   // --- ESTATS DE MIDA (RESIZABLE) ---
   const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
   const [consoleHeight, setConsoleHeight] = useState(250); // Alçada inicial Consola
-  
+
   // Refs per gestionar l'arrossegament sense lag
   const isResizingSidebar = useRef(false);
   const isResizingConsole = useRef(false);
@@ -125,40 +126,46 @@ function App() {
         </div>
 
         {/* 🤏 RESIZER HORITZONTAL (Barra verda per arrossegar la consola) */}
-        <div 
-            onMouseDown={startResizingConsole}
-            style={{
-                height: '2px',
-                background: '#004400',
-                cursor: 'row-resize',
-                zIndex: 15,
-                transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
+        <div
+          onMouseDown={startResizingConsole}
+          style={{
+            height: '2px',
+            background: '#004400',
+            cursor: 'row-resize',
+            zIndex: 15,
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
+          onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
         />
 
         {/* 3. CONSOLA / SNIFFER - ALÇADA DINÀMICA */}
-        <div style={{ 
-            height: `${consoleHeight}px`, 
-            zIndex: 10,
-            boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
-            background: '#000'
+     
+        <div style={{
+          height: `${consoleHeight}px`,
+          zIndex: 10,
+          boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
+          background: '#000'
         }}>
-            <ConsoleLogs logs={consoleLogs} devices={devices}/>
+          <ConsoleLogs
+            logs={consoleLogs}
+            devices={devices}
+            selectedDevice={selectedDevice} // 👈 AFEGEIX AIXÒ O EL FILTRE NO FUNCIONARÀ
+            onClearSystemLogs={clearLogs}
+          />
         </div>
 
       </div>
 
       {/* 🤏 RESIZER VERTICAL (Barra lateral per arrossegar el sidebar) */}
-      <div 
+      <div
         onMouseDown={startResizingSidebar}
         style={{
-            width: '2px',
-            background: '#004400',
-            cursor: 'col-resize',
-            zIndex: 40,
-            transition: 'background 0.2s'
+          width: '2px',
+          background: '#004400',
+          cursor: 'col-resize',
+          zIndex: 40,
+          transition: 'background 0.2s'
         }}
         onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
         onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
@@ -168,7 +175,7 @@ function App() {
           COLUMNA DRETA: SIDEBAR (AMPLADA DINÀMICA)
          ================================================================================= */}
       <div style={{
-        width: `${sidebarWidth}px`, 
+        width: `${sidebarWidth}px`,
         minWidth: '300px',
         flexShrink: 0,
         height: '100vh',
