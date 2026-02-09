@@ -33,6 +33,7 @@ Desde la raiz del proyecto:
 ```bash
 npm test -- --run
 npm run build
+npm run test:e2e
 ```
 
 Backend Rust:
@@ -91,6 +92,22 @@ Reglas:
 - priorizar tests unitarios en `application` y `domain`,
 - evitar depender de red real o drivers del sistema,
 - aislar comportamiento de riesgo/calculo/transformacion.
+
+## 4.6 E2E UI (`e2e/`)
+Objetivo:
+- validar flujos reales de interfaz en navegador con Playwright.
+
+Estado actual:
+- Configuracion en `playwright.config.ts`.
+- Tests iniciales en `e2e/app.spec.ts`:
+  - carga de interfaz principal,
+  - apertura/cierre de historial.
+
+Comandos:
+```bash
+npm run test:e2e
+npm run test:e2e:ui
+```
 
 ## 5. Criterios de Aceptacion por Cambio
 Aplicar esta tabla antes de cerrar una tarea:

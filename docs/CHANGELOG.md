@@ -2,6 +2,68 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.5.5] - Base E2E con Playwright (2026-02-09)
+### 🧪 E2E
+- Añadida configuracion de Playwright:
+  - `playwright.config.ts`
+- Añadidos scripts npm:
+  - `test:e2e`
+  - `test:e2e:ui`
+- Añadidos tests E2E iniciales:
+  - `e2e/app.spec.ts`
+  - Smoke de carga principal.
+  - Apertura y cierre de panel de historial.
+
+### ✅ Verificacion
+- `npm run test:e2e` en verde (`2` tests).
+
+## [v0.5.4] - Ampliacion de Cobertura en UI y Servicios (2026-02-09)
+### 🧪 Frontend testing
+- Añadidos tests de componentes criticos:
+  - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
+  - `src/ui/components/__tests__/DangerModal.test.tsx`
+  - `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
+- Añadido test de integracion para:
+  - `src/ui/hooks/__tests__/useNetworkManager.test.ts`
+
+### 🦀 Backend unit testing
+- Añadidos tests unitarios en servicios Rust:
+  - `src-tauri/src/application/audit_service.rs`
+  - `src-tauri/src/application/history_service.rs`
+
+### ✅ Verificacion
+- `npm test -- --run` en verde (`33` tests).
+- `npm run build` en verde.
+- `cargo check --tests` en verde.
+
+## [v0.5.3] - Cobertura de Testing para IPC y Trafico (2026-02-09)
+### 🧪 Nuevos tests
+- Añadidos tests de contratos IPC para adapters:
+  - `src/adapters/__tests__/networkAdapter.test.ts`
+  - `src/adapters/__tests__/auditAdapter.test.ts`
+- Añadidos tests del hook de monitorizacion de trafico:
+  - `src/ui/hooks/modules/__tests__/useTrafficMonitor.test.ts`
+  - Cobertura de arranque/parada, procesamiento de paquetes, lista de paquetes interceptados y limpieza de buffers.
+
+### ✅ Verificacion
+- `npm test -- --run` en verde con la nueva suite.
+- `npm run build` en verde.
+- `cargo check` en verde.
+
+## [v0.5.2] - Limpieza de Warnings en Backend Rust (2026-02-09)
+### 🧹 Calidad de codigo
+- Eliminados imports no usados en `src-tauri/src/application/jammer_service.rs`.
+- Simplificado `NetworkScannerPort` eliminando el metodo no utilizado `resolve_vendor`.
+- Actualizadas implementaciones y mocks afectados:
+  - `src-tauri/src/infrastructure/system_scanner.rs`
+  - `src-tauri/src/application/scanner_service.rs`
+- Eliminado codigo muerto no referenciado:
+  - `src-tauri/src/application/intel.rs` (y su export en `application/mod.rs`)
+  - `src-tauri/src/domain/network_math.rs` (y su export en `domain/mod.rs`)
+
+### ✅ Verificacion
+- `cargo check` completado en verde y sin warnings.
+
 ## [v0.5.1] - Alineacion de Documentacion y Reglas de Calidad (2026-02-09)
 ### 📚 Documentacion
 - Reescrito `AGENTS.md` con arquitectura real actual (`api/application/domain/infrastructure`) y flujo operativo para juniors/agentes IA.
