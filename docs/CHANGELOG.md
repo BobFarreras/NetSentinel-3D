@@ -2,6 +2,17 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.5.1] - Alineacion de Documentacion y Reglas de Calidad (2026-02-09)
+### 📚 Documentacion
+- Reescrito `AGENTS.md` con arquitectura real actual (`api/application/domain/infrastructure`) y flujo operativo para juniors/agentes IA.
+- Actualizado `docs/ARCHITECTURE.md` para reflejar estructura vigente, comandos Tauri actuales y flujo IPC real (`invoke` + eventos).
+- Actualizado `docs/SECURITY.md` con superficie de comandos expuesta, riesgos por modulo y checklist minimo pre-release.
+- Creado `docs/TESTING.md` con estrategia por capas, comandos de validacion y roadmap de mejora de cobertura.
+
+### ✅ Gobernanza de cambios
+- Se establece como norma en `AGENTS.md` que todo cambio funcional, de arquitectura, de seguridad o testing debe registrarse en `docs/CHANGELOG.md`.
+- Se añade el requisito de changelog en el flujo de trabajo y en la Definition of Done.
+
 ## [v0.5.0] - Migració a Rust & Tauri (Current)
 ### 🚀 Canvi de Motor (Engine Swap)
 - **Rust Backend:** S'ha substituït tot el nucli de Node.js per **Rust**.

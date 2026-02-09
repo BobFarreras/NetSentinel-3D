@@ -25,11 +25,16 @@ describe('🔌 Integration: useScanner Hook', () => {
     vi.clearAllMocks();
   });
 
-  it('🟢 Hauria d\'iniciar amb l\'estat buit', () => {
+  it('🟢 Hauria d\'iniciar amb l\'estat buit', async () => {
     // Simulem que l'historial està buit al principi
     (networkAdapter.getHistory as any).mockResolvedValue([]);
 
     const { result } = renderHook(() => useScanner());
+    
+    // Esperem que l'efecte inicial acabi per evitar actualitzacions fora de `act`
+    await waitFor(() => {
+      expect(networkAdapter.getHistory).toHaveBeenCalledTimes(1);
+    });
 
     expect(result.current.devices).toEqual([]);
     expect(result.current.scanning).toBe(false);
