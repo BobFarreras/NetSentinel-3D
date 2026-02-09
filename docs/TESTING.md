@@ -121,6 +121,18 @@ Reglas E2E:
 - Mantener todos los puntos `invoke/listen` pasando por el bridge compartido.
 - Si se añade un nuevo comando/evento Tauri, actualizar el mock E2E en el mismo cambio.
 
+## 10. CI en GitHub Actions
+Workflow:
+- `.github/workflows/ci.yml`
+
+Checks automatizados:
+- Frontend + E2E (Ubuntu):
+  - `npm test -- --run`
+  - `npm run build`
+  - `npm run test:e2e`
+- Rust (Windows):
+  - `cargo check --tests`
+
 ## 5. Criterios de Aceptacion por Cambio
 Aplicar esta tabla antes de cerrar una tarea:
 

@@ -2,6 +2,24 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.5.7] - Workflow CI con GitHub Actions (2026-02-09)
+### ⚙️ Automatizacion
+- Añadido workflow de CI en:
+  - `.github/workflows/ci.yml`
+
+### ✅ Pipeline definido
+- Job `frontend-e2e` en Ubuntu:
+  - `npm ci`
+  - `npm test -- --run`
+  - `npm run build`
+  - `npx playwright install --with-deps chromium`
+  - `npm run test:e2e`
+- Job `rust-check` en Windows:
+  - `cargo check --tests`
+
+### 📚 Documentacion
+- Actualizado `docs/TESTING.md` con seccion de CI y checks automatizados.
+
 ## [v0.5.6] - E2E Funcional Completo con Mock Tauri (2026-02-09)
 ### 🧪 E2E y estabilidad
 - Implementado bridge unificado para Tauri en:
