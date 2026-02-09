@@ -2,6 +2,41 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.5.6] - E2E Funcional Completo con Mock Tauri (2026-02-09)
+### 🧪 E2E y estabilidad
+- Implementado bridge unificado para Tauri en:
+  - `src/shared/tauri/bridge.ts`
+- Añadido modo mock E2E (`VITE_E2E_MOCK_TAURI=true`) en `playwright.config.ts`.
+- Adaptados consumidores de `invoke/listen` al bridge:
+  - `src/adapters/networkAdapter.ts`
+  - `src/adapters/auditAdapter.ts`
+  - `src/adapters/systemAdapter.ts`
+  - `src/ui/hooks/modules/useJamming.ts`
+  - `src/ui/hooks/modules/useTrafficMonitor.ts`
+  - `src/ui/components/hud/HistoryPanel.tsx`
+
+### ✅ Cobertura E2E ampliada
+- `e2e/app.spec.ts` cubre flujos funcionales:
+  - carga inicial,
+  - scan de red,
+  - carga de snapshot desde historial,
+  - monitor de trafico en vivo,
+  - seleccion de nodo + auditoria + alerta critica de gateway.
+
+### 🛠️ Ajustes de calidad
+- Corregido `useRouterHacker` para actualizar `routerRisk` y permitir visualizacion del modal de riesgo.
+- Ajustada configuracion de Vitest para excluir `e2e/**` sin romper excludes por defecto (`configDefaults.exclude`).
+- Actualizados tests unitarios para mockear el bridge:
+  - `src/adapters/__tests__/networkAdapter.test.ts`
+  - `src/adapters/__tests__/auditAdapter.test.ts`
+  - `src/ui/hooks/modules/__tests__/useTrafficMonitor.test.ts`
+
+### ✅ Verificacion
+- `npm test -- --run` en verde (`33` tests).
+- `npm run test:e2e` en verde (`6` tests).
+- `npm run build` en verde.
+- `cargo check --tests` en verde.
+
 ## [v0.5.5] - Base E2E con Playwright (2026-02-09)
 ### 🧪 E2E
 - Añadida configuracion de Playwright:

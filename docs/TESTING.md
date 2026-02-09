@@ -99,8 +99,15 @@ Objetivo:
 
 Estado actual:
 - Configuracion en `playwright.config.ts`.
-- Tests iniciales en `e2e/app.spec.ts`:
+- Modo mock de Tauri para E2E:
+  - `VITE_E2E_MOCK_TAURI=true` en `playwright.config.ts`.
+  - Bridge unificado: `src/shared/tauri/bridge.ts`.
+- Flujos E2E en `e2e/app.spec.ts`:
   - carga de interfaz principal,
+  - escaneo y actualizacion de nodos,
+  - carga de snapshot desde historial,
+  - inicio de monitor de trafico y recepcion de paquetes,
+  - seleccion de nodo, auditoria de puertos y alerta critica de gateway,
   - apertura/cierre de historial.
 
 Comandos:
@@ -108,6 +115,11 @@ Comandos:
 npm run test:e2e
 npm run test:e2e:ui
 ```
+
+Reglas E2E:
+- Evitar depender de backend nativo para pruebas de UI en CI.
+- Mantener todos los puntos `invoke/listen` pasando por el bridge compartido.
+- Si se añade un nuevo comando/evento Tauri, actualizar el mock E2E en el mismo cambio.
 
 ## 5. Criterios de Aceptacion por Cambio
 Aplicar esta tabla antes de cerrar una tarea:

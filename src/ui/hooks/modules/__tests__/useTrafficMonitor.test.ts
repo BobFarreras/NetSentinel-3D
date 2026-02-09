@@ -3,17 +3,14 @@ import { act, renderHook } from '@testing-library/react';
 import { useTrafficMonitor } from '../useTrafficMonitor';
 import type { TrafficPacket } from '../../../../shared/dtos/NetworkDTOs';
 
-const { invokeMock, listenMock } = vi.hoisted(() => ({
-  invokeMock: vi.fn(),
-  listenMock: vi.fn(),
+const { invokeCommandMock, listenEventMock } = vi.hoisted(() => ({
+  invokeCommandMock: vi.fn(),
+  listenEventMock: vi.fn(),
 }));
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: invokeMock,
-}));
-
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: listenMock,
+vi.mock('../../../../shared/tauri/bridge', () => ({
+  invokeCommand: invokeCommandMock,
+  listenEvent: listenEventMock,
 }));
 
 describe('useTrafficMonitor', () => {
@@ -24,7 +21,7 @@ describe('useTrafficMonitor', () => {
     vi.clearAllMocks();
     trafficHandler = null;
 
-    listenMock.mockImplementation(async (_eventName: string, handler: (event: { payload: TrafficPacket }) => void) => {
+    listenEventMock.mockImplementation(async (_eventName: string, handler: (event: { payload: TrafficPacket }) => void) => {
       trafficHandler = handler;
       return () => {};
     });
@@ -42,20 +39,20 @@ describe('useTrafficMonitor', () => {
       await Promise.resolve();
     });
 
-    expect(listenMock).toHaveBeenCalled();
+    expect(listenEventMock).toHaveBeenCalled();
 
     await act(async () => {
       await result.current.toggleMonitoring();
     });
 
-    expect(invokeMock).toHaveBeenCalledWith('start_traffic_sniffing');
+    expect(invokeCommandMock).toHaveBeenCalledWith('start_traffic_sniffing');
     expect(result.current.isActive).toBe(true);
 
     await act(async () => {
       await result.current.toggleMonitoring();
     });
 
-    expect(invokeMock).toHaveBeenCalledWith('stop_traffic_sniffing');
+    expect(invokeCommandMock).toHaveBeenCalledWith('stop_traffic_sniffing');
     expect(result.current.isActive).toBe(false);
   });
 

@@ -22,5 +22,8 @@ export default defineConfig({
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    env: {
+      VITE_E2E_MOCK_TAURI: 'true',
+    },
   },
 });

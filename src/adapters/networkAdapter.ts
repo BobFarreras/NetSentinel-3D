@@ -1,20 +1,20 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invokeCommand } from "../shared/tauri/bridge";
 import { DeviceDTO, ScanSession, HostIdentity } from "../shared/dtos/NetworkDTOs";
 
 export const networkAdapter = {
   scanNetwork: async (range: string = '192.168.1.0/24'): Promise<DeviceDTO[]> => {
-    return await invoke<DeviceDTO[]>('scan_network', { range });
+    return await invokeCommand<DeviceDTO[]>('scan_network', { range });
   },
 
   saveScan: async (devices: DeviceDTO[]): Promise<void> => {
-    await invoke('save_scan', { devices });
+    await invokeCommand('save_scan', { devices });
   },
 
   getHistory: async (): Promise<ScanSession[]> => {
-    return await invoke<ScanSession[]>('get_history');
+    return await invokeCommand<ScanSession[]>('get_history');
   },
 
   getHostIdentity: async (): Promise<HostIdentity> => {
-    return await invoke<HostIdentity>('get_identity');
+    return await invokeCommand<HostIdentity>('get_identity');
   }
 };

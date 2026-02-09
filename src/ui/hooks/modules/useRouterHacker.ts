@@ -16,6 +16,7 @@ export const useRouterHacker = (
 
     try {
       const result = await auditAdapter.auditRouter(gatewayIp);
+      setRouterRisk(result);
 
       if (result.vulnerable) {
         addLog(gatewayIp, `💀 CRITICAL: PASSWORD FOUND: ${result.credentials_found}`);
