@@ -21,7 +21,7 @@ impl TrafficService {
         }
 
         // 1. OBTENIR LA IP REAL (Per no connectar-nos a Hyper-V)
-        let identity = local_intelligence::get_host_identity();
+        let identity: Result<crate::domain::entities::HostIdentity, String> = local_intelligence::get_host_identity();
         let target_ip = match identity {
             Ok(id) => id.ip,
             Err(_) => {

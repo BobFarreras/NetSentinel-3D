@@ -1,32 +1,27 @@
 use crate::domain::entities::{Device, OpenPort};
 use crate::domain::ports::NetworkScannerPort;
-// 👇 IMPORT NOU: vendor_resolver
 use crate::infrastructure::network::{
     arp_client::ArpClient, ping_executor::PingExecutor, port_scanner::PortScanner,
     vendor_resolver::VendorResolver,
+    hostname_resolver::HostnameResolver, // 👈 IMPORT IMPORTANT
 };
 use crate::infrastructure::repositories::local_intelligence;
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 use std::thread;
+
 pub struct SystemScanner;
+// ❌ ESBORRA AQUESTA LÍNIA: pub struct HostnameResolver; 
 
 #[async_trait]
 impl NetworkScannerPort for SystemScanner {
-    // 1. ESCANEIG DE XARXA
-    // 1. ESCANEIG DE XARXA
+    
     async fn scan_network(&self, subnet_base: &str) -> Vec<Device> {
         println!("🛠️ INFRA: Scanning subnet {}...", subnet_base);
 
         let my_identity = local_intelligence::get_host_identity().ok();
-        let my_ip = my_identity
-            .as_ref()
-            .map(|id| id.ip.clone())
-            .unwrap_or_default();
-        let my_mac = my_identity
-            .as_ref()
-            .map(|id| id.mac.clone())
-            .unwrap_or_default();
+        let my_ip = my_identity.as_ref().map(|id| id.ip.clone()).unwrap_or_default();
+        let my_mac = my_identity.as_ref().map(|id| id.mac.clone()).unwrap_or_default();
 
         let detected_ips = Arc::new(Mutex::new(Vec::new()));
         let mut handles = vec![];
@@ -47,33 +42,42 @@ impl NetworkScannerPort for SystemScanner {
             let _ = handle.join();
         }
 
-        // FASE 2: ARP & VENDOR
+        // FASE 2: ARP & VENDOR & HOSTNAME
         let arp_table = ArpClient::get_table();
         let active_ips = detected_ips.lock().unwrap();
         let mut devices = Vec::new();
 
         for ip in active_ips.iter() {
-            // 🟢 FIX 1: Afegim 'mut' perquè puguem canviar-la si som nosaltres
-            let mut mac = arp_table
-                .get(ip)
-                .cloned()
-                .unwrap_or("00:00:00:00:00:00".to_string());
-
-            // 🟢 FIX 2: Afegim 'mut' aquí també
-            let mut vendor = VendorResolver::resolve(&mac);
-
-            // SI ÉS LA MEVA IP, SOBREESCRIURE DADES
+            let mut mac = arp_table.get(ip).cloned().unwrap_or("00:00:00:00:00:00".to_string());
+            let mut vendor = VendorResolver::resolve(&mac); 
+            
+            // SI ÉS LA MEVA IP
             if *ip == my_ip {
                 mac = my_mac.clone();
                 vendor = "NETSENTINEL (HOST)".to_string();
             }
 
+            // 🕵️ NIVELL 2: Resolució de Hostname
+            let hostname_found = HostnameResolver::resolve(ip);
+            
+            // LOG DE DEBUG
+            if let Some(ref h) = hostname_found {
+                println!("🔎 NAME FOUND per {}: {}", ip, h);
+            }
+
+            // Preparem els camps opcionals
+            let (hostname, name) = if let Some(h) = hostname_found {
+                (Some(h.clone()), Some(h))
+            } else {
+                (None, None)
+            };
+
             devices.push(Device {
                 ip: ip.clone(),
                 mac,
-                vendor,
-                hostname: None,
-                name: None,
+                vendor: vendor.clone(), // Clone perquè la fem servir al println després
+                hostname, // 👈 Passem el resultat real
+                name,     // 👈 Passem el resultat real
                 is_gateway: ip.ends_with(".1"),
                 ping: Some(10),
                 signal_strength: None,
@@ -99,22 +103,24 @@ impl NetworkScannerPort for SystemScanner {
             } else {
                 "📱 DEVICE"
             };
+            
+            // Mostrem el hostname si en té
+            let name_display = dev.hostname.as_deref().unwrap_or("");
+            
             println!(
-                "   > {} \tMAC: {} \tVENDOR: {} \t{}",
-                dev.ip, dev.mac, dev.vendor, icon
+                "   > {} \tMAC: {} \tVENDOR: {} \tNAME: {} \t{}",
+                dev.ip, dev.mac, dev.vendor, name_display, icon
             );
         }
         println!("--------------------------------------------------");
 
         devices
     }
-    // 2. RESOLVE VENDOR (Implementació del Trait obligatòria)
+
     fn resolve_vendor(&self, mac: &str) -> String {
-        // Simplement deleguem al nostre especialista
         VendorResolver::resolve(mac)
     }
 
-    // 3. ESCANEIG DE PORTS
     async fn scan_ports(&self, ip: &str) -> Vec<OpenPort> {
         let common_ports = [21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 3389, 8080];
         let mut open_ports = Vec::new();
@@ -148,7 +154,7 @@ impl NetworkScannerPort for SystemScanner {
     }
 }
 
-// Helper petit per ordenar IPs (1.2 abans que 1.10)
+// Helper petit per ordenar IPs
 fn human_sort(ip_a: &str, ip_b: &str) -> std::cmp::Ordering {
     let a_last: u8 = ip_a.split('.').last().unwrap_or("0").parse().unwrap_or(0);
     let b_last: u8 = ip_b.split('.').last().unwrap_or("0").parse().unwrap_or(0);

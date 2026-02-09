@@ -82,4 +82,5 @@ export interface TrafficPacket {
   protocol: string;
   length: number;
   info: string;
+  isIntercepted: boolean;
 }

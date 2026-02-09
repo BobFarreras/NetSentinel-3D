@@ -1,4 +1,3 @@
-
 use crate::domain::{
     entities::{Device, OpenPort},
     ports::NetworkScannerPort,
@@ -35,6 +34,7 @@ impl ScannerService {
             final_base, raw_target
         );
 
+        // La màgia del HostnameResolver ja passa automàticament dins de scan_network
         self.scanner_port.scan_network(&final_base).await
     }
 
@@ -54,9 +54,8 @@ impl ScannerService {
                 p.description = Some(info.description.to_string());
 
                 // Si el risc és crític, afegim una "vulnerabilitat" automàtica
-                if info.risk == "CRITICAL" || info.risk == "HIGH" {
-                    // Aquí podries connectar amb una BD de CVEs en el futur
-                }
+                // (Aquí podries connectar amb una BD de CVEs en el futur)
+                
                 p
             })
             .collect();
@@ -81,10 +80,10 @@ impl ScannerService {
     }
 }
 
-// 👇 AFEGEIX AIXÒ AL FINAL DEL FITXER
+// --- TESTS ---
 #[cfg(test)]
 mod tests {
-    use super::*; // Importem tot el que hi ha al fitxer pare (ScannerService, etc.)
+    use super::*; 
     use crate::domain::entities::{Device, OpenPort};
     use async_trait::async_trait;
     use std::sync::Arc;
@@ -145,14 +144,13 @@ mod tests {
         }
     }
 
-    // --- TESTS ---
+    // --- TESTS REALS ---
 
     #[tokio::test]
     async fn test_scan_network_flow() {
         let mock_infra = Arc::new(MockScanner);
         let service = ScannerService::new(mock_infra);
 
-        // Provem que neteja la IP (treu el /24)
         let devices = service
             .run_network_scan(Some("192.168.1.0/24".to_string()))
             .await;
@@ -168,9 +166,8 @@ mod tests {
 
         let (ports, risk_global) = service.audit_ip("192.168.1.1".to_string()).await;
 
-        // Verifiquem que la lògica de negoci detecta el perill
         assert_eq!(ports.len(), 1);
-        assert_eq!(ports[0].service, "TELNET");
+        assert_eq!(ports[0].service, "TELNET"); // El diccionari converteix el 23 en TELNET
         assert_eq!(risk_global, "CRITICAL");
     }
 }

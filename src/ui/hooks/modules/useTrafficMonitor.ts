@@ -1,71 +1,116 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { TrafficPacket } from '../../../shared/dtos/NetworkDTOs';
 import { invoke } from '@tauri-apps/api/core';
 
+export interface UITrafficPacket extends TrafficPacket {
+  _uiId: string;
+  _seq: number;
+}
+
 export const useTrafficMonitor = () => {
   const [isActive, setIsActive] = useState(false);
-  const [packets, setPackets] = useState<TrafficPacket[]>([]);
-  const [speed, setSpeed] = useState(0); // Bytes per segon
-  const bufferRef = useRef<TrafficPacket[]>([]);
+  // Estat que conté TOTES les llistes necessàries
+  const [data, setData] = useState<{
+      all: UITrafficPacket[], 
+      jammed: UITrafficPacket[]
+  }>({ all: [], jammed: [] });
+  
+  const [speed, setSpeed] = useState(0); 
+  
+  // 1. BUFFER PRINCIPAL (Trànsit viu, rota ràpid)
+  const bufferRef = useRef<UITrafficPacket[]>([]);
+  // 2. BUFFER SEGUR (Només atacs, NO s'esborra pel trànsit normal)
+  const jammedBufferRef = useRef<UITrafficPacket[]>([]);
+  
   const byteCountRef = useRef(0);
+  const seqRef = useRef(0);
 
-  // 1. INICIAR / ATURAR DES DEL FRONTEND
   const toggleMonitoring = async () => {
     try {
       if (isActive) {
         await invoke('stop_traffic_sniffing');
         setIsActive(false);
       } else {
+        // RESET TOTAL
+        bufferRef.current = [];
+        jammedBufferRef.current = [];
+        setData({ all: [], jammed: [] });
+        seqRef.current = 0; 
         await invoke('start_traffic_sniffing');
         setIsActive(true);
       }
     } catch (e) {
-      console.error("Failed to toggle sniffer:", e);
+      console.error(e);
+      setIsActive(false);
     }
   };
 
-  // 2. ESCOLTAR EVENTS (OPTIMITZAT)
   useEffect(() => {
     let unlisten: (() => void) | null = null;
 
-    const setupListener = async () => {
+    const setup = async () => {
       unlisten = await listen<TrafficPacket>('traffic-event', (event) => {
-        // En lloc de fer setState (que és lent), guardem en una referència temporal
-        bufferRef.current.unshift(event.payload); // Afegim al principi
-        byteCountRef.current += event.payload.length;
+        seqRef.current++;
         
-        // Limitem el buffer a 50 paquets per no petar la memòria visual
-        if (bufferRef.current.length > 50) {
-          bufferRef.current = bufferRef.current.slice(0, 50);
+        const newPacket: UITrafficPacket = {
+            ...event.payload,
+            _uiId: `pkt-${seqRef.current}-${Math.random().toString(36).substr(2, 5)}`,
+            _seq: seqRef.current
+        };
+
+        // A. AFEGIM AL BUFFER PRINCIPAL (Dalt de tot)
+        bufferRef.current.unshift(newPacket);
+        
+        // B. SI ÉS UN ATAC, EL GUARDEM A LA CAIXA FORTA
+        if (newPacket.isIntercepted) {
+            jammedBufferRef.current.unshift(newPacket);
+            // Limitem els atacs a 1000 per si de cas, però és difícil omplir-ho
+            if (jammedBufferRef.current.length > 1000) {
+                jammedBufferRef.current = jammedBufferRef.current.slice(0, 1000);
+            }
+        }
+
+        byteCountRef.current += event.payload.length;
+
+        // C. LIMIT PRINCIPAL (5000 PAQUETS)
+        // Això dóna molt marge per fer scroll abans que s'esborrin
+        if (bufferRef.current.length > 5000) {
+          bufferRef.current = bufferRef.current.slice(0, 5000);
         }
       });
     };
 
-    setupListener();
+    setup();
 
-    // 3. ACTUALITZAR UI CADA 500ms (THROTTLE)
+    // Loop de refresc UI (200ms)
     const interval = setInterval(() => {
-      if (byteCountRef.current > 0 || bufferRef.current.length > 0) {
-        setSpeed(byteCountRef.current * 2); // *2 perquè actualitzem cada 0.5s -> velocitat per segon
-        setPackets([...bufferRef.current]); // Ara sí, actualitzem l'estat visual
-        byteCountRef.current = 0; // Reiniciem comptador de velocitat
-      } else {
-          setSpeed(0);
-      }
-    }, 500);
+        if (isActive || bufferRef.current.length > 0) {
+            setSpeed(byteCountRef.current * 5);
+            byteCountRef.current = 0;
+            
+            // Passem les DUES llistes a la UI
+            setData({
+                all: [...bufferRef.current],
+                jammed: [...jammedBufferRef.current]
+            });
+        }
+    }, 200);
 
     return () => {
       if (unlisten) unlisten();
       clearInterval(interval);
-      invoke('stop_traffic_sniffing').catch(() => {}); // Assegurar parada al desmuntar
     };
-  }, []);
+  }, [isActive]);
 
-  return {
-    isActive,
-    packets,
-    speed,
-    toggleMonitoring
-  };
+  const clearPackets = useCallback(() => {
+    bufferRef.current = [];
+    jammedBufferRef.current = [];
+    setData({ all: [], jammed: [] });
+    setSpeed(0);
+    seqRef.current = 0;
+  }, []);
+  
+  // Retornem l'objecte 'packets' però ara conté les dues llistes
+  return { isActive, packets: data.all, jammedPackets: data.jammed, speed, toggleMonitoring, clearPackets };
 };
