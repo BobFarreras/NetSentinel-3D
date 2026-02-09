@@ -11,6 +11,28 @@ pub fn validate_ipv4(value: &str, field: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub fn validate_usable_host_ipv4(value: &str, field: &str) -> Result<(), String> {
+    validate_ipv4(value, field)?;
+    let parsed = value
+        .trim()
+        .parse::<Ipv4Addr>()
+        .map_err(|_| format!("{field} must be a valid IPv4 address"))?;
+
+    if parsed.is_unspecified() {
+        return Err(format!("{field} cannot be 0.0.0.0"));
+    }
+    if parsed.is_loopback() {
+        return Err(format!("{field} cannot be a loopback address"));
+    }
+    if parsed.is_multicast() {
+        return Err(format!("{field} cannot be a multicast address"));
+    }
+    if parsed.octets() == [255, 255, 255, 255] {
+        return Err(format!("{field} cannot be a broadcast address"));
+    }
+    Ok(())
+}
+
 pub fn validate_ipv4_or_cidr(value: &str, field: &str) -> Result<(), String> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
@@ -94,5 +116,14 @@ mod tests {
         assert!(validate_mac_address("AA:BB:CC:DD:EE:FF", "mac").is_ok());
         assert!(validate_mac_address("AA:BB:CC:DD:EE", "mac").is_err());
         assert!(validate_mac_address("AA:BB:CC:DD:EE:GG", "mac").is_err());
+    }
+
+    #[test]
+    fn validate_usable_host_ipv4_rejects_non_usable_addresses() {
+        assert!(validate_usable_host_ipv4("192.168.1.20", "ip").is_ok());
+        assert!(validate_usable_host_ipv4("0.0.0.0", "ip").is_err());
+        assert!(validate_usable_host_ipv4("127.0.0.1", "ip").is_err());
+        assert!(validate_usable_host_ipv4("224.0.0.1", "ip").is_err());
+        assert!(validate_usable_host_ipv4("255.255.255.255", "ip").is_err());
     }
 }

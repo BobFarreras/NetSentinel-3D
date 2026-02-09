@@ -11,7 +11,7 @@ use tauri::{Emitter, Manager, State};
 
 use crate::application::jammer_service::JammerService;
 use crate::application::traffic_service::TrafficService;
-use crate::api::validators::{validate_ipv4, validate_mac_address};
+use crate::api::validators::{validate_mac_address, validate_usable_host_ipv4};
 use crate::domain::entities::HostIdentity;
 use crate::infrastructure::repositories::local_intelligence;
 
@@ -77,9 +77,9 @@ fn stop_jamming(state: State<JammerState>, ip: String) -> Result<(), String> {
 }
 
 fn validate_start_jamming_input(ip: &str, mac: &str, gateway_ip: &str) -> Result<(), String> {
-    validate_ipv4(ip, "ip")?;
+    validate_usable_host_ipv4(ip, "ip")?;
     validate_mac_address(mac, "mac")?;
-    validate_ipv4(gateway_ip, "gateway_ip")?;
+    validate_usable_host_ipv4(gateway_ip, "gateway_ip")?;
     if ip.trim() == gateway_ip.trim() {
         return Err("ip and gateway_ip cannot be the same".to_string());
     }
@@ -87,7 +87,7 @@ fn validate_start_jamming_input(ip: &str, mac: &str, gateway_ip: &str) -> Result
 }
 
 fn validate_stop_jamming_input(ip: &str) -> Result<(), String> {
-    validate_ipv4(ip, "ip")
+    validate_usable_host_ipv4(ip, "ip")
 }
 // --- PUNT D'ENTRADA PRINCIPAL ---
 
@@ -172,5 +172,6 @@ mod tests {
     fn validate_stop_jamming_input_rejects_invalid_ip() {
         assert!(validate_stop_jamming_input("192.168.1.50").is_ok());
         assert!(validate_stop_jamming_input("not-an-ip").is_err());
+        assert!(validate_stop_jamming_input("127.0.0.1").is_err());
     }
 }

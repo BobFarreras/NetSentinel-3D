@@ -3,7 +3,7 @@ use crate::application::scanner_service::ScannerService;
 use crate::application::audit_service::AuditService;
 use crate::application::history_service::HistoryService;
 use crate::api::dtos::{DeviceDTO, SecurityReportDTO, RouterAuditResultDTO};
-use crate::api::validators::{validate_ipv4, validate_ipv4_or_cidr, validate_non_empty};
+use crate::api::validators::{validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4};
 use crate::domain::entities::ScanSession;
 
 // --- NETWORK SCANNER ---
@@ -23,7 +23,7 @@ pub async fn scan_network(service: State<'_, ScannerService>, _range: Option<Str
 
 #[tauri::command]
 pub async fn audit_target(service: State<'_, ScannerService>, ip: String) -> Result<SecurityReportDTO, String> {
-    validate_ipv4(&ip, "ip")?;
+    validate_usable_host_ipv4(&ip, "ip")?;
 
     let (ports, risk) = service.audit_ip(ip.clone()).await;
     
@@ -38,7 +38,7 @@ pub async fn audit_target(service: State<'_, ScannerService>, ip: String) -> Res
 
 #[tauri::command]
 pub async fn audit_router(service: State<'_, AuditService>, gateway_ip: String) -> Result<RouterAuditResultDTO, String> {
-    validate_ipv4(&gateway_ip, "gateway_ip")?;
+    validate_usable_host_ipv4(&gateway_ip, "gateway_ip")?;
 
     // Nota: El logging es fa via event global definit al wiring del lib.rs
     let result = service.brute_force_gateway(gateway_ip).await;
@@ -76,7 +76,7 @@ fn validate_scan_range(range: &Option<String>) -> Result<(), String> {
 }
 
 fn validate_router_credentials_input(gateway_ip: &str, user: &str, pass: &str) -> Result<(), String> {
-    validate_ipv4(gateway_ip, "gateway_ip")?;
+    validate_usable_host_ipv4(gateway_ip, "gateway_ip")?;
     validate_non_empty(user, "user", 64)?;
     validate_non_empty(pass, "pass", 128)?;
     Ok(())
@@ -102,5 +102,6 @@ mod tests {
         assert!(validate_router_credentials_input("x.y.z.w", "admin", "1234").is_err());
         assert!(validate_router_credentials_input("192.168.1.1", "", "1234").is_err());
         assert!(validate_router_credentials_input("192.168.1.1", "admin", "").is_err());
+        assert!(validate_router_credentials_input("127.0.0.1", "admin", "1234").is_err());
     }
 }

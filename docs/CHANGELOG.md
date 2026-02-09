@@ -2,6 +2,37 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.6.0] - Hardening Continuo de CI, Validacion y Resiliencia E2E (2026-02-09)
+### 🔐 Seguridad y validacion
+- CSP reforzada en `src-tauri/tauri.conf.json` con directivas adicionales:
+  - `script-src 'self'`
+  - `object-src 'none'`
+  - `base-uri 'none'`
+  - `form-action 'none'`
+  - `frame-ancestors 'none'`
+- Validacion semantica de IPs en backend:
+  - nuevo validador `validate_usable_host_ipv4` en `src-tauri/src/api/validators.rs`.
+  - aplicado en comandos de auditoria y jamming para bloquear IPs no operativas (`0.0.0.0`, loopback, multicast, broadcast).
+
+### 🧪 Testing y robustez
+- Ampliados tests unitarios Rust:
+  - `src-tauri/src/application/jammer_service.rs`
+  - `src-tauri/src/application/traffic_service.rs`
+  - ajustes de tests en `src-tauri/src/api/commands.rs`, `src-tauri/src/lib.rs` y `src-tauri/src/api/validators.rs`.
+- E2E ampliado con escenarios negativos controlados:
+  - fallo forzado de `scan_network`.
+  - fallo forzado de `start_traffic_sniffing`.
+  - implementado soporte de flags de escenario en `src/shared/tauri/bridge.ts`.
+
+### ⚙️ CI
+- Workflow `.github/workflows/ci.yml` actualizado con auditorias de dependencias no bloqueantes:
+  - `npm audit --omit=dev --audit-level=high`
+  - `cargo audit` (instalando `cargo-audit`)
+- Actualizada dependencia `reqwest` de `0.11` a `0.12` en `src-tauri/Cargo.toml` para corregir vulnerabilidad transitiva reportada por RustSec (`RUSTSEC-2024-0421` / `idna`).
+
+### 📚 Documentacion
+- Actualizados `docs/SECURITY.md` y `docs/TESTING.md` con el nuevo estado de seguridad, CI y cobertura E2E.
+
 ## [v0.5.9] - Validacion Defensiva de Inputs en Comandos Rust (2026-02-09)
 ### 🔐 Hardening backend
 - Añadido modulo de validadores:

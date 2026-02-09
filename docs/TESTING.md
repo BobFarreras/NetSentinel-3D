@@ -107,6 +107,8 @@ Estado actual:
   - escaneo y actualizacion de nodos,
   - carga de snapshot desde historial,
   - inicio de monitor de trafico y recepcion de paquetes,
+  - resiliencia ante error de `scan_network` sin romper UI,
+  - resiliencia ante error de `start_traffic_sniffing` manteniendo estado detenido,
   - seleccion de nodo, auditoria de puertos y alerta critica de gateway,
   - apertura/cierre de historial.
 
@@ -130,8 +132,13 @@ Checks automatizados:
   - `npm test -- --run`
   - `npm run build`
   - `npm run test:e2e`
+  - `npm audit --omit=dev --audit-level=high` (no bloqueante)
 - Rust (Windows):
   - `cargo check --tests`
+  - `cargo audit` (no bloqueante)
+
+Nota:
+- `cargo audit` puede reportar advertencias de dependencias transitivas de Tauri/GTK en Linux; mientras no sean vulnerabilidades bloqueantes del target soportado, el pipeline no debe romperse por ese motivo.
 
 ## 5. Criterios de Aceptacion por Cambio
 Aplicar esta tabla antes de cerrar una tarea:

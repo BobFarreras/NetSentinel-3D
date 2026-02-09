@@ -46,6 +46,10 @@ jobs:
       - name: E2E tests (Playwright)
         run: npm run test:e2e
 
+      - name: Dependency audit (npm, prod only)
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+
   rust-check:
     name: Rust Check
     runs-on: windows-latest
@@ -66,3 +70,11 @@ jobs:
 
       - name: Cargo check tests
         run: cargo check --tests
+
+      - name: Install cargo-audit
+        continue-on-error: true
+        run: cargo install cargo-audit --locked
+
+      - name: Dependency audit (cargo)
+        continue-on-error: true
+        run: cargo audit
