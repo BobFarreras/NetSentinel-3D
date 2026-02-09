@@ -2,6 +2,19 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.5.8] - Hardening CSP en Tauri (2026-02-09)
+### 🔐 Seguridad runtime
+- Sustituida configuracion insegura `csp: null` por una politica CSP explicita en:
+  - `src-tauri/tauri.conf.json`
+- Definida `csp` para produccion y `devCsp` para desarrollo local (`localhost:1420` y websocket de Vite).
+
+### ✅ Estado de proteccion
+- Se restringen origenes por defecto para scripts/conexiones/imagenes/fuentes.
+- Se mantiene compatibilidad actual con `style-src 'unsafe-inline'` por uso de estilos inline existentes.
+
+### 📚 Documentacion
+- Actualizado `docs/SECURITY.md` con la nueva politica CSP, impacto y siguiente mejora recomendada.
+
 ## [v0.5.7] - Workflow CI con GitHub Actions (2026-02-09)
 ### ⚙️ Automatizacion
 - Añadido workflow de CI en:

@@ -43,13 +43,25 @@ Esto reduce permisos generales del runtime, pero no sustituye la validacion de c
 
 ### 3.2 CSP
 En `src-tauri/tauri.conf.json` la configuracion actual es:
-- `app.security.csp = null`
+- `app.security.csp` definida con directivas explicitas.
+- `app.security.devCsp` definida para entorno de desarrollo local.
+
+Estado actual:
+- Produccion:
+  - `default-src 'self' customprotocol: asset:`
+  - `connect-src ipc: http://ipc.localhost`
+  - `img-src 'self' asset: http://asset.localhost blob: data:`
+  - `style-src 'self' 'unsafe-inline'`
+  - `font-src 'self' data:`
+- Desarrollo:
+  - Se permite `localhost:1420` y `ws://localhost:1420` para Vite/Tauri dev.
 
 Impacto:
-- Aumenta riesgo frente a XSS/inyecciones en la capa web.
+- Reduce superficie de XSS e inyeccion al bloquear origenes no autorizados por defecto.
+- Mantiene compatibilidad con estilos inline actuales de la UI.
 
-Accion recomendada:
-- Definir una CSP explicita para build de produccion y revisar fuentes permitidas.
+Siguiente mejora recomendada:
+- Eliminar gradualmente `'unsafe-inline'` en `style-src` migrando estilos inline a hojas CSS controladas.
 
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)
