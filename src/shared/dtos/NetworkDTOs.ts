@@ -15,6 +15,7 @@ export interface OpenPortDTO {
   service: string; // 'http', 'ssh', 'unknown'
   riskLevel: 'SAFE' | 'POTENTIAL' | 'DANGER'; 
   description?: string;
+  version?: string;
   
   // Camp opcional per si trobem info de seguretat
   vulnerability?: VulnerabilityDTO; 
@@ -43,5 +44,15 @@ export interface DeviceDTO {
   vendor: string;
   name?: string;
   isGateway?: boolean; // Per pintar el sol al centre
-  ping?: number; // 👈 AFEGIT: Ara el TypeScript ja no es queixarà
+  ping?: number; 
+  hostname?: string; 
+  signal_strength?: number; 
+  signal_rate?: number; 
+  wifi_band?: string; 
+}
+
+export interface RouterAuditResult {
+  vulnerable: boolean;
+  credentials_found?: string;
+  message: string;
 }

@@ -1,4 +1,4 @@
-use crate::models::{Device, SecurityReport, OpenPort};
+use crate::models::{DeviceDTO, SecurityReport, OpenPort}; // 👈 Fem servir DeviceDTO
 use crate::intel;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
@@ -12,12 +12,11 @@ use std::collections::HashMap;
 use std::os::windows::process::CommandExt;
 
 const COMMON_PORTS: [u16; 12] = [21, 22, 23, 25, 53, 80, 110, 139, 443, 445, 3389, 8080];
-// Codi màgic de Windows per "No creïs finestra"
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // --- COMANDA 1: SCAN NETWORK ---
 #[tauri::command]
-pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
+pub async fn scan_network(_range: Option<String>) -> Vec<DeviceDTO> { // 👈 Canviat Device -> DeviceDTO
     println!("🦀 RUST: Scan Network (Stealth Mode)...");
 
     let detected_ips = Arc::new(Mutex::new(Vec::new()));
@@ -32,14 +31,12 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
         let handle = thread::spawn(move || {
             let mut cmd = Command::new("ping");
             
-            // Arguments segons el sistema
             #[cfg(target_os = "windows")]
             cmd.args(["-n", "1", "-w", "200", &ip_target]);
             
             #[cfg(not(target_os = "windows"))]
             cmd.args(["-c", "1", "-W", "1", &ip_target]);
 
-            // 🛑 FIX: APLIQUEM EL MODE SILENCIÓS (NOMÉS WINDOWS)
             #[cfg(target_os = "windows")]
             cmd.creation_flags(CREATE_NO_WINDOW);
 
@@ -66,10 +63,9 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
         
         let mut vendor = intel::resolve_vendor(&mac); 
         let hostname = intel::resolve_hostname(ip);
-        let mut name = hostname.or_else(|| Some(format!("Host {}", ip.split('.').last().unwrap())));
+        let mut name = hostname.clone().or_else(|| Some(format!("Host {}", ip.split('.').last().unwrap())));
         let mut is_gateway = false;
 
-        // Auto-detecció
         if mac == "00:00:00:00:00:00" {
             vendor = "NETSENTINEL HOST (ME)".to_string();
             name = Some("My Computer".to_string());
@@ -81,17 +77,21 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
             is_gateway = true;
         }
 
-        final_devices.push(Device {
+        // 👇 AQUI CONSTRUÏM EL DTO NOU (Amb els camps Wifi buits)
+        final_devices.push(DeviceDTO {
             ip: ip.clone(),
             mac,
             vendor,
+            hostname,
             name,
             is_gateway,
             ping: Some(5),
+            signal_strength: None, // L'ARP no sap el senyal
+            signal_rate: None,     // L'ARP no sap la velocitat
+            wifi_band: None,       // L'ARP no sap la banda
         });
     }
 
-    // Ordenar
     final_devices.sort_by(|a, b| {
         let a_last: u8 = a.ip.split('.').last().unwrap_or("0").parse().unwrap_or(0);
         let b_last: u8 = b.ip.split('.').last().unwrap_or("0").parse().unwrap_or(0);
@@ -101,20 +101,14 @@ pub async fn scan_network(_range: Option<String>) -> Vec<Device> {
     final_devices
 }
 
-// Helper: ARP Table (També en mode silenciós!)
 fn get_arp_table() -> HashMap<String, String> {
     let mut map = HashMap::new();
-    
     let mut cmd = Command::new("arp");
     cmd.arg("-a");
-    
-    // 🛑 FIX: AMAGUEM TAMBÉ LA FINESTRA DE L'ARP
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let output = cmd.output();
-
-    if let Ok(result) = output {
+    if let Ok(result) = cmd.output() {
         let stdout = String::from_utf8_lossy(&result.stdout);
         for line in stdout.lines() {
             let parts: Vec<&str> = line.split_whitespace().collect();
@@ -130,7 +124,6 @@ fn get_arp_table() -> HashMap<String, String> {
     map
 }
 
-// --- COMANDA 2: AUDIT TARGET ---
 #[tauri::command]
 pub async fn audit_target(ip: String) -> SecurityReport {
     println!("🦀 RUST: Audit {}...", ip);

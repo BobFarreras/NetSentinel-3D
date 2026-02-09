@@ -20,10 +20,15 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+reqwest = { version = "0.11", features = ["blocking", "json", "rustls-tls", "cookies"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] } # Motor asíncron potent
 local-ip-address = "0.6" # Per saber la nostra IP
 directories = "5.0"  # 👈 Aquesta màgia troba les rutes del sistema
+headless_chrome = "1.0"
+anyhow = "1.0" # Per gestionar errors fàcilment
+regex = "1"
+
 # Per ara farem servir comandes de sistema per l'ARP inicial per assegurar estabilitat
 # Més endavant afegirem 'pnet' per l'atac.

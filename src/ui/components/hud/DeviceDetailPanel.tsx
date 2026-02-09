@@ -1,7 +1,7 @@
 import React from 'react';
 import { DeviceDTO, OpenPortDTO } from '../../../shared/dtos/NetworkDTOs';
-import { ConsoleDisplay } from './details/ConsoleDisplay'; // 👈 Ajusta la ruta segons on ho guardis
-import { PortResults } from './details/PortResults';       // 👈 Ajusta la ruta
+import { ConsoleDisplay } from './details/ConsoleDisplay'; 
+import { PortResults } from './details/PortResults';      
 
 interface Props {
   device: DeviceDTO;
@@ -11,14 +11,26 @@ interface Props {
   onAudit: () => void;
   isJammed: boolean;
   onToggleJam: () => void;
+  onRouterAudit: (ip: string) => void;
 }
 
-export const DeviceDetailPanel: React.FC<Props> = ({ 
-    device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam 
+export const DeviceDetailPanel: React.FC<Props> = ({
+  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit
 }) => {
+  
+  // Helper per saber si el senyal és bo o dolent (visual)
+  const getSignalColor = (signal?: string) => {
+    if (!signal) return '#fff';
+    const val = parseInt(signal); 
+    if (isNaN(val)) return '#fff';
+    if (val > -60) return '#0f0'; // Verd (Excel·lent)
+    if (val > -75) return '#ffff00'; // Groc (Acceptable)
+    return '#ff5555'; // Vermell (Dolent)
+  };
+
   return (
     <>
-      {/* GLOBAL STYLES (Theme) */}
+      {/* GLOBAL STYLES */}
       <style>
         {`
           @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
@@ -47,18 +59,60 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         position: 'absolute', top: 20, right: 20, width: '340px',
         padding: '20px', color: '#0f0', fontFamily: 'Consolas, monospace', zIndex: 10
       }}>
-        
+
         {/* HEADER */}
         <h3 style={{ borderBottom: '2px solid #004400', paddingBottom: 10, marginTop: 0, display: 'flex', justifyContent: 'space-between' }}>
           <span>TARGET_ANALYSIS</span>
           <span className="blinking-cursor" style={{ width: '10px', height: '10px', borderRadius: '50%' }}></span>
         </h3>
 
-        {/* INFO */}
+        {/* INFO BÀSICA */}
         <div style={{ display: 'grid', gap: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ opacity: 0.7 }}>{'>'} IP ADDR:</span> <b>{device.ip}</b></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ opacity: 0.7 }}>{'>'} MAC ID:</span> <span>{device.mac.toUpperCase()}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span> <span style={{ color: '#adff2f' }}>{device.vendor.substring(0, 20)}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{'>'} IP ADDR:</span> 
+            <b>{device.ip}</b>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{'>'} MAC ID:</span> 
+            <span>{device.mac.toUpperCase()}</span>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span> 
+            <span style={{ color: '#adff2f' }}>{device.vendor.substring(0, 20)}</span>
+          </div>
+
+          {/* 👇 SECCIÓ WIFI (MAGENTA) 👇 */}
+          {(device.signal_strength || device.wifi_band) && (
+             <>
+               <div style={{ borderBottom: '1px dashed #004400', margin: '5px 0' }}></div>
+               
+               {device.wifi_band && (
+                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ opacity: 0.7 }}>{'>'} FREQUENCY:</span> 
+                    <span style={{ color: '#ff00ff' }}>{device.wifi_band}</span>
+                 </div>
+               )}
+
+               {device.signal_strength && (
+                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ opacity: 0.7 }}>{'>'} SIGNAL:</span> 
+                    <span style={{ color: getSignalColor(device.signal_strength) }}>
+                        {device.signal_strength}
+                    </span>
+                 </div>
+               )}
+
+               {device.signal_rate && (
+                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ opacity: 0.7 }}>{'>'} SPEED:</span> 
+                    <span>{device.signal_rate}</span>
+                 </div>
+               )}
+             </>
+          )}
+
         </div>
 
         {/* CONTROLS */}
@@ -81,14 +135,24 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* 👇 COMPONENT 1: TERMINAL */}
+        {/* BOTÓ ROUTER (Només si és Gateway) */}
+        {device.isGateway && (
+          <button
+            onClick={() => onRouterAudit(device.ip)}
+            style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: 'Consolas', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            ☠️ AUDIT GATEWAY SECURITY
+          </button>
+        )}
+
+        {/* COMPONENT 1: TERMINAL */}
         <ConsoleDisplay logs={consoleLogs} />
 
-        {/* 👇 COMPONENT 2: RESULTATS */}
-        <PortResults 
-            results={auditResults} 
-            isAuditing={auditing} 
-            hasLogs={consoleLogs.length > 0} 
+        {/* COMPONENT 2: RESULTATS */}
+        <PortResults
+          results={auditResults}
+          isAuditing={auditing}
+          hasLogs={consoleLogs.length > 0}
         />
 
       </div>
