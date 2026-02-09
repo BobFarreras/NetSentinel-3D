@@ -1,7 +1,7 @@
 import React from 'react';
 import { DeviceDTO, OpenPortDTO } from '../../../shared/dtos/NetworkDTOs';
-import { ConsoleDisplay } from './details/ConsoleDisplay'; 
-import { PortResults } from './details/PortResults';      
+import { ConsoleDisplay } from './details/ConsoleDisplay';
+import { PortResults } from './details/PortResults';
 
 interface Props {
   device: DeviceDTO;
@@ -17,15 +17,16 @@ interface Props {
 export const DeviceDetailPanel: React.FC<Props> = ({
   device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit
 }) => {
-  
+
   // Helper per saber si el senyal és bo o dolent (visual)
-  const getSignalColor = (signal?: string) => {
-    if (!signal) return '#fff';
-    const val = parseInt(signal); 
-    if (isNaN(val)) return '#fff';
-    if (val > -60) return '#0f0'; // Verd (Excel·lent)
-    if (val > -75) return '#ffff00'; // Groc (Acceptable)
-    return '#ff5555'; // Vermell (Dolent)
+  // 🐛 FIX: Ara accepta 'number' directament, no string
+  const getSignalColor = (signal?: number) => {
+    if (signal === undefined) return '#fff'; // Si no hi ha senyal, blanc
+
+    // Ja no cal fer parseInt perquè ja és un número!
+    if (signal > -60) return '#0f0';      // Verd (Excel·lent)
+    if (signal > -75) return '#ffff00';   // Groc (Acceptable)
+    return '#ff5555';                     // Vermell (Dolent)
   };
 
   return (
@@ -55,62 +56,79 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         `}
       </style>
 
-      <div className="crt-screen" style={{
-        position: 'absolute', top: 20, right: 20, width: '340px',
-        padding: '20px', color: '#0f0', fontFamily: 'Consolas, monospace', zIndex: 10
+      {/* 👇 CANVI IMPORTANT: Traiem 'position: absolute', 'top', 'right' i 'width'.
+             Ara ocupa el 100% del pare (la sidebar d'App.tsx) */}
+      {/* CONTENIDOR PRINCIPAL: Flex Column amb padding intern */}
+      <div style={{
+        width: '100%',
+        height: '100%',
+        padding: '25px', // Padding intern
+        boxSizing: 'border-box', // Important perquè el padding no sumi al width
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto' // Scroll només si cal
       }}>
 
         {/* HEADER */}
-        <h3 style={{ borderBottom: '2px solid #004400', paddingBottom: 10, marginTop: 0, display: 'flex', justifyContent: 'space-between' }}>
+        <h3 style={{
+          fontSize: '1.4rem',
+          borderBottom: '2px solid #004400',
+          paddingBottom: 15,
+          marginTop: 0,
+          marginBottom: 20,
+          display: 'flex',
+          justifyContent: 'space-between',
+          color: '#0f0'
+        }}>
           <span>TARGET_ANALYSIS</span>
-          <span className="blinking-cursor" style={{ width: '10px', height: '10px', borderRadius: '50%' }}></span>
+          <span className="blinking-cursor" style={{ width: '12px', height: '12px', borderRadius: '50%' }}></span>
         </h3>
 
         {/* INFO BÀSICA */}
         <div style={{ display: 'grid', gap: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} IP ADDR:</span> 
+            <span style={{ opacity: 0.7 }}>{'>'} IP ADDR:</span>
             <b>{device.ip}</b>
           </div>
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} MAC ID:</span> 
+            <span style={{ opacity: 0.7 }}>{'>'} MAC ID:</span>
             <span>{device.mac.toUpperCase()}</span>
           </div>
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span> 
+            <span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span>
             <span style={{ color: '#adff2f' }}>{device.vendor.substring(0, 20)}</span>
           </div>
 
           {/* 👇 SECCIÓ WIFI (MAGENTA) 👇 */}
           {(device.signal_strength || device.wifi_band) && (
-             <>
-               <div style={{ borderBottom: '1px dashed #004400', margin: '5px 0' }}></div>
-               
-               {device.wifi_band && (
-                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ opacity: 0.7 }}>{'>'} FREQUENCY:</span> 
-                    <span style={{ color: '#ff00ff' }}>{device.wifi_band}</span>
-                 </div>
-               )}
+            <>
+              <div style={{ borderBottom: '1px dashed #004400', margin: '5px 0' }}></div>
 
-               {device.signal_strength && (
-                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ opacity: 0.7 }}>{'>'} SIGNAL:</span> 
-                    <span style={{ color: getSignalColor(device.signal_strength) }}>
-                        {device.signal_strength}
-                    </span>
-                 </div>
-               )}
+              {device.wifi_band && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ opacity: 0.7 }}>{'>'} FREQUENCY:</span>
+                  <span style={{ color: '#ff00ff' }}>{device.wifi_band}</span>
+                </div>
+              )}
 
-               {device.signal_rate && (
-                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ opacity: 0.7 }}>{'>'} SPEED:</span> 
-                    <span>{device.signal_rate}</span>
-                 </div>
-               )}
-             </>
+              {device.signal_strength && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ opacity: 0.7 }}>{'>'} SIGNAL:</span>
+                  <span style={{ color: getSignalColor(device.signal_strength) }}>
+                    {device.signal_strength}
+                  </span>
+                </div>
+              )}
+
+              {device.signal_rate && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ opacity: 0.7 }}>{'>'} SPEED:</span>
+                  <span>{device.signal_rate}</span>
+                </div>
+              )}
+            </>
           )}
 
         </div>

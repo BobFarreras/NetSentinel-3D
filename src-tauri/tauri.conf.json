@@ -15,6 +15,8 @@
         "title": "NetSentinel 3D // Tactical Interface",
         "width": 1000,
         "height": 700,
+        "minWidth": 900,   
+        "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
         "decorations": true,

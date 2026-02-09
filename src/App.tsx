@@ -1,5 +1,5 @@
 import { useState } from 'react';
-// 👇 Fixa't que ara importem des de "./ui/..."
+import { TopBar } from './ui/components/layout/TopBar';
 import { NetworkScene } from './ui/components/3d/NetworkScene';
 import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
@@ -7,100 +7,118 @@ import { useNetworkManager } from './ui/hooks/useNetworkManager';
 import { DangerModal } from './ui/components/DangerModal';
 
 function App() {
-  // 1. Invoquem el nostre Hook de lògica (Connectat a Rust)
   const {
     devices, selectedDevice, scanning, auditing,
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
     toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
-    intruders 
+    intruders
   } = useNetworkManager();
 
-  // 2. Estat local per la UI
   const [showHistory, setShowHistory] = useState(false);
 
-  // Suposem que el router és la IP acabada en .1
-  const gatewayIp = devices.find(d => d.ip.endsWith('.1'))?.ip || '192.168.1.1';
-
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
+    // CONTENIDOR PRINCIPAL
+    <div style={{
+      display: 'flex',
+      width: '100vw',
+      height: '100vh',
+      background: '#050505',
+      color: '#0f0',
+      overflow: 'hidden', // Evitem scrolls globals
+      fontFamily: "'Consolas', 'Courier New', monospace",
+      fontSize: '16px'
+    }}>
 
-      {/* 🛑 LAYER DE PERILL (Z-INDEX SUPERIOR) */}
-      {/* Ara routerRisk ja existeix i funcionarà */}
+      {/* 🚨 MODAL */}
       <DangerModal result={routerRisk} onClose={dismissRisk} />
 
-      {/* 1. HUD ESQUERRE */}
-      <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
+      {/* =================================================================================
+          COLUMNA ESQUERRA: TOPBAR + MAPA (FLEX 1)
+         ================================================================================= */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        height: '100%',
+        minWidth: 0, // 👈 ⚠️ TRUC MÀGIC: Permet que la columna s'encongeixi sense trencar-se
+        overflow: 'hidden' // Assegura que res surti de mare
+      }}>
 
-        <h2 style={{ color: '#0f0', fontFamily: 'monospace', margin: '0 0 10px 0', textShadow: '0 0 5px #0f0' }}>
-          NETSENTINEL /// RUST_CORE
-        </h2>
+        <TopBar
+          scanning={scanning}
+          activeNodes={devices.length}
+          onScan={startScan}
+          onHistoryToggle={() => setShowHistory(!showHistory)}
+          showHistory={showHistory}
+        />
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={startScan}
-            disabled={scanning}
-            style={{
-              background: scanning ? '#002200' : 'rgba(0, 20, 0, 0.9)',
-              color: scanning ? '#005500' : '#0f0',
-              border: '1px solid #0f0', padding: '10px 20px',
-              fontFamily: 'monospace', fontSize: '1rem', cursor: scanning ? 'wait' : 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            {scanning ? '[ SCANNING... ]' : '[ INITIATE SCAN ]'}
-          </button>
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          {showHistory && (
+            <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 20 }}>
+              <HistoryPanel
+                onClose={() => setShowHistory(false)}
+                onLoadSession={(oldDevices) => { loadSession(oldDevices); setShowHistory(false); }}
+              />
+            </div>
+          )}
 
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            style={{
-              background: showHistory ? '#004400' : 'rgba(0, 20, 0, 0.9)',
-              color: '#0f0',
-              border: '1px solid #0f0', padding: '10px 15px',
-              fontFamily: 'monospace', fontSize: '1rem', cursor: 'pointer',
-            }}
-          >
-            {showHistory ? '[ HIDE LOGS ]' : '[ HISTORY ]'}
-          </button>
-        </div>
-
-        <div style={{ color: '#0f0', fontFamily: 'monospace', marginTop: 10 }}>
-          NODES DETECTED: {devices.length}
+          <NetworkScene
+            devices={devices}
+            onDeviceSelect={selectDevice}
+            selectedIp={selectedDevice?.ip}
+            intruders={intruders}
+          />
         </div>
       </div>
 
-      {/* PANELL HISTORIAL */}
-      {showHistory && (
-        <HistoryPanel
-          onClose={() => setShowHistory(false)}
-          onLoadSession={(oldDevices) => {
-            loadSession(oldDevices);
-            setShowHistory(false);
-          }}
-        />
-      )}
+      {/* =================================================================================
+          COLUMNA DRETA: SIDEBAR (FIXA PERÒ SEGURA)
+         ================================================================================= */}
+      <div style={{
+        width: '400px',      // ⬇️ Una mica més estret per seguretat (era 450)
+        minWidth: '400px',   // 👈 Assegura que mai sigui menys de 400
+        flexShrink: 0,       // 👈 ⚠️ TRUC MÀGIC 2: Prohibit aixafar la sidebar
+        height: '100vh',
+        background: '#020202',
+        borderLeft: '2px solid #004400',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '-10px 0 30px rgba(0, 50, 0, 0.2)',
+        position: 'relative',
+        zIndex: 30
+      }}>
 
-      {/* 2. HUD DRET (DETALLS) */}
-      {selectedDevice && (
-        <DeviceDetailPanel
-          device={selectedDevice}
-          auditResults={auditResults}
-          consoleLogs={consoleLogs}
-          auditing={auditing}
-          onAudit={() => startAudit(selectedDevice.ip)}
-          isJammed={jammedDevices.includes(selectedDevice.ip)}
-          onToggleJam={() => toggleJammer(selectedDevice.ip, gatewayIp)}
-          onRouterAudit={checkRouterSecurity}
-        />
-      )}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          backgroundImage: 'linear-gradient(rgba(0, 20, 0, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 20, 0, 0.1) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+          opacity: 0.3
+        }}></div>
 
-      {/* 3. ESCENA 3D */}
-      <NetworkScene
-        devices={devices}
-        onDeviceSelect={selectDevice}
-        selectedIp={selectedDevice?.ip}
-        intruders={intruders}
-      />
+        {selectedDevice ? (
+          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <DeviceDetailPanel
+              device={selectedDevice}
+              auditResults={auditResults}
+              consoleLogs={consoleLogs}
+              auditing={auditing}
+              onAudit={() => startAudit(selectedDevice.ip)}
+              isJammed={jammedDevices.includes(selectedDevice.ip)}
+              onToggleJam={() => toggleJammer(selectedDevice.ip)}
+              onRouterAudit={checkRouterSecurity}
+            />
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#004400', textAlign: 'center', padding: 40 }}>
+            <div style={{ fontSize: '5rem', marginBottom: 20, opacity: 0.3, textShadow: '0 0 20px #0f0' }}>⌖</div>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: 10, color: '#0f0' }}>AWAITING TARGET</h3>
+            <p style={{ fontSize: '1rem', opacity: 0.7 }}>SELECT A NODE FROM THE NETWORK GRID</p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
