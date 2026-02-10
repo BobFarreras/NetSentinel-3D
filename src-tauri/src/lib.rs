@@ -21,7 +21,7 @@ use crate::infrastructure::repositories::local_intelligence;
 
 // 2. Imports propis (Infraestructura)
 use crate::infrastructure::{
-    chrome_auditor::ChromeAuditor, fs_repository::FileHistoryRepository,
+    router_audit::chrome_auditor::ChromeAuditor, fs_repository::FileHistoryRepository,
     system_scanner::SystemScanner,
 };
 use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;

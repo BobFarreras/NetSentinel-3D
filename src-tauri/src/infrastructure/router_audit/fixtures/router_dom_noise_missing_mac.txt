@@ -1,0 +1,13 @@
+connected devices
+5 GHz
+
+192.168.1.40
+IP: 192.168.1.40
+Signal strength: -40 dBm
+Signal rate: 390 Mbps
+
+Laptop-Office
+IP: 192.168.1.10
+Signal strength: -55 dBm
+Signal rate: 120 Mbps
+
