@@ -18,6 +18,17 @@ export const useRouterHacker = (
     return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m);
   };
 
+  const isBadVendor = (vendor?: string) => {
+    if (!vendor) return true;
+    const v = vendor.trim();
+    if (!v) return true;
+    if (v.toLowerCase() === 'unknown') return true;
+    if (v.toLowerCase() === 'generic') return true;
+    if (v.toLowerCase().includes('generic / unknown')) return true;
+    if (/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(v)) return true;
+    return false;
+  };
+
   const checkRouterSecurity = async (gatewayIp: string) => {
     setActiveTarget(gatewayIp);
     addLog(gatewayIp, `> INITIATING GATEWAY AUDIT: ${gatewayIp}...`);
@@ -52,11 +63,15 @@ export const useRouterHacker = (
               if (newMap.has(rd.ip)) {
                 const existing = newMap.get(rd.ip)!;
                 const nextMac = isValidMac(existing.mac) ? existing.mac : (isValidMac(rd.mac) ? rd.mac : existing.mac);
+                const nextVendor = !isBadVendor(existing.vendor)
+                  ? existing.vendor
+                  : (!isBadVendor(rd.vendor) ? rd.vendor : existing.vendor);
                 newMap.set(rd.ip, {
                   ...existing,
                   mac: nextMac,
-                  vendor: (rd.vendor && rd.vendor !== rd.ip) ? rd.vendor : existing.vendor,
-                  hostname: rd.hostname,
+                  vendor: nextVendor,
+                  hostname: rd.hostname ?? existing.hostname,
+                  name: (rd.name ?? existing.name),
                   signal_strength: rd.signal_strength,
                   signal_rate: rd.signal_rate,
                   wifi_band: rd.wifi_band
@@ -66,8 +81,9 @@ export const useRouterHacker = (
                 newMap.set(rd.ip, {
                   ...rd,
                   mac: isValidMac(rd.mac) ? rd.mac : '00:00:00:00:00:00',
-                  vendor: rd.vendor && rd.vendor !== rd.ip ? rd.vendor : 'Generic / Unknown Device',
+                  vendor: !isBadVendor(rd.vendor) ? rd.vendor : 'Generic / Unknown Device',
                   hostname: rd.hostname && rd.hostname !== rd.ip ? rd.hostname : undefined,
+                  name: rd.name,
                 });
               }
             });

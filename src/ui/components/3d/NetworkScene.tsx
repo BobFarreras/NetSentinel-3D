@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { NetworkNode } from './NetworkNode';
-import { DeviceDTO } from '../../../shared/dtos/NetworkDTOs';
+import { DeviceDTO, HostIdentity } from '../../../shared/dtos/NetworkDTOs';
 import * as THREE from 'three';
 
 interface NetworkSceneProps {
@@ -10,6 +10,7 @@ interface NetworkSceneProps {
   onDeviceSelect?: (device: DeviceDTO | null) => void;
   selectedIp?: string | null;
   intruders?: string[];
+  identity?: HostIdentity | null;
 }
 
 // --- COMPONENT MÀGIC: CÀMERA AUTO-AJUSTABLE ---
@@ -62,14 +63,21 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   devices = [], 
   onDeviceSelect,
   selectedIp,
-  intruders = [] 
+  intruders = [],
+  identity = null,
 }) => {
   
   const { centerNode, orbitingNodes } = useMemo(() => {
-    const gateway = devices.find(d => d.ip.endsWith('.1') || d.isGateway);
-    const others = devices.filter(d => !d.ip.endsWith('.1') && !d.isGateway);
+    const gateway = devices.find(d =>
+      Boolean(d.isGateway) ||
+      (identity?.gatewayIp ? d.ip === identity.gatewayIp : d.ip.endsWith('.1'))
+    );
+    const others = devices.filter(d =>
+      !Boolean(d.isGateway) &&
+      (identity?.gatewayIp ? d.ip !== identity.gatewayIp : !d.ip.endsWith('.1'))
+    );
     return { centerNode: gateway, orbitingNodes: others };
-  }, [devices]);
+  }, [devices, identity?.gatewayIp]);
 
   return (
     <div style={{ width: '100%', height: '100%', background: '#000000' }}>
@@ -114,7 +122,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
 
           let nodeColor = "#ff4444"; 
           const isIntruder = intruders.includes(device.ip);
-          const isMe = device.vendor.includes('NETSENTINEL') || device.vendor.includes('(ME)') || device.mac === "00:00:00:00:00:00";
+          const isMe = (identity?.ip ? device.ip === identity.ip : false) || device.vendor.includes('NETSENTINEL') || device.vendor.includes('(ME)');
           const hasWifiData = device.wifi_band || device.signal_strength;
 
           if (isMe) nodeColor = "#00ff00";

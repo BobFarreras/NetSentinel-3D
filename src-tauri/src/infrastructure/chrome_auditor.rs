@@ -7,6 +7,7 @@ use std::thread;
 use std::sync::Arc;
 use regex::Regex;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
+use crate::infrastructure::network::arp_client::ArpClient;
 
 // --- 1. ARSENAL D'SCRIPTS (Separem el JS brut de la lògica Rust) ---
 struct ScriptArsenal;
@@ -273,7 +274,21 @@ impl RouterAuditorPort for ChromeAuditor {
                 self.log("   📄 Extraient dades del DOM...");
                 if let Ok(res) = tab.evaluate(ScriptArsenal::injection_extract_text(), false) {
                     let text = res.value.as_ref().and_then(|v| v.as_str()).unwrap_or("");
-                    return self.parse_router_text(text);
+                    let mut devices = self.parse_router_text(text);
+
+                    // Enriquecimiento local: muchos routers no exponen la MAC en la vista web.
+                    // Si tenemos IPs, intentamos resolver MAC via tabla ARP local y recalculamos vendor.
+                    let arp_table = ArpClient::get_table();
+                    for d in devices.iter_mut() {
+                        if d.mac == "00:00:00:00:00:00" {
+                            if let Some(mac) = arp_table.get(&d.ip) {
+                                d.mac = mac.clone();
+                            }
+                        }
+                        d.vendor = VendorResolver::resolve(&d.mac);
+                    }
+
+                    return devices;
                 }
             }
         }

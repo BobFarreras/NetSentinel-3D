@@ -37,8 +37,11 @@ vi.mock('../modules/useSocketLogs', () => ({
     deviceLogs: {
       '192.168.1.10': ['L1', 'L2'],
     },
+    systemLogs: [],
     addLog: addLogMock,
+    addSystemLog: vi.fn(),
     clearLogs: clearLogsMock,
+    clearSystemLogs: vi.fn(),
     setActiveTarget: setActiveTargetMock,
   }),
 }));

@@ -12,7 +12,7 @@ import { useJamming } from './modules/useJamming'; // 👈 IMPORT NOU
 
 export const useNetworkManager = () => {
   // 1. Logs (Base)
-  const { deviceLogs, addLog, clearLogs, setActiveTarget } = useSocketLogs();
+  const { deviceLogs, systemLogs, addLog, clearLogs, clearSystemLogs, setActiveTarget } = useSocketLogs();
 
   // 2. Scanner (Core)
   const { devices, setDevices, history, intruders, scanning, startScan, loadSession } = useScanner();
@@ -148,6 +148,7 @@ export const useNetworkManager = () => {
     devices, selectedDevice, history, intruders,
     auditResults, routerRisk, jammedDevices,
     consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
+    systemLogs,
     identity,
 
     // Estats
@@ -164,5 +165,6 @@ export const useNetworkManager = () => {
     toggleJammer, // 👈 Ara ve del useJamming
     dismissRisk, 
     clearLogs: () => selectedDevice && clearLogs(selectedDevice.ip),
+    clearSystemLogs,
   };
 };

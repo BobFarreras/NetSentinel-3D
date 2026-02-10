@@ -2,8 +2,6 @@ import React from 'react';
 import { DeviceDTO, OpenPortDTO } from '../../../shared/dtos/NetworkDTOs';
 import { ConsoleDisplay } from './details/ConsoleDisplay';
 import { PortResults } from './details/PortResults';
-import { DangerModal } from '../../components/DangerModal';
-import type { RouterAuditResult } from '../../../shared/dtos/NetworkDTOs';
 
 interface Props {
   device: DeviceDTO;
@@ -15,12 +13,10 @@ interface Props {
   onToggleJam: () => void;
   onRouterAudit: (ip: string) => void;
   onOpenLabAudit: (device: DeviceDTO) => void;
-  routerRisk?: RouterAuditResult | null;
-  onDismissRisk?: () => void;
 }
 
 export const DeviceDetailPanel: React.FC<Props> = ({
-  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit, routerRisk = null, onDismissRisk = () => {}
+  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit
 }) => {
 
   // Helper para colorear la potencia de senal (RSSI) cuando el dispositivo expone datos WiFi.
@@ -100,8 +96,35 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{'>'} NAME:</span>
+            <span
+              style={{
+                color: '#fff',
+                maxWidth: 240,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={device.name || device.hostname || ''}
+            >
+              {device.name || device.hostname || 'Unknown'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span>
-            <span style={{ color: '#adff2f' }}>{device.vendor.substring(0, 20)}</span>
+            <span
+              style={{
+                color: '#adff2f',
+                maxWidth: 240,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={device.vendor}
+            >
+              {device.vendor}
+            </span>
           </div>
 
           {/* 👇 SECCIÓ WIFI (MAGENTA) 👇 */}
@@ -187,9 +210,6 @@ export const DeviceDetailPanel: React.FC<Props> = ({
             ☠️ AUDIT GATEWAY SECURITY
           </button>
         )}
-
-        {/* Inline: riesgo del gateway debajo del panel, sin ocupar toda la pantalla */}
-        <DangerModal result={routerRisk} onClose={onDismissRisk} variant="inline" />
 
         {/* COMPONENT 1: TERMINAL */}
         <ConsoleDisplay logs={consoleLogs} />

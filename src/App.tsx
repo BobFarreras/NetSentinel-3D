@@ -14,8 +14,8 @@ function App() {
     devices, selectedDevice, scanning, auditing,
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
-    clearLogs,
+    toggleJammer, checkRouterSecurity,
+    systemLogs, clearSystemLogs,
     intruders, identity
   } = useNetworkManager();
 
@@ -211,6 +211,7 @@ function App() {
                 onDeviceSelect={selectDevice}
                 selectedIp={selectedDevice?.ip}
                 intruders={intruders}
+                identity={identity}
               />
             </div>
           </div>
@@ -240,10 +241,10 @@ function App() {
           background: '#000'
         }}>
           <ConsoleLogs
-            logs={consoleLogs}
+            logs={systemLogs}
             devices={devices}
             selectedDevice={selectedDevice} // Necesario para filtros por objetivo
-            onClearSystemLogs={clearLogs}
+            onClearSystemLogs={clearSystemLogs}
           />
         </div>
 
@@ -303,8 +304,6 @@ function App() {
                 setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
                 setShowExternalAudit(true);
               }}
-              routerRisk={routerRisk}
-              onDismissRisk={dismissRisk}
             />
           </div>
         ) : (
