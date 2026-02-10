@@ -2,6 +2,21 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.6.1] - Reestructuracion de AGENTS.md para Agentes IA (2026-02-10)
+### 📚 Documentacion de gobierno
+- Reestructurado `AGENTS.md` a formato explicito de perfil de agente:
+  - `Descripcion`
+  - `Instrucciones`
+  - `Tono`
+  - `Prioridades actuales`
+- Conservadas y reorganizadas las reglas tecnicas existentes:
+  - arquitectura hexagonal real del repositorio,
+  - comandos Tauri vigentes,
+  - contratos Rust/TypeScript,
+  - validaciones minimas,
+  - Definition of Done y flujo operativo.
+- Objetivo del cambio: facilitar onboarding de juniors y reducir ambiguedad operativa de agentes IA.
+
 ## [v0.6.0] - Hardening Continuo de CI, Validacion y Resiliencia E2E (2026-02-09)
 ### 🔐 Seguridad y validacion
 - CSP reforzada en `src-tauri/tauri.conf.json` con directivas adicionales:
