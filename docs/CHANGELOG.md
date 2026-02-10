@@ -1,6 +1,6 @@
-# 📜 DIARI DE DESENVOLUPAMENT (CHANGELOG)
+# Diario de desarrollo (CHANGELOG)
 
-Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
+Todos los cambios notables en NetSentinel deben documentarse aqui.
 
 ## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
 ### 🧠 Scanner (UX / estabilidad)
@@ -27,6 +27,27 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
   - guia paso a paso para añadir escenarios LAB (simulados o externos).
 ### 🧭 Onboarding
 - `README.md`: enlace directo a `docs/EXTERNAL_AUDIT.md`.
+
+## [v0.7.5] - Refactor backend (SOLID) + hardening runtime + fixtures (2026-02-10)
+### 🦀 API (Tauri)
+- `src-tauri/src/api/commands.rs`: comandos agrupados por dominio con submodulos `api/commands/*`.
+- `src-tauri/src/lib.rs`: wiring mas limpio (solo dependencias + registro de comandos).
+
+### 🦀 External Audit (wrapper CLI)
+- `src-tauri/src/application/external_audit/*`: runner/validacion/sink testeable.
+- Streaming real de `stdout/stderr`, cancelacion y timeout con tests.
+
+### 🦀 WiFi / Vendor
+- Resolver OUI data-driven con seed embebido y override en AppData (`oui.json`).
+- `WifiService` como caso de uso fino + normalizacion pura (`wifi_normalizer`).
+
+### 🦀 Runtime (identidad/traffic/jammer)
+- Identidad local robusta con parser puro + fixtures (`local_intelligence/*`).
+- Preflight del sniffer: si no se abre el canal, no se marca el monitor como running.
+- Hardening de `JammerService` y `PacketInjector` (menos `unwrap()`, mas checks, tests).
+
+### 📚 Docs
+- Sincronizada documentacion con arquitectura real (README, External Audit, Architecture, etc.).
 
 ## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
 ### 📚 Documentacion estrategica

@@ -1,3 +1,5 @@
+<!-- docs/ARCHITECTURE.md -->
+
 # Arquitectura Tecnica de NetSentinel 3D
 
 ## 1. Vision General
@@ -42,6 +44,7 @@ Ubicacion: `src-tauri/src/application`
 - `traffic_service.rs`: control del monitor de trafico.
 - `jammer_service.rs`: contramedidas activas.
 - `wifi_service.rs`: orquestacion de Radar View (WiFi) + normalizacion.
+  - normalizacion pura en `wifi_normalizer.rs`.
 - `external_audit/*`: wrapper de ejecucion de herramientas externas (stdout/stderr en tiempo real).
 
 ### 3.3 Infrastructure
@@ -50,8 +53,9 @@ Ubicacion: `src-tauri/src/infrastructure`
 - `router_audit/*`: automatizacion de auditoria de gateway (Chrome) + parsing con fixtures.
 - `fs_repository.rs`: persistencia en disco.
 - `network/*`: sniffing, ARP, puertos, vendor/hostname resolver, etc.
+  - `network/vendor_resolver*`: resolucion de fabricante por OUI (seed embebido + override en AppData).
 - `wifi/*`: escaneo WiFi por SO (Windows `netsh`, fallback `wifiscanner`) + fixtures.
-- `repositories/local_intelligence*`: identidad local del host (con parsing testeado + fixtures).
+- `repositories/local_intelligence*`: identidad local del host (PowerShell + parsing con fixtures y cache corto).
 
 ### 3.4 API (Tauri commands)
 Ubicacion: `src-tauri/src/api` y `src-tauri/src/lib.rs`
