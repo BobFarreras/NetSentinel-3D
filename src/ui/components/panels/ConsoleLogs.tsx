@@ -37,9 +37,9 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
     };
 
     return (
-        <div style={{ height: '100%', background: COLORS.bg, borderTop: `2px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', padding: '0 5px', fontFamily: 'monospace' }}>
+        <div style={{ height: '100%', minHeight: 0, background: COLORS.bg, borderTop: `2px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', padding: '0 5px', fontFamily: 'monospace' }}>
             
-            {/* STYLES SCROLLBAR */}
+            {/* Estilos globales de scrollbar para panel de consola */}
             <style>{`
                 ::-webkit-scrollbar { width: 6px; height: 6px; }
                 ::-webkit-scrollbar-track { background: #001100; }
@@ -47,7 +47,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
                 ::-webkit-scrollbar-thumb:hover { background: #00ff00; }
             `}</style>
 
-            {/* HEADER */}
+            {/* Cabecera de pestañas y acciones */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '35px', borderBottom: `1px solid ${COLORS.border}`, marginBottom: '5px' }}>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <TabButton label="SYSTEM LOGS" active={activeTab === 'SYSTEM'} onClick={() => setActiveTab('SYSTEM')} />
@@ -69,18 +69,18 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
                         </>
                     )}
                     
-                    {/* 🔥 CORRECCIÓ: Aquest botó ara es mostra SEMPRE i executa l'acció segons la pestanya activa */}
+                    {/* Boton de limpieza contextual segun pestaña activa */}
                     <button onClick={handleClear} style={{ background: 'transparent', border: '1px solid #444', color: '#666', cursor: 'pointer', fontSize: '0.7rem' }}>🗑️</button>
                 </div>
             </div>
 
-            {/* CONTINGUT */}
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            {/* Contenido principal */}
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 {activeTab === 'SYSTEM' ? (
                     <div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                        {/* SYSTEM LOGS: Invertim manualment perquè surtin a dalt */}
+                        {/* Logs del sistema: se muestran del mas reciente al mas antiguo */}
                         {logs.slice(0).reverse().map((log, i) => (
-                            <div key={i} style={{ borderBottom: '1px solid #111', fontSize: '0.8rem', color: log.includes('ERROR') ? '#f55' : '#0f0', padding: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div key={i} style={{ borderBottom: '1px solid #111', fontSize: '0.8rem', color: log.includes('ERROR') ? '#f55' : '#0f0', padding: '2px 0', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                                 <span style={{ color: '#006600', marginRight: '8px' }}>{new Date().toLocaleTimeString()}</span>{log}
                             </div>
                         ))}
@@ -90,6 +90,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
                         isActive={traffic.isActive} 
                         speed={traffic.speed} 
                         packets={traffic.packets} 
+                        jammedPackets={traffic.jammedPackets}
                         devices={devices} 
                         selectedDevice={selectedDevice} 
                         compactMode={true} 

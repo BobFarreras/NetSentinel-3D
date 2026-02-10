@@ -2,6 +2,45 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
+### 🧭 Gobierno y prioridades
+- Actualizadas prioridades en `AGENTS.md` para enfocar:
+  - comentarios en castellano en archivos afectados,
+  - correccion de `SYSTEM LOGS` (scroll y textos),
+  - correccion de filtros de `LIVE TRAFFIC`,
+  - documentacion funcional en `README.md`.
+
+### 🖥️ UI: Console y trafico
+- `src/ui/components/panels/ConsoleLogs.tsx`:
+  - activado paso de `jammedPackets` a `TrafficPanel`.
+  - ajuste de contenedores flex (`minHeight: 0`) para scroll fiable.
+  - eliminado recorte por `ellipsis` en logs de sistema y habilitado wrapping.
+- `src/ui/components/panels/TrafficPanel.tsx`:
+  - etiqueta del filtro `TARGET` usando `vendor`/`hostname` antes que IP.
+  - limpieza de comentarios y tipado de `FilterBtn` sin `any`.
+- `src/ui/hooks/modules/useTrafficMonitor.ts`:
+  - comentarios actualizados a castellano tecnico.
+
+### 📚 Documentacion
+- `README.md`:
+  - nueva guia de `LIVE TRAFFIC` (colores, columnas y filtros).
+  - guia paso a paso para implementar prioridades sin romper funcionalidad.
+
+## [v0.6.1] - Reestructuracion de AGENTS.md para Agentes IA (2026-02-10)
+### 📚 Documentacion de gobierno
+- Reestructurado `AGENTS.md` a formato explicito de perfil de agente:
+  - `Descripcion`
+  - `Instrucciones`
+  - `Tono`
+  - `Prioridades actuales`
+- Conservadas y reorganizadas las reglas tecnicas existentes:
+  - arquitectura hexagonal real del repositorio,
+  - comandos Tauri vigentes,
+  - contratos Rust/TypeScript,
+  - validaciones minimas,
+  - Definition of Done y flujo operativo.
+- Objetivo del cambio: facilitar onboarding de juniors y reducir ambiguedad operativa de agentes IA.
+
 ## [v0.6.0] - Hardening Continuo de CI, Validacion y Resiliencia E2E (2026-02-09)
 ### 🔐 Seguridad y validacion
 - CSP reforzada en `src-tauri/tauri.conf.json` con directivas adicionales:

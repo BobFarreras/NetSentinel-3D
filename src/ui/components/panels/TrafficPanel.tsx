@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { TrafficPacket, DeviceDTO } from '../../../shared/dtos/NetworkDTOs';
 
-// Interfície UI
+// Interfaz de paquete para capa UI
 interface UITrafficPacket extends TrafficPacket {
   _uiId?: string;
   _seq?: number;
@@ -26,10 +26,10 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
 }) => {
   
   const [filterMode, setFilterMode] = useState<FilterMode>('ALL');
-  const [visibleLimit, setVisibleLimit] = useState(50); // Comencem amb 50
+  const [visibleLimit, setVisibleLimit] = useState(50); // Carga inicial de filas
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Reset en canviar de mode
+  // Reset al cambiar dispositivo objetivo
   useEffect(() => {
     if (selectedDevice) setFilterMode('TARGET');
     else setFilterMode('ALL');
@@ -43,10 +43,10 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
       if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
   };
 
-  // DETECCIÓ D'SCROLL (LOAD MORE)
+  // Deteccion de scroll para cargar mas filas
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-      // Si arribem al final...
+      // Carga progresiva al acercarse al final
       if (scrollHeight - scrollTop <= clientHeight + 50) {
           setVisibleLimit(prev => prev + 50);
       }
@@ -61,22 +61,17 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
     return ip;
   };
 
-  // 1. SELECCIÓ DE LA FONT DE DADES (Font Segura vs Font Ràpida)
+  // 1) Seleccion de fuente de datos (general o jammed)
   const sourcePackets = useMemo(() => {
-      // SI ESTEM EN MODE JAMMED, USEM LA LLISTA SEGURA!
       if (filterMode === 'JAMMED') return jammedPackets;
-      // SI NO, LA GENERAL
       return packets;
   }, [packets, jammedPackets, filterMode]);
 
-  // 2. FILTRATGE
+  // 2) Filtro por modo seleccionado
   const filteredPackets = useMemo(() => {
     let filtered = sourcePackets;
     
-    // El mode JAMMED ja ve filtrat de la llista segura, però per si de cas...
-    if (filterMode === 'JAMMED') {
-        // No cal fer res, jammedPackets ja només té atacs
-    } else if (filterMode === 'TARGET') {
+    if (filterMode === 'TARGET') {
         if (selectedDevice) {
             filtered = sourcePackets.filter(p => p.sourceIp === selectedDevice.ip || p.destinationIp === selectedDevice.ip);
         }
@@ -84,25 +79,34 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
     return filtered;
   }, [sourcePackets, filterMode, selectedDevice]);
 
-  // 3. PAGINACIÓ (SCROLL INFINIT)
+  // 3) Paginacion incremental
   const visiblePackets = useMemo(() => {
       return filteredPackets.slice(0, visibleLimit);
   }, [filteredPackets, visibleLimit]);
 
+  const targetLabel = useMemo(() => {
+    if (!selectedDevice) return '🎯 TARGET';
+    const vendor = selectedDevice.vendor?.trim();
+    if (vendor && vendor.toLowerCase() !== 'unknown') return `🎯 ${vendor}`;
+    const hostname = selectedDevice.hostname?.trim();
+    if (hostname && hostname.toLowerCase() !== 'unknown') return `🎯 ${hostname}`;
+    return `🎯 ${selectedDevice.ip}`;
+  }, [selectedDevice]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#050505', overflow: 'hidden' }}>
       
-      {/* HEADER */}
+      {/* Cabecera de filtros */}
       <div style={{ 
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '6px', borderBottom: '1px solid #004400', background: '#020202', flexShrink: 0
       }}>
           <div style={{ display: 'flex', gap: '5px' }}>
               <FilterBtn label={`ALL (${packets.length})`} active={filterMode === 'ALL'} onClick={() => handleFilterChange('ALL')} />
-              {/* Mostrem contador real d'atacs guardats */}
+              {/* Contador real de paquetes interceptados */}
               <FilterBtn label={`💀 JAMMED (${jammedPackets.length})`} active={filterMode === 'JAMMED'} onClick={() => handleFilterChange('JAMMED')} color="#ff5555" />
               <FilterBtn 
-                label={selectedDevice ? `🎯 ${selectedDevice.ip.split('.').pop()}` : '🎯 TARGET'} 
+                label={targetLabel} 
                 active={filterMode === 'TARGET'} 
                 onClick={() => handleFilterChange('TARGET')} 
                 disabled={!selectedDevice} 
@@ -120,7 +124,7 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
           </div>
       </div>
 
-      {/* TAULA HEADER */}
+      {/* Cabecera de columnas */}
       <div style={{ 
           display: 'grid', gridTemplateColumns: '45px 1fr 15px 1fr 100px', 
           gap: '5px', padding: '4px 0', borderBottom: '1px solid #222',
@@ -133,7 +137,7 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
           <span style={{textAlign: 'right', paddingRight: 5}}>DATA</span>
       </div>
 
-      {/* LLISTA AMB SCROLL */}
+      {/* Lista con scroll */}
       <div 
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -157,7 +161,7 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
                 alignItems: 'center', fontFamily: "'Consolas', monospace", fontSize: '0.7rem',
                 backgroundColor: isBlocked ? 'rgba(100, 0, 0, 0.2)' : 'transparent',
                 color: isBlocked ? '#ff5555' : (pkt.protocol === 'TCP' ? '#8f8' : '#ff8'),
-                // Només animem els 3 primers per evitar lag
+                // Animamos solo las primeras filas para evitar coste extra
                 animation: idx < 3 ? 'flashNew 0.5s ease-out' : 'none'
               }}>
                 <style>{`
@@ -176,7 +180,7 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
           })
         )}
         
-        {/* INDICADORS DE FINALS DE LLISTA */}
+        {/* Indicadores de estado de buffer */}
         {visibleLimit < filteredPackets.length ? (
             <div style={{textAlign: 'center', padding: 10, color: '#004400', fontSize: '0.7rem'}}>
                 ... SCROLL TO LOAD MORE ...
@@ -193,7 +197,15 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
   );
 };
 
-const FilterBtn = ({ label, active, onClick, color = '#00ff00', disabled }: any) => (
+interface FilterBtnProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  color?: string;
+  disabled?: boolean;
+}
+
+const FilterBtn: React.FC<FilterBtnProps> = ({ label, active, onClick, color = '#00ff00', disabled }) => (
     <button onClick={onClick} disabled={disabled} style={{
         background: active ? `${color}22` : 'transparent',
         border: `1px solid ${active ? color : '#333'}`,

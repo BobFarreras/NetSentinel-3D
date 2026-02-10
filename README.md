@@ -70,3 +70,64 @@ Per compilar el codi font necessites les següents eines:
 ```bash
 git clone [https://github.com/EL_TEU_USUARI/netsentinel.git](https://github.com/EL_TEU_USUARI/netsentinel.git)
 cd netsentinel-rust
+```
+
+## 📡 Guía de LIVE TRAFFIC
+
+El panel `LIVE TRAFFIC` muestra paquetes capturados en tiempo real y permite filtrar por contexto operativo.
+
+### Estados y colores
+
+- Verde:
+  - tráfico permitido/no interceptado.
+  - normalmente paquetes `TCP`.
+- Amarillo:
+  - tráfico no interceptado de otros protocolos (por ejemplo `UDP`).
+- Rojo:
+  - paquete interceptado/bloqueado (`isIntercepted = true`).
+  - en columna `TYPE` aparece como `BLK`.
+
+### Columnas
+
+- `TYPE`:
+  - tipo de tráfico (`TCP`, `UDP`) o `BLK` si está interceptado.
+- `SRC`:
+  - origen del paquete.
+  - prioriza nombre conocido del dispositivo (vendor/hostname) cuando existe.
+- `DST`:
+  - destino del paquete.
+  - aplica la misma resolución de nombre que `SRC`.
+- `DATA`:
+  - resumen corto del contenido/metadata (`pkt.info`).
+
+### Filtros
+
+- `ALL`:
+  - muestra todo el buffer general en vivo.
+- `JAMMED`:
+  - muestra solo paquetes interceptados.
+- `TARGET`:
+  - muestra solo paquetes donde participa el nodo seleccionado.
+  - la etiqueta del botón prioriza `vendor` del nodo objetivo.
+
+## 🧩 Guía paso a paso para implementar prioridades
+
+Esta guía define cómo aplicar las prioridades actuales sin romper el sistema:
+
+1. Alinear comentarios/documentación al castellano:
+   - revisar solo archivos afectados por el cambio.
+   - reemplazar comentarios ambiguos por explicaciones técnicas cortas.
+2. Corregir `SYSTEM LOGS`:
+   - asegurar `minHeight: 0` en contenedores flex con scroll.
+   - usar `whiteSpace: pre-wrap` + `overflowWrap: anywhere` para evitar texto cortado.
+3. Corregir `LIVE TRAFFIC`:
+   - verificar que `TrafficPanel` recibe `jammedPackets`.
+   - validar filtros `ALL`, `JAMMED` y `TARGET` con datos simulados/interceptados.
+   - priorizar nombre de `vendor` o `hostname` en etiqueta del objetivo.
+4. Documentar comportamiento:
+   - actualizar `README.md` con colores, columnas y filtros.
+   - registrar cambios relevantes en `docs/CHANGELOG.md`.
+5. Validar antes de cerrar:
+   - `npm test -- --run`
+   - `npm run build`
+   - `cargo check` (si hubo cambios en Rust)
