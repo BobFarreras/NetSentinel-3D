@@ -40,6 +40,17 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 ### ✅ Verificacion
 - `cargo check --tests` en verde.
 
+## [v0.6.5] - Gobernanza GitHub: PR review obligatorio (2026-02-10)
+### 🧭 Proceso
+- Añadido `CONTRIBUTING.md` con politica de PR y revision senior.
+- Añadidos ficheros de soporte GitHub:
+  - `.github/CODEOWNERS`
+  - `.github/pull_request_template.md`
+- Actualizado `AGENTS.md` para prohibir commits finales automaticos por agentes IA sin confirmacion.
+
+### 🛠️ Calidad
+- Ajuste de tipos explicitos en `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` para evitar errores de inferencia en IDE.
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

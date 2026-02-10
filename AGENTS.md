@@ -103,7 +103,10 @@ Nota Windows:
 2. Definir impacto por capas (UI, adapter, comando, servicio, dominio, infraestructura).
 3. Implementar cambios atomicos.
 4. Ejecutar validaciones minimas.
-5. Documentar:
+5. Politica de commits:
+   - Un agente IA puede preparar cambios y dejar el arbol listo.
+   - No debe crear commits finales ni hacer push/merge sin confirmacion del desarrollador o senior responsable.
+6. Documentar:
    - que se cambio
    - por que se cambio
    - que validaciones se ejecutaron

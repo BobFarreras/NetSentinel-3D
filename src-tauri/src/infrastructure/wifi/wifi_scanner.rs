@@ -14,9 +14,9 @@ impl SystemWifiScanner {
 impl WifiScannerPort for SystemWifiScanner {
     async fn scan_airwaves(&self) -> Result<Vec<WifiScanRecord>, String> {
         // `wifiscanner::scan` es blocking; se ejecuta fuera del hilo async para no congelar UI.
-        let networks = tokio::task::spawn_blocking(|| {
-            wifiscanner::scan().map_err(|e| format!("{e:?}"))
-        })
+        let networks: Vec<wifiscanner::Wifi> = tokio::task::spawn_blocking(
+            || -> Result<Vec<wifiscanner::Wifi>, String> { wifiscanner::scan().map_err(|e| format!("{e:?}")) },
+        )
             .await
             .map_err(|e| e.to_string())??;
 
