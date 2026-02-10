@@ -114,6 +114,20 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
   - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
   - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
 
+## [v0.7.0] - ExternalAuditService: wrapper async de herramientas CLI (2026-02-10)
+### 🦀 Backend (Rust + Tauri)
+- Añadido `ExternalAuditService` como orquestador de herramientas externas ya instaladas por el administrador:
+  - `src-tauri/src/application/external_audit_service.rs`
+- Nuevos comandos Tauri:
+  - `start_external_audit`
+  - `cancel_external_audit`
+- Streaming en tiempo real de logs via eventos Tauri:
+  - `external-audit-log` (stdout/stderr)
+  - `external-audit-exit` (exit code, success, duration)
+
+### 🔐 Seguridad (DevSecOps)
+- Ejecucion sin shell (args tokenizados) y validaciones defensivas (limites de args/env/timeout) para reducir riesgos operativos.
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

@@ -49,11 +49,14 @@ Eres el arquitecto principal de NetSentinel, una herramienta de auditoria de red
 - `fetch_router_devices`
 - `save_scan`
 - `get_history`
+- `scan_airwaves`
 - `get_identity`
 - `start_traffic_sniffing`
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
+- `start_external_audit`
+- `cancel_external_audit`
 
 Regla:
 - Si se añade, elimina o renombra un comando, actualizar adapters y documentacion en el mismo cambio.
@@ -74,6 +77,9 @@ Regla:
 5. JammerSkill:
    - Tecnico: `start_jamming`, `stop_jamming`
    - Resultado: contramedida activa controlada
+6. ExternalAuditSkill:
+   - Tecnico: `start_external_audit`, `cancel_external_audit`
+   - Resultado: wrapper async de herramientas CLI externas con logs en tiempo real
 
 ### Convenciones de codigo
 1. Rust:
