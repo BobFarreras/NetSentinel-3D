@@ -9,7 +9,7 @@ export interface UITrafficPacket extends TrafficPacket {
 
 export const useTrafficMonitor = () => {
   const [isActive, setIsActive] = useState(false);
-  // Estat que conté TOTES les llistes necessàries
+  // Estado que contiene las listas consumidas por la UI
   const [data, setData] = useState<{
       all: UITrafficPacket[], 
       jammed: UITrafficPacket[]
@@ -17,9 +17,9 @@ export const useTrafficMonitor = () => {
   
   const [speed, setSpeed] = useState(0); 
   
-  // 1. BUFFER PRINCIPAL (Trànsit viu, rota ràpid)
+  // 1) Buffer principal de trafico
   const bufferRef = useRef<UITrafficPacket[]>([]);
-  // 2. BUFFER SEGUR (Només atacs, NO s'esborra pel trànsit normal)
+  // 2) Buffer seguro de paquetes interceptados
   const jammedBufferRef = useRef<UITrafficPacket[]>([]);
   
   const byteCountRef = useRef(0);
@@ -31,7 +31,7 @@ export const useTrafficMonitor = () => {
         await invokeCommand('stop_traffic_sniffing');
         setIsActive(false);
       } else {
-        // RESET TOTAL
+        // Reset completo al arrancar monitor
         bufferRef.current = [];
         jammedBufferRef.current = [];
         setData({ all: [], jammed: [] });
@@ -58,13 +58,13 @@ export const useTrafficMonitor = () => {
             _seq: seqRef.current
         };
 
-        // A. AFEGIM AL BUFFER PRINCIPAL (Dalt de tot)
+        // A) Se inserta al inicio para mostrar lo mas reciente arriba
         bufferRef.current.unshift(newPacket);
         
-        // B. SI ÉS UN ATAC, EL GUARDEM A LA CAIXA FORTA
+        // B) Si el paquete fue interceptado, se conserva en lista jammed
         if (newPacket.isIntercepted) {
             jammedBufferRef.current.unshift(newPacket);
-            // Limitem els atacs a 1000 per si de cas, però és difícil omplir-ho
+            // Limite defensivo para evitar crecimiento no acotado
             if (jammedBufferRef.current.length > 1000) {
                 jammedBufferRef.current = jammedBufferRef.current.slice(0, 1000);
             }
@@ -72,8 +72,7 @@ export const useTrafficMonitor = () => {
 
         byteCountRef.current += event.payload.length;
 
-        // C. LIMIT PRINCIPAL (5000 PAQUETS)
-        // Això dóna molt marge per fer scroll abans que s'esborrin
+        // C) Limite principal de historial en vivo
         if (bufferRef.current.length > 5000) {
           bufferRef.current = bufferRef.current.slice(0, 5000);
         }
@@ -82,13 +81,13 @@ export const useTrafficMonitor = () => {
 
     setup();
 
-    // Loop de refresc UI (200ms)
+    // Refresco de UI cada 200ms para reducir renders
     const interval = setInterval(() => {
         if (isActive || bufferRef.current.length > 0) {
             setSpeed(byteCountRef.current * 5);
             byteCountRef.current = 0;
             
-            // Passem les DUES llistes a la UI
+            // Se publica snapshot de ambas listas
             setData({
                 all: [...bufferRef.current],
                 jammed: [...jammedBufferRef.current]
@@ -110,6 +109,6 @@ export const useTrafficMonitor = () => {
     seqRef.current = 0;
   }, []);
   
-  // Retornem l'objecte 'packets' però ara conté les dues llistes
+  // Retorno del estado de trafico para la UI
   return { isActive, packets: data.all, jammedPackets: data.jammed, speed, toggleMonitoring, clearPackets };
 };
