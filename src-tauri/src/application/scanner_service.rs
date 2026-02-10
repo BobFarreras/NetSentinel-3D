@@ -1,3 +1,5 @@
+// src-tauri/src/application/scanner_service.rs
+
 use crate::domain::{
     entities::{Device, OpenPort},
     ports::NetworkScannerPort,
@@ -15,35 +17,32 @@ impl ScannerService {
     }
 
     pub async fn run_network_scan(&self, subnet: Option<String>) -> Vec<Device> {
-        // 1. Obtenim l'entrada bruta (Ex: "192.168.1.0/24" o "192.168.1")
+        // 1) Obtenemos la entrada cruda (ej: "192.168.1.0/24" o "192.168.1").
         let raw_target = subnet.unwrap_or("192.168.1".to_string());
 
-        // 2. NETEJA: Traiem la màscara CIDR (/24)
+        // 2) Limpieza: quitamos mascara CIDR (/24).
         let clean_cidr = raw_target.split('/').next().unwrap_or(&raw_target);
 
-        // 3. EXTRACCIÓ: Agafem només els 3 primers octets (192.168.1)
+        // 3) Extraccion: nos quedamos con los 3 primeros octetos (192.168.1).
         let parts: Vec<&str> = clean_cidr.split('.').collect();
         let final_base = if parts.len() >= 3 {
             format!("{}.{}.{}", parts[0], parts[1], parts[2])
         } else {
-            "192.168.1".to_string() // Fallback segur
+            "192.168.1".to_string() // Fallback seguro.
         };
 
-        println!(
-            "🧠 APP: Escanejant Base '{}' (Original: '{}')",
-            final_base, raw_target
-        );
+        println!("🧠 [APP] Escaneando base '{}' (original: '{}')", final_base, raw_target);
 
-        // La màgia del HostnameResolver ja passa automàticament dins de scan_network
+        // El enriquecimiento (MAC/vendor/hostname) ocurre en la infraestructura (`SystemScanner`).
         self.scanner_port.scan_network(&final_base).await
     }
 
     pub async fn audit_ip(&self, ip: String) -> (Vec<OpenPort>, String) {
-        println!("🧠 APP: Analitzant ports de {}", ip);
+        println!("🧠 [APP] Auditando puertos de {}", ip);
 
         let raw_ports = self.scanner_port.scan_ports(&ip).await;
 
-        // Enriquim les dades usant el ServiceDictionary
+        // Enriquecemos los datos usando `ServiceDictionary`.
         let enriched_ports: Vec<OpenPort> = raw_ports
             .into_iter()
             .map(|mut p| {
@@ -60,7 +59,7 @@ impl ScannerService {
             })
             .collect();
 
-        // Calculem el risc global del dispositiu
+        // Calculamos el riesgo global del dispositivo.
         let mut global_risk = "SAFE";
         if !enriched_ports.is_empty() {
             global_risk = "LOW";
