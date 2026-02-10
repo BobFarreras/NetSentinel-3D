@@ -4,9 +4,11 @@ import { NetworkScene } from './ui/components/3d/NetworkScene';
 import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
 import { RadarPanel } from './ui/components/hud/RadarPanel';
+import { ExternalAuditPanel } from './ui/components/hud/ExternalAuditPanel';
 import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
 import { DangerModal } from './ui/components/DangerModal';
+import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
 
 function App() {
   const {
@@ -20,6 +22,9 @@ function App() {
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
+  const [showExternalAudit, setShowExternalAudit] = useState(false);
+  const [externalAuditTarget, setExternalAuditTarget] = useState<DeviceDTO | null>(null);
+  const [externalAuditScenarioId, setExternalAuditScenarioId] = useState<string | null>(null);
 
   // --- ESTADOS DE TAMAÑO (RESIZABLE) ---
   const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
@@ -135,6 +140,15 @@ function App() {
           showHistory={showHistory}
           onRadarToggle={() => setShowRadar(!showRadar)}
           showRadar={showRadar}
+          onExternalAuditToggle={() => {
+            const next = !showExternalAudit;
+            setShowExternalAudit(next);
+            if (next) {
+              setExternalAuditTarget(null);
+              setExternalAuditScenarioId(null);
+            }
+          }}
+          showExternalAudit={showExternalAudit}
           identity={identity}
         />
 
@@ -146,6 +160,30 @@ function App() {
                 onClose={() => setShowHistory(false)}
                 onLoadSession={(oldDevices) => { loadSession(oldDevices); setShowHistory(false); }}
               />
+            </div>
+          )}
+
+          {showExternalAudit && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 20,
+                zIndex: 60,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                pointerEvents: 'none',
+              }}
+            >
+              <div style={{ pointerEvents: 'auto' }}>
+                <ExternalAuditPanel
+                  onClose={() => setShowExternalAudit(false)}
+                  targetDevice={externalAuditTarget}
+                  identity={identity}
+                  defaultScenarioId={externalAuditScenarioId}
+                  autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
+                />
+              </div>
             </div>
           )}
 
@@ -263,6 +301,11 @@ function App() {
               isJammed={jammedDevices.includes(selectedDevice.ip)}
               onToggleJam={() => toggleJammer(selectedDevice.ip)}
               onRouterAudit={checkRouterSecurity}
+              onOpenLabAudit={(d) => {
+                setExternalAuditTarget(d);
+                setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
+                setShowExternalAudit(true);
+              }}
             />
           </div>
         ) : (

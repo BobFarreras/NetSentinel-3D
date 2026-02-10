@@ -128,6 +128,19 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 ### 🔐 Seguridad (DevSecOps)
 - Ejecucion sin shell (args tokenizados) y validaciones defensivas (limites de args/env/timeout) para reducir riesgos operativos.
 
+## [v0.7.1] - External Audit UI: LAB por dispositivo + escenarios (2026-02-10)
+### 🎛️ Frontend
+- Añadido panel `ExternalAuditPanel` con dos modos:
+  - `LAB`: escenarios preconfigurados por dispositivo (externo o simulado).
+  - `CUSTOM`: ejecucion manual (binario + args).
+- Añadido boton `LAB AUDIT` en `DeviceDetailPanel` para abrir auditorias por dispositivo.
+- Añadido boton `EXT AUDIT` en TopBar para abrir el panel en modo manual.
+
+### 🧠 Logica (escenarios)
+- Nuevo catalogo de escenarios en `src/core/logic/externalAuditScenarios.ts`:
+  - presets no intrusivos (recon basico, fingerprint de cabeceras),
+  - simulaciones didacticas (PMKID/IoT) sin ejecucion ofensiva.
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:
