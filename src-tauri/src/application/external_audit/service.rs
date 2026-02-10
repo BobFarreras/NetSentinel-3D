@@ -11,6 +11,7 @@ use tauri::AppHandle;
 use tokio::sync::{oneshot, Mutex};
 
 use super::runner::run_external_tool;
+use super::sink::{ExternalAuditEventSink, TauriExternalAuditSink};
 use super::types::ExternalAuditRequest;
 use super::validation::validate_request;
 
@@ -42,8 +43,9 @@ impl ExternalAuditService {
 
         let running_map = Arc::clone(&self.running);
         let audit_id_for_task = audit_id.clone();
+        let sink: Arc<dyn ExternalAuditEventSink> = Arc::new(TauriExternalAuditSink::new(app.clone()));
         tokio::spawn(async move {
-            run_external_tool(app, audit_id_for_task, request, cancel_rx, running_map).await;
+            run_external_tool(audit_id_for_task, request, cancel_rx, running_map, sink).await;
         });
 
         Ok(audit_id)

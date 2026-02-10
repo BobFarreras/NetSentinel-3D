@@ -4,19 +4,19 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::{oneshot, Mutex};
 
+use super::sink::ExternalAuditEventSink;
 use super::types::{ExternalAuditExitEvent, ExternalAuditLogEvent, ExternalAuditRequest};
 
 pub async fn run_external_tool(
-    app: AppHandle,
     audit_id: String,
     request: ExternalAuditRequest,
     mut cancel_rx: oneshot::Receiver<()>,
     running_map: Arc<Mutex<HashMap<String, super::service::RunningAudit>>>,
+    sink: Arc<dyn ExternalAuditEventSink>,
 ) {
     let started = std::time::Instant::now();
 
@@ -43,37 +43,31 @@ pub async fn run_external_tool(
         let stderr = child.stderr.take();
 
         let log_task_out = stdout.map(|out| {
-            let app = app.clone();
             let audit_id = audit_id.clone();
+            let sink = Arc::clone(&sink);
             tokio::spawn(async move {
                 let mut lines = BufReader::new(out).lines();
                 while let Ok(Some(line)) = lines.next_line().await {
-                    let _ = app.emit(
-                        "external-audit-log",
-                        ExternalAuditLogEvent {
-                            audit_id: audit_id.clone(),
-                            stream: "stdout".to_string(),
-                            line,
-                        },
-                    );
+                    sink.on_log(ExternalAuditLogEvent {
+                        audit_id: audit_id.clone(),
+                        stream: "stdout".to_string(),
+                        line,
+                    });
                 }
             })
         });
 
         let log_task_err = stderr.map(|err| {
-            let app = app.clone();
             let audit_id = audit_id.clone();
+            let sink = Arc::clone(&sink);
             tokio::spawn(async move {
                 let mut lines = BufReader::new(err).lines();
                 while let Ok(Some(line)) = lines.next_line().await {
-                    let _ = app.emit(
-                        "external-audit-log",
-                        ExternalAuditLogEvent {
-                            audit_id: audit_id.clone(),
-                            stream: "stderr".to_string(),
-                            line,
-                        },
-                    );
+                    sink.on_log(ExternalAuditLogEvent {
+                        audit_id: audit_id.clone(),
+                        stream: "stderr".to_string(),
+                        line,
+                    });
                 }
             })
         });
@@ -130,29 +124,22 @@ pub async fn run_external_tool(
         Ok(status) => {
             let success = status.success();
             let exit_code = status.code();
-            let _ = app.emit(
-                "external-audit-exit",
-                ExternalAuditExitEvent {
-                    audit_id,
-                    success,
-                    exit_code,
-                    duration_ms,
-                    error: None,
-                },
-            );
+            sink.on_exit(ExternalAuditExitEvent {
+                audit_id,
+                success,
+                exit_code,
+                duration_ms,
+                error: None,
+            });
         }
         Err(err) => {
-            let _ = app.emit(
-                "external-audit-exit",
-                ExternalAuditExitEvent {
-                    audit_id,
-                    success: false,
-                    exit_code: None,
-                    duration_ms,
-                    error: Some(err),
-                },
-            );
+            sink.on_exit(ExternalAuditExitEvent {
+                audit_id,
+                success: false,
+                exit_code: None,
+                duration_ms,
+                error: Some(err),
+            });
         }
     }
 }
-
