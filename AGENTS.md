@@ -133,7 +133,16 @@ Nota Windows:
 Directo, tecnico, pragmatico y orientado a robustez. Prioriza soluciones mantenibles, verificables y seguras frente a atajos fragiles.
 
 ## Prioridades actuales
-Sin prioridades abiertas en este momento.
+1. Implementar `Radar View` (WiFi Spectrum) como reconocimiento pasivo de infraestructura.
+2. Añadir simulaciones educativas controladas para:
+   - PMKID (client-less) en modo inferencia,
+   - perfilado de riesgo IoT por OUI/vendor,
+   - agrupacion Wi-Fi 7/MLO en supernodos multi-banda.
+3. Integrar hardening del modulo:
+   - modal legal de primer uso,
+   - sanitizacion de SSID/BSSID en render,
+   - trazabilidad local de escaneos.
+4. Asegurar cobertura de tests (unitarios/integracion/E2E) para el nuevo flujo.
 
 Regla:
-- Cuando se definan nuevas prioridades, deben ser concretas, medibles y cerrarse con su correspondiente registro en `docs/CHANGELOG.md`.
+- Las prioridades deben cerrarse con evidencia tecnica (tests/build/check) y registro en `docs/CHANGELOG.md`.

@@ -2,6 +2,32 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
+### 📚 Documentacion estrategica
+- Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:
+  - arquitectura backend/frontend,
+  - fases de entrega,
+  - criterios de aceptacion,
+  - reglas de seguridad.
+
+### 🧭 Priorizacion de producto
+- Actualizadas `Prioridades actuales` en `AGENTS.md` con foco en:
+  - `scan_airwaves` y vista Radar,
+  - simulaciones educativas controladas de PMKID/IoT/MLO (modo inferencia),
+  - hardening legal/sanitizacion/trazabilidad,
+  - cobertura de testing.
+
+### 🔐 Seguridad y alcance
+- Actualizado `docs/SECURITY.md` para dejar explicito:
+  - uso autorizado en laboratorio,
+  - simulaciones didacticas permitidas,
+  - exclusion de automatizaciones ofensivas reales.
+
+### 🏗️ Arquitectura y testing
+- Actualizado `docs/ARCHITECTURE.md` con roadmap de `scan_airwaves`.
+- Actualizado `docs/TESTING.md` con prioridades de pruebas para Radar View.
+- Actualizado `README.md` con seccion de roadmap inmediato y enlace a `docs/RADAR_VIEW.md`.
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

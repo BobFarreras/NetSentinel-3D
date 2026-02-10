@@ -90,6 +90,9 @@ Comandos de sistema/tiempo real:
 - `start_jamming`
 - `stop_jamming`
 
+Roadmap inmediato (documentado):
+- `scan_airwaves` para modulo `Radar View` (WiFi Spectrum), ver `docs/RADAR_VIEW.md`.
+
 Regla de mantenimiento:
 - Cualquier cambio en comandos debe actualizar en el mismo commit:
   - adapters frontend
