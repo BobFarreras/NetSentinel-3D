@@ -17,6 +17,17 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 - `SYSTEM LOGS` pinta eventos `CRITICAL`/`💀` en rojo.
 - `audit_router/fetch_router_devices`: logging de dispositivos conectado tras enriquecimiento ARP para evitar `MAC=00:00:...` en consola cuando ya existe MAC real.
 
+## [v0.7.4] - Documentacion External Audit / LAB Audit (2026-02-10)
+### 📚 Documentacion
+- Añadido `docs/EXTERNAL_AUDIT.md`:
+  - arquitectura end-to-end (UI -> Tauri -> proceso -> eventos),
+  - mapa de archivos,
+  - DTOs y eventos,
+  - limitaciones,
+  - guia paso a paso para añadir escenarios LAB (simulados o externos).
+### 🧭 Onboarding
+- `README.md`: enlace directo a `docs/EXTERNAL_AUDIT.md`.
+
 ## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
 ### 📚 Documentacion estrategica
 - Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:

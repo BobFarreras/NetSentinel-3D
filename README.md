@@ -143,3 +143,9 @@ Se ha definido la arquitectura de `Radar View` para reconocimiento pasivo de esp
   - simulaciones educativas controladas de PMKID/IoT/MLO en modo inferencia.
 - Restriccion:
   - no se incorporan automatizaciones ofensivas reales.
+
+## 🧰 External Audit / LAB Audit
+
+NetSentinel incluye un wrapper para ejecutar herramientas CLI existentes (sin reimplementar su logica) y un catalogo de escenarios didacticos.
+
+- Guia completa: `docs/EXTERNAL_AUDIT.md`
