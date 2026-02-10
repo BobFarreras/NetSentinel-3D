@@ -84,3 +84,16 @@ export interface TrafficPacket {
   info: string;
   isIntercepted: boolean;
 }
+
+// 6. WiFi Radar View (scan_airwaves)
+export interface WifiNetworkDTO {
+  bssid: string;
+  ssid: string;
+  channel?: number;
+  signalLevel: number;
+  securityType: string;
+  vendor: string;
+  distanceMock: number;
+  riskLevel: 'HARDENED' | 'STANDARD' | 'LEGACY' | 'OPEN' | (string & {});
+  isTargetable: boolean;
+}
