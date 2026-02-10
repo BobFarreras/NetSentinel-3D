@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTrafficMonitor } from '../../hooks/modules/useTrafficMonitor';
+import { useRadarLogs } from '../../hooks/modules/useRadarLogs';
 import { TrafficPanel } from './TrafficPanel';
 import { DeviceDTO } from '../../../shared/dtos/NetworkDTOs';
 
@@ -15,9 +16,10 @@ interface ConsoleLogsProps {
 }
 
 export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selectedDevice, onClearSystemLogs }) => {
-    const [activeTab, setActiveTab] = useState<'SYSTEM' | 'TRAFFIC'>('SYSTEM');
+    const [activeTab, setActiveTab] = useState<'SYSTEM' | 'TRAFFIC' | 'RADAR'>('SYSTEM');
     const [isLoading, setIsLoading] = useState(false);
     const traffic = useTrafficMonitor();
+    const radar = useRadarLogs();
 
     const handleToggle = async () => {
         setIsLoading(true);
@@ -27,7 +29,8 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
 
     const handleClear = () => {
         if (activeTab === 'SYSTEM') onClearSystemLogs();
-        else traffic.clearPackets();
+        else if (activeTab === 'TRAFFIC') traffic.clearPackets();
+        else radar.clear();
     };
 
     const formatSpeed = (bytes: number) => {
@@ -52,6 +55,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <TabButton label="SYSTEM LOGS" active={activeTab === 'SYSTEM'} onClick={() => setActiveTab('SYSTEM')} />
                     <TabButton label="LIVE TRAFFIC" active={activeTab === 'TRAFFIC'} onClick={() => setActiveTab('TRAFFIC')} />
+                    <TabButton label="RADAR LOGS" active={activeTab === 'RADAR'} onClick={() => setActiveTab('RADAR')} />
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -85,6 +89,31 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
                             </div>
                         ))}
                     </div>
+                ) : activeTab === 'RADAR' ? (
+                    <div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                        {/* Logs del radar (WiFi Spectrum): resumen y detalle de escaneos */}
+                        {radar.logs.slice(0).reverse().map((log, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    borderBottom: '1px solid #111',
+                                    fontSize: '0.8rem',
+                                    color: log.includes('ERROR') ? '#f55' : '#0f0',
+                                    padding: '2px 0',
+                                    whiteSpace: 'pre-wrap',
+                                    overflowWrap: 'anywhere',
+                                    wordBreak: 'break-word'
+                                }}
+                            >
+                                {log}
+                            </div>
+                        ))}
+                        {radar.logs.length === 0 && (
+                            <div style={{ color: '#008800', fontSize: '0.8rem', padding: '6px 0' }}>
+                                Sin actividad. Abre RADAR VIEW y pulsa SCAN AIRWAVES.
+                            </div>
+                        )}
+                    </div>
                 ) : (
                     <TrafficPanel 
                         isActive={traffic.isActive} 
@@ -103,7 +132,9 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
     );
 };
 
-const TabButton = ({ label, active, onClick }: any) => (
+type TabButtonProps = { label: string; active: boolean; onClick: () => void };
+
+const TabButton: React.FC<TabButtonProps> = ({ label, active, onClick }) => (
     <div onClick={onClick} style={{ 
         padding: '0 10px', cursor: 'pointer', 
         color: active ? '#0f0' : '#004400', 

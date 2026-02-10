@@ -18,6 +18,7 @@ vi.mock("../../../hooks/modules/useWifiRadar", () => ({
         distanceMock: 40,
         riskLevel: "OPEN",
         isTargetable: true,
+        isConnected: false,
       },
       {
         bssid: "BB:BB:BB:BB:BB:02",
@@ -29,6 +30,7 @@ vi.mock("../../../hooks/modules/useWifiRadar", () => ({
         distanceMock: 25,
         riskLevel: "STANDARD",
         isTargetable: false,
+        isConnected: true,
       },
     ],
   }),

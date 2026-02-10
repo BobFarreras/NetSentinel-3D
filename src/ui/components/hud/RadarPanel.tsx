@@ -44,6 +44,7 @@ type BandFilter = "ALL" | "2.4" | "5" | "UNK";
 export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   const { scanning, networks, error, lastScanAt, scan } = useWifiRadar();
   const [selected, setSelected] = useState<WifiNetworkDTO | null>(null);
+  const [showIntelHelp, setShowIntelHelp] = useState(false);
   const [accepted, setAccepted] = useState<boolean>(() => {
     return localStorage.getItem("netsentinel.radar.legalAccepted") === "true";
   });
@@ -329,12 +330,13 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
             {nodes.map((n) => {
               const style = riskStyle(n.riskLevel);
               const isSelected = selected?.bssid === n.bssid;
+              const isConnected = Boolean(n.isConnected);
               return (
                 <button
                   key={n.bssid}
                   onClick={() => setSelected(n)}
                   aria-label={`NODE ${n.ssid} CH ${n.channel ?? "?"}`}
-                  title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}`}
+                  title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}${isConnected ? " / CONNECTED" : ""}`}
                   style={{
                     position: "absolute",
                     left: `calc(50% + ${n.x * 45}%)`,
@@ -343,9 +345,21 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
                     height: isSelected ? 10 : 8,
                     transform: "translate(-50%,-50%)",
                     borderRadius: "50%",
-                    border: `1px solid ${isSelected ? "#ffffff" : "rgba(255,255,255,0.25)"}`,
+                    border: `1px solid ${
+                      isSelected
+                        ? "#ffffff"
+                        : isConnected
+                        ? "rgba(0,229,255,0.85)"
+                        : "rgba(255,255,255,0.25)"
+                    }`,
                     background: style.dot,
-                    boxShadow: `0 0 ${isSelected ? 24 : 14}px ${style.glow}`,
+                    boxShadow: [
+                      isConnected ? "0 0 0 2px rgba(0,229,255,0.55)" : "",
+                      isConnected ? "0 0 18px rgba(0,229,255,0.25)" : "",
+                      `0 0 ${isSelected ? 24 : 14}px ${style.glow}`,
+                    ]
+                      .filter(Boolean)
+                      .join(", "),
                     cursor: "pointer",
                     padding: 0,
                   }}
@@ -407,9 +421,57 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
             color: "#b7ffe2",
           }}
         >
-          <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1, marginBottom: 10 }}>
-            NODE INTEL
+          <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>NODE INTEL</span>
+            <button
+              onClick={() => setShowIntelHelp((v) => !v)}
+              aria-label="NODE_INTEL_HELP"
+              title="Que significa NODE INTEL"
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(0,255,136,0.25)",
+                color: "rgba(183,255,226,0.85)",
+                cursor: "pointer",
+                fontSize: 11,
+                padding: "2px 8px",
+              }}
+            >
+              ?
+            </button>
           </div>
+
+          {showIntelHelp && (
+            <div
+              style={{
+                marginBottom: 10,
+                padding: 10,
+                border: "1px solid rgba(0,255,136,0.18)",
+                background: "rgba(0,0,0,0.35)",
+                color: "rgba(183,255,226,0.85)",
+                fontSize: 11,
+                lineHeight: 1.45,
+              }}
+            >
+              <div style={{ color: "#00ff88", fontWeight: 900, marginBottom: 6 }}>
+                Guia rapida
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <b>Riesgo</b>: filtra por seguridad inferida (<b>OPEN/LEGACY</b> suele ser debil; <b>HARDENED</b> suele ser robusto).
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <b>Bandas</b>: se infieren por canal (<b>2.4GHz</b> 1..14, <b>5GHz</b> 32..177). <b>UNKGHz</b> indica que Windows/driver no expuso canal.
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <b>CH</b>: canal WiFi. Sirve para detectar solapamiento y congestion.
+              </div>
+              <div style={{ marginBottom: 6 }}>
+                <b>SEARCH</b>: filtra por SSID, vendor (OUI) o BSSID.
+              </div>
+              <div>
+                <b>AUTO</b>: reescaneo periodico para observar cambios de señal/RSSI sin tener que pulsar manualmente.
+              </div>
+            </div>
+          )}
 
           {/* Filtros */}
           <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
@@ -527,6 +589,12 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
                 {selected.ssid}{" "}
                 <span style={{ color: "rgba(183,255,226,0.6)", fontWeight: 600 }}>
                   [CH {selected.channel ?? "?"}]
+                </span>
+              </div>
+              <div>
+                Link:{" "}
+                <span style={{ color: selected.isConnected ? "#00e5ff" : "rgba(183,255,226,0.75)", fontWeight: 800 }}>
+                  {selected.isConnected ? "CONNECTED (TU ROUTER)" : "NEARBY"}
                 </span>
               </div>
               <div>

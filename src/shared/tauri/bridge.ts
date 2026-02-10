@@ -39,6 +39,7 @@ const mockAirwaves: WifiNetworkDTO[] = [
     distanceMock: 28,
     riskLevel: 'STANDARD',
     isTargetable: false,
+    isConnected: true,
   },
   {
     bssid: 'AA:BB:CC:DD:EE:01',
@@ -50,6 +51,7 @@ const mockAirwaves: WifiNetworkDTO[] = [
     distanceMock: 42,
     riskLevel: 'OPEN',
     isTargetable: true,
+    isConnected: false,
   },
   {
     bssid: '04:D9:F5:11:22:33',
@@ -61,6 +63,7 @@ const mockAirwaves: WifiNetworkDTO[] = [
     distanceMock: 35,
     riskLevel: 'HARDENED',
     isTargetable: false,
+    isConnected: false,
   },
 ];
 

@@ -93,6 +93,27 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
   - seccion de troubleshooting en Windows (cache de escaneo, permisos, limitaciones de driver).
   - glosario/guia de `NODE INTEL` (CH, bandas, riesgo, auto, busqueda).
 
+## [v0.6.9] - Radar View: RADAR LOGS + AP conectado resaltado + ayuda in-app (2026-02-10)
+### 🎛️ Frontend
+- `src/ui/components/panels/ConsoleLogs.tsx`:
+  - nueva pestaña `RADAR LOGS` para trazabilidad local de escaneos WiFi.
+- `src/ui/hooks/modules/useWifiRadar.ts`:
+  - registra resumen y detalle de cada escaneo en `RADAR LOGS` (SSID/BSSID/vendor/seguridad/canal/RSSI/riesgo).
+- `src/ui/components/hud/RadarPanel.tsx`:
+  - el AP conectado se resalta con anillo cian y etiqueta `CONNECTED (TU ROUTER)`.
+  - boton `?` para explicar `NODE INTEL` (riesgo/banda/canal/busqueda/auto) directamente en la UI.
+
+### 🦀 Backend (Contratos)
+- `src-tauri/src/domain/entities.rs`, `src-tauri/src/api/dtos.rs`:
+  - añadido `isConnected` en WiFi Radar para identificar el AP conectado cuando el SO lo expone.
+- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
+  - marca `is_connected` a partir de `netsh wlan show interfaces` en Windows.
+
+### 🧪 Tests
+- Añadidos tests:
+  - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
+  - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

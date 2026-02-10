@@ -14,6 +14,7 @@ vi.mock("../../../../adapters/wifiAdapter", () => ({
         distanceMock: 20,
         riskLevel: "STANDARD",
         isTargetable: false,
+        isConnected: false,
       },
     ]),
   },
@@ -56,4 +57,3 @@ describe("useWifiRadar", () => {
     });
   });
 });
-

@@ -96,4 +96,5 @@ export interface WifiNetworkDTO {
   distanceMock: number;
   riskLevel: 'HARDENED' | 'STANDARD' | 'LEGACY' | 'OPEN' | (string & {});
   isTargetable: boolean;
+  isConnected: boolean;
 }

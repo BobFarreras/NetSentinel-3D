@@ -12,6 +12,7 @@ vi.mock("../../shared/tauri/bridge", () => ({
       distanceMock: 35,
       riskLevel: "OPEN",
       isTargetable: true,
+      isConnected: false,
     },
   ]),
 }));
@@ -28,4 +29,3 @@ describe("wifiAdapter", () => {
     expect(res[0].bssid).toBe("AA:BB:CC:DD:EE:FF");
   });
 });
-

@@ -50,6 +50,7 @@ impl WifiScannerPort for SystemWifiScanner {
                     channel,
                     signal_level,
                     security_type: net.security,
+                    is_connected: false,
                 }
             })
             .collect();
@@ -102,6 +103,7 @@ async fn scan_via_netsh() -> Result<Vec<WifiScanRecord>, String> {
                     channel: iface.channel,
                     signal_level: iface.rssi.unwrap_or(-100),
                     security_type: "OPEN".to_string(),
+                    is_connected: true,
                 });
             } else {
                 for r in records.iter_mut() {
@@ -118,6 +120,7 @@ async fn scan_via_netsh() -> Result<Vec<WifiScanRecord>, String> {
                         if r.bssid == stable_pseudo_bssid(&r.ssid, &r.security_type) {
                             r.bssid = iface.ap_bssid.clone();
                         }
+                        r.is_connected = r.bssid == iface.ap_bssid;
                     }
                 }
             }
@@ -155,6 +158,7 @@ fn parse_netsh_networks(text: &str) -> Vec<WifiScanRecord> {
                     channel: None,
                     signal_level: -100,
                     security_type: current_auth.clone(),
+                    is_connected: false,
                 });
             }
 
@@ -179,6 +183,7 @@ fn parse_netsh_networks(text: &str) -> Vec<WifiScanRecord> {
                 channel: None,
                 signal_level: -100,
                 security_type: current_auth.clone(),
+                is_connected: false,
             });
             last_record_idx = Some(records.len().saturating_sub(1));
             current_ssid_has_bssid = true;
@@ -217,6 +222,7 @@ fn parse_netsh_networks(text: &str) -> Vec<WifiScanRecord> {
             channel: None,
             signal_level: -100,
             security_type: current_auth,
+            is_connected: false,
         });
     }
 
@@ -443,6 +449,7 @@ SSID 1 : MIWIFI_UHeX
         assert_eq!(parsed[0].signal_level, -100);
         assert_eq!(parsed[0].channel, None);
         assert_eq!(parsed[0].bssid.len(), "00:00:00:00:00:00".len());
+        assert!(!parsed[0].is_connected);
     }
 
     #[test]

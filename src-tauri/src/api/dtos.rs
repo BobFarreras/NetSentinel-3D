@@ -75,6 +75,7 @@ pub struct WifiNetworkDTO {
     pub distance_mock: f32,
     pub risk_level: String,
     pub is_targetable: bool,
+    pub is_connected: bool,
 }
 
 impl From<WifiEntity> for WifiNetworkDTO {
@@ -89,6 +90,7 @@ impl From<WifiEntity> for WifiNetworkDTO {
             distance_mock: w.distance_mock,
             risk_level: w.risk_level,
             is_targetable: w.is_targetable,
+            is_connected: w.is_connected,
         }
     }
 }

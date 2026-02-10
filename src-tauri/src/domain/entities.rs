@@ -96,6 +96,9 @@ pub struct WifiScanRecord {
     pub signal_level: i32,
     // Cadena de seguridad reportada por el sistema (WPA2/WPA3/WEP/OPEN/etc.).
     pub security_type: String,
+    // Marca si el registro corresponde al AP al que el host esta conectado actualmente.
+    // Solo puede inferirse en plataformas donde el sistema expone el enlace activo (ej: Windows via netsh).
+    pub is_connected: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -110,4 +113,5 @@ pub struct WifiEntity {
     pub distance_mock: f32,
     pub risk_level: String,     // HARDENED | STANDARD | LEGACY | OPEN
     pub is_targetable: bool,    // true si la configuracion es debil (legacy/open) en modo educativo
+    pub is_connected: bool,     // true si es el AP actual del host
 }

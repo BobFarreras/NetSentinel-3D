@@ -39,6 +39,7 @@ impl WifiService {
             distance_mock,
             risk_level,
             is_targetable,
+            is_connected: record.is_connected,
         }
     }
 }
@@ -142,6 +143,7 @@ mod tests {
             channel: Some(6),
             signal_level: -55,
             security_type: "open".to_string(),
+            is_connected: false,
         };
 
         let entity = WifiService::normalize_record(record);
@@ -152,4 +154,3 @@ mod tests {
         assert!(!entity.vendor.is_empty());
     }
 }
-
