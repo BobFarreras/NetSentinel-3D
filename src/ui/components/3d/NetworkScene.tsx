@@ -4,6 +4,8 @@ import { OrbitControls, Stars } from '@react-three/drei';
 import { NetworkNode } from './NetworkNode';
 import { DeviceDTO, HostIdentity } from '../../../shared/dtos/NetworkDTOs';
 import * as THREE from 'three';
+import { classifyDeviceIntel, applyDeviceIntel } from '../../../core/logic/deviceIntel';
+import { NodeLabel } from './NodeLabel';
 
 interface NetworkSceneProps {
   devices?: DeviceDTO[];
@@ -67,17 +69,24 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   identity = null,
 }) => {
   
+  const enrichedDevices = useMemo(() => {
+    return devices.map((d) => {
+      const intel = classifyDeviceIntel(d, { gatewayIp: identity?.gatewayIp, hostIp: identity?.ip || null });
+      return applyDeviceIntel(d, intel);
+    });
+  }, [devices, identity?.gatewayIp, identity?.ip]);
+
   const { centerNode, orbitingNodes } = useMemo(() => {
-    const gateway = devices.find(d =>
+    const gateway = enrichedDevices.find(d =>
       Boolean(d.isGateway) ||
       (identity?.gatewayIp ? d.ip === identity.gatewayIp : d.ip.endsWith('.1'))
     );
-    const others = devices.filter(d =>
+    const others = enrichedDevices.filter(d =>
       !Boolean(d.isGateway) &&
       (identity?.gatewayIp ? d.ip !== identity.gatewayIp : !d.ip.endsWith('.1'))
     );
     return { centerNode: gateway, orbitingNodes: others };
-  }, [devices, identity?.gatewayIp]);
+  }, [enrichedDevices, identity?.gatewayIp]);
 
   return (
     <div style={{ width: '100%', height: '100%', background: '#000000' }}>
@@ -129,6 +138,11 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           else if (isIntruder) nodeColor = "#ff0000";
           else if (hasWifiData) nodeColor = "#ff00ff";
 
+          const labelTitle = device.name || device.hostname || device.ip;
+          const labelSubtitle = `${device.ip} | ${device.vendor || 'Desconocido'}`;
+          const labelType = device.deviceType || 'UNKNOWN';
+          const labelConfidence = device.deviceTypeConfidence ?? 40;
+
           return (
             <group position={[x, 0, z]} key={device.ip}>
               <NetworkNode 
@@ -136,6 +150,13 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
                 color={nodeColor} 
                 name={device.ip}
                 onClick={() => onDeviceSelect && onDeviceSelect(device)}
+                isSelected={selectedIp === device.ip}
+              />
+              <NodeLabel
+                title={labelTitle}
+                subtitle={labelSubtitle}
+                type={labelType}
+                confidence={labelConfidence}
                 isSelected={selectedIp === device.ip}
               />
               {isIntruder && <AlarmRing />}
