@@ -112,6 +112,14 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
               onClick={() => onDeviceSelect && onDeviceSelect(centerNode)}
               isSelected={selectedIp === centerNode.ip}
             />
+            <NodeLabel
+              title={centerNode.name || centerNode.hostname || "GATEWAY"}
+              subtitle={`${centerNode.ip} | ${centerNode.vendor || "Router"}`}
+              meta={`MAC: ${centerNode.mac || "?"} | IF: ${identity?.interfaceName || "?"}`}
+              type={"ROUTER"}
+              confidence={centerNode.deviceTypeConfidence ?? 92}
+              isSelected={selectedIp === centerNode.ip}
+            />
             <mesh rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[1.5, 1.6, 64]} />
               <meshBasicMaterial color="#004488" transparent opacity={0.3} />
@@ -155,6 +163,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
               <NodeLabel
                 title={labelTitle}
                 subtitle={labelSubtitle}
+                meta={`MAC: ${device.mac}`}
                 type={labelType}
                 confidence={labelConfidence}
                 isSelected={selectedIp === device.ip}

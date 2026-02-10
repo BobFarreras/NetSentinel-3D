@@ -81,10 +81,11 @@ const Icon: React.FC<{ type: DeviceType; color: string }> = ({ type, color }) =>
 export const NodeLabel: React.FC<{
   title: string;
   subtitle: string;
+  meta?: string;
   type: DeviceType;
   confidence: number;
   isSelected?: boolean;
-}> = ({ title, subtitle, type, confidence, isSelected = false }) => {
+}> = ({ title, subtitle, meta, type, confidence, isSelected = false }) => {
   const palette = COLORS[type] || COLORS.UNKNOWN;
 
   const confText = useMemo(() => {
@@ -100,21 +101,40 @@ export const NodeLabel: React.FC<{
       style={{ pointerEvents: "none" }}
       transform
     >
+      <style>{`
+        @keyframes nsLabelGlow {
+          0% { box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 0 18px ${palette.glow}; }
+          50% { box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 0 28px ${palette.glow}; }
+          100% { box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 0 18px ${palette.glow}; }
+        }
+        @keyframes nsLabelScan {
+          0% { transform: translateY(0); opacity: 0.10; }
+          50% { transform: translateY(10px); opacity: 0.22; }
+          100% { transform: translateY(0); opacity: 0.10; }
+        }
+        @keyframes nsSelectedPulse {
+          0% { transform: translateY(-10px) scale(1.10); }
+          50% { transform: translateY(-10px) scale(1.18); }
+          100% { transform: translateY(-10px) scale(1.10); }
+        }
+      `}</style>
       <div
         style={{
-          minWidth: 160,
-          maxWidth: 220,
-          padding: "6px 8px",
-          background: "linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))",
+          minWidth: 190,
+          maxWidth: 260,
+          padding: "9px 10px",
+          background: "linear-gradient(180deg, rgba(0,0,0,0.88), rgba(0,0,0,0.55))",
           border: `1px solid ${palette.border}`,
           boxShadow: `0 0 0 1px rgba(0,0,0,0.55), 0 0 18px ${palette.glow}`,
           fontFamily: "'Consolas','Courier New',monospace",
-          letterSpacing: 0.3,
+          letterSpacing: 0.35,
           color: palette.fg,
-          opacity: isSelected ? 1 : 0.88,
-          transform: "translateY(-6px)",
+          opacity: isSelected ? 1 : 0.90,
+          transform: isSelected ? "translateY(-10px) scale(1.10)" : "translateY(-8px) scale(1.02)",
           position: "relative",
-          filter: isSelected ? "drop-shadow(0 0 10px rgba(255,215,0,0.35))" : "none",
+          filter: isSelected ? "drop-shadow(0 0 14px rgba(255,215,0,0.32))" : "none",
+          animation: isSelected ? "nsSelectedPulse 1.2s ease-in-out infinite" : "nsLabelGlow 2.2s ease-in-out infinite",
+          backdropFilter: "blur(6px)",
         }}
       >
         {/* scanlines */}
@@ -130,25 +150,45 @@ export const NodeLabel: React.FC<{
           }}
         />
 
+        {/* barra de escaneo (animada) */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 10,
+            background: `linear-gradient(90deg, transparent, ${palette.glow}, transparent)`,
+            mixBlendMode: "screen",
+            pointerEvents: "none",
+            animation: "nsLabelScan 1.8s ease-in-out infinite",
+          }}
+        />
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
             <div style={{ width: 16, height: 16, display: "grid", placeItems: "center" }}>
               <Icon type={type} color={palette.fg} />
             </div>
-            <div style={{ fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ fontWeight: 950, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {title}
             </div>
           </div>
-          <div style={{ fontSize: 10, opacity: 0.9, border: `1px solid ${palette.border}`, padding: "1px 6px" }}>
+          <div style={{ fontSize: 11, opacity: 0.92, border: `1px solid ${palette.border}`, padding: "2px 7px" }}>
             {confText}
           </div>
         </div>
 
-        <div style={{ marginTop: 3, fontSize: 11, opacity: 0.9, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.92, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {subtitle}
         </div>
+
+        {meta && (
+          <div style={{ marginTop: 4, fontSize: 11, opacity: 0.75, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {meta}
+          </div>
+        )}
       </div>
     </Html>
   );
 };
-
