@@ -1,5 +1,7 @@
+// src-tauri/src/infrastructure/network/ping_executor.rs
+
 use std::process::Command;
-// 👇 AFEGEIX AQUEST IMPORT
+// Import requerido en Windows para ocultar ventana.
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 

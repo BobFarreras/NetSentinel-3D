@@ -1,3 +1,5 @@
+// src-tauri/src/infrastructure/network/arp_client.rs
+
 use std::collections::HashMap;
 use std::process::Command;
 
@@ -22,7 +24,7 @@ impl ArpClient {
         if let Ok(result) = cmd.output() {
             let stdout = String::from_utf8_lossy(&result.stdout);
             for line in stdout.lines() {
-                // Lògica de parsing aïllada aquí
+                // Logica de parsing aislada aqui.
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 2 {
                     let ip = parts[0];

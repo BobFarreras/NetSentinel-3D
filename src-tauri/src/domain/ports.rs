@@ -2,13 +2,13 @@
 use async_trait::async_trait;
 use crate::domain::entities::{Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials}; 
 
-// PORT 1: ESCÀNER DE XARXA
+// PORT 1: ESCANER DE RED
 #[async_trait]
 pub trait NetworkScannerPort: Send + Sync {
-    // Escaneja un rang i retorna dispositius
+    // Escanea un rango y retorna dispositivos.
     async fn scan_network(&self, subnet: &str) -> Vec<Device>;
 
-    // 👇 Aquest és el mètode que faltava, integrat en la mateixa definició
+    // Metodo integrado en el mismo puerto para evitar duplicar adaptadores.
     async fn scan_ports(&self, ip: &str) -> Vec<OpenPort>;
 }
 
@@ -19,7 +19,7 @@ pub trait RouterAuditorPort: Send + Sync {
     async fn fetch_connected_devices(&self, ip: &str, creds: &str) -> Vec<Device>;
 }
 
-// PORT 3: REPOSITORI D'HISTORIAL
+// PORT 3: REPOSITORIO DE HISTORIAL
 #[async_trait]
 pub trait HistoryRepositoryPort: Send + Sync {
     async fn save_session(&self, session: ScanSession) -> Result<(), String>;
@@ -45,4 +45,10 @@ pub trait CredentialStorePort: Send + Sync {
 #[async_trait]
 pub trait WifiScannerPort: Send + Sync {
     async fn scan_airwaves(&self) -> Result<Vec<crate::domain::entities::WifiScanRecord>, String>;
+}
+
+// PORT 5: RESOLUCION DE VENDOR (OUI)
+// Se usa tanto para dispositivos (MAC) como para BSSID (WiFi).
+pub trait VendorLookupPort: Send + Sync {
+    fn resolve_vendor(&self, mac_or_bssid: &str) -> String;
 }

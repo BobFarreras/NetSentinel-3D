@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use crate::domain::entities::{Device, RouterAuditResult, WifiEntity};
 
-// 1. DISPOSITIU DTO (Aquest SÍ que volem camelCase per React)
+// 1) DISPOSITIVO DTO (queremos `camelCase` para React).
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DeviceDTO {
@@ -112,3 +112,4 @@ pub struct ExternalAuditRequestDTO {
     pub timeout_ms: Option<u64>,
     pub env: Option<Vec<ExternalAuditEnvVarDTO>>,
 }
+// src-tauri/src/api/dtos.rs

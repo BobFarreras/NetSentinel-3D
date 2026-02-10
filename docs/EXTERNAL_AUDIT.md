@@ -1,3 +1,5 @@
+<!-- docs/EXTERNAL_AUDIT.md -->
+
 # External Audit y LAB Audit (Guia Completa)
 
 Esta guia documenta el modulo **EXTERNAL AUDIT** y su modo **LAB AUDIT** en NetSentinel 3D.
@@ -50,16 +52,22 @@ Flujo `LAB(simulated)`:
 ## 3) Mapa de archivos (fuente de verdad)
 
 ### Backend (Rust, Tauri)
-- Servicio:
+- Servicio (fuente de verdad):
+  - `src-tauri/src/application/external_audit/`
+    - `service.rs`: API del caso de uso (`start_audit`, `cancel_audit`), genera `audit_id`.
+    - `runner.rs`: ejecuta el proceso con `tokio::process::Command` y hace streaming stdout/stderr.
+    - `sink.rs`: salida de eventos (Tauri sink) + sink de memoria (solo tests).
+    - `validation.rs`: validaciones defensivas del request.
+    - `types.rs`: modelos (`ExternalAuditRequest`, eventos, etc.).
+    - `tests.rs`: tests reales (sin mocks) para stdout/stderr + timeout + cancel.
   - `src-tauri/src/application/external_audit_service.rs`
-    - valida request,
-    - crea `audit_id`,
-    - ejecuta proceso (async) y emite eventos,
-    - soporta cancelacion y timeout.
+    - **shim de compatibilidad** (re-export) para no romper imports legacy.
 - Comandos Tauri:
   - `src-tauri/src/api/commands.rs`
     - `start_external_audit`
     - `cancel_external_audit`
+  - Implementacion interna:
+    - `src-tauri/src/api/commands/external_audit.rs`
 - DTOs (contrato Rust):
   - `src-tauri/src/api/dtos.rs`
 
@@ -103,13 +111,13 @@ El hook `useExternalAudit` filtra por `auditId` para que no se mezclen auditoria
 ## 5) Seguridad y decisiones DevSecOps (por que esta hecho asi)
 
 ### 5.1 No usar shell
-En `src-tauri/src/application/external_audit_service.rs` se usa:
+En `src-tauri/src/application/external_audit/runner.rs` se usa:
 - `Command::new(binary_path)` + `cmd.args(args)`
 
 No usamos `cmd /c ...` ni `sh -c ...` por defecto para evitar injection por concatenacion.
 
 ### 5.2 Validaciones defensivas
-El backend valida (resumen):
+El backend valida (ver `src-tauri/src/application/external_audit/validation.rs`):
 - `binary_path` no vacio, sin byte nulo,
 - limites de args (cantidad y longitud),
 - limites de env,
@@ -117,6 +125,10 @@ El backend valida (resumen):
 
 ### 5.3 Cancelacion
 `cancel_external_audit` envia una senal interna; el runner hace `child.kill()` y espera el `wait()`.
+
+Semantica actual:
+- Cancelado: `success=false` y `error` contiene `"cancelado por el usuario"`.
+- Timeout: `success=false` y `error` contiene `"timeout"`.
 
 ### 5.4 Streaming en tiempo real
 Se leen pipes con `BufReader(lines())` y se emiten eventos por linea.
@@ -218,4 +230,3 @@ El cancel es cooperativo:
 Porque la docencia no depende de ejecutar herramientas reales siempre:
 - se puede ensenar el flujo, señales y mitigaciones,
 - y reservar ejecuciones reales para un laboratorio controlado y autorizado.
-

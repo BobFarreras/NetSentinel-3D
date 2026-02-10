@@ -12,7 +12,7 @@ impl HistoryService {
     }
 
     pub async fn save_session(&self, devices: Vec<crate::domain::entities::Device>) -> Result<String, String> {
-        // Lògica de negoci: Crear l'objecte sessió
+        // Logica de negocio: crear el objeto sesion.
         let start = SystemTime::now();
         let timestamp = start.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
         let id = format!("session_{}", timestamp);
@@ -111,3 +111,4 @@ mod tests {
         assert!(history.is_empty());
     }
 }
+// src-tauri/src/application/history_service.rs

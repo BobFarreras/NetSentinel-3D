@@ -1,3 +1,5 @@
+<!-- docs/ARCHITECTURE.md -->
+
 # Arquitectura Tecnica de NetSentinel 3D
 
 ## 1. Vision General
@@ -32,7 +34,7 @@ Principio base:
 Ubicacion: `src-tauri/src/domain`
 - `entities.rs`: modelos de dominio (`Device`, `OpenPort`, `ScanSession`, etc.).
 - `ports.rs`: contratos de abstraccion para infraestructura.
-- `network_math.rs`: utilidades de calculo de red.
+- Nota: el dominio debe mantenerse lo mas "puro" posible (sin I/O ni dependencias de Tauri).
 
 ### 3.2 Application
 Ubicacion: `src-tauri/src/application`
@@ -41,19 +43,26 @@ Ubicacion: `src-tauri/src/application`
 - `history_service.rs`: guardado y lectura de sesiones.
 - `traffic_service.rs`: control del monitor de trafico.
 - `jammer_service.rs`: contramedidas activas.
+- `wifi_service.rs`: orquestacion de Radar View (WiFi) + normalizacion.
+  - normalizacion pura en `wifi_normalizer.rs`.
+- `external_audit/*`: wrapper de ejecucion de herramientas externas (stdout/stderr en tiempo real).
 
 ### 3.3 Infrastructure
 Ubicacion: `src-tauri/src/infrastructure`
-- `system_scanner.rs`: escaneo de red del sistema.
-- `chrome_auditor.rs`: automatizacion para auditoria de gateway.
+- `system_scanner.rs`: adaptador del puerto `NetworkScannerPort` (orquesta submodulos en `system_scanner/*`).
+- `router_audit/*`: automatizacion de auditoria de gateway (Chrome) + parsing con fixtures.
 - `fs_repository.rs`: persistencia en disco.
 - `network/*`: sniffing, ARP, puertos, vendor/hostname resolver, etc.
-- `repositories/local_intelligence.rs`: identidad local del host.
+  - `network/vendor_resolver*`: resolucion de fabricante por OUI (seed embebido + override en AppData).
+- `wifi/*`: escaneo WiFi por SO (Windows `netsh`, fallback `wifiscanner`) + fixtures.
+- `repositories/local_intelligence*`: identidad local del host (PowerShell + parsing con fixtures y cache corto).
 
 ### 3.4 API (Tauri commands)
 Ubicacion: `src-tauri/src/api` y `src-tauri/src/lib.rs`
-- `api/commands.rs`: comandos async de scanner, auditoria e historial.
-- `lib.rs`: wiring de dependencias y comandos adicionales de sistema.
+- `api/commands.rs`: fachada de comandos (`#[tauri::command]`) y delegacion a `api/commands/*` por dominio.
+  - Importante: los atributos `#[tauri::command]` viven en `api/commands.rs` para que `generate_handler!` encuentre los `__cmd__*`.
+- `api/state.rs`: estados gestionados por Tauri (`TrafficState`, `JammerState`).
+- `lib.rs`: wiring de dependencias (infra -> application) y registro de comandos en `invoke_handler`.
 
 ## 4. Flujo Frontend <-> Backend
 Flujo tipico de comando:
@@ -82,6 +91,11 @@ Comandos de red y auditoria:
 Comandos de historial:
 - `save_scan`
 - `get_history`
+- `save_latest_snapshot`
+- `load_latest_snapshot`
+- `save_gateway_credentials`
+- `get_gateway_credentials`
+- `delete_gateway_credentials`
 
 Comandos de sistema/tiempo real:
 - `get_identity`
@@ -90,8 +104,12 @@ Comandos de sistema/tiempo real:
 - `start_jamming`
 - `stop_jamming`
 
-Roadmap inmediato (documentado):
-- `scan_airwaves` para modulo `Radar View` (WiFi Spectrum), ver `docs/RADAR_VIEW.md`.
+Comandos de WiFi (Radar View):
+- `scan_airwaves` (ver `docs/RADAR_VIEW.md`).
+
+Comandos de auditoria externa (wrapper CLI):
+- `start_external_audit`
+- `cancel_external_audit`
 
 Regla de mantenimiento:
 - Cualquier cambio en comandos debe actualizar en el mismo commit:
@@ -115,6 +133,7 @@ Regla:
   - `npm run build`
 - Backend:
   - `cargo check` en `src-tauri`
+  - `cargo test` en `src-tauri` (si el entorno de linking lo permite)
 
 ### 7.2 Limitacion actual en Windows
 - `cargo test` puede fallar por linking de `Packet.lib` (dependencia nativa de captura/red).
@@ -122,7 +141,7 @@ Regla:
 
 ### 7.3 Deuda tecnica visible
 - Hay zonas con naming mixto y discrepancias puntuales entre DTOs Rust/TS.
-- Existen warnings en backend que conviene limpiar para mejorar mantenibilidad.
+- Existen warnings puntuales que conviene limpiar para mejorar mantenibilidad.
 
 ## 8. Principios de Evolucion
 - Mantener frontend delgado y backend fuerte.

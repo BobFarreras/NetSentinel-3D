@@ -1,4 +1,13 @@
 {
+  "B06EBF": "Apple",
+  "D8305F": "Apple",
+  "ACBC32": "Apple",
+  "A4D18C": "Apple",
+  "28CFE9": "Apple",
+  "0017F2": "Apple",
+  "001C4D": "Apple",
+  "002332": "Apple",
+
   "0C47C9": "Amazon",
   "34D270": "Amazon",
   "38F73D": "Amazon",
@@ -21,6 +30,9 @@
   "B827EB": "Raspberry Pi",
   "28CDC1": "Raspberry Pi",
   "E45F01": "Raspberry Pi",
+
+  "8086F2": "Intel",
+  "F4CE46": "Intel",
 
   "B04E26": "TP-Link",
   "D807B6": "TP-Link",
@@ -46,4 +58,3 @@
   "00E04C": "Realtek",
   "E4F042": "Realtek"
 }
-

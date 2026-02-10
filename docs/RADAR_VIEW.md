@@ -1,3 +1,5 @@
+<!-- docs/RADAR_VIEW.md -->
+
 # Radar View (WiFi Spectrum) - Guia de Implementacion
 
 ## 1. Objetivo
@@ -18,7 +20,8 @@ Fuera de alcance:
 
 ## 3. Arquitectura propuesta
 ### 3.1 Backend Rust
-- Nuevo servicio: `src-tauri/src/application/wifi_service.rs`
+- Servicio: `src-tauri/src/application/wifi_service.rs`
+- Normalizacion pura: `src-tauri/src/application/wifi_normalizer.rs`
 - Nuevo comando Tauri: `scan_airwaves`
 - DTO Rust: `WifiNetworkDTO` en `src-tauri/src/api/dtos.rs`
 - Normalizacion de datos:
@@ -26,6 +29,11 @@ Fuera de alcance:
   - `distance_mock` (derivada de RSSI),
   - `risk_level` (`HARDENED`, `STANDARD`, `LEGACY`, `OPEN`),
   - `inference_flags` (heuristicas defensivas).
+
+Resolucion vendor:
+- Backend usa resolucion por OUI para BSSID:
+  - puerto `VendorLookupPort` (dominio),
+  - adaptador `SystemVendorLookup` (infra) que delega en `VendorResolver`.
 
 ### 3.2 Frontend React
 - Adapter: `src/adapters/wifiAdapter.ts`
@@ -147,6 +155,10 @@ Solucion implementada:
   - `AP BSSID`,
   - `Canal`,
   - `Rssi` real.
+
+Detalles de implementacion:
+- Fuente Windows: `src-tauri/src/infrastructure/wifi/windows_netsh/*` (parser + trigger best-effort).
+- Orquestador: `src-tauri/src/infrastructure/wifi/windows_netsh.rs` y `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`.
 
 ### 9.3 "Al entrar en Configuracion > Red e Internet ahora salen todas"
 Es posible que al abrir el panel de redes de Windows se fuerce un nuevo escaneo o se refresque el cache de redes visibles.

@@ -1,3 +1,5 @@
+<!-- docs/SECURITY.md -->
+
 # Politica de Seguridad de NetSentinel 3D
 
 ## 1. Alcance y Objetivo
@@ -80,6 +82,17 @@ Impacto:
 Siguiente mejora recomendada:
 - Eliminar gradualmente `'unsafe-inline'` en `style-src` migrando estilos inline a hojas CSS controladas.
 
+## 3.3 External Audit (wrapper CLI)
+El modulo `External Audit` esta disenado como **orquestador** (wrapper) para herramientas externas ya instaladas:
+- no reimplementa herramientas,
+- no usa shell por defecto,
+- hace streaming de stdout/stderr a UI,
+- soporta cancelacion y timeout.
+
+Fuente de verdad:
+- `src-tauri/src/application/external_audit/*`
+- `docs/EXTERNAL_AUDIT.md`
+
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)
 Riesgos:
@@ -99,6 +112,7 @@ Riesgos:
 Controles existentes:
 - inicio/parada explicitos por comando,
 - buffer acotado en frontend.
+- preflight backend (si no se puede abrir el canal, el comando falla y no queda "running" a medias).
 
 Controles recomendados:
 - añadir filtros por interfaz/objetivo,
