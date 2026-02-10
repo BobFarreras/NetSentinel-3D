@@ -107,6 +107,8 @@ Estado actual:
   - escaneo y actualizacion de nodos,
   - carga de snapshot desde historial,
   - inicio de monitor de trafico y recepcion de paquetes,
+  - resiliencia ante error de `scan_network` sin romper UI,
+  - resiliencia ante error de `start_traffic_sniffing` manteniendo estado detenido,
   - seleccion de nodo, auditoria de puertos y alerta critica de gateway,
   - apertura/cierre de historial.
 
@@ -120,6 +122,23 @@ Reglas E2E:
 - Evitar depender de backend nativo para pruebas de UI en CI.
 - Mantener todos los puntos `invoke/listen` pasando por el bridge compartido.
 - Si se añade un nuevo comando/evento Tauri, actualizar el mock E2E en el mismo cambio.
+
+## 10. CI en GitHub Actions
+Workflow:
+- `.github/workflows/ci.yml`
+
+Checks automatizados:
+- Frontend + E2E (Ubuntu):
+  - `npm test -- --run`
+  - `npm run build`
+  - `npm run test:e2e`
+  - `npm audit --omit=dev --audit-level=high` (no bloqueante)
+- Rust (Windows):
+  - `cargo check --tests`
+  - `cargo audit` (no bloqueante)
+
+Nota:
+- `cargo audit` puede reportar advertencias de dependencias transitivas de Tauri/GTK en Linux; mientras no sean vulnerabilidades bloqueantes del target soportado, el pipeline no debe romperse por ese motivo.
 
 ## 5. Criterios de Aceptacion por Cambio
 Aplicar esta tabla antes de cerrar una tarea:

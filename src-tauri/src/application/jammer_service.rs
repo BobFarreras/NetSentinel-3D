@@ -111,3 +111,44 @@ impl JammerService {
         }
     }
 }
+
+impl Drop for JammerService {
+    fn drop(&mut self) {
+        if let Ok(mut running) = self.running.lock() {
+            *running = false;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn start_jamming_registers_target() {
+        let service = JammerService::new();
+        service.start_jamming(
+            "192.168.1.20".to_string(),
+            "AA:BB:CC:DD:EE:20".to_string(),
+            "192.168.1.1".to_string(),
+        );
+
+        let lock = service.active_targets.lock().unwrap();
+        assert_eq!(lock.len(), 1);
+        assert!(lock.contains_key("192.168.1.20"));
+    }
+
+    #[test]
+    fn stop_jamming_removes_target() {
+        let service = JammerService::new();
+        service.start_jamming(
+            "192.168.1.30".to_string(),
+            "AA:BB:CC:DD:EE:30".to_string(),
+            "192.168.1.1".to_string(),
+        );
+        service.stop_jamming("192.168.1.30".to_string());
+
+        let lock = service.active_targets.lock().unwrap();
+        assert!(lock.is_empty());
+    }
+}

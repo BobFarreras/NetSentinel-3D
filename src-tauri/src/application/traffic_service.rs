@@ -48,3 +48,24 @@ impl TrafficService {
         self.is_running.store(false, Ordering::Relaxed);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stop_monitoring_sets_running_false() {
+        let service = TrafficService::new();
+        service.is_running.store(true, Ordering::Relaxed);
+
+        service.stop_monitoring();
+
+        assert!(!service.is_running.load(Ordering::Relaxed));
+    }
+
+    #[test]
+    fn service_starts_in_stopped_state() {
+        let service = TrafficService::new();
+        assert!(!service.is_running.load(Ordering::Relaxed));
+    }
+}

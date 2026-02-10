@@ -7,6 +7,16 @@ type EventCallback<T> = (event: EventEnvelope<T>) => void;
 export type UnlistenFn = () => void;
 
 const isE2EMock = import.meta.env.VITE_E2E_MOCK_TAURI === 'true';
+type E2EScenarioFlags = {
+  failScan?: boolean;
+  failTrafficStart?: boolean;
+  failAuditRouter?: boolean;
+};
+
+const getScenarioFlags = (): E2EScenarioFlags => {
+  const scopedWindow = window as Window & { __E2E_SCENARIO__?: E2EScenarioFlags };
+  return scopedWindow.__E2E_SCENARIO__ || {};
+};
 
 const listeners = new Map<string, Set<EventCallback<unknown>>>();
 let trafficTimer: ReturnType<typeof setInterval> | null = null;
@@ -71,8 +81,10 @@ const stopMockTraffic = () => {
 };
 
 const invokeMock = async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
+  const scenario = getScenarioFlags();
   switch (command) {
     case 'scan_network':
+      if (scenario.failScan) throw new Error('E2E mock: fallo forzado en scan_network');
       return clone(mockScanDevices) as T;
     case 'save_scan': {
       const devices = (args?.devices as DeviceDTO[]) || [];
@@ -109,6 +121,7 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
       } as T;
     }
     case 'audit_router':
+      if (scenario.failAuditRouter) throw new Error('E2E mock: fallo forzado en audit_router');
       return {
         vulnerable: true,
         credentials_found: 'admin:1234',
@@ -127,6 +140,7 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
         },
       ] as T;
     case 'start_traffic_sniffing':
+      if (scenario.failTrafficStart) throw new Error('E2E mock: fallo forzado en start_traffic_sniffing');
       startMockTraffic();
       return undefined as T;
     case 'stop_traffic_sniffing':

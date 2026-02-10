@@ -2,6 +2,94 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.6.0] - Hardening Continuo de CI, Validacion y Resiliencia E2E (2026-02-09)
+### 🔐 Seguridad y validacion
+- CSP reforzada en `src-tauri/tauri.conf.json` con directivas adicionales:
+  - `script-src 'self'`
+  - `object-src 'none'`
+  - `base-uri 'none'`
+  - `form-action 'none'`
+  - `frame-ancestors 'none'`
+- Validacion semantica de IPs en backend:
+  - nuevo validador `validate_usable_host_ipv4` en `src-tauri/src/api/validators.rs`.
+  - aplicado en comandos de auditoria y jamming para bloquear IPs no operativas (`0.0.0.0`, loopback, multicast, broadcast).
+
+### 🧪 Testing y robustez
+- Ampliados tests unitarios Rust:
+  - `src-tauri/src/application/jammer_service.rs`
+  - `src-tauri/src/application/traffic_service.rs`
+  - ajustes de tests en `src-tauri/src/api/commands.rs`, `src-tauri/src/lib.rs` y `src-tauri/src/api/validators.rs`.
+- E2E ampliado con escenarios negativos controlados:
+  - fallo forzado de `scan_network`.
+  - fallo forzado de `start_traffic_sniffing`.
+  - implementado soporte de flags de escenario en `src/shared/tauri/bridge.ts`.
+
+### ⚙️ CI
+- Workflow `.github/workflows/ci.yml` actualizado con auditorias de dependencias no bloqueantes:
+  - `npm audit --omit=dev --audit-level=high`
+  - `cargo audit` (instalando `cargo-audit`)
+- Actualizada dependencia `reqwest` de `0.11` a `0.12` en `src-tauri/Cargo.toml` para corregir vulnerabilidad transitiva reportada por RustSec (`RUSTSEC-2024-0421` / `idna`).
+
+### 📚 Documentacion
+- Actualizados `docs/SECURITY.md` y `docs/TESTING.md` con el nuevo estado de seguridad, CI y cobertura E2E.
+
+## [v0.5.9] - Validacion Defensiva de Inputs en Comandos Rust (2026-02-09)
+### 🔐 Hardening backend
+- Añadido modulo de validadores:
+  - `src-tauri/src/api/validators.rs`
+- Aplicadas validaciones en comandos API:
+  - `scan_network`: rango IPv4/CIDR valido.
+  - `audit_target`: IPv4 valida.
+  - `audit_router`: IPv4 valida.
+  - `fetch_router_devices`: IPv4 valida + `user/pass` no vacios y con longitud maxima.
+- Aplicadas validaciones en comandos de jamming:
+  - `start_jamming`: valida `ip`, `mac`, `gateway_ip` y bloquea `ip == gateway_ip`.
+  - `stop_jamming`: valida `ip`.
+
+### 🧪 Tests añadidos
+- Tests unitarios de validadores en `src-tauri/src/api/validators.rs`.
+- Tests unitarios de validacion en:
+  - `src-tauri/src/api/commands.rs`
+  - `src-tauri/src/lib.rs`
+
+### 📚 Documentacion
+- Actualizado `docs/SECURITY.md` con el estado actual de validacion de inputs.
+
+### ✅ Verificacion
+- `cargo check --tests` en verde.
+- `npm test -- --run` en verde.
+
+## [v0.5.8] - Hardening CSP en Tauri (2026-02-09)
+### 🔐 Seguridad runtime
+- Sustituida configuracion insegura `csp: null` por una politica CSP explicita en:
+  - `src-tauri/tauri.conf.json`
+- Definida `csp` para produccion y `devCsp` para desarrollo local (`localhost:1420` y websocket de Vite).
+
+### ✅ Estado de proteccion
+- Se restringen origenes por defecto para scripts/conexiones/imagenes/fuentes.
+- Se mantiene compatibilidad actual con `style-src 'unsafe-inline'` por uso de estilos inline existentes.
+
+### 📚 Documentacion
+- Actualizado `docs/SECURITY.md` con la nueva politica CSP, impacto y siguiente mejora recomendada.
+
+## [v0.5.7] - Workflow CI con GitHub Actions (2026-02-09)
+### ⚙️ Automatizacion
+- Añadido workflow de CI en:
+  - `.github/workflows/ci.yml`
+
+### ✅ Pipeline definido
+- Job `frontend-e2e` en Ubuntu:
+  - `npm ci`
+  - `npm test -- --run`
+  - `npm run build`
+  - `npx playwright install --with-deps chromium`
+  - `npm run test:e2e`
+- Job `rust-check` en Windows:
+  - `cargo check --tests`
+
+### 📚 Documentacion
+- Actualizado `docs/TESTING.md` con seccion de CI y checks automatizados.
+
 ## [v0.5.6] - E2E Funcional Completo con Mock Tauri (2026-02-09)
 ### 🧪 E2E y estabilidad
 - Implementado bridge unificado para Tauri en:

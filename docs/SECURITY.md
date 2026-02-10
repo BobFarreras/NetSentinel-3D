@@ -43,13 +43,30 @@ Esto reduce permisos generales del runtime, pero no sustituye la validacion de c
 
 ### 3.2 CSP
 En `src-tauri/tauri.conf.json` la configuracion actual es:
-- `app.security.csp = null`
+- `app.security.csp` definida con directivas explicitas.
+- `app.security.devCsp` definida para entorno de desarrollo local.
+
+Estado actual:
+- Produccion:
+  - `default-src 'self' customprotocol: asset:`
+  - `script-src 'self'`
+  - `connect-src ipc: http://ipc.localhost`
+  - `img-src 'self' asset: http://asset.localhost blob: data:`
+  - `style-src 'self' 'unsafe-inline'`
+  - `font-src 'self' data:`
+  - `object-src 'none'`
+  - `base-uri 'none'`
+  - `form-action 'none'`
+  - `frame-ancestors 'none'`
+- Desarrollo:
+  - Se permite `localhost:1420` y `ws://localhost:1420` para Vite/Tauri dev.
 
 Impacto:
-- Aumenta riesgo frente a XSS/inyecciones en la capa web.
+- Reduce superficie de XSS e inyeccion al bloquear origenes no autorizados por defecto.
+- Mantiene compatibilidad con estilos inline actuales de la UI.
 
-Accion recomendada:
-- Definir una CSP explicita para build de produccion y revisar fuentes permitidas.
+Siguiente mejora recomendada:
+- Eliminar gradualmente `'unsafe-inline'` en `style-src` migrando estilos inline a hojas CSS controladas.
 
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)
@@ -102,12 +119,24 @@ Controles recomendados en CI o rutina semanal:
 - `cargo audit` para crates Rust.
 - revisar changelogs de Tauri y crates de red (`pnet`, etc.).
 
+Estado actual conocido:
+- vulnerabilidades criticas/bloqueantes: no detectadas en `npm audit --omit=dev`.
+- vulnerabilidades criticas/bloqueantes en Rust: mitigada la de `idna` al actualizar `reqwest` a `0.12`.
+- advertencias no bloqueantes de Rust: dependencias GTK3 transitivas de Tauri en Linux marcadas como "unmaintained"; no aplican al target principal Windows, pero deben revisarse al planificar soporte Linux.
+
 ## 6. Reglas de Desarrollo Seguro
 - No añadir comandos Tauri nuevos sin justificar riesgo/beneficio.
 - Validar y sanear inputs en todos los comandos expuestos.
 - Evitar logs con credenciales, tokens o datos sensibles.
 - Mantener DTOs Rust/TS coherentes para evitar errores de parseo y bypass de validacion.
 - Mantener comentarios y documentacion en castellano tecnico y accionable.
+
+Validaciones backend actualmente aplicadas:
+- IPv4 en comandos de auditoria y jamming (`audit_target`, `audit_router`, `fetch_router_devices`, `start_jamming`, `stop_jamming`).
+- Rechazo de IPs no usables operativamente en objetivos y gateway (loopback, multicast, broadcast y `0.0.0.0`).
+- Rango de escaneo en formato IPv4 o CIDR valido (`scan_network`).
+- Credenciales no vacias y con longitud acotada en `fetch_router_devices`.
+- Formato de MAC address validado en `start_jamming`.
 
 ## 7. Checklist Minimo Antes de Release
 - [ ] `npm test -- --run` en verde.

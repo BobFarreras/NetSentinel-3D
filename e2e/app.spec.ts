@@ -76,4 +76,36 @@ test.describe('NetSentinel App', () => {
     await page.getByRole('button', { name: /AUDIT GATEWAY SECURITY/ }).click();
     await expect(page.getByText(/CRITICAL VULNERABILITY/)).toBeVisible();
   });
+
+  test('debe recuperarse si scan_network falla y mantener la UI operativa', async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as Window & { __E2E_SCENARIO__?: { failScan?: boolean } }).__E2E_SCENARIO__ = {
+        failScan: true,
+      };
+    });
+
+    await page.goto('/');
+    await expectNodesCount(page, 2);
+
+    await page.getByRole('button', { name: 'SCAN NET' }).click();
+
+    await expect(page.getByRole('button', { name: 'SCAN NET' })).toBeVisible();
+    await expectNodesCount(page, 2);
+  });
+
+  test('debe mantener monitor detenido si start_traffic_sniffing falla', async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as Window & { __E2E_SCENARIO__?: { failTrafficStart?: boolean } }).__E2E_SCENARIO__ = {
+        failTrafficStart: true,
+      };
+    });
+
+    await page.goto('/');
+
+    await page.getByText('LIVE TRAFFIC').click();
+    await page.getByRole('button', { name: /START/ }).click();
+
+    await expect(page.getByRole('button', { name: /START/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /STOP/ })).toHaveCount(0);
+  });
 });
