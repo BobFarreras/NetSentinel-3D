@@ -106,6 +106,8 @@ Muy largo y con parsing complejo (locales, fallbacks, interfaces), dificil de ma
   - calculo `distanceMock`
 - `fixtures/` + tests:
   - outputs reales (ES/EN) recortados y anonimizados
+  - objetivo: fijar contratos de parsing. Si Windows/driver/idioma cambia el formato del texto,
+    los tests fallan y nos avisan antes de romper el producto.
 
 **Criterios de aceptacion**
 - Parser con tests unitarios por idioma/variante.
