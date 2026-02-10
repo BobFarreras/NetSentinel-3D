@@ -13,7 +13,7 @@ vi.mock("../../../hooks/modules/useTrafficMonitor", () => ({
   }),
 }));
 
-import { addRadarLog, clearRadarLogs } from "../../../hooks/modules/useRadarLogs";
+import { addRadarScanLog, clearRadarLogs } from "../../../hooks/modules/useRadarLogs";
 import { ConsoleLogs } from "../ConsoleLogs";
 
 describe("ConsoleLogs", () => {
@@ -22,7 +22,7 @@ describe("ConsoleLogs", () => {
   });
 
   it("debe mostrar RADAR LOGS en su pestaña", () => {
-    addRadarLog("scan_airwaves: 1 redes detectadas");
+    addRadarScanLog(1);
 
     render(
       <ConsoleLogs
@@ -51,4 +51,3 @@ describe("ConsoleLogs", () => {
     expect(screen.getByText(/sin actividad/i)).toBeInTheDocument();
   });
 });
-

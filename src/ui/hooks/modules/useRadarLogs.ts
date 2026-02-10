@@ -1,11 +1,17 @@
 import { useSyncExternalStore } from "react";
+import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
 
-// Logs de Radar en memoria (frontend). Se usan para depuracion educativa y trazabilidad local:
-// cada escaneo registra un resumen y una linea por red detectada.
+// Logs estructurados del Radar (frontend).
+// Objetivo: trazabilidad local + una vista tipo "tabla" (similar a LIVE TRAFFIC).
 
 type Listener = () => void;
 
-let radarLogs: string[] = [];
+export type RadarLogEntry =
+  | { ts: number; kind: "scan"; message: string; count: number }
+  | { ts: number; kind: "network"; network: WifiNetworkDTO }
+  | { ts: number; kind: "error"; message: string };
+
+let radarLogs: RadarLogEntry[] = [];
 const listeners = new Set<Listener>();
 
 const emit = () => {
@@ -19,15 +25,34 @@ const subscribe = (listener: Listener) => {
 
 const getSnapshot = () => radarLogs;
 
-const formatTime = (ts: number) => {
-  const d = new Date(ts);
-  return d.toLocaleTimeString();
+export const addRadarScanLog = (count: number) => {
+  const entry: RadarLogEntry = {
+    ts: Date.now(),
+    kind: "scan",
+    count,
+    message: `scan_airwaves: ${count} redes detectadas`,
+  };
+  radarLogs = [...radarLogs, entry].slice(-800);
+  emit();
 };
 
-export const addRadarLog = (message: string) => {
-  const line = `[${formatTime(Date.now())}] ${message}`;
-  // Evitar crecimiento sin limite (proteccion defensiva).
-  radarLogs = [...radarLogs, line].slice(-500);
+export const addRadarNetworkLog = (network: WifiNetworkDTO) => {
+  const entry: RadarLogEntry = {
+    ts: Date.now(),
+    kind: "network",
+    network,
+  };
+  radarLogs = [...radarLogs, entry].slice(-800);
+  emit();
+};
+
+export const addRadarErrorLog = (message: string) => {
+  const entry: RadarLogEntry = {
+    ts: Date.now(),
+    kind: "error",
+    message,
+  };
+  radarLogs = [...radarLogs, entry].slice(-800);
   emit();
 };
 
@@ -40,4 +65,3 @@ export const useRadarLogs = () => {
   const logs = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return { logs, clear: clearRadarLogs };
 };
-

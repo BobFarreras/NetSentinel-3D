@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
 import { useWifiRadar } from "../../hooks/modules/useWifiRadar";
+import { useWifiRadarSelection } from "../../hooks/modules/useWifiRadarSelection";
 
 interface RadarPanelProps {
   onClose: () => void;
@@ -41,9 +42,20 @@ const hashToAngleDeg = (seed: string) => {
 type RiskFilter = "ALL" | "HARDENED" | "STANDARD" | "LEGACY" | "OPEN";
 type BandFilter = "ALL" | "2.4" | "5" | "UNK";
 
+const selectStyle: React.CSSProperties = {
+  width: "100%",
+  background: "rgba(0,0,0,0.35)",
+  border: "1px solid rgba(0,255,136,0.18)",
+  color: "#b7ffe2",
+  padding: "6px 8px",
+  fontSize: 12,
+  outline: "none",
+  fontFamily: "'Consolas', 'Courier New', monospace",
+};
+
 export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   const { scanning, networks, error, lastScanAt, scan } = useWifiRadar();
-  const [selected, setSelected] = useState<WifiNetworkDTO | null>(null);
+  const { selectedBssid, setSelectedBssid } = useWifiRadarSelection();
   const [showIntelHelp, setShowIntelHelp] = useState(false);
   const [accepted, setAccepted] = useState<boolean>(() => {
     return localStorage.getItem("netsentinel.radar.legalAccepted") === "true";
@@ -129,6 +141,11 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
       };
     });
   }, [filteredNetworks]);
+
+  const selected = useMemo<WifiNetworkDTO | null>(() => {
+    if (!selectedBssid) return null;
+    return networks.find((n) => n.bssid === selectedBssid) || null;
+  }, [networks, selectedBssid]);
 
   const availableChannels = useMemo(() => {
     const uniq = new Set<number>();
@@ -329,12 +346,12 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
             {/* Nodos */}
             {nodes.map((n) => {
               const style = riskStyle(n.riskLevel);
-              const isSelected = selected?.bssid === n.bssid;
+              const isSelected = selectedBssid === n.bssid;
               const isConnected = Boolean(n.isConnected);
               return (
                 <button
                   key={n.bssid}
-                  onClick={() => setSelected(n)}
+                  onClick={() => setSelectedBssid(n.bssid)}
                   aria-label={`NODE ${n.ssid} CH ${n.channel ?? "?"}`}
                   title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}${isConnected ? " / CONNECTED" : ""}`}
                   style={{
@@ -419,6 +436,10 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
             padding: 12,
             background: "linear-gradient(180deg, rgba(0,10,5,0.75), rgba(0,0,0,0.55))",
             color: "#b7ffe2",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            overflow: "hidden",
           }}
         >
           <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -475,107 +496,69 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
 
           {/* Filtros */}
           <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-              {(["ALL", "HARDENED", "STANDARD", "LEGACY", "OPEN"] as RiskFilter[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRiskFilter(r)}
-                  aria-label={`FILTER_RISK_${r}`}
-                  style={{
-                    background: riskFilter === r ? "rgba(0,255,136,0.10)" : "transparent",
-                    border: `1px solid ${riskFilter === r ? "rgba(0,255,136,0.45)" : "rgba(0,255,136,0.18)"}`,
-                    color: riskFilter === r ? "#00ff88" : "rgba(183,255,226,0.75)",
-                    padding: "4px 8px",
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: 0.6,
-                  }}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>RISK</div>
+                <select
+                  aria-label="FILTER_RISK_SELECT"
+                  value={riskFilter}
+                  onChange={(e) => setRiskFilter(e.target.value as RiskFilter)}
+                  style={selectStyle}
                 >
-                  {r}
-                </button>
-              ))}
+                  <option value="ALL">ALL</option>
+                  <option value="HARDENED">HARDENED</option>
+                  <option value="STANDARD">STANDARD</option>
+                  <option value="LEGACY">LEGACY</option>
+                  <option value="OPEN">OPEN</option>
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>BAND</div>
+                <select
+                  aria-label="FILTER_BAND_SELECT"
+                  value={bandFilter}
+                  onChange={(e) => setBandFilter(e.target.value as BandFilter)}
+                  style={selectStyle}
+                >
+                  <option value="ALL">ALL</option>
+                  <option value="2.4">2.4GHz</option>
+                  <option value="5">5GHz</option>
+                  <option value="UNK">UNKGHz</option>
+                </select>
+              </div>
             </div>
 
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-              {(["ALL", "2.4", "5", "UNK"] as BandFilter[]).map((b) => (
-                <button
-                  key={b}
-                  onClick={() => setBandFilter(b)}
-                  aria-label={`FILTER_BAND_${b}`}
-                  style={{
-                    background: bandFilter === b ? "rgba(255,224,102,0.10)" : "transparent",
-                    border: `1px solid ${bandFilter === b ? "rgba(255,224,102,0.45)" : "rgba(0,255,136,0.18)"}`,
-                    color: bandFilter === b ? "#ffe066" : "rgba(183,255,226,0.75)",
-                    padding: "4px 8px",
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: 0.6,
-                  }}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginBottom: 8 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>CHANNEL</div>
+                <select
+                  aria-label="FILTER_CH_SELECT"
+                  value={channelFilter === null ? "ALL" : String(channelFilter)}
+                  onChange={(e) => setChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
+                  style={selectStyle}
                 >
-                  {b}GHz
-                </button>
-              ))}
-            </div>
-
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-              <button
-                onClick={() => setChannelFilter(null)}
-                aria-label="FILTER_CH_ALL"
-                style={{
-                  background: channelFilter === null ? "rgba(111,233,183,0.12)" : "transparent",
-                  border: `1px solid ${channelFilter === null ? "rgba(111,233,183,0.45)" : "rgba(0,255,136,0.18)"}`,
-                  color: channelFilter === null ? "#6fe9b7" : "rgba(183,255,226,0.75)",
-                  padding: "4px 8px",
-                  cursor: "pointer",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: 0.6,
-                }}
-              >
-                CH:ALL
-              </button>
-              {availableChannels.map((ch) => (
-                <button
-                  key={ch}
-                  onClick={() => setChannelFilter(ch)}
-                  aria-label={`FILTER_CH_${ch}`}
-                  style={{
-                    background: channelFilter === ch ? "rgba(111,233,183,0.12)" : "transparent",
-                    border: `1px solid ${channelFilter === ch ? "rgba(111,233,183,0.45)" : "rgba(0,255,136,0.18)"}`,
-                    color: channelFilter === ch ? "#6fe9b7" : "rgba(183,255,226,0.75)",
-                    padding: "4px 8px",
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: 800,
-                    letterSpacing: 0.6,
-                  }}
-                >
-                  CH {ch}
-                </button>
-              ))}
+                  <option value="ALL">ALL</option>
+                  {availableChannels.map((ch) => (
+                    <option key={ch} value={String(ch)}>
+                      CH {ch}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="SEARCH: ssid/vendor/bssid"
-              style={{
-                width: "100%",
-                background: "rgba(0,0,0,0.35)",
-                border: "1px solid rgba(0,255,136,0.18)",
-                color: "#b7ffe2",
-                padding: "6px 8px",
-                fontSize: 12,
-                outline: "none",
-              }}
+              style={selectStyle}
             />
           </div>
 
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingRight: 4 }}>
           {!selected ? (
             <div style={{ color: "rgba(183,255,226,0.7)", fontSize: 12, lineHeight: 1.45 }}>
-              Selecciona un nodo del radar para ver detalles.
+              Selecciona un nodo del radar (o una fila en RADAR LOGS) para ver detalles.
               <div style={{ marginTop: 10, fontSize: 11, opacity: 0.75 }}>
                 Leyenda:
                 <div>VERDE: Hardened</div>
@@ -637,6 +620,7 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 

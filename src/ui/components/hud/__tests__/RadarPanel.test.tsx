@@ -49,14 +49,14 @@ describe("RadarPanel", () => {
     expect(screen.getByText(/NETWORKS:\s*2/i)).toBeInTheDocument();
     expect(screen.getByText(/VISIBLE:\s*2/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("FILTER_RISK_OPEN"));
+    fireEvent.change(screen.getByLabelText("FILTER_RISK_SELECT"), { target: { value: "OPEN" } });
     expect(screen.getByText(/VISIBLE:\s*1/i)).toBeInTheDocument();
   });
 
   it("debe filtrar por canal", () => {
     render(<RadarPanel onClose={() => {}} />);
 
-    fireEvent.click(screen.getByLabelText("FILTER_CH_6"));
+    fireEvent.change(screen.getByLabelText("FILTER_CH_SELECT"), { target: { value: "6" } });
     expect(screen.getByText(/VISIBLE:\s*1/i)).toBeInTheDocument();
   });
 });

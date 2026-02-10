@@ -2,6 +2,15 @@ use crate::domain::entities::WifiScanRecord;
 use crate::domain::ports::WifiScannerPort;
 use async_trait::async_trait;
 use std::process::Command;
+use std::time::Duration;
+
+#[cfg(windows)]
+use windows::Win32::Foundation::{ERROR_SUCCESS, HANDLE};
+#[cfg(windows)]
+use windows::Win32::NetworkManagement::WiFi::{
+    WlanCloseHandle, WlanEnumInterfaces, WlanFreeMemory, WlanOpenHandle, WlanScan,
+    WLAN_INTERFACE_INFO_LIST,
+};
 
 pub struct SystemWifiScanner;
 
@@ -60,6 +69,13 @@ impl WifiScannerPort for SystemWifiScanner {
 }
 
 async fn scan_via_netsh() -> Result<Vec<WifiScanRecord>, String> {
+    // Windows tiende a cachear resultados. El panel de WiFi del SO fuerza un re-escaneo inmediato.
+    // Para evitar el efecto "solo veo mi router hasta que abro Configuracion", forzamos un scan best-effort.
+    if cfg!(windows) {
+        trigger_windows_wlan_scan_best_effort().await;
+        tokio::time::sleep(Duration::from_millis(650)).await;
+    }
+
     let output = tokio::task::spawn_blocking(|| {
         Command::new("netsh")
             .args(["wlan", "show", "networks", "mode=bssid"])
@@ -128,6 +144,44 @@ async fn scan_via_netsh() -> Result<Vec<WifiScanRecord>, String> {
     }
 
     Ok(records)
+}
+
+#[cfg(windows)]
+async fn trigger_windows_wlan_scan_best_effort() {
+    // Ejecutamos el FFI en un hilo blocking para evitar bloquear el runtime async.
+    let _ = tokio::task::spawn_blocking(|| unsafe {
+        let mut negotiated_version: u32 = 0;
+        let mut client_handle: HANDLE = HANDLE::default();
+
+        let open_status = WlanOpenHandle(2, None, &mut negotiated_version, &mut client_handle);
+        if open_status != ERROR_SUCCESS.0 {
+            return;
+        }
+
+        let mut if_list_ptr: *mut WLAN_INTERFACE_INFO_LIST = std::ptr::null_mut();
+        let enum_status = WlanEnumInterfaces(client_handle, None, &mut if_list_ptr);
+        if enum_status != ERROR_SUCCESS.0 || if_list_ptr.is_null() {
+            let _ = WlanCloseHandle(client_handle, None);
+            return;
+        }
+
+        // WLAN_INTERFACE_INFO_LIST contiene un array inline de longitud variable.
+        let list = &*if_list_ptr;
+        let infos = std::slice::from_raw_parts(list.InterfaceInfo.as_ptr(), list.dwNumberOfItems as usize);
+        for info in infos {
+            // Scan asíncrono: solicita al driver que refresque el cache de redes.
+            let _ = WlanScan(client_handle, &info.InterfaceGuid, None, None, None);
+        }
+
+        WlanFreeMemory(if_list_ptr as _);
+        let _ = WlanCloseHandle(client_handle, None);
+    })
+    .await;
+}
+
+#[cfg(not(windows))]
+async fn trigger_windows_wlan_scan_best_effort() {
+    // No-op fuera de Windows.
 }
 
 fn parse_netsh_networks(text: &str) -> Vec<WifiScanRecord> {
