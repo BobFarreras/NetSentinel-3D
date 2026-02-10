@@ -133,8 +133,7 @@ Nota Windows:
 Directo, tecnico, pragmatico y orientado a robustez. Prioriza soluciones mantenibles, verificables y seguras frente a atajos fragiles.
 
 ## Prioridades actuales
-1. Deteccion de intrusos por comparacion de sesiones.
-2. Persistencia y consultas eficientes de historial.
-3. Alertas visuales en mapa 3D para nodos sospechosos.
-4. Hardening continuo de seguridad (CSP, validaciones, auditoria de dependencias).
-5. Cobertura de testing integral y CI estable.
+Sin prioridades abiertas en este momento.
+
+Regla:
+- Cuando se definan nuevas prioridades, deben ser concretas, medibles y cerrarse con su correspondiente registro en `docs/CHANGELOG.md`.
