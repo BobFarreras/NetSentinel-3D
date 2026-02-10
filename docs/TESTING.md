@@ -203,6 +203,12 @@ Prioridad media:
 Prioridad baja:
 - ampliar unit tests Rust en `audit_service`, `history_service`, `traffic_service`.
 
+Prioridad inmediata (Radar View):
+- tests de `wifiAdapter` (contrato `scan_airwaves`).
+- tests de `useWifiRadar` (estado, errores y normalizacion de datos).
+- tests de render de `RadarView` (colores por riesgo y filtros por canal/banda).
+- E2E de flujo Radar: abrir vista, escanear, seleccionar nodo y ver detalle.
+
 ## 9. Checklist Rapido para PR
 - [ ] He añadido o actualizado tests del comportamiento modificado.
 - [ ] `npm test -- --run` pasa en local.

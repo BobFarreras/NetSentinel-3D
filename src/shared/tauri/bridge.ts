@@ -1,6 +1,6 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
-import type { DeviceDTO, TrafficPacket } from '../dtos/NetworkDTOs';
+import type { DeviceDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
 
 type EventEnvelope<T> = { payload: T };
 type EventCallback<T> = (event: EventEnvelope<T>) => void;
@@ -26,6 +26,45 @@ const mockScanDevices: DeviceDTO[] = [
   { ip: '192.168.1.1', mac: 'AA:BB:CC:DD:EE:01', vendor: 'Router', isGateway: true, hostname: 'gateway' },
   { ip: '192.168.1.10', mac: 'AA:BB:CC:DD:EE:10', vendor: 'Workstation', hostname: 'DEV-WS' },
   { ip: '192.168.1.21', mac: 'AA:BB:CC:DD:EE:21', vendor: 'Phone', hostname: 'Unknown' },
+];
+
+const mockAirwaves: WifiNetworkDTO[] = [
+  {
+    bssid: 'B8:27:EB:AA:BB:CC',
+    ssid: 'LAB_WIFI_01',
+    channel: 6,
+    signalLevel: -48,
+    securityType: 'WPA2-PSK',
+    vendor: 'Raspberry Pi',
+    distanceMock: 28,
+    riskLevel: 'STANDARD',
+    isTargetable: false,
+    isConnected: true,
+  },
+  {
+    bssid: 'AA:BB:CC:DD:EE:01',
+    ssid: '<hidden>',
+    channel: 1,
+    signalLevel: -62,
+    securityType: 'OPEN',
+    vendor: 'Generic Device',
+    distanceMock: 42,
+    riskLevel: 'OPEN',
+    isTargetable: true,
+    isConnected: false,
+  },
+  {
+    bssid: '04:D9:F5:11:22:33',
+    ssid: 'CAMPUS_SECURE',
+    channel: 36,
+    signalLevel: -55,
+    securityType: 'WPA3',
+    vendor: 'Asus Network',
+    distanceMock: 35,
+    riskLevel: 'HARDENED',
+    isTargetable: false,
+    isConnected: false,
+  },
 ];
 
 type MockSession = {
@@ -86,6 +125,8 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
     case 'scan_network':
       if (scenario.failScan) throw new Error('E2E mock: fallo forzado en scan_network');
       return clone(mockScanDevices) as T;
+    case 'scan_airwaves':
+      return clone(mockAirwaves) as T;
     case 'save_scan': {
       const devices = (args?.devices as DeviceDTO[]) || [];
       const session = {

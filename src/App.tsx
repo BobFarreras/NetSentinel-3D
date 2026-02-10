@@ -3,6 +3,7 @@ import { TopBar } from './ui/components/layout/TopBar';
 import { NetworkScene } from './ui/components/3d/NetworkScene';
 import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
+import { RadarPanel } from './ui/components/hud/RadarPanel';
 import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
 import { DangerModal } from './ui/components/DangerModal';
@@ -18,45 +19,74 @@ function App() {
   } = useNetworkManager();
 
   const [showHistory, setShowHistory] = useState(false);
+  const [showRadar, setShowRadar] = useState(false);
 
-  // --- ESTATS DE MIDA (RESIZABLE) ---
+  // --- ESTADOS DE TAMAÑO (RESIZABLE) ---
   const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
   const [consoleHeight, setConsoleHeight] = useState(250); // Alçada inicial Consola
+  const [radarWidth, setRadarWidth] = useState(520); // Anchura inicial del radar (panel izquierdo)
 
-  // Refs per gestionar l'arrossegament sense lag
-  const isResizingSidebar = useRef(false);
-  const isResizingConsole = useRef(false);
+  // Refs para gestionar el arrastre sin lag
+  const resizeMode = useRef<null | 'sidebar' | 'console' | 'radar'>(null);
+  const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
+  const startSidebarWidth = useRef(450);
+  const startConsoleHeight = useRef(250);
+  const startRadarWidth = useRef(520);
 
-  // --- GESTIÓ DEL RESIZE ---
-  const startResizingSidebar = useCallback(() => { isResizingSidebar.current = true; }, []);
-  const startResizingConsole = useCallback(() => { isResizingConsole.current = true; }, []);
+  // --- GESTION DEL RESIZE ---
+  const startResizingSidebar = useCallback((e: React.MouseEvent) => {
+    resizeMode.current = 'sidebar';
+    dragStartX.current = e.clientX;
+    startSidebarWidth.current = sidebarWidth;
+  }, [sidebarWidth]);
+
+  const startResizingConsole = useCallback((e: React.MouseEvent) => {
+    resizeMode.current = 'console';
+    dragStartY.current = e.clientY;
+    startConsoleHeight.current = consoleHeight;
+  }, [consoleHeight]);
+
+  const startResizingRadar = useCallback((e: React.MouseEvent) => {
+    resizeMode.current = 'radar';
+    dragStartX.current = e.clientX;
+    startRadarWidth.current = radarWidth;
+  }, [radarWidth]);
 
   const stopResizing = useCallback(() => {
-    isResizingSidebar.current = false;
-    isResizingConsole.current = false;
+    resizeMode.current = null;
     document.body.style.cursor = 'default'; // Restaurar cursor
   }, []);
 
   const resize = useCallback((e: MouseEvent) => {
-    if (isResizingSidebar.current) {
-      // Calculem la nova amplada (des de la dreta)
-      const newWidth = window.innerWidth - e.clientX;
-      if (newWidth > 300 && newWidth < 800) { // Límits mínim i màxim
-        setSidebarWidth(newWidth);
-        document.body.style.cursor = 'col-resize';
-      }
+    if (resizeMode.current === 'sidebar') {
+      // Arrastrar hacia la izquierda aumenta la anchura del sidebar.
+      const delta = dragStartX.current - e.clientX;
+      const next = Math.max(300, Math.min(800, startSidebarWidth.current + delta));
+      setSidebarWidth(next);
+      document.body.style.cursor = 'col-resize';
+      return;
     }
-    if (isResizingConsole.current) {
-      // Calculem la nova alçada (des de baix)
-      const newHeight = window.innerHeight - e.clientY;
-      if (newHeight > 100 && newHeight < window.innerHeight - 100) { // Límits
-        setConsoleHeight(newHeight);
-        document.body.style.cursor = 'row-resize';
-      }
-    }
-  }, []);
 
-  // Listeners globals per al ratolí
+    if (resizeMode.current === 'console') {
+      // Resizer entre panel superior y consola: mover hacia arriba aumenta altura.
+      const delta = dragStartY.current - e.clientY;
+      const next = Math.max(120, Math.min(window.innerHeight - 160, startConsoleHeight.current + delta));
+      setConsoleHeight(next);
+      document.body.style.cursor = 'row-resize';
+      return;
+    }
+
+    if (resizeMode.current === 'radar') {
+      // Resizer entre radar (izquierda) y escena (derecha): mover hacia la derecha aumenta anchura.
+      const delta = e.clientX - dragStartX.current;
+      const next = Math.max(360, Math.min(820, startRadarWidth.current + delta));
+      setRadarWidth(next);
+      document.body.style.cursor = 'col-resize';
+    }
+  }, [setSidebarWidth, setConsoleHeight, setRadarWidth]);
+
+  // Listeners globales de raton
   useEffect(() => {
     window.addEventListener('mousemove', resize);
     window.addEventListener('mouseup', stopResizing);
@@ -67,7 +97,7 @@ function App() {
   }, [resize, stopResizing]);
 
   return (
-    // CONTENIDOR PRINCIPAL
+    // Contenedor principal
     <div style={{
       display: 'flex',
       width: '100vw',
@@ -77,10 +107,10 @@ function App() {
       overflow: 'hidden',
       fontFamily: "'Consolas', 'Courier New', monospace",
       fontSize: '16px',
-      userSelect: (isResizingSidebar.current || isResizingConsole.current) ? 'none' : 'auto' // Evitar seleccionar text mentre arrosseguem
+      userSelect: (resizeMode.current !== null) ? 'none' : 'auto' // Evitar seleccionar texto mientras se arrastra
     }}>
 
-      {/* 🚨 MODAL */}
+      {/* Modal de riesgo */}
       <DangerModal result={routerRisk} onClose={dismissRisk} />
 
       {/* =================================================================================
@@ -96,18 +126,20 @@ function App() {
         overflow: 'hidden'
       }}>
 
-        {/* 1. BARRA SUPERIOR */}
+        {/* 1. Barra superior */}
         <TopBar
           scanning={scanning}
           activeNodes={devices.length}
           onScan={startScan}
           onHistoryToggle={() => setShowHistory(!showHistory)}
           showHistory={showHistory}
+          onRadarToggle={() => setShowRadar(!showRadar)}
+          showRadar={showRadar}
           identity={identity}
         />
 
-        {/* 2. MAPA 3D (Ocupa l'espai restant) */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* 2. Zona superior: Radar (izquierda) + Mapa 3D (centro) */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
           {showHistory && (
             <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 20 }}>
               <HistoryPanel
@@ -117,15 +149,39 @@ function App() {
             </div>
           )}
 
-          <NetworkScene
-            devices={devices}
-            onDeviceSelect={selectDevice}
-            selectedIp={selectedDevice?.ip}
-            intruders={intruders}
-          />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', minHeight: 0 }}>
+            {showRadar && (
+              <>
+                <div style={{ width: `${radarWidth}px`, minWidth: 360, maxWidth: 820, minHeight: 0, background: '#000', overflow: 'hidden', zIndex: 12 }}>
+                  <RadarPanel onClose={() => setShowRadar(false)} />
+                </div>
+                <div
+                  onMouseDown={startResizingRadar}
+                  style={{
+                    width: '2px',
+                    background: '#004400',
+                    cursor: 'col-resize',
+                    zIndex: 13,
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
+                />
+              </>
+            )}
+
+            <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+              <NetworkScene
+                devices={devices}
+                onDeviceSelect={selectDevice}
+                selectedIp={selectedDevice?.ip}
+                intruders={intruders}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* 🤏 RESIZER HORITZONTAL (Barra verda per arrossegar la consola) */}
+        {/* Resizer horizontal (para arrastrar la consola) */}
         <div
           onMouseDown={startResizingConsole}
           style={{
@@ -139,10 +195,11 @@ function App() {
           onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
         />
 
-        {/* 3. CONSOLA / SNIFFER - ALÇADA DINÀMICA */}
+        {/* 3. Consola / sniffer (altura dinamica) */}
      
         <div style={{
           height: `${consoleHeight}px`,
+          minHeight: 0,
           zIndex: 10,
           boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
           background: '#000'
@@ -150,14 +207,14 @@ function App() {
           <ConsoleLogs
             logs={consoleLogs}
             devices={devices}
-            selectedDevice={selectedDevice} // 👈 AFEGEIX AIXÒ O EL FILTRE NO FUNCIONARÀ
+            selectedDevice={selectedDevice} // Necesario para filtros por objetivo
             onClearSystemLogs={clearLogs}
           />
         </div>
 
       </div>
 
-      {/* 🤏 RESIZER VERTICAL (Barra lateral per arrossegar el sidebar) */}
+      {/* Resizer vertical (para arrastrar el sidebar) */}
       <div
         onMouseDown={startResizingSidebar}
         style={{
@@ -172,7 +229,7 @@ function App() {
       />
 
       {/* =================================================================================
-          COLUMNA DRETA: SIDEBAR (AMPLADA DINÀMICA)
+          Columna derecha: sidebar (anchura dinamica)
          ================================================================================= */}
       <div style={{
         width: `${sidebarWidth}px`,

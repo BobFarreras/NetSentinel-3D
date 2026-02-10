@@ -2,6 +2,118 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
+### 📚 Documentacion estrategica
+- Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:
+  - arquitectura backend/frontend,
+  - fases de entrega,
+  - criterios de aceptacion,
+  - reglas de seguridad.
+
+### 🧭 Priorizacion de producto
+- Actualizadas `Prioridades actuales` en `AGENTS.md` con foco en:
+  - `scan_airwaves` y vista Radar,
+  - simulaciones educativas controladas de PMKID/IoT/MLO (modo inferencia),
+  - hardening legal/sanitizacion/trazabilidad,
+  - cobertura de testing.
+
+### 🔐 Seguridad y alcance
+- Actualizado `docs/SECURITY.md` para dejar explicito:
+  - uso autorizado en laboratorio,
+  - simulaciones didacticas permitidas,
+  - exclusion de automatizaciones ofensivas reales.
+
+### 🏗️ Arquitectura y testing
+- Actualizado `docs/ARCHITECTURE.md` con roadmap de `scan_airwaves`.
+- Actualizado `docs/TESTING.md` con prioridades de pruebas para Radar View.
+- Actualizado `README.md` con seccion de roadmap inmediato y enlace a `docs/RADAR_VIEW.md`.
+
+## [v0.6.4] - Backend inicial Radar View: scan_airwaves (2026-02-10)
+### 🦀 Backend (Rust + Tauri)
+- Añadido servicio `WifiService` con normalizacion defensiva:
+  - saneo de SSID (control chars, longitud, `<hidden>`),
+  - clasificacion de riesgo (`HARDENED|STANDARD|LEGACY|OPEN`),
+  - calculo `distance_mock` para visualizacion.
+- Añadido puerto `WifiScannerPort` y scanner de sistema con `wifiscanner`.
+- Añadido comando Tauri `scan_airwaves` y DTO `WifiNetworkDTO`.
+
+### ✅ Verificacion
+- `cargo check --tests` en verde.
+
+## [v0.6.5] - Gobernanza GitHub: PR review obligatorio (2026-02-10)
+### 🧭 Proceso
+- Añadido `CONTRIBUTING.md` con politica de PR y revision senior.
+- Añadidos ficheros de soporte GitHub:
+  - `.github/CODEOWNERS`
+  - `.github/pull_request_template.md`
+- Actualizado `AGENTS.md` para prohibir commits finales automaticos por agentes IA sin confirmacion.
+
+### 🛠️ Calidad
+- Ajuste de tipos explicitos en `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` para evitar errores de inferencia en IDE.
+
+## [v0.6.6] - Radar View UI inicial (CRT terminal) + soporte E2E (2026-02-10)
+### 🎛️ Frontend
+- Añadido panel `RadarPanel` con estetica CRT/cyberpunk y aviso legal de primer uso:
+  - `src/ui/components/hud/RadarPanel.tsx`
+- Integrado el toggle `RADAR` en:
+  - `src/ui/components/layout/TopBar.tsx`
+  - `src/App.tsx`
+
+### 🧪 E2E
+- Extendida la bridge mock con `scan_airwaves`:
+  - `src/shared/tauri/bridge.ts`
+- Añadido test E2E de Radar View:
+  - `e2e/app.spec.ts`
+
+## [v0.6.7] - Radar View UI v2: filtros y auto-refresh (2026-02-10)
+### 🎛️ Frontend
+- `src/ui/components/hud/RadarPanel.tsx`:
+  - filtros por riesgo, banda, canal y busqueda (SSID/vendor/BSSID),
+  - contador `VISIBLE` para ver impacto de filtros,
+  - auto-refresh opcional (sin solapar escaneos),
+  - `aria-label` para tests estables.
+
+### 🧪 Tests
+- Añadido `src/ui/components/hud/__tests__/RadarPanel.test.tsx`.
+
+## [v0.6.8] - Radar View: escaneo Windows mas fiable + layout dock a la izquierda (2026-02-10)
+### 🦀 Backend (Windows)
+- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
+  - preferencia por `netsh wlan show networks mode=bssid` como fuente de verdad en Windows.
+  - parser tolerante a locales (claves como `Señal/Senal/Signal`, `Canal/Channel`, `Autenticacion/Auth`).
+  - fallback cuando Windows omite BSSID/canal/señal: se genera un pseudo-BSSID estable para no devolver lista vacia.
+  - enriquecimiento con `netsh wlan show interfaces` para obtener RSSI/canal/AP BSSID reales de la red conectada.
+
+### 🎛️ Frontend (Layout)
+- `src/App.tsx`:
+  - Radar View acoplado a la izquierda (resizable por anchura) sin invadir el espacio vertical de `ConsoleLogs`.
+
+### 📚 Documentacion
+- `docs/RADAR_VIEW.md`:
+  - seccion de troubleshooting en Windows (cache de escaneo, permisos, limitaciones de driver).
+  - glosario/guia de `NODE INTEL` (CH, bandas, riesgo, auto, busqueda).
+
+## [v0.6.9] - Radar View: RADAR LOGS + AP conectado resaltado + ayuda in-app (2026-02-10)
+### 🎛️ Frontend
+- `src/ui/components/panels/ConsoleLogs.tsx`:
+  - nueva pestaña `RADAR LOGS` para trazabilidad local de escaneos WiFi.
+- `src/ui/hooks/modules/useWifiRadar.ts`:
+  - registra resumen y detalle de cada escaneo en `RADAR LOGS` (SSID/BSSID/vendor/seguridad/canal/RSSI/riesgo).
+- `src/ui/components/hud/RadarPanel.tsx`:
+  - el AP conectado se resalta con anillo cian y etiqueta `CONNECTED (TU ROUTER)`.
+  - boton `?` para explicar `NODE INTEL` (riesgo/banda/canal/busqueda/auto) directamente en la UI.
+
+### 🦀 Backend (Contratos)
+- `src-tauri/src/domain/entities.rs`, `src-tauri/src/api/dtos.rs`:
+  - añadido `isConnected` en WiFi Radar para identificar el AP conectado cuando el SO lo expone.
+- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
+  - marca `is_connected` a partir de `netsh wlan show interfaces` en Windows.
+
+### 🧪 Tests
+- Añadidos tests:
+  - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
+  - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

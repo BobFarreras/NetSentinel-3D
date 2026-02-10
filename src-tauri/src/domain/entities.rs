@@ -82,3 +82,36 @@ pub struct TrafficPacket {
     pub info: String,     // Ex: "HTTPS Traffic" o "DNS Query"
     pub is_intercepted: bool,
 }
+
+// 6. WIFI (Radar View)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiScanRecord {
+    // Identificador del AP (BSSID). Se trata como entrada no confiable.
+    pub bssid: String,
+    // SSID puede estar vacio en redes ocultas. Se sanea en application antes de exponerlo a UI.
+    pub ssid: String,
+    pub channel: Option<u16>,
+    // RSSI aproximado (ej: -40 fuerte, -90 debil). Si no hay dato fiable, usar -100.
+    pub signal_level: i32,
+    // Cadena de seguridad reportada por el sistema (WPA2/WPA3/WEP/OPEN/etc.).
+    pub security_type: String,
+    // Marca si el registro corresponde al AP al que el host esta conectado actualmente.
+    // Solo puede inferirse en plataformas donde el sistema expone el enlace activo (ej: Windows via netsh).
+    pub is_connected: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiEntity {
+    pub bssid: String,
+    pub ssid: String,
+    pub channel: Option<u16>,
+    pub signal_level: i32,
+    pub security_type: String,
+    pub vendor: String,
+    pub distance_mock: f32,
+    pub risk_level: String,     // HARDENED | STANDARD | LEGACY | OPEN
+    pub is_targetable: bool,    // true si la configuracion es debil (legacy/open) en modo educativo
+    pub is_connected: bool,     // true si es el AP actual del host
+}

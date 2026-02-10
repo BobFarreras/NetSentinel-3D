@@ -131,3 +131,15 @@ Esta guía define cómo aplicar las prioridades actuales sin romper el sistema:
    - `npm test -- --run`
    - `npm run build`
    - `cargo check` (si hubo cambios en Rust)
+
+## 🛰️ Roadmap inmediato: Radar View (WiFi Spectrum)
+
+Se ha definido la arquitectura de `Radar View` para reconocimiento pasivo de espectro WiFi.
+
+- Documento tecnico: `docs/RADAR_VIEW.md`
+- Enfoque:
+  - escaneo de infraestructura visible (SSID/BSSID/canal/RSSI),
+  - clasificacion de riesgo visual,
+  - simulaciones educativas controladas de PMKID/IoT/MLO en modo inferencia.
+- Restriccion:
+  - no se incorporan automatizaciones ofensivas reales.

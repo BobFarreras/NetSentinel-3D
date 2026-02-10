@@ -8,6 +8,10 @@ NetSentinel 3D es una herramienta defensiva de auditoria de red. Su uso debe est
 - redes con autorizacion explicita,
 - entornos de laboratorio o formacion.
 
+Politica adicional para modulos educativos avanzados:
+- Se permiten simulaciones controladas de tecnicas (p. ej. PMKID/IoT/MLO) con fines didacticos.
+- No se deben incluir instrucciones ni automatizaciones ofensivas reales orientadas a comprometer redes de terceros.
+
 ## 2. Modelo de Seguridad Base
 ### 2.1 Separacion de privilegios
 - Frontend (React): no debe ejecutar operaciones de sistema ni red de bajo nivel.
@@ -153,3 +157,9 @@ Si se detecta comportamiento inseguro:
 2. Registrar fecha, entorno y evidencia minima del fallo.
 3. Crear fix con test o validacion reproducible.
 4. Actualizar `docs/SECURITY.md`, `AGENTS.md` y docs afectadas en el mismo cambio.
+
+## 9. Radar View (WiFi Spectrum) - Reglas de seguridad
+- Toda visualizacion de SSID/BSSID debe tratarse como entrada no confiable.
+- El render en UI debe hacerse como texto plano (sin HTML incrustado).
+- El modulo debe mostrar aviso legal de uso autorizado en su primer uso.
+- Las simulaciones de riesgo (PMKID/IoT/MLO) deben mantenerse en modo inferencia didactica.

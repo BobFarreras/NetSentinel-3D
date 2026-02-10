@@ -32,6 +32,8 @@ regex = "1"
 async-trait = "0.1"
 pnet = "0.34"
 dns-lookup = "2.0"
+wifiscanner = "0.5.1"
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_NetworkManagement_WiFi"] }
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
 

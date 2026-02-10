@@ -5,12 +5,14 @@ interface TopBarProps {
   activeNodes: number;
   onScan: () => void;
   onHistoryToggle: () => void;
+  onRadarToggle: () => void;
   showHistory: boolean;
+  showRadar: boolean;
   identity: HostIdentity | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ 
-  scanning, activeNodes, onScan, onHistoryToggle, showHistory , identity
+  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, showHistory, showRadar, identity
 }) => {
   return (
     <div style={{
@@ -25,7 +27,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       zIndex: 50,
       userSelect: 'none' // Evita seleccionar text per error
     }}>
-      {/* LEFT: LOGO */}
+      {/* Izquierda: logo e identidad */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <h2 style={{ 
           margin: 0, 
@@ -38,7 +40,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           NETSENTINEL 
         </h2>
 
-        {/* 👇 VISUALITZACIÓ DE LA IDENTITAT */}
+        {/* Identidad local */}
         {identity && (
           <div style={{ 
             display: 'flex', gap: '15px', fontSize: '0.85rem', fontFamily: 'monospace',
@@ -50,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <span title="Interface Name" style={{ opacity: 0.7 }}>
               [{identity.interfaceName}]
             </span>
-            {/* Opcional: Gateway */}
+            {/* Gateway */}
             <span title="Gateway" style={{ opacity: 0.5 }}>
               GW: {identity.gatewayIp}
             </span>
@@ -58,7 +60,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         )}
       </div>
 
-      {/* CENTER: CONTROLS */}
+      {/* Centro: controles */}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
           onClick={onScan}
@@ -96,9 +98,26 @@ export const TopBar: React.FC<TopBarProps> = ({
         >
           {showHistory ? 'HIDE LOGS' : 'HISTORY'}
         </button>
+
+        <button
+          onClick={onRadarToggle}
+          style={{
+            background: showRadar ? '#003320' : 'transparent',
+            color: showRadar ? '#00ff88' : '#66ffcc',
+            border: `1px solid ${showRadar ? '#00ff88' : '#006644'}`,
+            borderRadius: '2px',
+            padding: '6px 16px',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'inherit'
+          }}
+        >
+          {showRadar ? 'HIDE RADAR' : 'RADAR'}
+        </button>
       </div>
 
-      {/* RIGHT: STATUS */}
+      {/* Derecha: estado */}
       <div style={{ 
         fontSize: '0.9rem', 
         color: '#88ff88', 

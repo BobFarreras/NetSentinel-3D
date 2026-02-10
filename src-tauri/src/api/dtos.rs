@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::domain::entities::{Device, RouterAuditResult};
+use crate::domain::entities::{Device, RouterAuditResult, WifiEntity};
 
 // 1. DISPOSITIU DTO (Aquest SÍ que volem camelCase per React)
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -58,6 +58,39 @@ impl From<RouterAuditResult> for RouterAuditResultDTO {
             vulnerable: r.vulnerable,
             credentials_found: r.credentials_found,
             message: r.message,
+        }
+    }
+}
+
+// 4. WIFI RADAR DTO
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiNetworkDTO {
+    pub bssid: String,
+    pub ssid: String,
+    pub channel: Option<u16>,
+    pub signal_level: i32,
+    pub security_type: String,
+    pub vendor: String,
+    pub distance_mock: f32,
+    pub risk_level: String,
+    pub is_targetable: bool,
+    pub is_connected: bool,
+}
+
+impl From<WifiEntity> for WifiNetworkDTO {
+    fn from(w: WifiEntity) -> Self {
+        Self {
+            bssid: w.bssid,
+            ssid: w.ssid,
+            channel: w.channel,
+            signal_level: w.signal_level,
+            security_type: w.security_type,
+            vendor: w.vendor,
+            distance_mock: w.distance_mock,
+            risk_level: w.risk_level,
+            is_targetable: w.is_targetable,
+            is_connected: w.is_connected,
         }
     }
 }

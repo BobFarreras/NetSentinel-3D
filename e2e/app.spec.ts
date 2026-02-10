@@ -108,4 +108,17 @@ test.describe('NetSentinel App', () => {
     await expect(page.getByRole('button', { name: /START/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /STOP/ })).toHaveCount(0);
   });
+
+  test('debe abrir Radar View y escanear redes WiFi (mock)', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'RADAR' }).click();
+    await expect(page.getByText('RADAR VIEW')).toBeVisible();
+
+    await page.getByRole('button', { name: /ACEPTO Y CONTINUO/ }).click();
+    await page.getByRole('button', { name: /SCAN AIRWAVES/ }).click();
+
+    // Al menos debe mostrar contador actualizado.
+    await expect(page.getByText(/NETWORKS:\s*[1-9]\d*/)).toBeVisible();
+  });
 });

@@ -11,6 +11,7 @@ use tauri::{Emitter, Manager, State};
 
 use crate::application::jammer_service::JammerService;
 use crate::application::traffic_service::TrafficService;
+use crate::application::wifi_service::WifiService;
 use crate::api::validators::{validate_mac_address, validate_usable_host_ipv4};
 use crate::domain::entities::HostIdentity;
 use crate::infrastructure::repositories::local_intelligence;
@@ -20,6 +21,7 @@ use crate::infrastructure::{
     chrome_auditor::ChromeAuditor, fs_repository::FileHistoryRepository,
     system_scanner::SystemScanner,
 };
+use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 
 // 3. Imports propis (Aplicació)
 use crate::application::{
@@ -100,6 +102,7 @@ pub fn run() {
             // 1. CAPA D'INFRAESTRUCTURA (Els "Músculs")
             // =====================================================
             let scanner_infra = Arc::new(SystemScanner);
+            let wifi_scanner_infra = Arc::new(SystemWifiScanner::new());
 
             // Auditor amb Logger connectat a Tauri Events
             let handle = app.handle().clone();
@@ -116,6 +119,7 @@ pub fn run() {
             let scanner_service = ScannerService::new(scanner_infra);
             let audit_service = AuditService::new(auditor_infra);
             let history_service = HistoryService::new(history_infra);
+            let wifi_service = WifiService::new(wifi_scanner_infra);
 
             // El Traffic Service no depèn d'infra externa injectada, es crea directe
             let traffic_service = TrafficService::new();
@@ -126,6 +130,7 @@ pub fn run() {
             app.manage(scanner_service);
             app.manage(audit_service);
             app.manage(history_service);
+            app.manage(wifi_service);
 
             // Registrem el TrafficService dins del wrapper TrafficState
             app.manage(TrafficState(Mutex::new(traffic_service)));
@@ -140,6 +145,7 @@ pub fn run() {
             api::commands::fetch_router_devices,
             api::commands::save_scan,
             api::commands::get_history,
+            api::commands::scan_airwaves,
             // Noves comandes registrades a lib.rs
             get_identity,
             start_traffic_sniffing,

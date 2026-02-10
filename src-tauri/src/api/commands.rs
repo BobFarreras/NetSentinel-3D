@@ -2,7 +2,9 @@ use tauri::State;
 use crate::application::scanner_service::ScannerService;
 use crate::application::audit_service::AuditService;
 use crate::application::history_service::HistoryService;
+use crate::application::wifi_service::WifiService;
 use crate::api::dtos::{DeviceDTO, SecurityReportDTO, RouterAuditResultDTO};
+use crate::api::dtos::WifiNetworkDTO;
 use crate::api::validators::{validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4};
 use crate::domain::entities::ScanSession;
 
@@ -66,6 +68,14 @@ pub async fn save_scan(service: State<'_, HistoryService>, devices: Vec<crate::d
 #[tauri::command]
 pub async fn get_history(service: State<'_, HistoryService>) -> Result<Vec<ScanSession>, String> {
     Ok(service.get_history().await)
+}
+
+// --- WIFI RADAR VIEW ---
+
+#[tauri::command]
+pub async fn scan_airwaves(service: State<'_, WifiService>) -> Result<Vec<WifiNetworkDTO>, String> {
+    let networks = service.scan_airwaves().await?;
+    Ok(networks.into_iter().map(WifiNetworkDTO::from).collect())
 }
 
 fn validate_scan_range(range: &Option<String>) -> Result<(), String> {

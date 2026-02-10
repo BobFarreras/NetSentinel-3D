@@ -25,3 +25,9 @@ pub trait HistoryRepositoryPort: Send + Sync {
     async fn save_session(&self, session: ScanSession) -> Result<(), String>;
     async fn get_all_sessions(&self) -> Result<Vec<ScanSession>, String>;
 }
+
+// PORT 4: ESCANER WIFI (RECONOCIMIENTO DE INFRAESTRUCTURA)
+#[async_trait]
+pub trait WifiScannerPort: Send + Sync {
+    async fn scan_airwaves(&self) -> Result<Vec<crate::domain::entities::WifiScanRecord>, String>;
+}
