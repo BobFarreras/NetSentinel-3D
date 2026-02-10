@@ -19,6 +19,8 @@ pub async fn run_external_tool(
     sink: Arc<dyn ExternalAuditEventSink>,
 ) {
     let started = std::time::Instant::now();
+    let mut finished_by_cancel = false;
+    let mut finished_by_timeout = false;
 
     let result = async {
         let mut cmd = Command::new(&request.binary_path);
@@ -76,6 +78,7 @@ pub async fn run_external_tool(
             let dur = Duration::from_millis(ms);
             tokio::select! {
                 _ = &mut cancel_rx => {
+                    finished_by_cancel = true;
                     let _ = child.kill().await;
                     child.wait().await.map_err(|e| e.to_string())?
                 }
@@ -83,7 +86,10 @@ pub async fn run_external_tool(
                     match s {
                         Ok(r) => r.map_err(|e| e.to_string())?,
                         Err(_) => {
+                            finished_by_timeout = true;
                             let _ = child.kill().await;
+                            // Best-effort: esperamos un poco a que el proceso termine tras kill.
+                            let _ = tokio::time::timeout(Duration::from_millis(700), child.wait()).await;
                             return Err(format!("timeout tras {ms}ms"));
                         }
                     }
@@ -92,6 +98,7 @@ pub async fn run_external_tool(
         } else {
             tokio::select! {
                 _ = &mut cancel_rx => {
+                    finished_by_cancel = true;
                     let _ = child.kill().await;
                     child.wait().await.map_err(|e| e.to_string())?
                 }
@@ -124,12 +131,18 @@ pub async fn run_external_tool(
         Ok(status) => {
             let success = status.success();
             let exit_code = status.code();
+            let error = if finished_by_cancel {
+                Some("cancelado por el usuario".to_string())
+            } else {
+                None
+            };
             sink.on_exit(ExternalAuditExitEvent {
                 audit_id,
-                success,
+                // Cancelado: el exit code puede ser 1/137/etc dependiendo de la plataforma. Lo tratamos como fallo.
+                success: if finished_by_cancel { false } else { success },
                 exit_code,
                 duration_ms,
-                error: None,
+                error,
             });
         }
         Err(err) => {
@@ -138,7 +151,12 @@ pub async fn run_external_tool(
                 success: false,
                 exit_code: None,
                 duration_ms,
-                error: Some(err),
+                error: Some(if finished_by_timeout {
+                    // Mensaje estable para UI + logs.
+                    format!("timeout: {err}")
+                } else {
+                    err
+                }),
             });
         }
     }
