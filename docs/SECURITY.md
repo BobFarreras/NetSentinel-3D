@@ -25,11 +25,19 @@ Comandos actualmente registrados:
 - `fetch_router_devices`
 - `save_scan`
 - `get_history`
+- `save_latest_snapshot`
+- `load_latest_snapshot`
+- `save_gateway_credentials`
+- `get_gateway_credentials`
+- `delete_gateway_credentials`
+- `scan_airwaves`
 - `get_identity`
 - `start_traffic_sniffing`
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
+- `start_external_audit`
+- `cancel_external_audit`
 
 Riesgo:
 - Si la UI se compromete, un atacante puede intentar abusar de estos comandos.
@@ -116,6 +124,17 @@ Controles existentes:
 Controles recomendados:
 - documentar ubicacion exacta por SO,
 - definir politica de retencion y borrado manual.
+
+### 4.5 Credenciales (gateway) - keyring local
+Objetivo:
+- Reducir friccion: si el auditor ya ha validado credenciales del gateway en un lab, no repetir la misma auditoria cada vez.
+
+Regla:
+- No guardar contraseñas en JSON plano en `AppData`.
+
+Implementacion:
+- Backend: `KeyringCredentialStore` (crate `keyring`) guarda un blob JSON en el keyring del sistema (Windows Credential Manager).
+- Comandos: `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`.
 
 ## 5. Cadena de Suministro (Dependencias)
 Controles recomendados en CI o rutina semanal:

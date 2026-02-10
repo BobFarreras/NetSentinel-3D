@@ -14,10 +14,18 @@ export const useScanner = () => {
     let mounted = true;
     const load = async () => {
       try {
+        // 1) Snapshot rapido (si existe) para pintar UI al instante.
+        const snap = await networkAdapter.loadLatestSnapshot();
+        if (mounted && snap?.devices?.length) {
+          setDevices(snap.devices);
+        }
+
+        // 2) Historial (fuente de verdad para comparacion/intrusos)
         const h = await networkAdapter.getHistory();
         if (mounted) {
           setHistory(h);
-          if (h.length > 0) setDevices(h[0].devices);
+          // Si no hay snapshot, usamos la ultima sesion historica como fallback.
+          if ((!snap || !snap.devices?.length) && h.length > 0) setDevices(h[0].devices);
         }
       } catch (e) { console.error(e); }
     };
@@ -25,15 +33,17 @@ export const useScanner = () => {
     return () => { mounted = false; };
   }, []);
 
-  const startScan = async () => {
+  const startScan = async (range: string = '192.168.1.0/24') => {
     setScanning(true);
     try {
-      const results = await networkAdapter.scanNetwork('192.168.1.0/24');
+      const results = await networkAdapter.scanNetwork(range);
       
       const newIntruders = detectIntruders(results, history);
       setIntruders(newIntruders);
       setDevices(results);
 
+      // Persistimos snapshot para arranque rapido.
+      await networkAdapter.saveLatestSnapshot(results);
       await networkAdapter.saveScan(results);
       setHistory(await networkAdapter.getHistory());
     } catch (e) {

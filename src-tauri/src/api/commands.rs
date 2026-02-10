@@ -4,11 +4,14 @@ use crate::application::audit_service::AuditService;
 use crate::application::history_service::HistoryService;
 use crate::application::wifi_service::WifiService;
 use crate::application::external_audit_service::{ExternalAuditRequest, ExternalAuditService};
+use crate::application::latest_snapshot_service::LatestSnapshotService;
+use crate::application::credential_service::CredentialService;
 use crate::api::dtos::{DeviceDTO, SecurityReportDTO, RouterAuditResultDTO};
 use crate::api::dtos::WifiNetworkDTO;
 use crate::api::dtos::ExternalAuditRequestDTO;
 use crate::api::validators::{validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4};
-use crate::domain::entities::ScanSession;
+use crate::domain::entities::{ScanSession, LatestSnapshot, GatewayCredentials};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 // --- NETWORK SCANNER ---
 
@@ -70,6 +73,65 @@ pub async fn save_scan(service: State<'_, HistoryService>, devices: Vec<crate::d
 #[tauri::command]
 pub async fn get_history(service: State<'_, HistoryService>) -> Result<Vec<ScanSession>, String> {
     Ok(service.get_history().await)
+}
+
+// --- SNAPSHOT (arranque rapido) ---
+
+#[tauri::command]
+pub async fn save_latest_snapshot(
+    service: State<'_, LatestSnapshotService>,
+    devices: Vec<crate::domain::entities::Device>,
+) -> Result<(), String> {
+    service.save_devices(devices).await
+}
+
+#[tauri::command]
+pub async fn load_latest_snapshot(service: State<'_, LatestSnapshotService>) -> Result<Option<LatestSnapshot>, String> {
+    service.load_snapshot().await
+}
+
+// --- CREDENCIALES (gateway) ---
+
+#[tauri::command]
+pub async fn save_gateway_credentials(
+    service: State<'_, CredentialService>,
+    gateway_ip: String,
+    user: String,
+    pass: String,
+) -> Result<(), String> {
+    validate_router_credentials_input(&gateway_ip, &user, &pass)?;
+
+    let saved_at = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+
+    service
+        .save_gateway_credentials(GatewayCredentials {
+            gateway_ip,
+            user,
+            pass,
+            saved_at,
+        })
+        .await
+}
+
+#[tauri::command]
+pub async fn get_gateway_credentials(
+    service: State<'_, CredentialService>,
+    gateway_ip: String,
+) -> Result<Option<GatewayCredentials>, String> {
+    validate_usable_host_ipv4(&gateway_ip, "gateway_ip")?;
+    service.get_gateway_credentials(&gateway_ip).await
+}
+
+#[tauri::command]
+pub async fn delete_gateway_credentials(
+    service: State<'_, CredentialService>,
+    gateway_ip: String,
+) -> Result<(), String> {
+    validate_usable_host_ipv4(&gateway_ip, "gateway_ip")?;
+    service.delete_gateway_credentials(&gateway_ip).await
 }
 
 // --- WIFI RADAR VIEW ---

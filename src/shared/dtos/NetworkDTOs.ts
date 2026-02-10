@@ -74,6 +74,18 @@ export interface HostIdentity {
   dnsServers: string[];
 }
 
+export interface LatestSnapshotDTO {
+  timestamp: number;
+  devices: DeviceDTO[];
+}
+
+export interface GatewayCredentialsDTO {
+  gatewayIp: string;
+  user: string;
+  pass: string;
+  savedAt: number;
+}
+
 export interface TrafficPacket {
   id: number;
   timestamp: number;

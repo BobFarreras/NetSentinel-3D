@@ -13,6 +13,8 @@ use crate::application::jammer_service::JammerService;
 use crate::application::traffic_service::TrafficService;
 use crate::application::wifi_service::WifiService;
 use crate::application::external_audit_service::ExternalAuditService;
+use crate::application::latest_snapshot_service::LatestSnapshotService;
+use crate::application::credential_service::CredentialService;
 use crate::api::validators::{validate_mac_address, validate_usable_host_ipv4};
 use crate::domain::entities::HostIdentity;
 use crate::infrastructure::repositories::local_intelligence;
@@ -22,6 +24,8 @@ use crate::infrastructure::{
     chrome_auditor::ChromeAuditor, fs_repository::FileHistoryRepository,
     system_scanner::SystemScanner,
 };
+use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
+use crate::infrastructure::credential_store::KeyringCredentialStore;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 
 // 3. Imports propis (Aplicació)
@@ -113,6 +117,8 @@ pub fn run() {
             let auditor_infra = Arc::new(ChromeAuditor::new(logger_callback));
 
             let history_infra = Arc::new(FileHistoryRepository);
+            let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
+            let credential_store_infra = Arc::new(KeyringCredentialStore::new("netsentinel"));
             let jammer_service = JammerService::new();
             // =====================================================
             // 2. CAPA D'APLICACIÓ (El "Cervell")
@@ -120,6 +126,8 @@ pub fn run() {
             let scanner_service = ScannerService::new(scanner_infra);
             let audit_service = AuditService::new(auditor_infra);
             let history_service = HistoryService::new(history_infra);
+            let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
+            let credential_service = CredentialService::new(credential_store_infra);
             let wifi_service = WifiService::new(wifi_scanner_infra);
             let external_audit_service = ExternalAuditService::new();
 
@@ -132,6 +140,8 @@ pub fn run() {
             app.manage(scanner_service);
             app.manage(audit_service);
             app.manage(history_service);
+            app.manage(latest_snapshot_service);
+            app.manage(credential_service);
             app.manage(wifi_service);
             app.manage(external_audit_service);
 
@@ -148,6 +158,11 @@ pub fn run() {
             api::commands::fetch_router_devices,
             api::commands::save_scan,
             api::commands::get_history,
+            api::commands::save_latest_snapshot,
+            api::commands::load_latest_snapshot,
+            api::commands::save_gateway_credentials,
+            api::commands::get_gateway_credentials,
+            api::commands::delete_gateway_credentials,
             api::commands::scan_airwaves,
             api::commands::start_external_audit,
             api::commands::cancel_external_audit,

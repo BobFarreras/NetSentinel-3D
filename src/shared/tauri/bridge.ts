@@ -1,6 +1,6 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
-import type { DeviceDTO, ExternalAuditExitEvent, ExternalAuditLogEvent, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
+import type { DeviceDTO, ExternalAuditExitEvent, ExternalAuditLogEvent, GatewayCredentialsDTO, LatestSnapshotDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
 
 type EventEnvelope<T> = { payload: T };
 type EventCallback<T> = (event: EventEnvelope<T>) => void;
@@ -24,6 +24,8 @@ let packetId = 0;
 let extAuditTimer: ReturnType<typeof setInterval> | null = null;
 let extAuditSeq = 0;
 let activeExtAuditId: string | null = null;
+let mockLatestSnapshot: LatestSnapshotDTO | null = null;
+const mockGatewayCreds = new Map<string, GatewayCredentialsDTO>();
 
 const mockScanDevices: DeviceDTO[] = [
   { ip: '192.168.1.1', mac: 'AA:BB:CC:DD:EE:01', vendor: 'Router', isGateway: true, hostname: 'gateway' },
@@ -141,6 +143,13 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
       mockHistory = [session, ...mockHistory].slice(0, 50);
       return undefined as T;
     }
+    case 'save_latest_snapshot': {
+      const devices = (args?.devices as DeviceDTO[]) || [];
+      mockLatestSnapshot = { timestamp: Date.now(), devices: clone(devices) };
+      return undefined as T;
+    }
+    case 'load_latest_snapshot':
+      return clone(mockLatestSnapshot) as T;
     case 'get_history':
       return clone(mockHistory) as T;
     case 'get_identity':
@@ -152,6 +161,23 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
         interfaceName: 'Wi-Fi',
         dnsServers: ['1.1.1.1', '8.8.8.8'],
       } as T;
+    case 'save_gateway_credentials': {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      const user = (args?.user as string) || 'admin';
+      const pass = (args?.pass as string) || '1234';
+      mockGatewayCreds.set(gatewayIp, { gatewayIp, user, pass, savedAt: Date.now() });
+      return undefined as T;
+    }
+    case 'get_gateway_credentials': {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      const creds = mockGatewayCreds.get(gatewayIp) || null;
+      return clone(creds) as T;
+    }
+    case 'delete_gateway_credentials': {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      mockGatewayCreds.delete(gatewayIp);
+      return undefined as T;
+    }
     case 'audit_target': {
       const targetIp = (args?.ip as string) || '192.168.1.10';
       return {

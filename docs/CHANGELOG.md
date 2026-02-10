@@ -141,6 +141,27 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
   - presets no intrusivos (recon basico, fingerprint de cabeceras),
   - simulaciones didacticas (PMKID/IoT) sin ejecucion ofensiva.
 
+## [v0.7.2] - Auto-scan + snapshot + credenciales locales (2026-02-10)
+### ⚡ Arranque (UX)
+- Al iniciar la app, se puede ejecutar auto-scan (preferencia `netsentinel:autoScanOnStartup` en `localStorage`).
+- El escaneo usa el CIDR derivado de `get_identity` (IP + netmask), con fallback a `/24`.
+
+### 💾 Persistencia
+- Nuevo snapshot rapido en AppData: `latest_snapshot.json` (carga inmediata de inventario al abrir la app).
+- Nuevos comandos:
+  - `save_latest_snapshot`, `load_latest_snapshot`
+
+### 🔐 Credenciales (local, seguro)
+- Al detectar credenciales del gateway, se guardan en el keyring del sistema (Windows Credential Manager) para:
+  - sincronizar `fetch_router_devices` automaticamente en el arranque (si existe credencial almacenada),
+  - reducir dependencia de repetir `audit_router`.
+- Nuevos comandos:
+  - `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`
+
+### 🧠 Identificacion
+- Mejorado `VendorResolver` con deteccion de MAC aleatoria (privacy) y soporte opcional de `oui.json` en AppData.
+- Filtro defensivo de hostnames: se descarta `localhost` en IPs remotas para evitar falsos positivos (TV/Alexa por cable, etc.).
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

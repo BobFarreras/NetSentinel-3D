@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DeviceDTO, RouterAuditResult } from '../../../shared/dtos/NetworkDTOs';
 import { auditAdapter } from '../../../adapters/auditAdapter';
+import { networkAdapter } from '../../../adapters/networkAdapter';
 
 export const useRouterHacker = (
   addLog: (ip: string, msg: string) => void,
@@ -23,6 +24,15 @@ export const useRouterHacker = (
         
         if (result.credentials_found) {
           const [user, pass] = result.credentials_found.split(':');
+
+          // Persistencia local (equipo del auditor): evita repetir audit_router en cada arranque.
+          try {
+            await networkAdapter.saveGatewayCredentials(gatewayIp, user, pass);
+            addLog(gatewayIp, `> CREDENTIALS: guardadas localmente para ${gatewayIp}`);
+          } catch {
+            addLog(gatewayIp, `> WARNING: no se pudieron guardar credenciales localmente (keyring)`);
+          }
+
           const routerDevices = await auditAdapter.fetchRouterDevices(gatewayIp, user, pass);
           
           addLog(gatewayIp, `✨ SYNC COMPLETE: ${routerDevices.length} nodes imported.`);
@@ -45,7 +55,10 @@ export const useRouterHacker = (
                 newMap.set(rd.ip, rd);
               }
             });
-            return Array.from(newMap.values());
+            const merged = Array.from(newMap.values());
+            // Snapshot para que el arranque pinte el inventario completo.
+            void networkAdapter.saveLatestSnapshot(merged);
+            return merged;
           });
         }
       } else {

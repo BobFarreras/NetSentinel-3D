@@ -9,7 +9,9 @@ vi.mock('../../../../adapters/networkAdapter', () => ({
   networkAdapter: {
     scanNetwork: vi.fn(),
     saveScan: vi.fn(),
-    getHistory: vi.fn()
+    getHistory: vi.fn(),
+    loadLatestSnapshot: vi.fn(),
+    saveLatestSnapshot: vi.fn(),
   }
 }));
 
@@ -27,6 +29,7 @@ describe('🔌 Integration: useScanner Hook', () => {
 
   it('🟢 Hauria d\'iniciar amb l\'estat buit', async () => {
     // Simulem que l'historial està buit al principi
+    (networkAdapter.loadLatestSnapshot as any).mockResolvedValue(null);
     (networkAdapter.getHistory as any).mockResolvedValue([]);
 
     const { result } = renderHook(() => useScanner());
@@ -42,7 +45,9 @@ describe('🔌 Integration: useScanner Hook', () => {
 
   it('🚀 Hauria de fer un escaneig complet i actualitzar l\'estat', async () => {
     // ARRANGE (Preparem les respostes falses)
+    (networkAdapter.loadLatestSnapshot as any).mockResolvedValue(null);
     (networkAdapter.scanNetwork as any).mockResolvedValue(mockDevices);
+    (networkAdapter.saveLatestSnapshot as any).mockResolvedValue(undefined);
     (networkAdapter.saveScan as any).mockResolvedValue(undefined);
     (networkAdapter.getHistory as any).mockResolvedValue([]); // Historial buit per forçar intrusos
 
@@ -57,6 +62,7 @@ describe('🔌 Integration: useScanner Hook', () => {
     
     // 1. S'ha cridat a l'adaptador?
     expect(networkAdapter.scanNetwork).toHaveBeenCalledWith('192.168.1.0/24');
+    expect(networkAdapter.saveLatestSnapshot).toHaveBeenCalledTimes(1);
     
     // 2. S'ha actualitzat l'estat de dispositius?
     expect(result.current.devices).toEqual(mockDevices);
@@ -69,6 +75,7 @@ describe('🔌 Integration: useScanner Hook', () => {
 
   it('🚨 Hauria de detectar un intrús real durant l\'escaneig', async () => {
     // 1. Preparem un historial previ (Router + PC)
+    (networkAdapter.loadLatestSnapshot as any).mockResolvedValue(null);
     (networkAdapter.getHistory as any).mockResolvedValue([{
       id: 'session_1', timestamp: 1000, label: 'Old', 
       devices: mockDevices // Els 2 coneguts
@@ -87,6 +94,7 @@ describe('🔌 Integration: useScanner Hook', () => {
       { ip: '192.168.1.99', mac: 'FF:FF:FF', vendor: 'EVIL_HACKER' }
     ];
     (networkAdapter.scanNetwork as any).mockResolvedValue(newScan);
+    (networkAdapter.saveLatestSnapshot as any).mockResolvedValue(undefined);
 
     // ACT
     await act(async () => {

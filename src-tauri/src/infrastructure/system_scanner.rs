@@ -58,7 +58,15 @@ impl NetworkScannerPort for SystemScanner {
             }
 
             // 🕵️ NIVELL 2: Resolució de Hostname
-            let hostname_found = HostnameResolver::resolve(ip);
+            let mut hostname_found = HostnameResolver::resolve(ip);
+
+            // Filtro adicional: si por error devuelve "localhost" para un host que no es el nuestro,
+            // lo descartamos para no confundir el onboarding (TV/Alexa por cable, etc.).
+            if hostname_found.as_deref().map(|s| s.eq_ignore_ascii_case("localhost")).unwrap_or(false) {
+                if *ip != my_ip && *ip != "127.0.0.1" {
+                    hostname_found = None;
+                }
+            }
             
             // LOG DE DEBUG
             if let Some(ref h) = hostname_found {
