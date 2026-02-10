@@ -67,6 +67,7 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   const [channelFilter, setChannelFilter] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoTick, setAutoTick] = useState(0);
 
   const isMounted = useRef(true);
   const scanningRef = useRef(false);
@@ -96,6 +97,9 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   useEffect(() => {
     if (!accepted || !autoRefresh) return;
 
+    // Disparar un scan inmediato al activar AUTO para que el usuario vea feedback sin esperar el primer intervalo.
+    scan();
+
     const id = window.setInterval(() => {
       // Evitar solapar escaneos.
       if (!isMounted.current || scanningRef.current) return;
@@ -106,6 +110,20 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
       window.clearInterval(id);
     };
   }, [accepted, autoRefresh, scan]);
+
+  useEffect(() => {
+    if (!accepted || !autoRefresh) {
+      setAutoTick(0);
+      return;
+    }
+
+    setAutoTick(5);
+    const id = window.setInterval(() => {
+      setAutoTick((s) => (s <= 1 ? 5 : s - 1));
+    }, 1000);
+
+    return () => window.clearInterval(id);
+  }, [accepted, autoRefresh]);
 
   const filteredNetworks = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -231,7 +249,7 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
               disabled={!accepted}
               style={{ accentColor: "#00ff88" }}
             />
-            AUTO
+            AUTO{accepted && autoRefresh ? ` (${autoTick}s)` : ""}
           </label>
 
           <button
