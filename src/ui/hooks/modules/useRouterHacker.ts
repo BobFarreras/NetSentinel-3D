@@ -10,6 +10,14 @@ export const useRouterHacker = (
 ) => {
   const [routerRisk, setRouterRisk] = useState<RouterAuditResult | null>(null);
 
+  const isValidMac = (mac?: string) => {
+    if (!mac) return false;
+    const m = mac.trim().toUpperCase();
+    if (m === 'ROUTER_AUTH' || m === 'UNKNOWN') return false;
+    if (m === '00:00:00:00:00:00') return false;
+    return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m);
+  };
+
   const checkRouterSecurity = async (gatewayIp: string) => {
     setActiveTarget(gatewayIp);
     addLog(gatewayIp, `> INITIATING GATEWAY AUDIT: ${gatewayIp}...`);
@@ -43,8 +51,10 @@ export const useRouterHacker = (
             routerDevices.forEach(rd => {
               if (newMap.has(rd.ip)) {
                 const existing = newMap.get(rd.ip)!;
+                const nextMac = isValidMac(existing.mac) ? existing.mac : (isValidMac(rd.mac) ? rd.mac : existing.mac);
                 newMap.set(rd.ip, {
                   ...existing,
+                  mac: nextMac,
                   vendor: (rd.vendor && rd.vendor !== rd.ip) ? rd.vendor : existing.vendor,
                   hostname: rd.hostname,
                   signal_strength: rd.signal_strength,
@@ -52,7 +62,13 @@ export const useRouterHacker = (
                   wifi_band: rd.wifi_band
                 });
               } else {
-                newMap.set(rd.ip, rd);
+                // Si el router no aporta MAC valida, evitamos placeholders y dejamos Unknown.
+                newMap.set(rd.ip, {
+                  ...rd,
+                  mac: isValidMac(rd.mac) ? rd.mac : '00:00:00:00:00:00',
+                  vendor: rd.vendor && rd.vendor !== rd.ip ? rd.vendor : 'Generic / Unknown Device',
+                  hostname: rd.hostname && rd.hostname !== rd.ip ? rd.hostname : undefined,
+                });
               }
             });
             const merged = Array.from(newMap.values());

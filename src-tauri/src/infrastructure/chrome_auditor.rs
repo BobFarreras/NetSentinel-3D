@@ -5,6 +5,8 @@ use std::ffi::OsStr;
 use std::time::Duration;
 use std::thread;
 use std::sync::Arc;
+use regex::Regex;
+use crate::infrastructure::network::vendor_resolver::VendorResolver;
 
 // --- 1. ARSENAL D'SCRIPTS (Separem el JS brut de la lògica Rust) ---
 struct ScriptArsenal;
@@ -121,10 +123,16 @@ impl ChromeAuditor {
     }
 
     fn parse_router_text(&self, text: &str) -> Vec<Device> {
-        // ... (La mateixa lògica de parsing que teniem abans, sense canvis)
+        // Parsing defensivo: el texto del DOM puede variar segun firmware/idioma del router.
+        // Reglas:
+        // - Nunca emitimos MAC placeholders como "ROUTER_AUTH". Si no hay MAC valida => 00:00:00:00:00:00.
+        // - No usamos la IP como "vendor" o "name". Si no hay nombre legible => "Unknown".
         let mut devices = Vec::new();
         let lines: Vec<&str> = text.split('\n').collect();
         let mut current_band = "2.4 GHz".to_string();
+
+        let re_ip = Regex::new(r"^(?:\\d{1,3}\\.){3}\\d{1,3}$").unwrap();
+        let re_mac = Regex::new(r"(?i)([0-9a-f]{2}[:-]){5}[0-9a-f]{2}").unwrap();
         
         let mut i = 0;
         while i < lines.len() {
@@ -134,15 +142,40 @@ impl ChromeAuditor {
 
             if line.starts_with("IP:") {
                 let ip = line.replace("IP:", "").trim().to_string();
+
+                // --- Nombre/alias del dispositivo (si existe) ---
                 let mut name_found = "Unknown".to_string();
                 let mut k = 1;
                 while i >= k {
                     let candidate = lines[i-k].trim();
-                    if !candidate.is_empty() && !candidate.starts_with("Signal") && !candidate.contains("GHz") && !candidate.contains("connected devices") {
+                    if candidate.is_empty()
+                        || candidate.starts_with("Signal")
+                        || candidate.contains("GHz")
+                        || candidate.contains("connected devices")
+                        || re_ip.is_match(candidate)
+                    {
+                        k += 1;
+                        if k > 10 { break; }
+                        continue;
+                    }
+                    if !candidate.is_empty() {
                         name_found = candidate.to_string();
                         break;
                     }
-                    k += 1; if k > 8 { break; }
+                    k += 1; if k > 10 { break; }
+                }
+
+                // --- MAC (si aparece en el bloque del dispositivo) ---
+                let mut mac_found: Option<String> = None;
+                // ventana alrededor del "IP:"
+                let start = i.saturating_sub(8);
+                let end = (i + 12).min(lines.len().saturating_sub(1));
+                for idx in start..=end {
+                    let txt = lines[idx];
+                    if let Some(m) = re_mac.find(txt) {
+                        mac_found = Some(m.as_str().replace('-', ":").to_uppercase());
+                        break;
+                    }
                 }
                 
                 let mut signal = "-".to_string();
@@ -155,10 +188,22 @@ impl ChromeAuditor {
                     }
                 }
 
-                self.log(&format!("   ✨ DETECTAT: {} ({})", name_found, ip));
+                // Si el "nombre" acaba siendo la IP, lo descartamos.
+                if name_found.trim() == ip {
+                    name_found = "Unknown".to_string();
+                }
+
+                let mac = mac_found.unwrap_or_else(|| "00:00:00:00:00:00".to_string());
+                let vendor = VendorResolver::resolve(&mac);
+
+                self.log(&format!("   ✨ DETECTAT: {} ({}) MAC={}", name_found, ip, mac));
                 devices.push(Device {
-                    ip, mac: "ROUTER_AUTH".to_string(), vendor: name_found.clone(),
-                    hostname: Some(name_found.clone()), name: Some(name_found), is_gateway: false,
+                    ip,
+                    mac,
+                    vendor,
+                    hostname: if name_found != "Unknown" { Some(name_found.clone()) } else { None },
+                    name: if name_found != "Unknown" { Some(name_found) } else { None },
+                    is_gateway: false,
                     ping: None, signal_strength: Some(signal), signal_rate: Some(rate), wifi_band: Some(current_band.clone()),open_ports: None,
                 });
             }
