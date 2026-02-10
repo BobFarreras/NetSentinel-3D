@@ -196,8 +196,6 @@ impl ChromeAuditor {
 
                 let mac = mac_found.unwrap_or_else(|| "00:00:00:00:00:00".to_string());
                 let vendor = VendorResolver::resolve(&mac);
-
-                self.log(&format!("   ✨ DETECTAT: {} ({}) MAC={}", name_found, ip, mac));
                 devices.push(Device {
                     ip,
                     mac,
@@ -282,10 +280,17 @@ impl RouterAuditorPort for ChromeAuditor {
                     for d in devices.iter_mut() {
                         if d.mac == "00:00:00:00:00:00" {
                             if let Some(mac) = arp_table.get(&d.ip) {
-                                d.mac = mac.clone();
+                                d.mac = mac.replace('-', ":").to_uppercase();
                             }
                         }
                         d.vendor = VendorResolver::resolve(&d.mac);
+                        // Logging post-enriquecimiento: aqui el MAC/vendor ya es el "final" (si ARP lo resolvio).
+                        let name = d
+                            .name
+                            .clone()
+                            .or_else(|| d.hostname.clone())
+                            .unwrap_or_else(|| "Unknown".to_string());
+                        self.log(&format!("   ✨ DETECTADO: {} ({}) MAC={} VENDOR={}", name, d.ip, d.mac, d.vendor));
                     }
 
                     return devices;

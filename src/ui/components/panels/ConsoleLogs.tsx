@@ -98,7 +98,18 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
                     <div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                         {/* Logs del sistema: se muestran del mas reciente al mas antiguo */}
                         {logs.slice(0).reverse().map((log, i) => (
-                            <div key={i} style={{ borderBottom: '1px solid #111', fontSize: '0.8rem', color: log.includes('ERROR') ? COLORS.textErr : COLORS.textMain, padding: '2px 0', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                            <div
+                              key={i}
+                              style={{
+                                borderBottom: '1px solid #111',
+                                fontSize: '0.8rem',
+                                color: (log.includes('ERROR') || log.includes('CRITICAL') || log.includes('💀')) ? COLORS.textErr : COLORS.textMain,
+                                padding: '2px 0',
+                                whiteSpace: 'pre-wrap',
+                                overflowWrap: 'anywhere',
+                                wordBreak: 'break-word'
+                              }}
+                            >
                                 <span style={{ color: COLORS.textDim, marginRight: '8px' }}>{new Date().toLocaleTimeString()}</span>{log}
                             </div>
                         ))}

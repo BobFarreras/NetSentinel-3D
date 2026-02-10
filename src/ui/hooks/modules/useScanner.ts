@@ -9,6 +9,7 @@ export const useScanner = () => {
   const [intruders, setIntruders] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);
   const devicesRef = useRef<DeviceDTO[]>([]);
+  const hasStartedScanRef = useRef(false);
 
   useEffect(() => {
     devicesRef.current = devices;
@@ -33,7 +34,7 @@ export const useScanner = () => {
     return false;
   };
 
-  // Càrrega inicial
+  // Carga inicial (hydrate): snapshot rapido + historial (fallback).
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -48,8 +49,11 @@ export const useScanner = () => {
         const h = await networkAdapter.getHistory();
         if (mounted) {
           setHistory(h);
-          // Si no hay snapshot, usamos la ultima sesion historica como fallback.
-          if ((!snap || !snap.devices?.length) && h.length > 0) setDevices(h[0].devices);
+          // Fallback: solo hydratar desde historial si aun no hemos pintado nada y no hay un scan en curso/arrancado.
+          // Evita el "salto" de N nodos -> menos nodos cuando el historial llega tarde.
+          if (!hasStartedScanRef.current && devicesRef.current.length === 0 && h.length > 0) {
+            setDevices(h[0].devices);
+          }
         }
       } catch (e) { console.error(e); }
     };
@@ -58,6 +62,7 @@ export const useScanner = () => {
   }, []);
 
   const startScan = async (range: string = '192.168.1.0/24') => {
+    hasStartedScanRef.current = true;
     setScanning(true);
     try {
       const results = await networkAdapter.scanNetwork(range);
@@ -65,17 +70,35 @@ export const useScanner = () => {
       const newIntruders = detectIntruders(results, history);
       setIntruders(newIntruders);
 
-      // Merge defensivo: nunca degradar MAC/vendor si ya teniamos mejor intel previa.
-      const prevByIp = new Map(devicesRef.current.map((d) => [d.ip, d]));
-      const merged = results.map((d) => {
-        const old = prevByIp.get(d.ip);
-        if (!old) return d;
-        const nextMac = isValidMac(d.mac) ? d.mac : (isValidMac(old.mac) ? old.mac : d.mac);
-        const nextVendor = !isBadVendor(d.vendor) ? d.vendor : (!isBadVendor(old.vendor) ? old.vendor : d.vendor);
-        const nextHostname = d.hostname ?? old.hostname;
-        const nextName = d.name ?? old.name;
-        return { ...d, mac: nextMac, vendor: nextVendor, hostname: nextHostname, name: nextName };
+      // Merge defensivo:
+      // - Nunca degradar MAC/vendor si ya teniamos mejor intel previa.
+      // - No eliminar dispositivos ya conocidos (por ejemplo, descubiertos via audit_router).
+      //   El scan por ARP/ICMP puede "ver menos" temporalmente y no debe reducir el inventario.
+      const prev = devicesRef.current;
+      const prevByIp = new Map(prev.map((d) => [d.ip, d]));
+      const resultsByIp = new Map(results.map((d) => [d.ip, d]));
+
+      const mergeDevice = (scanDevice: DeviceDTO, old: DeviceDTO | undefined) => {
+        if (!old) return scanDevice;
+        const nextMac = isValidMac(scanDevice.mac) ? scanDevice.mac : (isValidMac(old.mac) ? old.mac : scanDevice.mac);
+        const nextVendor = !isBadVendor(scanDevice.vendor) ? scanDevice.vendor : (!isBadVendor(old.vendor) ? old.vendor : scanDevice.vendor);
+        const nextHostname = scanDevice.hostname ?? old.hostname;
+        const nextName = scanDevice.name ?? old.name;
+        return { ...scanDevice, mac: nextMac, vendor: nextVendor, hostname: nextHostname, name: nextName };
+      };
+
+      // 1) Mantener orden previo y actualizar los que salgan en el scan.
+      const merged: DeviceDTO[] = prev.map((old) => {
+        const scanDevice = resultsByIp.get(old.ip);
+        if (!scanDevice) return old;
+        return mergeDevice(scanDevice, old);
       });
+
+      // 2) Añadir nuevos dispositivos descubiertos por el scan (al final).
+      for (const scanDevice of results) {
+        if (!prevByIp.has(scanDevice.ip)) merged.push(scanDevice);
+      }
+
       setDevices(merged);
 
       // Persistimos snapshot para arranque rapido.

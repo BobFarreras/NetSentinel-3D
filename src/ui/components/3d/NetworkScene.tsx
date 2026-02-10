@@ -15,29 +15,27 @@ interface NetworkSceneProps {
   identity?: HostIdentity | null;
 }
 
-// --- COMPONENT MÀGIC: CÀMERA AUTO-AJUSTABLE ---
+// --- COMPONENTE: CAMARA AUTO-AJUSTABLE ---
 const AutoFitCamera = ({ devices }: { devices: DeviceDTO[] }) => {
-  // 🟢 FIX: Hem tret 'controls' del destructuring perquè no el fèiem servir
+  // Fix: quitamos propiedades no usadas para evitar warnings.
   const { camera } = useThree();
   
-  // 🟢 FIX: Hem tret 'controlsRef'
-
   useEffect(() => {
     if (devices.length === 0) return;
 
-    // Lògica simple: Si hi ha dispositius, ens allunyem per veure l'anella
+    // Logica simple: si hay dispositivos, nos alejamos para ver el anillo.
     const TARGET_RADIUS = 12; 
     const VIEW_ANGLE = 45 * (Math.PI / 180);
     const requiredDistance = TARGET_RADIUS / Math.tan(VIEW_ANGLE / 2);
     
-    // Posició Objectiu
+    // Posicion objetivo.
     const newY = requiredDistance * 0.8; 
     const newZ = requiredDistance * 0.8;
 
     camera.position.set(0, newY, newZ);
     camera.lookAt(0, 0, 0);
 
-  }, [devices.length, camera]); // Afegim camera a deps
+  }, [devices.length, camera]);
 
   return null;
 };
@@ -69,7 +67,23 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   identity = null,
 }) => {
   
-  const [showLabels, setShowLabels] = useState(true);
+  const [showLabels, setShowLabels] = useState(() => {
+    try {
+      const raw = localStorage.getItem("netsentinel.showNodeLabels");
+      if (raw === null) return true;
+      return raw === "true";
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("netsentinel.showNodeLabels", String(showLabels));
+    } catch {
+      // Ignorar: en algunos entornos (tests/sandbox) puede no existir storage.
+    }
+  }, [showLabels]);
 
   const enrichedDevices = useMemo(() => {
     return devices.map((d) => {
@@ -141,7 +155,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
         <pointLight position={[10, 10, 10]} intensity={1} />
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
 
-        {/* 🌞 CENTRE */}
+        {/* Centro (gateway/router) */}
         {centerNode ? (
           <group position={[0, 0, 0]}>
             <NetworkNode 
@@ -159,6 +173,14 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
                 type={"ROUTER"}
                 confidence={centerNode.deviceTypeConfidence ?? 92}
                 isSelected={selectedIp === centerNode.ip}
+                variant="router"
+                rows={[
+                  { label: "IP", value: centerNode.ip },
+                  { label: "MAC", value: centerNode.mac || "?" },
+                  { label: "VENDOR", value: centerNode.vendor || "Router" },
+                  { label: "IFACE", value: identity?.interfaceName || "?" },
+                  { label: "GW", value: identity?.gatewayIp || "?" },
+                ]}
               />
             )}
             <mesh rotation={[-Math.PI / 2, 0, 0]}>
@@ -170,7 +192,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           <NetworkNode position={[0, 0, 0]} color="#333333" name="SEARCHING..." />
         )}
 
-        {/* 🪐 ÒRBITA */}
+        {/* Orbita (resto de dispositivos) */}
         {orbitingNodes.map((device, index) => {
           const totalNodes = orbitingNodes.length;
           const radius = 10;

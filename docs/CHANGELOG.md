@@ -2,6 +2,21 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
+### 🧠 Scanner (UX / estabilidad)
+- `Scan Net` ya no reduce el inventario si el escaneo devuelve menos dispositivos temporalmente (merge por union).
+- Evitado el conflicto de hidratacion (snapshot/historial) que podia sobrescribir el inventario durante el auto-scan.
+- Añadido test de regresion para asegurar que el inventario no se recorta cuando el scan ve menos nodos.
+
+### 🧩 UI (Labels 3D)
+- Tarjetas (labels) mas grandes y legibles con estetica terminal/cyberpunk.
+- El router/gateway usa una tarjeta especial con filas (IP/MAC/Vendor/iface/GW).
+- Toggle para ocultar/mostrar tarjetas persistido en `localStorage`.
+
+### 🧾 Logs (trazabilidad)
+- `SYSTEM LOGS` pinta eventos `CRITICAL`/`💀` en rojo.
+- `audit_router/fetch_router_devices`: logging de dispositivos conectado tras enriquecimiento ARP para evitar `MAC=00:00:...` en consola cuando ya existe MAC real.
+
 ## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
 ### 📚 Documentacion estrategica
 - Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:
