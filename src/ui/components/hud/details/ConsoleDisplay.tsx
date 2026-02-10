@@ -1,62 +1,158 @@
 import React, { useEffect, useState, useRef } from 'react';
 
-// Sub-component intern (privat d'aquest fitxer)
-const TypewriterLine = ({ text, onComplete }: { text: string; onComplete?: () => void }) => {
-  const [displayedText, setDisplayedText] = useState('');
-
+// 1. COMPONENT TYPEWRITER (Ara accepta mode "instantani")
+const TypewriterLine = ({ text, onComplete, isActive, instant }: { text: string; onComplete?: () => void, isActive: boolean, instant?: boolean }) => {
+  const [displayedText, setDisplayedText] = useState(instant ? text : '');
+  
   useEffect(() => {
-    let index = 0;
-    if (!text) { if (onComplete) onComplete(); return; }
+    // Si és mode instantani (històric), no fem animació
+    if (instant) {
+      setDisplayedText(text);
+      if (onComplete) onComplete();
+      return;
+    }
 
+    // Animació normal
+    if (text.length > 80) { // Si és molt llarg, pinta-ho de cop
+      setDisplayedText(text);
+      if (onComplete) onComplete();
+      return;
+    }
+
+    let index = 0;
     const intervalId = setInterval(() => {
-      setDisplayedText(() => text.slice(0, index + 1));
+      setDisplayedText(text.slice(0, index + 1));
       index++;
       if (index >= text.length) {
         clearInterval(intervalId);
         if (onComplete) onComplete();
       }
-    }, 20); // Una mica més ràpid (20ms)
+    }, 15); // 15ms per caràcter
 
     return () => clearInterval(intervalId);
-  }, [text]);
+  }, [text, instant]); // Afegim 'instant' a dependències
 
-  return <span>{displayedText}</span>;
+  return (
+    <span>
+      {displayedText}
+      {isActive && !instant && <span className="cursor-block">█</span>}
+    </span>
+  );
 };
 
-// Component Exportable
-interface ConsoleProps {
-    logs: string[];
+// 2. PUNTS DE CÀRREGA
+const LoadingDots = () => {
+  const [dots, setDots] = useState('.');
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length < 3 ? prev + '.' : '.');
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  return <span>{dots}</span>;
+};
+
+interface ConsoleProps { 
+  logs: string[]; 
+  isBusy?: boolean; 
 }
 
-export const ConsoleDisplay: React.FC<ConsoleProps> = ({ logs }) => {
-    const logsEndRef = useRef<HTMLDivElement>(null);
-    const [currentLineIndex, setCurrentLineIndex] = useState(0);
+export const ConsoleDisplay: React.FC<ConsoleProps> = ({ logs, isBusy = false }) => {
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  
+  // Aquest índex controla quina línia s'està ANIMANT ara mateix
+  const [animatingLineIndex, setAnimatingLineIndex] = useState(0);
 
-    // Auto-scroll i Reset
-    useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [currentLineIndex, logs]);
-    useEffect(() => { if (logs.length === 0) setCurrentLineIndex(0); }, [logs]);
+  // Aquest Ref recorda quantes línies ja teníem abans de desmuntar el component
+  // Per defecte és 0, però la gràcia és que si el component es remunta amb els mateixos logs,
+  // podem detectar-ho. (NOTA: React destruirà l'estat local al desmuntar, així que la persistència
+  // real entre canvis de pestanya necessitaria guardar això al pare. 
+  // PERÒ: Com que 'logs' venen del pare, podem fer el truc següent:
+  
+  // TRUC: Si al muntar el component ja hi ha logs, assumim que els VLELS (tots menys l'últim potser) són històrics.
+  // O millor: Si l'usuari canvia de pestanya i torna, volem veure el text, no l'animació.
+  
+  // Solució simple: Animem només si l'índex és >= al que teníem.
+  // Però com que l'estat es reinicia, usarem un efecte d'inicialització.
 
-    return (
-        <div style={{
-            background: '#000', border: '1px inset #003300', height: '150px',
-            overflowY: 'auto', padding: '10px', fontSize: '0.7rem', color: '#0f0',
-            marginTop: '15px', fontFamily: 'Consolas, monospace', display: 'flex', flexDirection: 'column'
-        }}>
-            {logs.length === 0 && <span style={{ opacity: 0.5 }}>{'>'} WAITING FOR COMMAND...<span className="blinking-cursor" /></span>}
+  useEffect(() => {
+    // Quan es munta el component, si ja hi ha logs, no volem animar-los tots des de zero.
+    // Volem animar només els nous que arribin DESPRÉS del muntatge.
+    // Però volem que es vegi el text.
+    
+    // Si tenim 10 logs, posar l'índex a 10 faria que no s'animés res (es mostrarien instantanis).
+    setAnimatingLineIndex(logs.length);
+  }, []); // Només al muntar!
 
-            {logs.map((log, i) => {
-                if (i < currentLineIndex) return <div key={i}>{log}</div>;
-                if (i === currentLineIndex) return (
-                    <div key={i}>
-                        <TypewriterLine text={log} onComplete={() => setCurrentLineIndex(prev => prev + 1)} />
-                        <span className="blinking-cursor"></span>
-                    </div>
-                );
-                return null;
-            })}
-            
-            {logs.length > 0 && currentLineIndex >= logs.length && <div><span className="blinking-cursor"></span></div>}
-            <div ref={logsEndRef} />
-        </div>
-    );
+  // Si arriben nous logs (logs.length creix), l'animació continuarà des d'on estava
+  // No cal fer res especial perquè el renderitzat de baix s'encarrega.
+
+  // Auto-scroll
+  useEffect(() => { 
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
+  }, [logs, animatingLineIndex, isBusy]);
+
+  return (
+    <>
+      <style>{`
+        .cyber-console::-webkit-scrollbar { width: 8px; }
+        .cyber-console::-webkit-scrollbar-track { background: #001100; border-left: 1px solid #003300; }
+        .cyber-console::-webkit-scrollbar-thumb { background: #004400; border: 1px solid #0f0; }
+        .cyber-console::-webkit-scrollbar-thumb:hover { background: #0f0; cursor: pointer; }
+        @keyframes blink-block { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .cursor-block { display: inline-block; width: 8px; height: 14px; background-color: #0f0; animation: blink-block 1s step-end infinite; vertical-align: middle; margin-left: 2px; box-shadow: 0 0 5px #0f0; }
+      `}</style>
+
+      <div 
+        className="cyber-console"
+        style={{
+          background: '#050505', border: '1px solid #333', borderTop: '2px solid #0f0',
+          boxShadow: 'inset 0 0 20px #000', height: '200px', overflowY: 'auto', 
+          padding: '15px', fontSize: '0.85rem', color: '#0f0', marginTop: '15px', 
+          fontFamily: '"Courier New", Courier, monospace', display: 'flex', flexDirection: 'column',
+          textShadow: '0 0 4px rgba(0, 255, 0, 0.6)'
+        }}
+      >
+        {logs.map((log, i) => {
+          // CAS 1: Línies ja animades o històriques (anteriors a l'índex actual)
+          // Aquestes es mostren INSTANTÀNIAMENT (sense Typewriter o amb instant=true)
+          if (i < animatingLineIndex) {
+             // Use key per evitar re-renders innecessaris
+             return (
+               <div key={i} style={{ marginBottom: '4px', opacity: 0.8 }}>
+                 {'> '} {log}
+               </div>
+             );
+          }
+          
+          // CAS 2: Línia actual que s'està animant
+          if (i === animatingLineIndex) {
+            return (
+              <div key={i} style={{ marginBottom: '4px' }}>
+                {'> '} 
+                <TypewriterLine 
+                    text={log} 
+                    isActive={true} 
+                    onComplete={() => setAnimatingLineIndex(p => p + 1)} 
+                />
+              </div>
+            );
+          }
+          
+          // CAS 3: Línies futures (encara no ha arribat el torn)
+          return null;
+        })}
+
+        {/* Estat d'espera i Idle */}
+        {animatingLineIndex >= logs.length && isBusy && (
+           <div style={{ marginTop: '5px', color: '#adff2f' }}>{'>'} PROCESSING <LoadingDots /><span className="cursor-block">█</span></div>
+        )}
+        {animatingLineIndex >= logs.length && !isBusy && (
+           <div style={{ marginTop: '5px' }}>{'>'} _ <span className="cursor-block">█</span></div>
+        )}
+
+        <div ref={logsEndRef} />
+      </div>
+    </>
+  );
 };

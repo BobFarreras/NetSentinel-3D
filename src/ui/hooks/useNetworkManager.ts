@@ -1,125 +1,76 @@
 import { useState, useEffect } from 'react';
-import { invoke } from "@tauri-apps/api/core";
-import { DeviceDTO, OpenPortDTO } from '../../shared/dtos/NetworkDTOs';
+import { DeviceDTO, HostIdentity } from '../../shared/dtos/NetworkDTOs';
+import { networkAdapter } from '../../adapters/networkAdapter';
 
-// Definició de la interfície de Sessió (per TypeScript)
-interface ScanSession {
-  id: string;
-  timestamp: number;
-  devices: DeviceDTO[];
-  label: string;
-}
+// Importem els mòduls petits (Ara inclòs el Jammer)
+import { useSocketLogs } from './modules/useSocketLogs';
+import { useScanner } from './modules/useScanner';
+import { usePortAuditor } from './modules/usePortAuditor';
+import { useRouterHacker } from './modules/useRouterHacker';
+import { useJamming } from './modules/useJamming'; // 👈 IMPORT NOU
 
 export const useNetworkManager = () => {
-  const [devices, setDevices] = useState<DeviceDTO[]>([]);
+  // 1. Logs (Base)
+  const { deviceLogs, addLog, clearLogs, setActiveTarget } = useSocketLogs();
+
+  // 2. Scanner (Core)
+  const { devices, setDevices, history, intruders, scanning, startScan, loadSession } = useScanner();
+
+  // 3. Auditor (Ports)
+  const { auditing, auditResults, startAudit, clearResults } = usePortAuditor(addLog);
+
+  // 4. Hacker (Router)
+  const { routerRisk, setRouterRisk, checkRouterSecurity } = useRouterHacker(addLog, setDevices, setActiveTarget);
+
+  // 5. Jammer (Active Countermeasures) 👈 NOVA RESPONSABILITAT SEPARADA
+  // Li passem 'devices' perquè pugui trobar el Gateway, i 'addLog' per escriure a la consola
+  const { jammedDevices, toggleJammer } = useJamming(devices, addLog);
+
+  // 6. Estat local de UI (Selecció i Identitat)
   const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const [auditing, setAuditing] = useState(false);
-  const [auditResults, setAuditResults] = useState<OpenPortDTO[]>([]);
-  const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
-  const [jammedDevices, setJammedDevices] = useState<string[]>([]);
-  const [history, setHistory] = useState<ScanSession[]>([]); // Nou estat local
+  const [identity, setIdentity] = useState<HostIdentity | null>(null);
 
-  // 2. SCAN (Modificat per guardar)
-  const startScan = async () => {
-    setScanning(true);
-    setConsoleLogs([]);
-    try {
-      const results = await invoke<DeviceDTO[]>('scan_network', { range: '192.168.1.0/24' });
-      setDevices(results);
-
-      // 👇 GUARDAR AUTOMÀTICAMENT
-      console.log("💾 Persisting scan results...");
-      await invoke('save_scan', { devices: results });
-
-    } catch (error) {
-      console.error("❌ ERROR SCAN:", error);
-    } finally {
-      setScanning(false);
-    }
-  };
-
-  // 1. AUTO-LOAD (Recuperar memòria en obrir l'app)
-  // 1. AUTO-LOAD (Recuperar memòria en obrir l'app)
-  useEffect(() => {
-    const initMemory = async () => {
-      try {
-        console.log("🧠 TAURI: Loading History...");
-        const savedSessions = await invoke<ScanSession[]>('get_history');
-
-        if (savedSessions.length > 0) {
-          console.log(`📂 Loaded ${savedSessions.length} sessions.`);
-          setHistory(savedSessions); // Guardem la llista per al panell
-
-          // 👇 AFEGIT: Agafem la sessió més recent (la 0) i la pintem al mapa
-          const lastSession = savedSessions[0];
-          console.log(`⏪ AUTO-LOAD: Restoring session from ${new Date(lastSession.timestamp).toLocaleTimeString()}`);
-          setDevices(lastSession.devices);
-        }
-      } catch (e) {
-        console.error("Failed to load history:", e);
-      }
-    };
-    initMemory();
-  }, []);
-  // 2. AUDIT
-  const startAudit = async (ip: string) => {
-    if (auditing) return;
-
-    // ✨ RESET VISUAL: Netejem logs vells i resultats vells
-    setAuditing(true);
-    setAuditResults([]);
-    setConsoleLogs([
-      `> INITIALIZING TARGET PROTOCOL...`,
-      `> TARGET_IP: ${ip}`,
-      `> LOADING VULNERABILITY DB...`,
-      `> EXEC: FULL_TCP_CONNECT_SCAN`,
-      `> ...`
-    ]);
-
-    try {
-      const report = await invoke<any>('audit_target', { ip });
-
-      // Simulem una mica de "streaming" visual al final
-      setConsoleLogs(prev => [...prev, `> ANALYSIS COMPLETE.`]);
-      setConsoleLogs(prev => [...prev, `> PORTS FOUND: ${report.openPorts.length}`]);
-
-      if (report.riskLevel === 'HIGH' || report.riskLevel === 'CRITICAL') {
-        setConsoleLogs(prev => [...prev, `> ⚠️ CRITICAL VULNERABILITIES DETECTED`]);
-      }
-
-      setAuditResults(report.openPorts || []);
-    } catch (e) {
-      console.error(e);
-      setConsoleLogs(prev => [...prev, `> ERROR: CONNECTION FAILURE`]);
-    } finally {
-      setAuditing(false);
-    }
-  };
-
-  // 3. JAMMER
-  const toggleJammer = async (targetIp: string, gatewayIp: string) => {
-
-    setJammedDevices(prev => prev.includes(targetIp)
-      ? prev.filter(ip => ip !== targetIp)
-      : [...prev, targetIp]
-    );
-  };
-
+  // Helpers UI
   const selectDevice = (d: DeviceDTO | null) => {
     setSelectedDevice(d);
-    setAuditResults([]); // Netegem resultats
-    setConsoleLogs([]);  // Netegem terminal
+    if (d?.ip !== selectedDevice?.ip) clearResults();
   };
 
-  const loadSession = (d: DeviceDTO[]) => setDevices(d);
+  const dismissRisk = () => setRouterRisk(null);
+  
+  // Càrrega inicial d'identitat
+  useEffect(() => {
+    let mounted = true;
+    const loadIdentity = async () => {
+      try {
+        const id = await networkAdapter.getHostIdentity();
+        if (mounted) setIdentity(id);
+      } catch (e) {
+        console.error("Identity error:", e);
+      }
+    };
+    loadIdentity();
+    return () => { mounted = false; };
+  }, []);
 
-  // Funció auxiliar per carregar historial manualment (si la necessites pel panell)
-  const fetchHistory = async () => {
-    return await invoke<ScanSession[]>('get_history');
-  };
   return {
-    devices, selectedDevice, scanning, auditing, auditResults, consoleLogs, jammedDevices,
-    startScan, startAudit, selectDevice, loadSession, toggleJammer, fetchHistory, history, setHistory
+    // Dades
+    devices, selectedDevice, history, intruders,
+    auditResults, routerRisk, jammedDevices,
+    consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
+    identity,
+
+    // Estats
+    scanning, auditing,
+
+    // Accions (Delegades als hooks corresponents)
+    startScan, 
+    startAudit, 
+    checkRouterSecurity,
+    selectDevice, 
+    loadSession, 
+    toggleJammer, // 👈 Ara ve del useJamming
+    dismissRisk, 
+    clearLogs: () => selectedDevice && clearLogs(selectedDevice.ip),
   };
 };
