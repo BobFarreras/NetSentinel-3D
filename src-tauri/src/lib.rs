@@ -25,6 +25,7 @@ use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotReposit
 use crate::infrastructure::credential_store::KeyringCredentialStore;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
+use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 
 // 3. Imports propios (Aplicacion)
 use crate::application::{
@@ -65,7 +66,8 @@ pub fn run() {
             let history_service = HistoryService::new(history_infra);
             let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
             let credential_service = CredentialService::new(credential_store_infra);
-            let wifi_service = WifiService::new(wifi_scanner_infra);
+            let vendor_lookup_infra = Arc::new(SystemVendorLookup);
+            let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra);
             let external_audit_service = ExternalAuditService::new();
 
             // Traffic: no depende de una infra externa inyectada, se crea directo.

@@ -46,3 +46,9 @@ pub trait CredentialStorePort: Send + Sync {
 pub trait WifiScannerPort: Send + Sync {
     async fn scan_airwaves(&self) -> Result<Vec<crate::domain::entities::WifiScanRecord>, String>;
 }
+
+// PORT 5: RESOLUCION DE VENDOR (OUI)
+// Se usa tanto para dispositivos (MAC) como para BSSID (WiFi).
+pub trait VendorLookupPort: Send + Sync {
+    fn resolve_vendor(&self, mac_or_bssid: &str) -> String;
+}
