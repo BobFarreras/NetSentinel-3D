@@ -47,6 +47,7 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   const [accepted, setAccepted] = useState<boolean>(() => {
     return localStorage.getItem("netsentinel.radar.legalAccepted") === "true";
   });
+  const didInitialScan = useRef(false);
 
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
   const [bandFilter, setBandFilter] = useState<BandFilter>("ALL");
@@ -66,6 +67,18 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
       isMounted.current = false;
     };
   }, []);
+
+  // Auto-scan inicial para evitar la sensacion de "no detecta nada" al abrir.
+  useEffect(() => {
+    if (!accepted) return;
+    if (didInitialScan.current) return;
+    if (scanning) return;
+    if (error) return;
+
+    didInitialScan.current = true;
+    // Si falla, el usuario siempre puede relanzar manualmente.
+    scan();
+  }, [accepted, scanning, error, scan]);
 
   useEffect(() => {
     if (!accepted || !autoRefresh) return;
@@ -132,8 +145,10 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   return (
     <div
       style={{
-        width: 720,
-        height: 520,
+        width: "100%",
+        height: "100%",
+        minWidth: 320,
+        minHeight: 240,
         background: "#050607",
         border: "1px solid #0a3",
         boxShadow: "0 0 0 1px rgba(0,255,136,0.12), 0 25px 80px rgba(0,0,0,0.65)",
@@ -337,6 +352,32 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
                 />
               );
             })}
+
+            {/* Estado vacio */}
+            {accepted && !scanning && !error && filteredNetworks.length === 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: "80%",
+                  maxWidth: 420,
+                  textAlign: "center",
+                  color: "rgba(183,255,226,0.75)",
+                  fontSize: 12,
+                  lineHeight: 1.55,
+                }}
+              >
+                <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 0.8, marginBottom: 6 }}>
+                  NO SE DETECTAN REDES
+                </div>
+                <div style={{ opacity: 0.9 }}>
+                  Si estas en Windows, puede requerirse permiso de ubicacion para escanear WiFi.
+                  Verifica que el WiFi esta activado y pulsa <b>SCAN AIRWAVES</b>.
+                </div>
+              </div>
+            )}
 
             {/* Estado */}
             <div

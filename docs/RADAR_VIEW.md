@@ -117,3 +117,88 @@ Salida UI:
   - `npm run build`
   - `cargo check`
 
+## 9. Windows: por que a veces solo se detecta 1 red (y como lo resolvimos)
+En Windows, la cantidad de redes visibles no depende solo de NetSentinel: depende del stack WLAN, del driver y de las politicas de privacidad.
+
+### 9.1 Fuente de verdad: `netsh`
+NetSentinel usa un scanner de sistema que, en Windows, prioriza `netsh` por fiabilidad en drivers variados:
+
+```bash
+netsh wlan show networks
+netsh wlan show networks mode=bssid
+netsh wlan show interfaces
+```
+
+Regla practica:
+- Si `netsh wlan show networks` devuelve 1 red, NetSentinel no puede "inventarse" mas redes sin modo monitor.
+
+### 9.2 Caso real: `mode=bssid` no devuelve BSSID/canal/señal
+En algunos equipos, `netsh wlan show networks mode=bssid` puede listar SSIDs y seguridad pero omitir:
+- BSSID,
+- canal,
+- señal/RSSI.
+
+Esto sucede por privacidad, driver o cache de escaneo.
+
+Solucion implementada:
+- Parseo de `show networks mode=bssid` (cuando hay BSSID).
+- Si no hay BSSID, se crea un identificador estable (pseudo-BSSID) para poder dibujar el nodo sin jitter.
+- Se enriquece el registro con `netsh wlan show interfaces` (red conectada) para obtener:
+  - `AP BSSID`,
+  - `Canal`,
+  - `Rssi` real.
+
+### 9.3 "Al entrar en Configuracion > Red e Internet ahora salen todas"
+Es posible que al abrir el panel de redes de Windows se fuerce un nuevo escaneo o se refresque el cache de redes visibles.
+Esto puede hacer que `netsh` pase de devolver 1 red a devolver varias.
+
+Recomendaciones de operacion (sin tocar codigo):
+1. Abrir el selector de redes WiFi de Windows y comprobar si aparecen mas redes.
+2. Activar/Desactivar WiFi (o Modo avion) para forzar reescaneo.
+3. Verificar que la ubicacion esta permitida (Windows puede bloquear el escaneo de WiFi sin permiso).
+4. Revisar la configuracion del adaptador/driver (banda preferida, roaming aggressiveness).
+
+## 10. Que significa "NODE INTEL" (CH, bandas, riesgo, etc.)
+`NODE INTEL` es el panel de analisis del Radar. Su objetivo es que un alumno entienda el espectro como superficie de ataque fisica, sin depender de listas planas.
+
+### 10.1 Riesgo (ALL / HARDENED / STANDARD / LEGACY / OPEN)
+Clasifica el target segun la seguridad observada (inferencia defensiva):
+- `HARDENED`: WPA3 o configuracion robusta.
+- `STANDARD`: WPA2-Personal tipico.
+- `LEGACY`: WEP o configuraciones heredadas.
+- `OPEN`: red abierta.
+
+Uso:
+- Filtra por `LEGACY/OPEN` para ejercicios de hardening y concienciacion (sin ataque real).
+
+### 10.2 Bandas (ALLGHz / 2.4GHz / 5GHz / UNKGHz)
+Como la frecuencia real no siempre esta disponible en todas las APIs, el Radar infiere banda por canal:
+- `2.4GHz`: canales 1..14
+- `5GHz`: canales 32..177
+- `UNKGHz`: desconocida (datos incompletos del SO/driver)
+
+Uso:
+- Filtrar `2.4GHz` para ver entornos saturados (muchas redes se concentran ahi).
+- `UNKGHz` indica que el sistema no ha expuesto canal/banda de forma fiable.
+
+### 10.3 Canal (CH:ALL)
+Filtro rapido por canal cuando el dato esta disponible.
+
+Uso:
+- Detectar solapamientos (muchos SSIDs en el mismo canal).
+- Evaluar congestión y potencial de interferencia.
+
+### 10.4 Busqueda (SSID/vendor/BSSID)
+Filtra por:
+- SSID,
+- vendor (si se resuelve por OUI),
+- BSSID.
+
+Uso:
+- Encontrar un AP concreto o un fabricante (por ejemplo, IoT recurrente).
+
+### 10.5 Auto (AUTO)
+Reescaneo periodico (sin solapar scans) para observar variaciones de señal.
+
+Uso:
+- Simular "conciencia situacional": moverte con el portatil y ver cambios en RSSI/distancia.

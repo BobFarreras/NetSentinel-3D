@@ -76,6 +76,23 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 ### 🧪 Tests
 - Añadido `src/ui/components/hud/__tests__/RadarPanel.test.tsx`.
 
+## [v0.6.8] - Radar View: escaneo Windows mas fiable + layout dock a la izquierda (2026-02-10)
+### 🦀 Backend (Windows)
+- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
+  - preferencia por `netsh wlan show networks mode=bssid` como fuente de verdad en Windows.
+  - parser tolerante a locales (claves como `Señal/Senal/Signal`, `Canal/Channel`, `Autenticacion/Auth`).
+  - fallback cuando Windows omite BSSID/canal/señal: se genera un pseudo-BSSID estable para no devolver lista vacia.
+  - enriquecimiento con `netsh wlan show interfaces` para obtener RSSI/canal/AP BSSID reales de la red conectada.
+
+### 🎛️ Frontend (Layout)
+- `src/App.tsx`:
+  - Radar View acoplado a la izquierda (resizable por anchura) sin invadir el espacio vertical de `ConsoleLogs`.
+
+### 📚 Documentacion
+- `docs/RADAR_VIEW.md`:
+  - seccion de troubleshooting en Windows (cache de escaneo, permisos, limitaciones de driver).
+  - glosario/guia de `NODE INTEL` (CH, bandas, riesgo, auto, busqueda).
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:
