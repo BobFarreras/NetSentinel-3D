@@ -1,86 +1,102 @@
+// src-tauri/src/infrastructure/repositories/local_intelligence.rs
+
 use crate::domain::entities::HostIdentity;
 use std::net::UdpSocket;
-use std::process::Command;
+use std::sync::OnceLock;
+use std::time::{Duration, Instant};
+
+// Submodulos para separar responsabilidades (SOLID) sin romper la API publica.
+#[path = "local_intelligence/parse.rs"]
+mod parse;
+#[path = "local_intelligence/ps_script.rs"]
+mod ps_script;
+#[cfg(test)]
+mod tests;
+
+#[derive(Clone)]
+struct Cache {
+    value: HostIdentity,
+    at: Instant,
+}
+
+static CACHE: OnceLock<std::sync::Mutex<Option<Cache>>> = OnceLock::new();
 
 pub fn get_host_identity() -> Result<HostIdentity, String> {
-    println!("🚀 [CORE] INICIANT PROTOCOL D'IDENTIFICACIÓ...");
-
-    // PAS 1: OBTENIR IP VIA UDP (INFAL·LIBLE)
-    let socket = UdpSocket::bind("0.0.0.0:0")
-        .map_err(|e| format!("Error binding socket: {}", e))?;
-    socket.connect("8.8.8.8:80")
-        .map_err(|e| format!("Error connecting to Google DNS: {}", e))?;
-    let local_addr = socket.local_addr()
-        .map_err(|e| format!("Error getting local address: {}", e))?;
-    
-    let my_ip = local_addr.ip().to_string();
-    println!("✅ [CORE] IP DETECTADA (ROUTING TABLE): {}", my_ip);
-
-    // PAS 2: EXTREURE DETALLS AMB POWERSHELL (ROBUST)
-    // Buscamos el adaptador que tiene esta IP. Esto evita leer memoria corrupta.
-    // Comanda: Get-NetIPAddress -IPAddress {IP} | Get-NetAdapter | Select Name, MacAddress, InterfaceDescription
-    
-    let (mac, interface_name, interface_desc) = get_details_via_powershell(&my_ip);
-
-    println!("✅ [CORE] IDENTITAT CONFIRMADA:");
-    println!("   > IP: {}", my_ip);
-    println!("   > MAC: {}", mac);
-    println!("   > INTERFACE: {} ({})", interface_name, interface_desc);
-
-    Ok(HostIdentity {
-        ip: my_ip,
-        mac,
-        netmask: "255.255.255.0".to_string(), // Calcular-ho amb PS és lent, el 99% és /24
-        gateway_ip: "192.168.1.1".to_string(), // TODO: Millorar en futur
-        interface_name,
-        dns_servers: vec![],
-    })
-}
-
-// --- HELPER POWERSHELL ---
-fn get_details_via_powershell(ip: &str) -> (String, String, String) {
-    // Valores por defecto por si falla.
-    let mut mac = "UNKNOWN".to_string();
-    let mut name = "Unknown Interface".to_string();
-    let mut desc = "".to_string();
-
-    #[cfg(target_os = "windows")]
-    {
-        // Script: busca el adaptador por IP y devuelve un formato de texto simple.
-        let ps_script = format!(
-            "Get-NetIPAddress -IPAddress {} | Get-NetAdapter | Select-Object -Property MacAddress, Name, InterfaceDescription | Format-List",
-            ip
-        );
-
-        let output = Command::new("powershell")
-            .args(["-NoProfile", "-Command", &ps_script])
-            .output();
-
-        if let Ok(o) = output {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            
-            // Parseamos el texto (parsing manual simple por robustez).
-            for line in stdout.lines() {
-                let line = line.trim();
-                if line.starts_with("MacAddress") {
-                    if let Some(val) = line.split(':').nth(1) {
-                        mac = val.trim().to_string();
-                    }
-                }
-                if line.starts_with("Name") {
-                    if let Some(val) = line.split(':').nth(1) {
-                        name = val.trim().to_string();
-                    }
-                }
-                if line.starts_with("InterfaceDescription") {
-                    if let Some(val) = line.split(':').nth(1) {
-                        desc = val.trim().to_string();
-                    }
-                }
-            }
-        }
+    // Cache corto: esta funcion puede llamarse desde loops runtime (sniffer/jammer).
+    if let Some(v) = cache_get(Duration::from_millis(2_000)) {
+        return Ok(v);
     }
 
-    (mac, name, desc)
+    println!("🚀 [CORE] Iniciando protocolo de identificacion...");
+
+    // Paso 1: obtener IP via UDP (rapido y robusto). Si falla, hacemos fallback por OS.
+    let my_ip = detect_ip_via_udp().or_else(|_| ps_script::fallback_detect_ipv4())?;
+    println!("✅ [CORE] IP detectada: {}", my_ip);
+
+    // Paso 2 (Windows): extraer detalles (MAC, interfaz, gateway, DNS, netmask).
+    let intel = ps_script::probe_identity(&my_ip)
+        .ok()
+        .and_then(|text| parse::parse_identity_probe(&text).ok());
+
+    let identity = HostIdentity {
+        ip: my_ip.clone(),
+        mac: intel.as_ref().and_then(|i| i.mac.clone()).unwrap_or_else(|| "UNKNOWN".to_string()),
+        netmask: intel
+            .as_ref()
+            .and_then(|i| i.netmask.clone())
+            .unwrap_or_else(|| "255.255.255.0".to_string()),
+        gateway_ip: intel
+            .as_ref()
+            .and_then(|i| i.gateway_ip.clone())
+            .unwrap_or_else(|| default_gateway_guess(&my_ip)),
+        interface_name: intel
+            .as_ref()
+            .and_then(|i| i.interface_name.clone())
+            .unwrap_or_else(|| "Unknown Interface".to_string()),
+        dns_servers: intel
+            .as_ref()
+            .map(|i| i.dns_servers.clone())
+            .unwrap_or_default(),
+    };
+
+    println!("✅ [CORE] Identidad confirmada: ip={} mac={} iface={}", identity.ip, identity.mac, identity.interface_name);
+
+    cache_put(identity.clone());
+    Ok(identity)
 }
-// src-tauri/src/infrastructure/repositories/local_intelligence.rs
+
+fn detect_ip_via_udp() -> Result<String, String> {
+    let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("Error bind UDP: {e}"))?;
+    socket
+        .connect("8.8.8.8:80")
+        .map_err(|e| format!("Error connect UDP: {e}"))?;
+    let local_addr = socket.local_addr().map_err(|e| format!("Error local_addr: {e}"))?;
+    Ok(local_addr.ip().to_string())
+}
+
+fn default_gateway_guess(ip: &str) -> String {
+    // Fallback pragmatica: si no hay intel, intentamos usar el mismo /24 con .1
+    let parts: Vec<&str> = ip.split('.').collect();
+    if parts.len() == 4 {
+        return format!("{}.{}.{}.1", parts[0], parts[1], parts[2]);
+    }
+    "192.168.1.1".to_string()
+}
+
+fn cache_get(max_age: Duration) -> Option<HostIdentity> {
+    let lock = CACHE.get_or_init(|| std::sync::Mutex::new(None));
+    let guard = lock.lock().ok()?;
+    let c = guard.as_ref()?;
+    if c.at.elapsed() <= max_age {
+        Some(c.value.clone())
+    } else {
+        None
+    }
+}
+
+fn cache_put(value: HostIdentity) {
+    let lock = CACHE.get_or_init(|| std::sync::Mutex::new(None));
+    if let Ok(mut guard) = lock.lock() {
+        *guard = Some(Cache { value, at: Instant::now() });
+    }
+}

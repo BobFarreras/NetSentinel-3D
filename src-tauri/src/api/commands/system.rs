@@ -12,8 +12,7 @@ pub fn get_identity() -> Result<HostIdentity, String> {
 
 pub fn start_traffic_sniffing(state: State<'_, TrafficState>, app: AppHandle) -> Result<(), String> {
     let service = state.0.lock().map_err(|_| "Failed to lock traffic state".to_string())?;
-    service.start_monitoring(app);
-    Ok(())
+    service.start_monitoring(app)
 }
 
 pub fn stop_traffic_sniffing(state: State<'_, TrafficState>) -> Result<(), String> {
@@ -33,4 +32,3 @@ pub fn stop_jamming(state: State<'_, JammerState>, ip: String) -> Result<(), Str
     service.stop_jamming(ip);
     Ok(())
 }
-

@@ -17,6 +17,12 @@ mod protocol;
 pub struct TrafficSniffer;
 
 impl TrafficSniffer {
+    pub fn preflight(interface_hint: &str, target_ip: &str) -> Result<(), String> {
+        let (interface, _my_ip) = net::select_interface(interface_hint, target_ip)?;
+        let _rx = net::open_ethernet_rx(&interface)?;
+        Ok(())
+    }
+
     pub fn start_capture<F>(
         interface_hint: String,
         target_ip: String,

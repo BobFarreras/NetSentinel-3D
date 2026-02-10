@@ -16,21 +16,17 @@ impl TrafficService {
         Self { is_running: Arc::new(AtomicBool::new(false)) }
     }
 
-    pub fn start_monitoring(&self, app_handle: AppHandle) {
+    pub fn start_monitoring(&self, app_handle: AppHandle) -> Result<(), String> {
         if self.is_running.load(Ordering::Relaxed) {
-            println!("⚠️ [APP] El monitor ya esta en marcha.");
-            return;
+            return Err("El monitor ya esta en marcha".to_string());
         }
 
         // 1) Obtener la IP real (para no conectarnos a Hyper-V).
-        let identity: Result<crate::domain::entities::HostIdentity, String> = local_intelligence::get_host_identity();
-        let target_ip = match identity {
-            Ok(id) => id.ip,
-            Err(_) => {
-                eprintln!("❌ [APP] No puedo iniciar Sniffer sin identidad.");
-                return;
-            }
-        };
+        let identity = local_intelligence::get_host_identity()?;
+        let target_ip = identity.ip;
+
+        // Preflight: valida que podemos abrir el canal antes de marcar como "running".
+        TrafficSniffer::preflight("auto", &target_ip)?;
 
         println!("🚀 [APP] Iniciando monitor de trafico sobre IP: {}...", target_ip);
         
@@ -41,8 +37,9 @@ impl TrafficService {
             let _ = app_handle.emit("traffic-event", packet);
         };
 
-        // Passem la IP al Sniffer
+        // Pasamos la IP al sniffer.
         TrafficSniffer::start_capture("auto".to_string(), target_ip, running_clone, callback);
+        Ok(())
     }
 
     pub fn stop_monitoring(&self) {
