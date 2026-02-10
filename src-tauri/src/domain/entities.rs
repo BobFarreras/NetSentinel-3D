@@ -1,8 +1,10 @@
+// src-tauri/src/domain/entities.rs
+
 use serde::{Serialize, Deserialize};
 
 // 1. DISPOSITIU
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")] // 👈 AQUESTA LÍNIA ÉS CLAU!
+#[serde(rename_all = "camelCase")] // Linea clave: alinea el JSON con el frontend TypeScript.
 pub struct Device {
     pub ip: String,
     pub mac: String,
@@ -95,7 +97,7 @@ pub struct HostIdentity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TrafficPacket {
-    pub id: usize, // ID seqüencial per a llistes React (key)
+    pub id: usize, // ID secuencial para listas React (key).
     pub timestamp: u64,
     pub source_ip: String,
     pub destination_ip: String,

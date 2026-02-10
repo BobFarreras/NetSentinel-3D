@@ -11,7 +11,7 @@ impl AuditService {
     }
 
     pub async fn brute_force_gateway(&self, ip: String) -> RouterAuditResult {
-        println!("🧠 APP: Iniciant protocol d'intrusió a {}", ip);
+        println!("🧠 [APP] Iniciando protocolo de auditoria de gateway en {}", ip);
         self.auditor_port.audit_gateway(&ip).await
     }
 
@@ -101,3 +101,4 @@ mod tests {
         assert_eq!(last_creds.lock().unwrap().as_deref(), Some("admin:1234"));
     }
 }
+// src-tauri/src/application/audit_service.rs

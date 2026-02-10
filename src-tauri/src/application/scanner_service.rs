@@ -162,7 +162,7 @@ mod tests {
         let (ports, risk_global) = service.audit_ip("192.168.1.1".to_string()).await;
 
         assert_eq!(ports.len(), 1);
-        assert_eq!(ports[0].service, "TELNET"); // El diccionari converteix el 23 en TELNET
+        assert_eq!(ports[0].service, "TELNET"); // El diccionario convierte el 23 en TELNET.
         assert_eq!(risk_global, "CRITICAL");
     }
 }

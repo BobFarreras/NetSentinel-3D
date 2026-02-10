@@ -17,7 +17,7 @@ pub fn get_host_identity() -> Result<HostIdentity, String> {
     println!("✅ [CORE] IP DETECTADA (ROUTING TABLE): {}", my_ip);
 
     // PAS 2: EXTREURE DETALLS AMB POWERSHELL (ROBUST)
-    // Busquem l'adaptador que té aquesta IP. Això evita llegir memòria corrupta.
+    // Buscamos el adaptador que tiene esta IP. Esto evita leer memoria corrupta.
     // Comanda: Get-NetIPAddress -IPAddress {IP} | Get-NetAdapter | Select Name, MacAddress, InterfaceDescription
     
     let (mac, interface_name, interface_desc) = get_details_via_powershell(&my_ip);
@@ -39,14 +39,14 @@ pub fn get_host_identity() -> Result<HostIdentity, String> {
 
 // --- HELPER POWERSHELL ---
 fn get_details_via_powershell(ip: &str) -> (String, String, String) {
-    // Valors per defecte per si falla
+    // Valores por defecto por si falla.
     let mut mac = "UNKNOWN".to_string();
     let mut name = "Unknown Interface".to_string();
     let mut desc = "".to_string();
 
     #[cfg(target_os = "windows")]
     {
-        // Script màgic: Busca l'adaptador per IP i retorna format text simple
+        // Script: busca el adaptador por IP y devuelve un formato de texto simple.
         let ps_script = format!(
             "Get-NetIPAddress -IPAddress {} | Get-NetAdapter | Select-Object -Property MacAddress, Name, InterfaceDescription | Format-List",
             ip
@@ -59,7 +59,7 @@ fn get_details_via_powershell(ip: &str) -> (String, String, String) {
         if let Ok(o) = output {
             let stdout = String::from_utf8_lossy(&o.stdout);
             
-            // Parem el text (Parsing manual simple per robustesa)
+            // Parseamos el texto (parsing manual simple por robustez).
             for line in stdout.lines() {
                 let line = line.trim();
                 if line.starts_with("MacAddress") {
@@ -83,3 +83,4 @@ fn get_details_via_powershell(ip: &str) -> (String, String, String) {
 
     (mac, name, desc)
 }
+// src-tauri/src/infrastructure/repositories/local_intelligence.rs
