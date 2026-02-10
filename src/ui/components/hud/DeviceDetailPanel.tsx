@@ -96,8 +96,35 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{'>'} NAME:</span>
+            <span
+              style={{
+                color: '#fff',
+                maxWidth: 240,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={device.name || device.hostname || ''}
+            >
+              {device.name || device.hostname || 'Unknown'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span>
-            <span style={{ color: '#adff2f' }}>{device.vendor.substring(0, 20)}</span>
+            <span
+              style={{
+                color: '#adff2f',
+                maxWidth: 240,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={device.vendor}
+            >
+              {device.vendor}
+            </span>
           </div>
 
           {/* 👇 SECCIÓ WIFI (MAGENTA) 👇 */}

@@ -11,9 +11,13 @@ pub struct Device {
     pub name: Option<String>,
     pub is_gateway: bool,
     pub ping: Option<u16>, 
-    pub signal_strength: Option<String>, 
-    pub signal_rate: Option<String>,     
-    pub wifi_band: Option<String>,       
+    // Compat: el frontend historico usa snake_case en algunos campos.
+    #[serde(alias = "signal_strength")]
+    pub signal_strength: Option<String>,
+    #[serde(alias = "signal_rate")]
+    pub signal_rate: Option<String>,
+    #[serde(alias = "wifi_band")]
+    pub wifi_band: Option<String>,
     pub open_ports: Option<Vec<OpenPort>>,
 }
 
@@ -57,6 +61,24 @@ pub struct ScanSession {
     pub timestamp: u64,   
     pub devices: Vec<Device>, 
     pub label: String,    
+}
+
+// 5b. ULTIMA FOTO (snapshot) - Persistencia rapida para arranque
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LatestSnapshot {
+    pub timestamp: u64,
+    pub devices: Vec<Device>,
+}
+
+// 5c. CREDENCIALES (gateway) - Solo almacenamiento local en el equipo del auditor
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GatewayCredentials {
+    pub gateway_ip: String,
+    pub user: String,
+    pub pass: String,
+    pub saved_at: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -2,6 +2,21 @@
 
 Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 
+## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
+### 🧠 Scanner (UX / estabilidad)
+- `Scan Net` ya no reduce el inventario si el escaneo devuelve menos dispositivos temporalmente (merge por union).
+- Evitado el conflicto de hidratacion (snapshot/historial) que podia sobrescribir el inventario durante el auto-scan.
+- Añadido test de regresion para asegurar que el inventario no se recorta cuando el scan ve menos nodos.
+
+### 🧩 UI (Labels 3D)
+- Tarjetas (labels) mas grandes y legibles con estetica terminal/cyberpunk.
+- El router/gateway usa una tarjeta especial con filas (IP/MAC/Vendor/iface/GW).
+- Toggle para ocultar/mostrar tarjetas persistido en `localStorage`.
+
+### 🧾 Logs (trazabilidad)
+- `SYSTEM LOGS` pinta eventos `CRITICAL`/`💀` en rojo.
+- `audit_router/fetch_router_devices`: logging de dispositivos conectado tras enriquecimiento ARP para evitar `MAC=00:00:...` en consola cuando ya existe MAC real.
+
 ## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
 ### 📚 Documentacion estrategica
 - Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:
@@ -140,6 +155,27 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 - Nuevo catalogo de escenarios en `src/core/logic/externalAuditScenarios.ts`:
   - presets no intrusivos (recon basico, fingerprint de cabeceras),
   - simulaciones didacticas (PMKID/IoT) sin ejecucion ofensiva.
+
+## [v0.7.2] - Auto-scan + snapshot + credenciales locales (2026-02-10)
+### ⚡ Arranque (UX)
+- Al iniciar la app, se puede ejecutar auto-scan (preferencia `netsentinel:autoScanOnStartup` en `localStorage`).
+- El escaneo usa el CIDR derivado de `get_identity` (IP + netmask), con fallback a `/24`.
+
+### 💾 Persistencia
+- Nuevo snapshot rapido en AppData: `latest_snapshot.json` (carga inmediata de inventario al abrir la app).
+- Nuevos comandos:
+  - `save_latest_snapshot`, `load_latest_snapshot`
+
+### 🔐 Credenciales (local, seguro)
+- Al detectar credenciales del gateway, se guardan en el keyring del sistema (Windows Credential Manager) para:
+  - sincronizar `fetch_router_devices` automaticamente en el arranque (si existe credencial almacenada),
+  - reducir dependencia de repetir `audit_router`.
+- Nuevos comandos:
+  - `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`
+
+### 🧠 Identificacion
+- Mejorado `VendorResolver` con deteccion de MAC aleatoria (privacy) y soporte opcional de `oui.json` en AppData.
+- Filtro defensivo de hostnames: se descarta `localhost` en IPs remotas para evitar falsos positivos (TV/Alexa por cable, etc.).
 
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades

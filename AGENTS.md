@@ -49,6 +49,11 @@ Eres el arquitecto principal de NetSentinel, una herramienta de auditoria de red
 - `fetch_router_devices`
 - `save_scan`
 - `get_history`
+- `save_latest_snapshot`
+- `load_latest_snapshot`
+- `save_gateway_credentials`
+- `get_gateway_credentials`
+- `delete_gateway_credentials`
 - `scan_airwaves`
 - `get_identity`
 - `start_traffic_sniffing`
@@ -71,6 +76,12 @@ Regla:
 3. StorageSkill:
    - Tecnico: `save_scan`, `get_history`
    - Resultado: persistencia de sesiones con rotacion
+3b. SnapshotSkill:
+   - Tecnico: `save_latest_snapshot`, `load_latest_snapshot`
+   - Resultado: arranque rapido (pinta la ultima foto antes del primer escaneo)
+3c. CredentialSkill:
+   - Tecnico: `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`
+   - Resultado: almacenamiento local seguro (keyring) para no repetir auditorias del gateway en cada arranque
 4. TrafficSkill:
    - Tecnico: `start_traffic_sniffing`, `stop_traffic_sniffing`
    - Resultado: eventos `traffic-event` consumidos por UI

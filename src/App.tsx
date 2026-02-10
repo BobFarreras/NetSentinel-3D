@@ -7,7 +7,6 @@ import { RadarPanel } from './ui/components/hud/RadarPanel';
 import { ExternalAuditPanel } from './ui/components/hud/ExternalAuditPanel';
 import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
-import { DangerModal } from './ui/components/DangerModal';
 import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
 
 function App() {
@@ -15,8 +14,8 @@ function App() {
     devices, selectedDevice, scanning, auditing,
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
-    clearLogs,
+    toggleJammer, checkRouterSecurity,
+    systemLogs, clearSystemLogs,
     intruders, identity
   } = useNetworkManager();
 
@@ -116,8 +115,6 @@ function App() {
     }}>
 
       {/* Modal de riesgo */}
-      <DangerModal result={routerRisk} onClose={dismissRisk} />
-
       {/* =================================================================================
           COLUMNA ESQUERRA: TOPBAR + MAPA + CONSOLA (FLEX 1)
          ================================================================================= */}
@@ -214,6 +211,7 @@ function App() {
                 onDeviceSelect={selectDevice}
                 selectedIp={selectedDevice?.ip}
                 intruders={intruders}
+                identity={identity}
               />
             </div>
           </div>
@@ -243,10 +241,10 @@ function App() {
           background: '#000'
         }}>
           <ConsoleLogs
-            logs={consoleLogs}
+            logs={systemLogs}
             devices={devices}
             selectedDevice={selectedDevice} // Necesario para filtros por objetivo
-            onClearSystemLogs={clearLogs}
+            onClearSystemLogs={clearSystemLogs}
           />
         </div>
 

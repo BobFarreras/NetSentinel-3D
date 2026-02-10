@@ -49,7 +49,14 @@ export interface DeviceDTO {
   signal_strength?: number; 
   signal_rate?: number; 
   wifi_band?: string; 
+
+  // Intel local (frontend): calculado en UI a partir de señales (vendor/hostname/servicios).
+  // No depende de backend y no rompe contratos, porque es opcional.
+  deviceType?: DeviceType;
+  deviceTypeConfidence?: number; // 0..100
 }
+
+export type DeviceType = 'PHONE' | 'PC' | 'TV' | 'SPEAKER' | 'ROUTER' | 'IOT' | 'UNKNOWN';
 
 export interface RouterAuditResult {
   vulnerable: boolean;
@@ -72,6 +79,18 @@ export interface HostIdentity {
   gatewayIp: string;
   interfaceName: string;
   dnsServers: string[];
+}
+
+export interface LatestSnapshotDTO {
+  timestamp: number;
+  devices: DeviceDTO[];
+}
+
+export interface GatewayCredentialsDTO {
+  gatewayIp: string;
+  user: string;
+  pass: string;
+  savedAt: number;
 }
 
 export interface TrafficPacket {
