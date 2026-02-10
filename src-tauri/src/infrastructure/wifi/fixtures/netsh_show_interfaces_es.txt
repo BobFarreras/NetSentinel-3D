@@ -1,0 +1,9 @@
+Hay 1 interfaz en el sistema:
+
+    Nombre                   : Wi-Fi
+    Estado                  : conectado
+    SSID                   : MIWIFI_UHeX
+    AP BSSID               : 3c:58:5d:d3:68:e5
+    Canal                  : 100
+    RSSI                   : -40
+
