@@ -3,8 +3,10 @@ use crate::application::scanner_service::ScannerService;
 use crate::application::audit_service::AuditService;
 use crate::application::history_service::HistoryService;
 use crate::application::wifi_service::WifiService;
+use crate::application::external_audit_service::{ExternalAuditRequest, ExternalAuditService};
 use crate::api::dtos::{DeviceDTO, SecurityReportDTO, RouterAuditResultDTO};
 use crate::api::dtos::WifiNetworkDTO;
+use crate::api::dtos::ExternalAuditRequestDTO;
 use crate::api::validators::{validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4};
 use crate::domain::entities::ScanSession;
 
@@ -76,6 +78,40 @@ pub async fn get_history(service: State<'_, HistoryService>) -> Result<Vec<ScanS
 pub async fn scan_airwaves(service: State<'_, WifiService>) -> Result<Vec<WifiNetworkDTO>, String> {
     let networks = service.scan_airwaves().await?;
     Ok(networks.into_iter().map(WifiNetworkDTO::from).collect())
+}
+
+// --- EXTERNAL AUDIT (WRAPPER CLI) ---
+
+#[tauri::command]
+pub async fn start_external_audit(
+    service: State<'_, ExternalAuditService>,
+    app: tauri::AppHandle,
+    request: ExternalAuditRequestDTO,
+) -> Result<String, String> {
+    let env_pairs = request
+        .env
+        .unwrap_or_default()
+        .into_iter()
+        .map(|e| (e.key, e.value))
+        .collect();
+
+    service
+        .start_audit(
+            app,
+            ExternalAuditRequest {
+                binary_path: request.binary_path,
+                args: request.args,
+                cwd: request.cwd,
+                timeout_ms: request.timeout_ms,
+                env: env_pairs,
+            },
+        )
+        .await
+}
+
+#[tauri::command]
+pub async fn cancel_external_audit(service: State<'_, ExternalAuditService>, audit_id: String) -> Result<(), String> {
+    service.cancel_audit(&audit_id).await
 }
 
 fn validate_scan_range(range: &Option<String>) -> Result<(), String> {

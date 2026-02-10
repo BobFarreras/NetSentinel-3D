@@ -12,18 +12,19 @@ interface Props {
   isJammed: boolean;
   onToggleJam: () => void;
   onRouterAudit: (ip: string) => void;
+  onOpenLabAudit: (device: DeviceDTO) => void;
 }
 
 export const DeviceDetailPanel: React.FC<Props> = ({
-  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit
+  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit
 }) => {
 
-  // Helper per saber si el senyal és bo o dolent (visual)
-  // 🐛 FIX: Ara accepta 'number' directament, no string
+  // Helper para colorear la potencia de senal (RSSI) cuando el dispositivo expone datos WiFi.
+  // Nota: el valor ya llega como number, no como string.
   const getSignalColor = (signal?: number) => {
-    if (signal === undefined) return '#fff'; // Si no hi ha senyal, blanc
+    if (signal === undefined) return '#fff'; // Sin dato de senal
 
-    // Ja no cal fer parseInt perquè ja és un número!
+    // RSSI tipico: cerca de 0 es excelente, -90 es muy debil.
     if (signal > -60) return '#0f0';      // Verd (Excel·lent)
     if (signal > -75) return '#ffff00';   // Groc (Acceptable)
     return '#ff5555';                     // Vermell (Dolent)
@@ -56,9 +57,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         `}
       </style>
 
-      {/* 👇 CANVI IMPORTANT: Traiem 'position: absolute', 'top', 'right' i 'width'.
-             Ara ocupa el 100% del pare (la sidebar d'App.tsx) */}
-      {/* CONTENIDOR PRINCIPAL: Flex Column amb padding intern */}
+      {/* Contenedor principal: ocupa el 100% del panel lateral (sidebar) y hace scroll si hace falta. */}
       <div style={{
         width: '100%',
         height: '100%',
@@ -80,7 +79,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           justifyContent: 'space-between',
           color: '#0f0'
         }}>
-          <span>TARGET_ANALYSIS</span>
+          <span>DEVICE_INTEL</span>
           <span className="blinking-cursor" style={{ width: '12px', height: '12px', borderRadius: '50%' }}></span>
         </h3>
 
@@ -139,6 +138,20 @@ export const DeviceDetailPanel: React.FC<Props> = ({
             {auditing ? 'SCANNING...' : 'DEEP AUDIT'}
           </button>
 
+          <button
+            onClick={() => onOpenLabAudit(device)}
+            className="retro-button"
+            style={{
+              flex: 1,
+              borderColor: '#00e5ff',
+              color: '#00e5ff',
+              background: 'transparent',
+              boxShadow: '0 0 10px rgba(0,229,255,0.12)',
+            }}
+          >
+            🧪 LAB AUDIT
+          </button>
+
           <button onClick={onToggleJam} className="retro-button"
             style={{
               flex: 1,
@@ -151,6 +164,14 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           >
             {isJammed ? '⚫ DISCONNECTING' : '☠ KILL NET'}
           </button>
+        </div>
+
+        <div style={{ fontSize: '0.78rem', opacity: 0.75, lineHeight: 1.35, marginBottom: 14 }}>
+          <div style={{ color: '#00e5ff', fontWeight: 900, marginBottom: 4 }}>LAB AUDIT (educativo)</div>
+          <div>
+            Ejecuta diagnosticos y simulaciones controladas sobre el dispositivo seleccionado (sin bloquear la UI).
+            Si hay herramientas externas instaladas, puede orquestarlas y mostrar logs en tiempo real.
+          </div>
         </div>
 
         {/* BOTÓ ROUTER (Només si és Gateway) */}

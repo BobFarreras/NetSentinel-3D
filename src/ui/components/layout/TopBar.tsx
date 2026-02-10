@@ -6,13 +6,15 @@ interface TopBarProps {
   onScan: () => void;
   onHistoryToggle: () => void;
   onRadarToggle: () => void;
+  onExternalAuditToggle: () => void;
   showHistory: boolean;
   showRadar: boolean;
+  showExternalAudit: boolean;
   identity: HostIdentity | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ 
-  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, showHistory, showRadar, identity
+  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onExternalAuditToggle, showHistory, showRadar, showExternalAudit, identity
 }) => {
   return (
     <div style={{
@@ -114,6 +116,23 @@ export const TopBar: React.FC<TopBarProps> = ({
           }}
         >
           {showRadar ? 'HIDE RADAR' : 'RADAR'}
+        </button>
+
+        <button
+          onClick={onExternalAuditToggle}
+          style={{
+            background: showExternalAudit ? '#00202a' : 'transparent',
+            color: showExternalAudit ? '#00e5ff' : '#77e8ff',
+            border: `1px solid ${showExternalAudit ? '#00e5ff' : '#003a45'}`,
+            borderRadius: '2px',
+            padding: '6px 16px',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'inherit'
+          }}
+        >
+          {showExternalAudit ? 'HIDE AUDIT' : 'EXT AUDIT'}
         </button>
       </div>
 

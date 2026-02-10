@@ -29,10 +29,11 @@ describe('DeviceDetailPanel', () => {
         isJammed={false}
         onToggleJam={vi.fn()}
         onRouterAudit={vi.fn()}
+        onOpenLabAudit={vi.fn()}
       />
     );
 
-    expect(screen.getByText('TARGET_ANALYSIS')).toBeInTheDocument();
+    expect(screen.getByText('DEVICE_INTEL')).toBeInTheDocument();
     expect(screen.getByText('192.168.1.50')).toBeInTheDocument();
     expect(screen.getByText('AA:BB:CC:DD:EE:FF')).toBeInTheDocument();
     expect(screen.getByText('ACME')).toBeInTheDocument();
@@ -42,6 +43,7 @@ describe('DeviceDetailPanel', () => {
     const onAudit = vi.fn();
     const onToggleJam = vi.fn();
     const onRouterAudit = vi.fn();
+    const onOpenLabAudit = vi.fn();
 
     render(
       <DeviceDetailPanel
@@ -58,14 +60,17 @@ describe('DeviceDetailPanel', () => {
         isJammed={false}
         onToggleJam={onToggleJam}
         onRouterAudit={onRouterAudit}
+        onOpenLabAudit={onOpenLabAudit}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /DEEP AUDIT/ }));
+    fireEvent.click(screen.getByRole('button', { name: /LAB AUDIT/ }));
     fireEvent.click(screen.getByRole('button', { name: /KILL NET/ }));
     fireEvent.click(screen.getByRole('button', { name: /AUDIT GATEWAY SECURITY/ }));
 
     expect(onAudit).toHaveBeenCalledTimes(1);
+    expect(onOpenLabAudit).toHaveBeenCalledTimes(1);
     expect(onToggleJam).toHaveBeenCalledTimes(1);
     expect(onRouterAudit).toHaveBeenCalledWith('192.168.1.1');
   });

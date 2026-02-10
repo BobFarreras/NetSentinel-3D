@@ -94,3 +94,21 @@ impl From<WifiEntity> for WifiNetworkDTO {
         }
     }
 }
+
+// 5. External Audit (Wrapper de herramientas CLI)
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalAuditEnvVarDTO {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalAuditRequestDTO {
+    pub binary_path: String,
+    pub args: Vec<String>,
+    pub cwd: Option<String>,
+    pub timeout_ms: Option<u64>,
+    pub env: Option<Vec<ExternalAuditEnvVarDTO>>,
+}

@@ -12,6 +12,7 @@ use tauri::{Emitter, Manager, State};
 use crate::application::jammer_service::JammerService;
 use crate::application::traffic_service::TrafficService;
 use crate::application::wifi_service::WifiService;
+use crate::application::external_audit_service::ExternalAuditService;
 use crate::api::validators::{validate_mac_address, validate_usable_host_ipv4};
 use crate::domain::entities::HostIdentity;
 use crate::infrastructure::repositories::local_intelligence;
@@ -120,6 +121,7 @@ pub fn run() {
             let audit_service = AuditService::new(auditor_infra);
             let history_service = HistoryService::new(history_infra);
             let wifi_service = WifiService::new(wifi_scanner_infra);
+            let external_audit_service = ExternalAuditService::new();
 
             // El Traffic Service no depèn d'infra externa injectada, es crea directe
             let traffic_service = TrafficService::new();
@@ -131,6 +133,7 @@ pub fn run() {
             app.manage(audit_service);
             app.manage(history_service);
             app.manage(wifi_service);
+            app.manage(external_audit_service);
 
             // Registrem el TrafficService dins del wrapper TrafficState
             app.manage(TrafficState(Mutex::new(traffic_service)));
@@ -146,6 +149,8 @@ pub fn run() {
             api::commands::save_scan,
             api::commands::get_history,
             api::commands::scan_airwaves,
+            api::commands::start_external_audit,
+            api::commands::cancel_external_audit,
             // Noves comandes registrades a lib.rs
             get_identity,
             start_traffic_sniffing,

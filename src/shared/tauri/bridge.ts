@@ -1,6 +1,6 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
-import type { DeviceDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
+import type { DeviceDTO, ExternalAuditExitEvent, ExternalAuditLogEvent, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
 
 type EventEnvelope<T> = { payload: T };
 type EventCallback<T> = (event: EventEnvelope<T>) => void;
@@ -21,6 +21,9 @@ const getScenarioFlags = (): E2EScenarioFlags => {
 const listeners = new Map<string, Set<EventCallback<unknown>>>();
 let trafficTimer: ReturnType<typeof setInterval> | null = null;
 let packetId = 0;
+let extAuditTimer: ReturnType<typeof setInterval> | null = null;
+let extAuditSeq = 0;
+let activeExtAuditId: string | null = null;
 
 const mockScanDevices: DeviceDTO[] = [
   { ip: '192.168.1.1', mac: 'AA:BB:CC:DD:EE:01', vendor: 'Router', isGateway: true, hostname: 'gateway' },
@@ -193,6 +196,54 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
     case 'stop_jamming':
       emit('audit-log', `E2E MOCK: Jammer detenido en ${(args?.ip as string) || 'unknown'}`);
       return undefined as T;
+    case 'start_external_audit': {
+      extAuditSeq += 1;
+      const auditId = `mock_ext_audit_${extAuditSeq}`;
+      activeExtAuditId = auditId;
+
+      // Emitimos logs simulados en tiempo real.
+      if (extAuditTimer) clearInterval(extAuditTimer);
+      let lineNo = 0;
+      extAuditTimer = setInterval(() => {
+        lineNo += 1;
+        const evt: ExternalAuditLogEvent = {
+          auditId,
+          stream: lineNo % 4 === 0 ? 'stderr' : 'stdout',
+          line: lineNo % 4 === 0 ? `WARN line=${lineNo}` : `OK line=${lineNo}`,
+        };
+        emit('external-audit-log', evt);
+
+        if (lineNo >= 8) {
+          if (extAuditTimer) clearInterval(extAuditTimer);
+          extAuditTimer = null;
+          const exitEvt: ExternalAuditExitEvent = {
+            auditId,
+            success: true,
+            exitCode: 0,
+            durationMs: 1200,
+          };
+          emit('external-audit-exit', exitEvt);
+        }
+      }, 120);
+
+      return auditId as T;
+    }
+    case 'cancel_external_audit': {
+      const auditId = (args?.auditId as string) || activeExtAuditId || 'unknown';
+      if (extAuditTimer) {
+        clearInterval(extAuditTimer);
+        extAuditTimer = null;
+      }
+      const exitEvt: ExternalAuditExitEvent = {
+        auditId,
+        success: false,
+        exitCode: 130,
+        durationMs: 10,
+        error: 'cancelado',
+      };
+      emit('external-audit-exit', exitEvt);
+      return undefined as T;
+    }
     default:
       throw new Error(`E2E mock: comando no soportado (${command})`);
   }

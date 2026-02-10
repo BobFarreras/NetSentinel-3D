@@ -98,3 +98,31 @@ export interface WifiNetworkDTO {
   isTargetable: boolean;
   isConnected: boolean;
 }
+
+// 7. External Audit (Wrapper CLI)
+export interface ExternalAuditEnvVarDTO {
+  key: string;
+  value: string;
+}
+
+export interface ExternalAuditRequestDTO {
+  binaryPath: string;
+  args: string[];
+  cwd?: string;
+  timeoutMs?: number;
+  env?: ExternalAuditEnvVarDTO[];
+}
+
+export interface ExternalAuditLogEvent {
+  auditId: string;
+  stream: 'stdout' | 'stderr';
+  line: string;
+}
+
+export interface ExternalAuditExitEvent {
+  auditId: string;
+  success: boolean;
+  exitCode?: number;
+  durationMs: number;
+  error?: string;
+}
