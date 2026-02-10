@@ -27,6 +27,7 @@ use crate::infrastructure::{
 use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
 use crate::infrastructure::credential_store::KeyringCredentialStore;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
+use crate::infrastructure::network::vendor_resolver::VendorResolver;
 
 // 3. Imports propis (Aplicació)
 use crate::application::{
@@ -108,6 +109,8 @@ pub fn run() {
             // =====================================================
             let scanner_infra = Arc::new(SystemScanner);
             let wifi_scanner_infra = Arc::new(SystemWifiScanner::new());
+            // Seed opcional del OUI para mejorar resolucion de vendors en el primer arranque.
+            VendorResolver::ensure_oui_seeded();
 
             // Auditor amb Logger connectat a Tauri Events
             let handle = app.handle().clone();

@@ -7,7 +7,6 @@ import { RadarPanel } from './ui/components/hud/RadarPanel';
 import { ExternalAuditPanel } from './ui/components/hud/ExternalAuditPanel';
 import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
-import { DangerModal } from './ui/components/DangerModal';
 import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
 
 function App() {
@@ -116,8 +115,6 @@ function App() {
     }}>
 
       {/* Modal de riesgo */}
-      <DangerModal result={routerRisk} onClose={dismissRisk} />
-
       {/* =================================================================================
           COLUMNA ESQUERRA: TOPBAR + MAPA + CONSOLA (FLEX 1)
          ================================================================================= */}
@@ -306,6 +303,8 @@ function App() {
                 setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
                 setShowExternalAudit(true);
               }}
+              routerRisk={routerRisk}
+              onDismissRisk={dismissRisk}
             />
           </div>
         ) : (

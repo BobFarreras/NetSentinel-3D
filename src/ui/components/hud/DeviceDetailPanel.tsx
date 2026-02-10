@@ -2,6 +2,8 @@ import React from 'react';
 import { DeviceDTO, OpenPortDTO } from '../../../shared/dtos/NetworkDTOs';
 import { ConsoleDisplay } from './details/ConsoleDisplay';
 import { PortResults } from './details/PortResults';
+import { DangerModal } from '../../components/DangerModal';
+import type { RouterAuditResult } from '../../../shared/dtos/NetworkDTOs';
 
 interface Props {
   device: DeviceDTO;
@@ -13,10 +15,12 @@ interface Props {
   onToggleJam: () => void;
   onRouterAudit: (ip: string) => void;
   onOpenLabAudit: (device: DeviceDTO) => void;
+  routerRisk?: RouterAuditResult | null;
+  onDismissRisk?: () => void;
 }
 
 export const DeviceDetailPanel: React.FC<Props> = ({
-  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit
+  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit, routerRisk = null, onDismissRisk = () => {}
 }) => {
 
   // Helper para colorear la potencia de senal (RSSI) cuando el dispositivo expone datos WiFi.
@@ -183,6 +187,9 @@ export const DeviceDetailPanel: React.FC<Props> = ({
             ☠️ AUDIT GATEWAY SECURITY
           </button>
         )}
+
+        {/* Inline: riesgo del gateway debajo del panel, sin ocupar toda la pantalla */}
+        <DangerModal result={routerRisk} onClose={onDismissRisk} variant="inline" />
 
         {/* COMPONENT 1: TERMINAL */}
         <ConsoleDisplay logs={consoleLogs} />

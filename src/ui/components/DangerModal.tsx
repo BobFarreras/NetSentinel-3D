@@ -4,14 +4,75 @@ import { RouterAuditResult } from '../../shared/dtos/NetworkDTOs';
 interface Props {
   result: RouterAuditResult | null;
   onClose: () => void;
+  variant?: 'overlay' | 'inline';
 }
 
-export const DangerModal: React.FC<Props> = ({ result, onClose }) => {
+export const DangerModal: React.FC<Props> = ({ result, onClose, variant = 'overlay' }) => {
   if (!result || !result.vulnerable) return null;
 
   const [user, pass] = result.credentials_found 
     ? result.credentials_found.split(':') 
     : ['UNKNOWN', 'UNKNOWN'];
+
+  if (variant === 'inline') {
+    return (
+      <div style={{
+        marginTop: 14,
+        background: 'rgba(20, 0, 0, 0.65)',
+        border: '1px solid rgba(255, 0, 0, 0.55)',
+        boxShadow: '0 0 0 1px rgba(255,0,0,0.15), 0 20px 50px rgba(0,0,0,0.55)',
+        padding: 14,
+        fontFamily: 'Consolas, monospace',
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          borderBottom: '1px solid rgba(255,0,0,0.35)',
+          paddingBottom: 10,
+          marginBottom: 10,
+        }}>
+          <div style={{ color: '#ff4444', fontWeight: 900, letterSpacing: 1 }}>
+            CRITICAL: Gateway vulnerable
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,0,0,0.55)',
+              color: '#ff6666',
+              padding: '6px 10px',
+              cursor: 'pointer',
+              fontWeight: 800,
+              fontFamily: 'inherit',
+            }}
+          >
+            CERRAR
+          </button>
+        </div>
+
+        <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, lineHeight: 1.35 }}>
+          Se han encontrado credenciales por defecto o debiles en el gateway. En entorno educativo, esto indica
+          una configuracion insegura que debe corregirse.
+        </div>
+
+        <div style={{
+          marginTop: 12,
+          border: '1px dashed rgba(255,0,0,0.55)',
+          background: 'rgba(255,0,0,0.08)',
+          padding: 12,
+        }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginBottom: 6 }}>
+            CREDENCIALES DETECTADAS
+          </div>
+          <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>
+            {user}<span style={{ color: '#ff6666' }}>:</span>{pass}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{

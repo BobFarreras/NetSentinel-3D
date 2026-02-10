@@ -9,6 +9,25 @@ export const useScanner = () => {
   const [intruders, setIntruders] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);
 
+  const isValidMac = (mac?: string) => {
+    if (!mac) return false;
+    const m = mac.trim().toUpperCase();
+    if (m === '00:00:00:00:00:00') return false;
+    if (m === 'ROUTER_AUTH' || m === 'UNKNOWN') return false;
+    return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m);
+  };
+
+  const isBadVendor = (vendor?: string) => {
+    if (!vendor) return true;
+    const v = vendor.trim();
+    if (!v) return true;
+    if (v.toLowerCase() === 'unknown') return true;
+    if (v.toLowerCase().includes('generic / unknown')) return true;
+    // Evitar casos donde "vendor" termina siendo una IP.
+    if (/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(v)) return true;
+    return false;
+  };
+
   // Càrrega inicial
   useEffect(() => {
     let mounted = true;
@@ -40,9 +59,22 @@ export const useScanner = () => {
       
       const newIntruders = detectIntruders(results, history);
       setIntruders(newIntruders);
-      setDevices(results);
+
+      // Merge defensivo: nunca degradar MAC/vendor si ya teniamos mejor intel previa.
+      setDevices((prev) => {
+        const prevByIp = new Map(prev.map((d) => [d.ip, d]));
+        return results.map((d) => {
+          const old = prevByIp.get(d.ip);
+          if (!old) return d;
+          const nextMac = isValidMac(d.mac) ? d.mac : (isValidMac(old.mac) ? old.mac : d.mac);
+          const nextVendor = !isBadVendor(d.vendor) ? d.vendor : (!isBadVendor(old.vendor) ? old.vendor : d.vendor);
+          const nextHostname = d.hostname ?? old.hostname;
+          return { ...d, mac: nextMac, vendor: nextVendor, hostname: nextHostname };
+        });
+      });
 
       // Persistimos snapshot para arranque rapido.
+      // Nota: guardamos el resultado "raw" del scan. La UI hace merge para no degradar intel.
       await networkAdapter.saveLatestSnapshot(results);
       await networkAdapter.saveScan(results);
       setHistory(await networkAdapter.getHistory());

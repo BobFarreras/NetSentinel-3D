@@ -18,6 +18,7 @@ use std::sync::OnceLock;
 pub struct VendorResolver;
 
 static OUI_CACHE: OnceLock<HashMap<String, String>> = OnceLock::new();
+const OUI_SEED_JSON: &str = include_str!("oui_seed.json");
 
 impl VendorResolver {
     pub fn resolve(mac: &str) -> String {
@@ -77,6 +78,23 @@ impl VendorResolver {
 
     fn oui_map() -> &'static HashMap<String, String> {
         OUI_CACHE.get_or_init(load_oui_map_from_appdata)
+    }
+
+    // Seed opcional: si no existe `oui.json` en AppData, crea uno con una base minima.
+    // Esto mejora el onboarding sin inflar el binario con un dataset completo.
+    pub fn ensure_oui_seeded() {
+        let Some(proj_dirs) = ProjectDirs::from("com", "netsentinel", "app") else {
+            return;
+        };
+        let path = proj_dirs.data_dir().join("oui.json");
+        if path.exists() {
+            return;
+        }
+        let _ = fs::create_dir_all(proj_dirs.data_dir());
+        // Solo escribimos si el JSON embedded parece valido.
+        if serde_json::from_str::<HashMap<String, String>>(OUI_SEED_JSON).is_ok() {
+            let _ = fs::write(path, OUI_SEED_JSON);
+        }
     }
 }
 

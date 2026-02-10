@@ -154,7 +154,9 @@ export const useNetworkManager = () => {
     scanning, auditing,
 
     // Accions (Delegades als hooks corresponents)
-    startScan, 
+    // Importante: TopBar pasa el evento si se asigna directamente como handler.
+    // Exponemos un wrapper sin argumentos para evitar regresiones.
+    startScan: (range?: string) => startScan(range ?? deriveCidrFromIdentity(identity)),
     startAudit, 
     checkRouterSecurity,
     selectDevice, 

@@ -65,7 +65,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* Centro: controles */}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
-          onClick={onScan}
+          onClick={() => onScan()}
           disabled={scanning}
           style={{
             background: scanning ? '#002200' : '#003300',
