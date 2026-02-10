@@ -51,6 +51,20 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 ### 🛠️ Calidad
 - Ajuste de tipos explicitos en `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` para evitar errores de inferencia en IDE.
 
+## [v0.6.6] - Radar View UI inicial (CRT terminal) + soporte E2E (2026-02-10)
+### 🎛️ Frontend
+- Añadido panel `RadarPanel` con estetica CRT/cyberpunk y aviso legal de primer uso:
+  - `src/ui/components/hud/RadarPanel.tsx`
+- Integrado el toggle `RADAR` en:
+  - `src/ui/components/layout/TopBar.tsx`
+  - `src/App.tsx`
+
+### 🧪 E2E
+- Extendida la bridge mock con `scan_airwaves`:
+  - `src/shared/tauri/bridge.ts`
+- Añadido test E2E de Radar View:
+  - `e2e/app.spec.ts`
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:
