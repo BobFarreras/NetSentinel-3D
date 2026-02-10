@@ -65,6 +65,17 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 - Añadido test E2E de Radar View:
   - `e2e/app.spec.ts`
 
+## [v0.6.7] - Radar View UI v2: filtros y auto-refresh (2026-02-10)
+### 🎛️ Frontend
+- `src/ui/components/hud/RadarPanel.tsx`:
+  - filtros por riesgo, banda, canal y busqueda (SSID/vendor/BSSID),
+  - contador `VISIBLE` para ver impacto de filtros,
+  - auto-refresh opcional (sin solapar escaneos),
+  - `aria-label` para tests estables.
+
+### 🧪 Tests
+- Añadido `src/ui/components/hud/__tests__/RadarPanel.test.tsx`.
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
 import { useWifiRadar } from "../../hooks/modules/useWifiRadar";
 
@@ -23,12 +23,23 @@ const riskStyle = (riskLevel: string): RiskColor => {
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
+const inferBandLabel = (channel?: number) => {
+  if (!channel) return "UNK";
+  if (channel >= 1 && channel <= 14) return "2.4";
+  if (channel >= 32 && channel <= 177) return "5";
+  // Sin frecuencia real, no inferimos 6GHz de forma fiable solo con canal.
+  return "UNK";
+};
+
 const hashToAngleDeg = (seed: string) => {
   // Hash estable para distribuir nodos en el radar sin jitter.
   let h = 0;
   for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   return h % 360;
 };
+
+type RiskFilter = "ALL" | "HARDENED" | "STANDARD" | "LEGACY" | "OPEN";
+type BandFilter = "ALL" | "2.4" | "5" | "UNK";
 
 export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   const { scanning, networks, error, lastScanAt, scan } = useWifiRadar();
@@ -37,8 +48,61 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
     return localStorage.getItem("netsentinel.radar.legalAccepted") === "true";
   });
 
+  const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
+  const [bandFilter, setBandFilter] = useState<BandFilter>("ALL");
+  const [channelFilter, setChannelFilter] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+
+  const isMounted = useRef(true);
+  const scanningRef = useRef(false);
+
+  useEffect(() => {
+    scanningRef.current = scanning;
+  }, [scanning]);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!accepted || !autoRefresh) return;
+
+    const id = window.setInterval(() => {
+      // Evitar solapar escaneos.
+      if (!isMounted.current || scanningRef.current) return;
+      scan();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [accepted, autoRefresh, scan]);
+
+  const filteredNetworks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return networks
+      .filter((n) => {
+        if (riskFilter !== "ALL" && (n.riskLevel || "").toUpperCase() !== riskFilter) return false;
+        const band = inferBandLabel(n.channel);
+        if (bandFilter !== "ALL" && band !== bandFilter) return false;
+        if (channelFilter !== null && (n.channel ?? -1) !== channelFilter) return false;
+        if (q) {
+          const ssid = (n.ssid || "").toLowerCase();
+          const vendor = (n.vendor || "").toLowerCase();
+          const bssid = (n.bssid || "").toLowerCase();
+          if (!ssid.includes(q) && !vendor.includes(q) && !bssid.includes(q)) return false;
+        }
+        return true;
+      })
+      // Orden tactico: mas fuerte primero (RSSI mas cercano a 0).
+      .sort((a, b) => (b.signalLevel ?? -100) - (a.signalLevel ?? -100));
+  }, [networks, riskFilter, bandFilter, channelFilter, search]);
+
   const nodes = useMemo(() => {
-    return networks.map((n) => {
+    return filteredNetworks.map((n) => {
       const angle = (hashToAngleDeg(n.bssid) * Math.PI) / 180;
       const dist = clamp(n.distanceMock ?? 60, 5, 60);
       // 0..1 => 0.1..0.95 del radio
@@ -50,6 +114,14 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
         y: Math.sin(angle) * radius,
       };
     });
+  }, [filteredNetworks]);
+
+  const availableChannels = useMemo(() => {
+    const uniq = new Set<number>();
+    networks.forEach((n) => {
+      if (typeof n.channel === "number") uniq.add(n.channel);
+    });
+    return Array.from(uniq).sort((a, b) => a - b).slice(0, 12);
   }, [networks]);
 
   const acceptLegal = () => {
@@ -118,6 +190,17 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#6fe9b7", fontSize: 12, opacity: 0.85 }}>
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              disabled={!accepted}
+              style={{ accentColor: "#00ff88" }}
+            />
+            AUTO
+          </label>
+
           <button
             onClick={scan}
             disabled={scanning || !accepted}
@@ -235,6 +318,7 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
                 <button
                   key={n.bssid}
                   onClick={() => setSelected(n)}
+                  aria-label={`NODE ${n.ssid} CH ${n.channel ?? "?"}`}
                   title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}`}
                   style={{
                     position: "absolute",
@@ -265,7 +349,9 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
                 opacity: 0.8,
               }}
             >
-              {error ? `ERROR: ${error}` : `NETWORKS: ${networks.length} / LAST: ${lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"}`}
+              {error
+                ? `ERROR: ${error}`
+                : `NETWORKS: ${networks.length} / VISIBLE: ${filteredNetworks.length} / LAST: ${lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"}`}
             </div>
           </div>
         </div>
@@ -282,6 +368,106 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
         >
           <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1, marginBottom: 10 }}>
             NODE INTEL
+          </div>
+
+          {/* Filtros */}
+          <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              {(["ALL", "HARDENED", "STANDARD", "LEGACY", "OPEN"] as RiskFilter[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRiskFilter(r)}
+                  aria-label={`FILTER_RISK_${r}`}
+                  style={{
+                    background: riskFilter === r ? "rgba(0,255,136,0.10)" : "transparent",
+                    border: `1px solid ${riskFilter === r ? "rgba(0,255,136,0.45)" : "rgba(0,255,136,0.18)"}`,
+                    color: riskFilter === r ? "#00ff88" : "rgba(183,255,226,0.75)",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              {(["ALL", "2.4", "5", "UNK"] as BandFilter[]).map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setBandFilter(b)}
+                  aria-label={`FILTER_BAND_${b}`}
+                  style={{
+                    background: bandFilter === b ? "rgba(255,224,102,0.10)" : "transparent",
+                    border: `1px solid ${bandFilter === b ? "rgba(255,224,102,0.45)" : "rgba(0,255,136,0.18)"}`,
+                    color: bandFilter === b ? "#ffe066" : "rgba(183,255,226,0.75)",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  {b}GHz
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              <button
+                onClick={() => setChannelFilter(null)}
+                aria-label="FILTER_CH_ALL"
+                style={{
+                  background: channelFilter === null ? "rgba(111,233,183,0.12)" : "transparent",
+                  border: `1px solid ${channelFilter === null ? "rgba(111,233,183,0.45)" : "rgba(0,255,136,0.18)"}`,
+                  color: channelFilter === null ? "#6fe9b7" : "rgba(183,255,226,0.75)",
+                  padding: "4px 8px",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 0.6,
+                }}
+              >
+                CH:ALL
+              </button>
+              {availableChannels.map((ch) => (
+                <button
+                  key={ch}
+                  onClick={() => setChannelFilter(ch)}
+                  aria-label={`FILTER_CH_${ch}`}
+                  style={{
+                    background: channelFilter === ch ? "rgba(111,233,183,0.12)" : "transparent",
+                    border: `1px solid ${channelFilter === ch ? "rgba(111,233,183,0.45)" : "rgba(0,255,136,0.18)"}`,
+                    color: channelFilter === ch ? "#6fe9b7" : "rgba(183,255,226,0.75)",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  CH {ch}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="SEARCH: ssid/vendor/bssid"
+              style={{
+                width: "100%",
+                background: "rgba(0,0,0,0.35)",
+                border: "1px solid rgba(0,255,136,0.18)",
+                color: "#b7ffe2",
+                padding: "6px 8px",
+                fontSize: 12,
+                outline: "none",
+              }}
+            />
           </div>
 
           {!selected ? (
@@ -313,6 +499,15 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
               </div>
               <div>
                 RSSI: <span style={{ color: "#b7ffe2" }}>{selected.signalLevel} dBm</span>
+              </div>
+              <div>
+                Band:{" "}
+                <span style={{ color: "#b7ffe2" }}>
+                  {inferBandLabel(selected.channel)}GHz
+                </span>
+              </div>
+              <div>
+                Dist: <span style={{ color: "#b7ffe2" }}>{Math.round(selected.distanceMock)}m</span>
               </div>
               <div>
                 Risk:{" "}
