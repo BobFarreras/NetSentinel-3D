@@ -28,6 +28,18 @@ Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
 - Actualizado `docs/TESTING.md` con prioridades de pruebas para Radar View.
 - Actualizado `README.md` con seccion de roadmap inmediato y enlace a `docs/RADAR_VIEW.md`.
 
+## [v0.6.4] - Backend inicial Radar View: scan_airwaves (2026-02-10)
+### 🦀 Backend (Rust + Tauri)
+- Añadido servicio `WifiService` con normalizacion defensiva:
+  - saneo de SSID (control chars, longitud, `<hidden>`),
+  - clasificacion de riesgo (`HARDENED|STANDARD|LEGACY|OPEN`),
+  - calculo `distance_mock` para visualizacion.
+- Añadido puerto `WifiScannerPort` y scanner de sistema con `wifiscanner`.
+- Añadido comando Tauri `scan_airwaves` y DTO `WifiNetworkDTO`.
+
+### ✅ Verificacion
+- `cargo check --tests` en verde.
+
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades
 - Actualizadas prioridades en `AGENTS.md` para enfocar:
