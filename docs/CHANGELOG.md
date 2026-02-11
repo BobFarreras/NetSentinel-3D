@@ -2,6 +2,35 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.3] - Refactor capa 3D + cobertura de hooks (2026-02-11)
+### ♻️ Frontend 3D (Scene)
+- Extraida logica de escena a `src/ui/hooks/modules/useNetworkSceneState.ts`:
+  - persistencia de `showLabels`,
+  - enriquecimiento de dispositivos,
+  - deteccion de nodo central (gateway),
+  - calculo de color por nodo.
+- Extraida logica de nodo a `src/ui/hooks/modules/useNetworkNodeState.ts`:
+  - hover/cursor/click,
+  - estado visual (escala y emisivo).
+- Extraida logica de label a `src/ui/hooks/modules/useNodeLabelState.ts`:
+  - paleta por tipo de dispositivo,
+  - normalizacion de confianza (LOW/MED/HIGH).
+- `NetworkScene`, `NetworkNode` y `NodeLabel` quedan mas orientados a presentacion.
+
+### 🎨 Tokens / estilo
+- Nuevo modulo `src/ui/components/3d/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
+
+### ✅ Testing
+- Nuevos tests:
+  - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
+
+### 📚 Documentacion
+- `README.md`: añadido resumen del patron frontend modular.
+- `docs/ARCHITECTURE.md`: documentada estructura frontend por feature y capa 3D.
+- `AGENTS.md`: regla explicita para aplicar patron modular tambien en componentes 3D.
+
 ## [v0.8.2] - Cierre documental del refactor frontend (2026-02-11)
 ### 📚 Documentacion
 - `docs/ARCHITECTURE.md` actualizado con el patron frontend modular:

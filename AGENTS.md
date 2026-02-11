@@ -110,6 +110,9 @@ Regla:
   - `Panel.tsx`: composicion de UI (sin logica compleja).
   - `usePanelState.ts`: estado, efectos, memos y handlers.
   - `panel/*`: subcomponentes de presentacion puros.
+- En componentes 3D aplicar la misma idea:
+  - `Scene.tsx` para composicion,
+  - hooks `useSceneState/useNodeState/useLabelState` para logica.
 - Cuando haya estilos repetidos, mover a tokens compartidos (`src/ui/styles/hudTokens.ts`) o modulo local de estilos.
 - Todo hook nuevo de panel debe tener test unitario en `src/ui/hooks/modules/__tests__`.
 

@@ -1,11 +1,12 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { NetworkNode } from './NetworkNode';
 import { DeviceDTO, HostIdentity } from '../../../shared/dtos/NetworkDTOs';
 import * as THREE from 'three';
-import { classifyDeviceIntel, applyDeviceIntel } from '../../../core/logic/deviceIntel';
 import { NodeLabel } from './NodeLabel';
+import { SCENE_TOKENS } from "./sceneTokens";
+import { useNetworkSceneState } from "../../hooks/modules/useNetworkSceneState";
 
 interface NetworkSceneProps {
   devices?: DeviceDTO[];
@@ -66,50 +67,15 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   intruders = [],
   identity = null,
 }) => {
-  
-  const [showLabels, setShowLabels] = useState(() => {
-    try {
-      const raw = localStorage.getItem("netsentinel.showNodeLabels");
-      if (raw === null) return true;
-      return raw === "true";
-    } catch {
-      return true;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("netsentinel.showNodeLabels", String(showLabels));
-    } catch {
-      // Ignorar: en algunos entornos (tests/sandbox) puede no existir storage.
-    }
-  }, [showLabels]);
-
-  const enrichedDevices = useMemo(() => {
-    return devices.map((d) => {
-      const intel = classifyDeviceIntel(d, { gatewayIp: identity?.gatewayIp, hostIp: identity?.ip || null });
-      return applyDeviceIntel(d, intel);
-    });
-  }, [devices, identity?.gatewayIp, identity?.ip]);
-
-  const { centerNode, orbitingNodes } = useMemo(() => {
-    const gateway = enrichedDevices.find(d =>
-      Boolean(d.isGateway) ||
-      (identity?.gatewayIp ? d.ip === identity.gatewayIp : d.ip.endsWith('.1'))
-    );
-    const others = enrichedDevices.filter(d =>
-      !Boolean(d.isGateway) &&
-      (identity?.gatewayIp ? d.ip !== identity.gatewayIp : !d.ip.endsWith('.1'))
-    );
-    return { centerNode: gateway, orbitingNodes: others };
-  }, [enrichedDevices, identity?.gatewayIp]);
+  const state = useNetworkSceneState({ devices, identity, intruders });
+  const centerNode = state.centerNode ?? null;
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#000000', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', background: SCENE_TOKENS.bgContainer, position: 'relative' }}>
       {/* Toggle UI: oculta/muestra labels sin afectar a los nodos 3D */}
       <button
-        onClick={() => setShowLabels((v) => !v)}
-        title={showLabels ? 'Ocultar tarjetas' : 'Mostrar tarjetas'}
+        onClick={state.toggleLabels}
+        title={state.showLabels ? 'Ocultar tarjetas' : 'Mostrar tarjetas'}
         aria-label="TOGGLE_NODE_LABELS"
         style={{
           position: 'absolute',
@@ -120,17 +86,17 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           height: 34,
           borderRadius: 2,
           background: 'linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))',
-          border: `1px solid ${showLabels ? 'rgba(0,229,255,0.55)' : 'rgba(0,255,136,0.35)'}`,
-          boxShadow: showLabels ? '0 0 16px rgba(0,229,255,0.25)' : '0 0 16px rgba(0,255,136,0.18)',
-          color: showLabels ? '#00e5ff' : '#00ff88',
+          border: `1px solid ${state.showLabels ? 'rgba(0,229,255,0.55)' : 'rgba(0,255,136,0.35)'}`,
+          boxShadow: state.showLabels ? '0 0 16px rgba(0,229,255,0.25)' : '0 0 16px rgba(0,255,136,0.18)',
+          color: state.showLabels ? SCENE_TOKENS.accentCyan : SCENE_TOKENS.accentGreen,
           cursor: 'pointer',
           display: 'grid',
           placeItems: 'center',
-          fontFamily: "'Consolas','Courier New',monospace",
+          fontFamily: SCENE_TOKENS.fontMono,
           userSelect: 'none',
         }}
       >
-        {showLabels ? (
+        {state.showLabels ? (
           // "ojo tachado" minimal
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
@@ -143,10 +109,10 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           </svg>
         )}
       </button>
-      <Canvas 
+        <Canvas 
         camera={{ position: [0, 20, 25], fov: 50 }} 
         resize={{ scroll: false, debounce: 0 }} 
-        style={{ background: '#050505' }}
+        style={{ background: SCENE_TOKENS.bgCanvas }}
         onPointerMissed={() => onDeviceSelect && onDeviceSelect(null)}
       >
         <AutoFitCamera devices={devices} />
@@ -165,7 +131,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
               onClick={() => onDeviceSelect && onDeviceSelect(centerNode)}
               isSelected={selectedIp === centerNode.ip}
             />
-            {showLabels && (
+            {state.showLabels && (
               <NodeLabel
                 title={centerNode.name || centerNode.hostname || "GATEWAY"}
                 subtitle={`${centerNode.ip} | ${centerNode.vendor || "Router"}`}
@@ -193,21 +159,15 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
         )}
 
         {/* Orbita (resto de dispositivos) */}
-        {orbitingNodes.map((device, index) => {
-          const totalNodes = orbitingNodes.length;
+        {state.orbitingNodes.map((device, index) => {
+          const totalNodes = state.orbitingNodes.length;
           const radius = 10;
           const angle = (index / totalNodes) * Math.PI * 2;
           const x = Math.cos(angle) * radius;
           const z = Math.sin(angle) * radius;
 
-          let nodeColor = "#ff4444"; 
           const isIntruder = intruders.includes(device.ip);
-          const isMe = (identity?.ip ? device.ip === identity.ip : false) || device.vendor.includes('NETSENTINEL') || device.vendor.includes('(ME)');
-          const hasWifiData = device.wifi_band || device.signal_strength;
-
-          if (isMe) nodeColor = "#00ff00";
-          else if (isIntruder) nodeColor = "#ff0000";
-          else if (hasWifiData) nodeColor = "#ff00ff";
+          const nodeColor = state.getNodeColor(device);
 
           const labelTitle = device.name || device.hostname || device.ip;
           const labelSubtitle = `${device.ip} | ${device.vendor || 'Desconocido'}`;
@@ -223,7 +183,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
                 onClick={() => onDeviceSelect && onDeviceSelect(device)}
                 isSelected={selectedIp === device.ip}
               />
-              {showLabels && (
+              {state.showLabels && (
                 <NodeLabel
                   title={labelTitle}
                   subtitle={labelSubtitle}

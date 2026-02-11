@@ -29,6 +29,15 @@ Principio base:
 \- /infrastructure          # Implementaciones concretas (red, fs, auditoria)
 ```
 
+### 2.1 Estructura frontend por feature (actual)
+- `src/ui/components/hud/*`: paneles HUD (Radar, DeviceDetail, History, ExternalAudit).
+- `src/ui/components/panels/*`: consola/logs/trafico.
+- `src/ui/components/3d/*`: escena de red (nodos, labels, camara, controles).
+- `src/ui/hooks/modules/*`: hooks de estado por modulo/panel/escena.
+
+Regla practica:
+- Si un componente supera responsabilidad de presentacion, extraer hook `useXxxState` y sub-vistas.
+
 ## 3. Capas del Backend (Rust)
 ### 3.1 Domain
 Ubicacion: `src-tauri/src/domain`
@@ -102,6 +111,13 @@ Ejemplos aplicados:
 - Device Detail:
   - `src/ui/components/hud/DeviceDetailPanel.tsx`
   - `src/ui/hooks/modules/useDeviceDetailPanelState.ts`
+- Escena 3D:
+  - `src/ui/components/3d/NetworkScene.tsx`
+  - `src/ui/components/3d/NetworkNode.tsx`
+  - `src/ui/components/3d/NodeLabel.tsx`
+  - `src/ui/hooks/modules/useNetworkSceneState.ts`
+  - `src/ui/hooks/modules/useNetworkNodeState.ts`
+  - `src/ui/hooks/modules/useNodeLabelState.ts`
 
 Beneficios:
 - Menos acoplamiento entre render y logica.
