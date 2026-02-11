@@ -2,6 +2,21 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
+### ✅ Testing (frontend)
+- Nuevos tests unitarios para hooks extraidos:
+  - `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
+- Cobertura añadida en:
+  - cambios de pestaña y limpieza contextual en `ConsoleLogs`,
+  - filtros/paginacion/resolucion de nombres en `Traffic`,
+  - derivadas y handlers de acciones en `DeviceDetail`.
+
+### ✅ Validaciones
+- `npm test -- --run` (20 files / 54 tests en verde)
+- `npm run build` (ok)
+
 ## [v0.8.0] - Tokens visuales HUD compartidos (2026-02-11)
 ### 🎨 Frontend (estilos)
 - Añadido `src/ui/styles/hudTokens.ts` como fuente compartida de:
