@@ -2,6 +2,22 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.0] - Tokens visuales HUD compartidos (2026-02-11)
+### 🎨 Frontend (estilos)
+- Añadido `src/ui/styles/hudTokens.ts` como fuente compartida de:
+  - tipografia mono (`HUD_TYPO.mono`)
+  - paleta base HUD (`HUD_COLORS`)
+- Integracion inicial de tokens en modulos refactorizados:
+  - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
+  - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
+  - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
+  - `DeviceDetail` (tipografia/colores clave en `src/ui/components/hud/DeviceDetailPanel.tsx`)
+- Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.7.9] - Refactor DeviceDetailPanel: acciones y derivadas en hook (2026-02-11)
 ### ♻️ Frontend (Device Detail)
 - Extraida logica de derivadas/acciones de `DeviceDetailPanel` a `src/ui/hooks/modules/useDeviceDetailPanelState.ts`.

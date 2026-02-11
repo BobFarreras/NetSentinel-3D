@@ -1,5 +1,6 @@
 import React from "react";
 import { useRadarPanelState } from "../../hooks/modules/useRadarPanelState";
+import { HUD_TYPO } from "../../styles/hudTokens";
 import { RadarHeader } from "./radar/RadarHeader";
 import { RadarIntelPanel } from "./radar/RadarIntelPanel";
 import { RadarLegalModal } from "./radar/RadarLegalModal";
@@ -24,7 +25,7 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
         boxShadow: "0 0 0 1px rgba(0,255,136,0.12), 0 25px 80px rgba(0,0,0,0.65)",
         position: "relative",
         overflow: "hidden",
-        fontFamily: "'Consolas', 'Courier New', monospace",
+        fontFamily: HUD_TYPO.mono,
       }}
     >
       <style>{`

@@ -1,6 +1,7 @@
 // src/ui/components/panels/traffic/TrafficTable.tsx
 import React from "react";
 import type { FilterMode, UITrafficPacket } from "../../../hooks/modules/useTrafficPanelState";
+import { HUD_TYPO } from "../../../styles/hudTokens";
 import { gridTemplate } from "./TrafficStyles";
 
 type TrafficTableProps = {
@@ -48,7 +49,7 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
 
       <div ref={scrollContainerRef} onScroll={onScroll} style={{ flex: 1, overflowY: "auto", padding: "2px" }}>
         {visiblePackets.length === 0 ? (
-          <div style={{ padding: "20px", textAlign: "center", color: "#444", fontSize: "0.7rem", fontFamily: "monospace" }}>
+          <div style={{ padding: "20px", textAlign: "center", color: "#444", fontSize: "0.7rem", fontFamily: HUD_TYPO.mono }}>
             {isActive ? "WAITING FOR TRAFFIC..." : "MONITOR PAUSED"}
             <div style={{ marginTop: 5, fontSize: "0.6rem" }}>Filter: {filterMode}</div>
             {filterMode === "JAMMED" && <div style={{ color: "#633", marginTop: 10 }}>No attacks detected yet.</div>}
@@ -67,7 +68,7 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
                   padding: "3px 0",
                   borderBottom: "1px solid #111",
                   alignItems: "center",
-                  fontFamily: "'Consolas', monospace",
+                  fontFamily: HUD_TYPO.mono,
                   fontSize: "0.7rem",
                   backgroundColor: isBlocked ? "rgba(100, 0, 0, 0.2)" : "transparent",
                   color: isBlocked ? "#ff5555" : pkt.protocol === "TCP" ? "#8f8" : "#ff8",

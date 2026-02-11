@@ -1,13 +1,15 @@
 // src/ui/components/panels/console_logs/consoleLogsStyles.ts
+import { HUD_COLORS } from "../../../styles/hudTokens";
+
 export const CONSOLE_COLORS = {
-  bg: "#020202",
-  border: "#0a3a2a",
+  bg: HUD_COLORS.bgBase,
+  border: HUD_COLORS.borderSoft,
   // Verde fosforo (menos "neon puro") para lectura prolongada.
-  textMain: "#a9f5c9",
-  textDim: "#4aa37a",
-  textErr: "#ff5555",
-  accent: "#00ff88",
-  cyan: "#00e5ff",
+  textMain: HUD_COLORS.textMain,
+  textDim: HUD_COLORS.textDim,
+  textErr: HUD_COLORS.textError,
+  accent: HUD_COLORS.accentGreen,
+  cyan: HUD_COLORS.accentCyan,
 };
 
 export const formatSpeed = (bytes: number) => {

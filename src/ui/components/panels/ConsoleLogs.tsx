@@ -6,6 +6,7 @@ import { ConsoleLogsHeader } from "./console_logs/ConsoleLogsHeader";
 import { CONSOLE_COLORS } from "./console_logs/consoleLogsStyles";
 import { RadarLogsView } from "./console_logs/RadarLogsView";
 import { SystemLogsView } from "./console_logs/SystemLogsView";
+import { HUD_TYPO } from "../../styles/hudTokens";
 
 interface ConsoleLogsProps {
   logs: string[];
@@ -27,7 +28,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
         display: "flex",
         flexDirection: "column",
         padding: "0 5px",
-        fontFamily: "monospace",
+        fontFamily: HUD_TYPO.mono,
       }}
     >
       <style>{`

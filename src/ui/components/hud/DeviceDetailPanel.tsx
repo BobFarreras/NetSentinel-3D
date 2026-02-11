@@ -1,6 +1,7 @@
 import React from "react";
 import { DeviceDTO, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 import { useDeviceDetailPanelState } from "../../hooks/modules/useDeviceDetailPanelState";
+import { HUD_COLORS, HUD_TYPO } from "../../styles/hudTokens";
 import { ConsoleDisplay } from "./details/ConsoleDisplay";
 import { PortResults } from "./details/PortResults";
 
@@ -28,19 +29,19 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         {`
           @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
           .blinking-cursor { 
-            display: inline-block; width: 8px; height: 14px; background-color: #0f0;
+            display: inline-block; width: 8px; height: 14px; background-color: ${HUD_COLORS.accentGreen};
             margin-left: 4px; vertical-align: text-bottom; animation: blink 1s step-end infinite;
           }
           .retro-button {
-            width: 100%; background: #000; color: #0f0; border: 2px solid #0f0;
-            padding: 12px; font-family: 'Consolas', monospace; font-weight: bold;
+            width: 100%; background: #000; color: ${HUD_COLORS.accentGreen}; border: 2px solid ${HUD_COLORS.accentGreen};
+            padding: 12px; font-family: ${HUD_TYPO.mono}; font-weight: bold;
             text-transform: uppercase; letter-spacing: 2px; cursor: pointer;
             transition: all 0.2s; box-shadow: 0 0 5px rgba(0, 255, 0, 0.2);
           }
-          .retro-button:hover:not(:disabled) { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+          .retro-button:hover:not(:disabled) { background: ${HUD_COLORS.accentGreen}; color: #000; box-shadow: 0 0 15px ${HUD_COLORS.accentGreen}; }
           .retro-button:disabled { border-color: #555; color: #555; cursor: not-allowed; }
           .crt-screen {
-            background: rgba(0, 10, 0, 0.95); border: 1px solid #0f0;
+            background: rgba(0, 10, 0, 0.95); border: 1px solid ${HUD_COLORS.accentGreen};
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
             background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             background-size: 100% 2px, 3px 100%;
@@ -68,7 +69,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           marginBottom: 20,
           display: 'flex',
           justifyContent: 'space-between',
-          color: '#0f0'
+          color: HUD_COLORS.accentGreen
         }}>
           <span>DEVICE_INTEL</span>
           <span className="blinking-cursor" style={{ width: '12px', height: '12px', borderRadius: '50%' }}></span>
@@ -196,7 +197,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         {device.isGateway && (
           <button
             onClick={state.handleRouterAudit}
-            style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: 'Consolas', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}
           >
             ☠️ AUDIT GATEWAY SECURITY
           </button>

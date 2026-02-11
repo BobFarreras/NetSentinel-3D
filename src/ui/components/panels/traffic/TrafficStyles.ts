@@ -1,11 +1,12 @@
 // src/ui/components/panels/traffic/TrafficStyles.ts
 import type { CSSProperties } from "react";
+import { HUD_COLORS } from "../../../styles/hudTokens";
 
 export const trafficRootStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   height: "100%",
-  background: "#050505",
+  background: HUD_COLORS.bgPanel,
   overflow: "hidden",
 };
 

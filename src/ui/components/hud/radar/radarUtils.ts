@@ -1,6 +1,7 @@
 // src/ui/components/hud/radar/radarUtils.ts
 import type { CSSProperties } from "react";
 import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { HUD_TYPO } from "../../../styles/hudTokens";
 
 export type RiskColor = {
   dot: string;
@@ -42,7 +43,7 @@ export const selectStyle: CSSProperties = {
   padding: "6px 8px",
   fontSize: 12,
   outline: "none",
-  fontFamily: "'Consolas', 'Courier New', monospace",
+  fontFamily: HUD_TYPO.mono,
 };
 
 export type RadarNode = WifiNetworkDTO & { x: number; y: number };

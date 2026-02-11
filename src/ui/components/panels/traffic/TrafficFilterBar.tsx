@@ -2,6 +2,7 @@
 import React from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
 import type { FilterMode } from "../../../hooks/modules/useTrafficPanelState";
+import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 
 type TrafficFilterBarProps = {
   packetsCount: number;
@@ -21,7 +22,7 @@ interface FilterBtnProps {
   disabled?: boolean;
 }
 
-const FilterBtn: React.FC<FilterBtnProps> = ({ label, active, onClick, color = "#00ff00", disabled }) => (
+const FilterBtn: React.FC<FilterBtnProps> = ({ label, active, onClick, color = HUD_COLORS.accentGreen, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -34,7 +35,7 @@ const FilterBtn: React.FC<FilterBtnProps> = ({ label, active, onClick, color = "
       cursor: disabled ? "not-allowed" : "pointer",
       marginRight: "4px",
       fontWeight: "bold",
-      fontFamily: "monospace",
+      fontFamily: HUD_TYPO.mono,
     }}
   >
     {label}
@@ -58,7 +59,7 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
         justifyContent: "space-between",
         padding: "6px",
         borderBottom: "1px solid #004400",
-        background: "#020202",
+        background: HUD_COLORS.bgBase,
         flexShrink: 0,
       }}
     >
@@ -91,7 +92,7 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
               fontSize: "0.65rem",
               padding: "2px 8px",
               fontWeight: "bold",
-              fontFamily: "monospace",
+              fontFamily: HUD_TYPO.mono,
             }}
           >
             🗑️ CLR
