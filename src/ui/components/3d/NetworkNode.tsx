@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh } from 'three';
+import { useNetworkNodeState } from "../../hooks/modules/useNetworkNodeState";
 
 interface NetworkNodeProps {
   position: [number, number, number];
@@ -18,12 +19,11 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
   name = 'Unknown'
 }) => {
   const meshRef = useRef<Mesh>(null);
-  const [hovered, setHover] = useState(false);
+  const state = useNetworkNodeState({ isSelected, color, name, onClick });
 
   useFrame((_, delta) => {
     if (meshRef.current) {
-      const speed = isSelected ? 2 : 0.5;
-      meshRef.current.rotation.x += delta * speed;
+      meshRef.current.rotation.x += delta * state.speed;
       meshRef.current.rotation.y += delta * 0.2;
     }
   });
@@ -32,29 +32,17 @@ export const NetworkNode: React.FC<NetworkNodeProps> = ({
     <mesh
       ref={meshRef}
       position={position}
-      onClick={(e) => {
-        // 🛑 ATENCIÓ: Aquest log surt a la CONSOLA DEL NAVEGADOR (F12), no a la terminal
-        console.log(`👆 CLICK 3D DETECTAT en: ${name}`);
-        e.stopPropagation(); // Evita que el click traspassi
-        onClick && onClick();
-      }}
-      onPointerOver={() => {
-        console.log(`👀 Ratolí sobre: ${name}`);
-        setHover(true);
-        document.body.style.cursor = 'pointer'; // Canvia el cursor a mà
-      }}
-      onPointerOut={() => {
-        setHover(false);
-        document.body.style.cursor = 'auto'; // Torna el cursor normal
-      }}
-      scale={isSelected ? 1.5 : (hovered ? 1.2 : 1)}
+      onClick={state.handleClick}
+      onPointerOver={state.handlePointerOver}
+      onPointerOut={state.handlePointerOut}
+      scale={state.scale}
     >
       <icosahedronGeometry args={[1, 1]} />
       <meshStandardMaterial
-        color={isSelected ? '#ffd700' : (hovered ? '#ffffff' : color)}
+        color={state.nodeColor}
         wireframe={true}
-        emissive={isSelected ? '#ffd700' : color}
-        emissiveIntensity={isSelected ? 2 : 0.5}
+        emissive={state.emissiveColor}
+        emissiveIntensity={state.emissiveIntensity}
       />
     </mesh>
   );

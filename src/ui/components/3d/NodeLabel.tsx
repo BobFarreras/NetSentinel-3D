@@ -1,16 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Html } from "@react-three/drei";
 import type { DeviceType } from "../../../shared/dtos/NetworkDTOs";
-
-const COLORS: Record<DeviceType, { fg: string; glow: string; border: string }> = {
-  ROUTER: { fg: "#77e8ff", glow: "rgba(0,229,255,0.35)", border: "rgba(0,229,255,0.55)" },
-  PC: { fg: "#a9f5c9", glow: "rgba(0,255,136,0.25)", border: "rgba(0,255,136,0.45)" },
-  PHONE: { fg: "#ff66cc", glow: "rgba(255,0,170,0.25)", border: "rgba(255,0,170,0.45)" },
-  TV: { fg: "#ffd36b", glow: "rgba(255,211,107,0.25)", border: "rgba(255,211,107,0.45)" },
-  SPEAKER: { fg: "#b388ff", glow: "rgba(179,136,255,0.25)", border: "rgba(179,136,255,0.45)" },
-  IOT: { fg: "#ff7777", glow: "rgba(255,85,85,0.25)", border: "rgba(255,85,85,0.45)" },
-  UNKNOWN: { fg: "#c9d1d9", glow: "rgba(201,209,217,0.15)", border: "rgba(201,209,217,0.25)" },
-};
+import { SCENE_TOKENS } from "./sceneTokens";
+import { useNodeLabelState } from "../../hooks/modules/useNodeLabelState";
 
 const Icon: React.FC<{ type: DeviceType; color: string }> = ({ type, color }) => {
   // Iconos SVG minimalistas, estilo terminal/cyberpunk (stroke neon).
@@ -88,14 +80,7 @@ export const NodeLabel: React.FC<{
   variant?: "default" | "router";
   rows?: Array<{ label: string; value: string }>;
 }> = ({ title, subtitle, meta, type, confidence, isSelected = false, variant = "default", rows }) => {
-  const palette = COLORS[type] || COLORS.UNKNOWN;
-
-  const conf = useMemo(() => {
-    const c = Math.max(0, Math.min(100, Math.round(confidence)));
-    // Etiqueta simple para que el % sea "usable" (sin tooltip, porque las labels no capturan hover).
-    const level = c >= 80 ? "HIGH" : c >= 50 ? "MED" : "LOW";
-    return { pct: c, level };
-  }, [confidence]);
+  const { palette, confidenceBadge } = useNodeLabelState({ type, confidence });
 
   return (
     <Html
@@ -143,7 +128,7 @@ export const NodeLabel: React.FC<{
           background: "linear-gradient(180deg, rgba(0,0,0,0.88), rgba(0,0,0,0.55))",
           border: `1px solid ${palette.border}`,
           boxShadow: `0 0 0 1px rgba(0,0,0,0.55), 0 0 18px ${palette.glow}`,
-          fontFamily: "'Consolas','Courier New',monospace",
+          fontFamily: SCENE_TOKENS.fontMono,
           letterSpacing: 0.35,
           color: palette.fg,
           opacity: isSelected ? 1 : 0.90,
@@ -211,7 +196,7 @@ export const NodeLabel: React.FC<{
               letterSpacing: 0.45,
             }}
           >
-            {conf.level} {conf.pct}%
+            {confidenceBadge.level} {confidenceBadge.pct}%
           </div>
         </div>
 
