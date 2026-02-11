@@ -101,3 +101,8 @@ Notas Windows:
 Wrapper para ejecutar herramientas CLI instaladas por el administrador y/o escenarios didacticos.
 
 Documento tecnico: `docs/EXTERNAL_AUDIT.md`.
+
+## Paneles desacoplados (desktop)
+- Los paneles `Console`, `Device`, `Radar`, `External` y `NetworkScene` soportan modo desacoplado.
+- En Tauri desktop se abren en ventana nativa independiente.
+- El cierre oficial del panel desacoplado es el `X` nativo de la ventana (reacopla automaticamente en la principal).

@@ -9,6 +9,7 @@ interface ExternalAuditPanelProps {
   identity?: HostIdentity | null;
   defaultScenarioId?: string | null;
   autoRun?: boolean;
+  embedded?: boolean;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -40,6 +41,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   identity = null,
   defaultScenarioId = null,
   autoRun = false,
+  embedded = false,
 }) => {
   const audit = useExternalAudit();
 
@@ -79,6 +81,11 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
       if (defaultScenarioId) setScenarioId(defaultScenarioId);
     }
   }, [targetDevice, defaultScenarioId]);
+
+  useEffect(() => {
+    // Permite re-disparar autorun cuando cambia el objetivo o escenario.
+    hasAutoRun.current = false;
+  }, [targetDevice?.ip, defaultScenarioId, scenarioId]);
 
   const scrollToBottom = () => {
     const el = logRef.current;
@@ -123,10 +130,10 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   return (
     <div
       style={{
-        width: 720,
-        maxWidth: "92vw",
-        height: "72vh",
-        maxHeight: "92vh",
+        width: embedded ? "100%" : 720,
+        maxWidth: embedded ? "none" : "92vw",
+        height: embedded ? "100%" : "72vh",
+        maxHeight: embedded ? "none" : "92vh",
         background: "#050607",
         border: "1px solid rgba(0,255,136,0.25)",
         boxShadow: "0 0 0 1px rgba(0,255,136,0.12), 0 25px 80px rgba(0,0,0,0.65)",

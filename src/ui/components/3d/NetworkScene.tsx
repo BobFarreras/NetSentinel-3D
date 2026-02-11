@@ -14,6 +14,7 @@ interface NetworkSceneProps {
   selectedIp?: string | null;
   intruders?: string[];
   identity?: HostIdentity | null;
+  onUndockScene?: (() => void) | null;
 }
 
 // --- COMPONENTE: CAMARA AUTO-AJUSTABLE ---
@@ -66,6 +67,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   selectedIp,
   intruders = [],
   identity = null,
+  onUndockScene = null,
 }) => {
   const state = useNetworkSceneState({ devices, identity, intruders });
   const centerNode = state.centerNode ?? null;
@@ -109,6 +111,36 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           </svg>
         )}
       </button>
+      {onUndockScene && (
+        <button
+          onClick={onUndockScene}
+          title="Desacoplar escena 3D"
+          aria-label="UNLOCK_SCENE3D"
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 52,
+            zIndex: 80,
+            width: 34,
+            height: 34,
+            borderRadius: 2,
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))',
+            border: '1px solid rgba(0,255,136,0.35)',
+            boxShadow: '0 0 16px rgba(0,255,136,0.18)',
+            color: SCENE_TOKENS.accentGreen,
+            cursor: 'pointer',
+            display: 'grid',
+            placeItems: 'center',
+            fontFamily: SCENE_TOKENS.fontMono,
+            userSelect: 'none',
+            fontSize: 16,
+            lineHeight: '16px',
+            padding: 0,
+          }}
+        >
+          ↗
+        </button>
+      )}
         <Canvas 
         camera={{ position: [0, 20, 25], fov: 50 }} 
         resize={{ scroll: false, debounce: 0 }} 

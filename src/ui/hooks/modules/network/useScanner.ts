@@ -5,7 +5,7 @@ import { detectIntruders } from '../../../../core/logic/intruderDetection';
 import { uiLogger } from '../../../utils/logger';
 import { mergeScanInventory } from '../shared/deviceMerge';
 
-export const useScanner = () => {
+export const useScanner = (enableHydration: boolean = true) => {
   const [devices, setDevices] = useState<DeviceDTO[]>([]);
   const [history, setHistory] = useState<ScanSession[]>([]);
   const [intruders, setIntruders] = useState<string[]>([]);
@@ -19,6 +19,7 @@ export const useScanner = () => {
 
   // Carga inicial (hydrate): snapshot rapido + historial (fallback).
   useEffect(() => {
+    if (!enableHydration) return;
     let mounted = true;
     const load = async () => {
       try {
@@ -44,7 +45,7 @@ export const useScanner = () => {
     };
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [enableHydration]);
 
   const startScan = async (range: string = '192.168.1.0/24') => {
     hasStartedScanRef.current = true;

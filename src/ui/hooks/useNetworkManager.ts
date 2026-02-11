@@ -9,12 +9,19 @@ import { useRouterHacker } from './modules/network/useRouterHacker';
 import { useJamming } from './modules/network/useJamming';
 import { useBootstrapNetwork } from './modules/network/useBootstrapNetwork';
 
-export const useNetworkManager = () => {
+interface UseNetworkManagerOptions {
+  enableAutoBootstrap?: boolean;
+  enableScannerHydration?: boolean;
+}
+
+export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   // 1. Logs (Base)
   const { deviceLogs, systemLogs, addLog, clearLogs, clearSystemLogs, setActiveTarget } = useSocketLogs();
 
   // 2. Scanner (Core)
-  const { devices, setDevices, history, intruders, scanning, startScan, loadSession } = useScanner();
+  const { devices, setDevices, history, intruders, scanning, startScan, loadSession } = useScanner(
+    options?.enableScannerHydration ?? true
+  );
 
   // 3. Auditor (Ports)
   const { auditing, auditResults, startAudit, clearResults } = usePortAuditor(addLog);
@@ -26,7 +33,11 @@ export const useNetworkManager = () => {
   const { jammedDevices, toggleJammer } = useJamming(devices, addLog);
 
   // 6. Bootstrap (identidad + autoscan + autosync de gateway)
-  const { identity, deriveCidr } = useBootstrapNetwork({ startScan, setDevices });
+  const { identity, deriveCidr } = useBootstrapNetwork({
+    startScan,
+    setDevices,
+    enableAutoBootstrap: options?.enableAutoBootstrap ?? true,
+  });
 
   // 7. Estado local de UI (seleccion)
   const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);

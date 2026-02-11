@@ -94,6 +94,30 @@ Nota de frontend (estado global):
 - Los hooks modulares se agrupan por dominio en `src/ui/hooks/modules/*`:
   - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
 
+## 4.2 Multiwindow y paneles desacoplados (Tauri)
+Fuente de verdad:
+- `src/App.tsx`
+- `src/adapters/windowingAdapter.ts`
+- `src-tauri/capabilities/default.json`
+
+Comportamiento actual:
+1. Cada panel (`console`, `device`, `radar`, `external`, `scene3d`) se puede desacoplar.
+2. En desktop Tauri se abre ventana nativa (`WebviewWindow`) fuera de la ventana principal.
+3. Si falla runtime Tauri (web/tests), hay fallback por `DetachedWindowPortal`.
+4. El cierre oficial en desacoplado es por `X` nativo del sistema.
+5. Al cerrar ventana desacoplada:
+   - se emite `netsentinel://dock-panel` via `pagehide`,
+   - la principal reacopla y limpia estado detached.
+
+Eventos internos de coordinacion:
+- `netsentinel://dock-panel`: reacople generico de panel.
+- `netsentinel://external-context`: sincroniza target/escenario/autorun del panel `External` desacoplado.
+
+Reglas de layout actuales:
+- Si `scene3d` esta desacoplada, `Radar/External` ocupan todo el ancho de la zona superior.
+- Si `console` esta desacoplada, la zona inferior y su resizer se ocultan.
+- Si `device` esta desacoplada, sidebar y resizer derecho se ocultan.
+
 ## 4.1 Patron Frontend Modular (actual)
 Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:
 - `PanelContenedor`: compone sub-vistas y conecta callbacks.

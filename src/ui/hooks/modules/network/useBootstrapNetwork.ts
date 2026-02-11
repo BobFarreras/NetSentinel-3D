@@ -8,6 +8,7 @@ import { uiLogger } from "../../../utils/logger";
 interface UseBootstrapNetworkParams {
   startScan: (range?: string) => Promise<void>;
   setDevices: Dispatch<SetStateAction<DeviceDTO[]>>;
+  enableAutoBootstrap?: boolean;
 }
 
 const netmaskToPrefix = (netmask: string): number | null => {
@@ -33,7 +34,7 @@ export const deriveCidrFromIdentity = (identity: HostIdentity | null): string =>
   return `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}.0/${prefix}`;
 };
 
-export const useBootstrapNetwork = ({ startScan, setDevices }: UseBootstrapNetworkParams) => {
+export const useBootstrapNetwork = ({ startScan, setDevices, enableAutoBootstrap = true }: UseBootstrapNetworkParams) => {
   const [identity, setIdentity] = useState<HostIdentity | null>(null);
   const bootAutoScanDone = useRef(false);
   const bootRouterSyncDone = useRef(false);
@@ -57,6 +58,7 @@ export const useBootstrapNetwork = ({ startScan, setDevices }: UseBootstrapNetwo
   }, []);
 
   useEffect(() => {
+    if (!enableAutoBootstrap) return;
     if (!identity || bootAutoScanDone.current) return;
     bootAutoScanDone.current = true;
 
@@ -65,9 +67,10 @@ export const useBootstrapNetwork = ({ startScan, setDevices }: UseBootstrapNetwo
     if (!enabled) return;
 
     void startScan(deriveCidrFromIdentity(identity));
-  }, [identity, startScan]);
+  }, [enableAutoBootstrap, identity, startScan]);
 
   useEffect(() => {
+    if (!enableAutoBootstrap) return;
     if (!identity?.gatewayIp || bootRouterSyncDone.current) return;
     bootRouterSyncDone.current = true;
 
@@ -104,7 +107,7 @@ export const useBootstrapNetwork = ({ startScan, setDevices }: UseBootstrapNetwo
     };
 
     void syncRouterDevices();
-  }, [identity?.gatewayIp, setDevices]);
+  }, [enableAutoBootstrap, identity?.gatewayIp, setDevices]);
 
   return {
     identity,
