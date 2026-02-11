@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { DeviceDTO, ExternalAuditRequestDTO, HostIdentity } from "../../../shared/dtos/NetworkDTOs";
-import { useExternalAudit } from "../../hooks/modules/useExternalAudit";
+import { useExternalAudit } from "../../hooks/modules/ui/useExternalAudit";
 import { getExternalAuditScenarios } from "../../../core/logic/externalAuditScenarios";
 
 interface ExternalAuditPanelProps {

@@ -77,7 +77,7 @@ Flujo `LAB(simulated)`:
 - Adapter (IPC):
   - `src/adapters/externalAuditAdapter.ts`
 - Hook de runtime (eventos/logs):
-  - `src/ui/hooks/modules/useExternalAudit.ts`
+  - `src/ui/hooks/modules/ui/useExternalAudit.ts`
 - UI:
   - `src/ui/components/hud/ExternalAuditPanel.tsx`
 - Catalogo de escenarios `LAB`:

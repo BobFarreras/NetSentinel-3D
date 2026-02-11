@@ -1,6 +1,6 @@
 // src/ui/components/panels/traffic/TrafficTable.tsx
 import React from "react";
-import type { FilterMode, UITrafficPacket } from "../../../hooks/modules/useTrafficPanelState";
+import type { FilterMode, UITrafficPacket } from "../../../hooks/modules/traffic/useTrafficPanelState";
 import { HUD_TYPO } from "../../../styles/hudTokens";
 import { gridTemplate } from "./TrafficStyles";
 

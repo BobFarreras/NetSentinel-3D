@@ -2,6 +2,69 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.8] - Cierre de refactor: docs alineadas y barrido de deuda residual (2026-02-11)
+### 📚 Documentacion
+- Actualizadas rutas de hooks en:
+  - `docs/ARCHITECTURE.md`
+  - `docs/EXTERNAL_AUDIT.md`
+  - `docs/TESTING.md`
+  - `docs/RADAR_VIEW.md`
+  - `docs/REFACTOR_AUDIT.md`
+- `AGENTS.md` actualizado con la estructura oficial de hooks por dominio en `src/ui/hooks/modules/*`.
+
+### ♻️ Deuda tecnica
+- Eliminado `console.log` de `src/core/logic/intruderDetection.ts`.
+- `useNetworkNodeState` migra trazas de debug a `uiLogger` para mantener politica unificada de logging UI.
+
+## [v0.8.7] - Migracion fisica de hooks por dominio (2026-02-11)
+### ♻️ Frontend (estructura)
+- Reorganizados hooks de `src/ui/hooks/modules` en subcarpetas:
+  - `network/`
+  - `radar/`
+  - `traffic/`
+  - `ui/`
+  - `scene3d/`
+  - `shared/`
+- Actualizados imports en componentes, hooks y tests para nuevas rutas.
+
+### ✅ Verificacion
+- `npm test -- --run` en verde.
+- `npm run build` en verde.
+
+## [v0.8.6] - Refactor scanner/router con utilidades compartidas (2026-02-11)
+### ♻️ Frontend (hooks)
+- Extraidas reglas de fusion y validacion de intel de dispositivos a:
+  - `src/ui/hooks/modules/shared/deviceMerge.ts`
+- `useScanner` ahora usa `mergeScanInventory` para mantener inventario estable sin duplicar logica.
+- `useRouterHacker` ahora usa `mergeRouterInventory` para fusion de nodos importados desde gateway.
+
+### 🧪 Testing
+- Nuevo test unitario:
+  - `src/ui/hooks/modules/__tests__/deviceMerge.test.ts`
+- Mantiene cobertura de regresion de `useScanner` y `useRouterHaker`.
+
+## [v0.8.5] - Hardening documental + limpieza UI + troceo bootstrap manager (2026-02-11)
+### 📚 Documentacion
+- `PRODUCT.md` reescrito para reflejar el estado real de Tauri/Rust:
+  - comandos actuales,
+  - Radar View,
+  - snapshot/keyring,
+  - External Audit.
+- `docs/SECURITY.md` actualizado con reglas de observabilidad segura en frontend.
+- `CONTRIBUTING.md` actualizado con reglas de rendimiento frontend (lazy/chunks) y politica de logs de debug.
+
+### ♻️ Frontend (deuda tecnica)
+- Nuevo logger unificado: `src/ui/utils/logger.ts`.
+- Eliminados `any` en `HistoryPanel` y tipado con `ScanSession`/`DeviceDTO`.
+- Reemplazo de `console.error/warn` dispersos por `uiLogger` en hooks de scanner, trafico y jamming.
+
+### 🧩 Frontend (arquitectura)
+- Nuevo hook `src/ui/hooks/modules/useBootstrapNetwork.ts` para aislar:
+  - carga de identidad,
+  - auto-scan de arranque,
+  - auto-sync de dispositivos desde gateway.
+- `useNetworkManager` queda mas delgado y orientado a composicion.
+
 ## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
 ### ✅ Integracion UI
 - Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:

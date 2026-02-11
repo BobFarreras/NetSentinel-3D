@@ -1,7 +1,7 @@
-// src/ui/hooks/modules/useNodeLabelState.ts
+// src/ui/hooks/modules/scene3d/useNodeLabelState.ts
 import { useMemo } from "react";
-import type { DeviceType } from "../../../shared/dtos/NetworkDTOs";
-import { NODE_TYPE_COLORS } from "../../components/3d/sceneTokens";
+import type { DeviceType } from "../../../../shared/dtos/NetworkDTOs";
+import { NODE_TYPE_COLORS } from "../../../components/3d/sceneTokens";
 
 type UseNodeLabelStateArgs = {
   type: DeviceType;

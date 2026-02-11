@@ -4,7 +4,7 @@ import { act, renderHook } from "@testing-library/react";
 describe("useNetworkNodeState", () => {
   it("debe exponer estado visual seleccionado", async () => {
     const onClick = vi.fn();
-    const { useNetworkNodeState } = await import("../useNetworkNodeState");
+    const { useNetworkNodeState } = await import("../scene3d/useNetworkNodeState");
     const { result } = renderHook(() =>
       useNetworkNodeState({
         isSelected: true,
@@ -22,7 +22,7 @@ describe("useNetworkNodeState", () => {
   it("debe cambiar cursor en hover y ejecutar click", async () => {
     const onClick = vi.fn();
     const stopPropagation = vi.fn();
-    const { useNetworkNodeState } = await import("../useNetworkNodeState");
+    const { useNetworkNodeState } = await import("../scene3d/useNetworkNodeState");
     const { result } = renderHook(() =>
       useNetworkNodeState({
         isSelected: false,

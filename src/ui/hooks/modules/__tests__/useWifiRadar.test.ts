@@ -22,7 +22,7 @@ vi.mock("../../../../adapters/wifiAdapter", () => ({
 
 describe("useWifiRadar", () => {
   it("debe escanear y exponer networks y lastScanAt", async () => {
-    const { useWifiRadar } = await import("../useWifiRadar");
+    const { useWifiRadar } = await import("../radar/useWifiRadar");
     const { result } = renderHook(() => useWifiRadar());
 
     expect(result.current.scanning).toBe(false);
@@ -44,7 +44,7 @@ describe("useWifiRadar", () => {
     const { wifiAdapter } = await import("../../../../adapters/wifiAdapter");
     (wifiAdapter.scanAirwaves as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
 
-    const { useWifiRadar } = await import("../useWifiRadar");
+    const { useWifiRadar } = await import("../radar/useWifiRadar");
     const { result } = renderHook(() => useWifiRadar());
 
     await act(async () => {

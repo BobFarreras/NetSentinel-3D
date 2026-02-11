@@ -7,7 +7,7 @@ const start = vi.fn(async () => "audit-id");
 const cancel = vi.fn(async () => {});
 const clear = vi.fn();
 
-vi.mock("../../../hooks/modules/useExternalAudit", () => ({
+vi.mock("../../../hooks/modules/ui/useExternalAudit", () => ({
   useExternalAudit: () => ({
     auditId: null,
     isRunning: false,

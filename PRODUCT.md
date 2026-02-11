@@ -1,71 +1,68 @@
-# PRODUCT.md - Especificación Funcional de NetSentinel 3D (Rust Edition)
+# PRODUCT.md - Especificacion Funcional de NetSentinel 3D
 
-## 1. Visión del Producto
-NetSentinel 3D es una plataforma de **Ciberseguridad Defensiva y Visualización** de alto rendimiento para entornos domésticos.
-Transforma datos abstractos de red (IPs, Puertos, Latencia) en un entorno 3D gamificado (Sistema Solar), permitiendo a usuarios no técnicos entender, monitorizar y proteger su infraestructura digital sin el consumo de recursos de las herramientas corporativas pesadas.
+## 1. Vision del producto
+NetSentinel 3D es una aplicacion de auditoria de red defensiva para laboratorio educativo, con backend Rust (Tauri) y frontend React/Three.js.
 
----
+Objetivo de producto:
+- visualizar infraestructura de red en 3D,
+- detectar riesgos de forma comprensible para juniors,
+- mantener operaciones locales, trazables y reproducibles.
 
-## 2. Perfil de Usuario (User Persona)
-* **Target:** Estudiantes, trabajadores remotos, gamers y entusiastas tech.
-* **Dolor:** "Mi internet va lento", "No sé si mi vecino me roba wifi", "No entiendo qué es un puerto abierto", "Las herramientas de hacking son consola pura y difíciles".
-* **Objetivo:** Tener un panel de control tipo "Minority Report" para su casa: visual, rápido y efectivo.
+## 2. Publico objetivo
+- Estudiantes de ciberseguridad y redes.
+- Profesores/labs que necesitan una herramienta visual para explicar ataque/defensa.
+- Equipos tecnicos que quieren telemetria local sin cloud.
 
----
+## 3. Funcionalidades actuales
+### 3.1 Descubrimiento de red (ScanSkill)
+- Comando: `scan_network`
+- Resultado: inventario de nodos (`DeviceDTO[]`) con IP, MAC, vendor y metadatos.
+- Soporte de auto-scan al arranque (configurable por `localStorage`).
 
-## 3. Funcionalidades Core (El "Qué")
+### 3.2 Auditoria de objetivo y gateway (AuditSkill)
+- Comandos: `audit_target`, `audit_router`, `fetch_router_devices`
+- Incluye auditoria de puertos y sincronizacion de dispositivos desde gateway cuando hay credenciales.
 
-### A. El Radar (Network Discovery)
-El sistema utiliza el motor de Rust para detectar dispositivos en la red local.
-* **Comportamiento:** Al iniciar, lanza hilos paralelos para mapear la red `/24`.
-* **Datos requeridos:** IP, MAC Address, Fabricante (Vendor) y Latencia.
-* **Visualización:** El Router se sitúa en el centro (Sol) y los dispositivos orbitan a su alrededor.
+### 3.3 Persistencia y arranque rapido
+- Historial: `save_scan`, `get_history`
+- Snapshot rapido: `save_latest_snapshot`, `load_latest_snapshot`
+- Credenciales de gateway en keyring local:
+  - `save_gateway_credentials`
+  - `get_gateway_credentials`
+  - `delete_gateway_credentials`
 
-### B. El Auditor (Deep Inspection)
-Herramienta de análisis de vulnerabilidades bajo demanda.
-* **Acción:** El usuario hace clic en un planeta y selecciona "DEEP AUDIT".
-* **Operación:** Rust abre conexiones TCP reales contra los puertos más comunes (21, 22, 23, 80, 443, 3389, etc.).
-* **Ciber-Inteligencia:**
-    * Cruza los puertos abiertos con una base de datos de vulnerabilidades.
-    * **Ejemplo:** Si detecta el puerto 23 (Telnet), marca el riesgo como **CRITICAL** y sugiere "Deshabilitar inmediatamente".
-    * **Ejemplo:** Si detecta el puerto 80 (HTTP), sugiere "Migrar a HTTPS".
+### 3.4 Radar WiFi (Radar View)
+- Comando: `scan_airwaves`
+- Vista de espectro con filtros por riesgo/banda/canal.
+- Riesgo inferido didactico (`HARDENED`, `STANDARD`, `LEGACY`, `OPEN`).
 
-### C. El Escudo (Defensa Activa / Kill Switch)
-Sistema de respuesta ante intrusiones.
-* **Funcionalidad:** "Jammer" o desconexión selectiva.
-* **Acción:** Botón "KILL NET" en el panel del dispositivo.
-* **Efecto:** Corta la comunicación del dispositivo seleccionado con el Router (simulado visualmente en MVP, preparado para ARP Spoofing real).
-* **Feedback:** El botón parpadea en rojo y el planeta se marca visualmente como "JAMMED".
+### 3.5 Live Traffic y contramedidas controladas
+- Trafico en vivo:
+  - `start_traffic_sniffing`
+  - `stop_traffic_sniffing`
+- Contramedida controlada:
+  - `start_jamming`
+  - `stop_jamming`
 
-### D. La Memoria (Historial y Persistencia)
-Sistema de registro automático.
-* **Persistencia:** Cada escaneo se guarda automáticamente en disco (`%APPDATA%`).
-* **Auto-Load:** Al abrir la aplicación, se restaura el estado de la última sesión conocida.
-* **Gestión:** El usuario puede navegar por sesiones pasadas ("Snapshot del Lunes") para comparar cambios.
+### 3.6 External Audit (wrapper CLI)
+- Comandos:
+  - `start_external_audit`
+  - `cancel_external_audit`
+- Orquesta herramientas externas instaladas por el administrador con logs en tiempo real.
 
----
+## 4. Reglas de producto (seguridad y uso)
+- Uso exclusivo en redes autorizadas y entorno de laboratorio.
+- No se incorporan automatizaciones ofensivas reales contra terceros.
+- Simulaciones avanzadas (PMKID/IoT/MLO) se mantienen en modo inferencia didactica.
 
-## 4. Guía Técnica de Comportamiento (El "Cómo")
+## 5. Flujo funcional resumido
+1. UI ejecuta comando Tauri via adapter.
+2. Backend Rust valida entrada y ejecuta caso de uso.
+3. Infrastructure resuelve red/FS/keyring/proceso externo.
+4. Resultado tipado vuelve a UI y se renderiza en paneles 2D/3D.
 
-### Flujo de Datos (Arquitectura Tauri)
-1.  **UI Trigger:** Usuario pulsa "SCAN". React llama a `invoke('scan_network')`.
-2.  **Rust Core:** El backend recibe el comando.
-    * Si es un Escaneo: Lanza `threads` para barrer la IP range.
-    * Si es Auditoría: Lanza `TcpStream` con timeouts de 400ms.
-    * Si es Guardado: Usa `serde_json` para escribir en disco.
-3.  **Respuesta:** Rust devuelve un `Vector` de Structs (`Vec<Device>`).
-4.  **Render:** Tauri serializa a JSON y React actualiza el estado de `useNetworkManager`.
-
-### Gestión de Errores y Seguridad
-* **Timeouts:** Si un dispositivo no responde al ping en 500ms, Rust corta la conexión para no congelar la UI.
-* **Permisos:** La escritura de historial crea automáticamente las carpetas necesarias en `AppData` si no existen.
-* **Memory Safety:** El uso de Rust garantiza que no habrá fugas de memoria (Memory Leaks) durante escaneos largos, a diferencia de la versión anterior en Node.js.
-
----
-
-## 5. Requisitos No Funcionales
-* **Privacidad:** Cero telemetría. Ningún dato sale de `localhost`. Todo el procesamiento es local.
-* **Rendimiento (Rust):**
-    * El backend debe consumir < 50MB de RAM.
-    * El tamaño del instalador debe ser < 10MB (vs los 100MB+ de Electron).
-* **Fluidez:** La escena 3D debe mantenerse a 60FPS incluso mientras Rust está auditando puertos en segundo plano.
+## 6. Criterios de calidad del producto
+- Contratos Rust/TS coherentes.
+- Build y tests en verde en cada cambio relevante.
+- Changelog actualizado para cambios funcionales o de arquitectura.
+- Rendimiento frontend controlado con carga diferida y chunks separados para 3D.

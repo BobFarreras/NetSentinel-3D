@@ -8,7 +8,7 @@ const { toggleMonitoringMock, clearPacketsMock, radarClearMock, setSelectedBssid
   setSelectedBssidMock: vi.fn((_bssid: string) => {}),
 }));
 
-vi.mock("../useTrafficMonitor", () => ({
+vi.mock("../traffic/useTrafficMonitor", () => ({
   useTrafficMonitor: () => ({
     isActive: false,
     speed: 0,
@@ -19,14 +19,14 @@ vi.mock("../useTrafficMonitor", () => ({
   }),
 }));
 
-vi.mock("../useRadarLogs", () => ({
+vi.mock("../radar/useRadarLogs", () => ({
   useRadarLogs: () => ({
     logs: [],
     clear: radarClearMock,
   }),
 }));
 
-vi.mock("../useWifiRadarSelection", () => ({
+vi.mock("../radar/useWifiRadarSelection", () => ({
   useWifiRadarSelection: () => ({
     selectedBssid: null,
     setSelectedBssid: setSelectedBssidMock,
@@ -45,13 +45,13 @@ describe("useConsoleLogsState", () => {
   });
 
   it("debe iniciar en pestaña SYSTEM", async () => {
-    const { useConsoleLogsState } = await import("../useConsoleLogsState");
+    const { useConsoleLogsState } = await import("../ui/useConsoleLogsState");
     const { result } = renderHook(() => useConsoleLogsState());
     expect(result.current.activeTab).toBe("SYSTEM");
   });
 
   it("debe limpiar logs segun pestaña activa", async () => {
-    const { useConsoleLogsState } = await import("../useConsoleLogsState");
+    const { useConsoleLogsState } = await import("../ui/useConsoleLogsState");
     const onClearSystemLogs = vi.fn();
     const { result } = renderHook(() => useConsoleLogsState());
 
@@ -78,7 +78,7 @@ describe("useConsoleLogsState", () => {
   });
 
   it("debe activar loading temporal al hacer toggle de trafico", async () => {
-    const { useConsoleLogsState } = await import("../useConsoleLogsState");
+    const { useConsoleLogsState } = await import("../ui/useConsoleLogsState");
     const { result } = renderHook(() => useConsoleLogsState());
 
     await act(async () => {

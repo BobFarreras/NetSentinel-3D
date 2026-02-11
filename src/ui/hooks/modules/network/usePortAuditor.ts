@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { OpenPortDTO } from '../../../shared/dtos/NetworkDTOs';
-import { auditAdapter } from '../../../adapters/auditAdapter';
+import { OpenPortDTO } from '../../../../shared/dtos/NetworkDTOs';
+import { auditAdapter } from '../../../../adapters/auditAdapter';
 
 export const usePortAuditor = (addLog: (ip: string, msg: string) => void) => {
   const [auditing, setAuditing] = useState(false);

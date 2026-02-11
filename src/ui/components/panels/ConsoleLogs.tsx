@@ -1,6 +1,6 @@
 import React from "react";
 import { DeviceDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useConsoleLogsState } from "../../hooks/modules/useConsoleLogsState";
+import { useConsoleLogsState } from "../../hooks/modules/ui/useConsoleLogsState";
 import { TrafficPanel } from "./TrafficPanel";
 import { ConsoleLogsHeader } from "./console_logs/ConsoleLogsHeader";
 import { CONSOLE_COLORS } from "./console_logs/consoleLogsStyles";

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useTrafficMonitor } from '../useTrafficMonitor';
+import { useTrafficMonitor } from '../traffic/useTrafficMonitor';
 import type { TrafficPacket } from '../../../../shared/dtos/NetworkDTOs';
 
 const { invokeCommandMock, listenEventMock } = vi.hoisted(() => ({

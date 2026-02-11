@@ -1,6 +1,6 @@
 import React from "react";
 import type { DeviceDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useTrafficPanelState, type UITrafficPacket } from "../../hooks/modules/useTrafficPanelState";
+import { useTrafficPanelState, type UITrafficPacket } from "../../hooks/modules/traffic/useTrafficPanelState";
 import { TrafficFilterBar } from "./traffic/TrafficFilterBar";
 import { trafficRootStyle } from "./traffic/TrafficStyles";
 import { TrafficTable } from "./traffic/TrafficTable";

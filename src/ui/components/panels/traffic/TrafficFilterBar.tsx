@@ -1,7 +1,7 @@
 // src/ui/components/panels/traffic/TrafficFilterBar.tsx
 import React from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
-import type { FilterMode } from "../../../hooks/modules/useTrafficPanelState";
+import type { FilterMode } from "../../../hooks/modules/traffic/useTrafficPanelState";
 import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 
 type TrafficFilterBarProps = {

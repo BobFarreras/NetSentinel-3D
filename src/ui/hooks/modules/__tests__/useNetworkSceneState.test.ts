@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 
 describe("useNetworkSceneState", () => {
   it("debe detectar gateway por identity.gatewayIp y separar orbita", async () => {
-    const { useNetworkSceneState } = await import("../useNetworkSceneState");
+    const { useNetworkSceneState } = await import("../scene3d/useNetworkSceneState");
     const devices = [
       { ip: "192.168.1.1", mac: "AA", vendor: "Router" },
       { ip: "192.168.1.20", mac: "BB", vendor: "Laptop" },
@@ -24,7 +24,7 @@ describe("useNetworkSceneState", () => {
 
   it("debe persistir toggle de labels en localStorage", async () => {
     localStorage.removeItem("netsentinel.showNodeLabels");
-    const { useNetworkSceneState } = await import("../useNetworkSceneState");
+    const { useNetworkSceneState } = await import("../scene3d/useNetworkSceneState");
     const { result } = renderHook(() =>
       useNetworkSceneState({
         devices: [] as any,

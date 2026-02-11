@@ -2,7 +2,7 @@ import React from "react";
 import { Html } from "@react-three/drei";
 import type { DeviceType } from "../../../shared/dtos/NetworkDTOs";
 import { SCENE_TOKENS } from "./sceneTokens";
-import { useNodeLabelState } from "../../hooks/modules/useNodeLabelState";
+import { useNodeLabelState } from "../../hooks/modules/scene3d/useNodeLabelState";
 
 const Icon: React.FC<{ type: DeviceType; color: string }> = ({ type, color }) => {
   // Iconos SVG minimalistas, estilo terminal/cyberpunk (stroke neon).

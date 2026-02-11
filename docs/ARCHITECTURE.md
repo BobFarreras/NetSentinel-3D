@@ -88,6 +88,12 @@ Flujo tipico de eventos:
 2. Hook frontend escucha con `listen(...)`.
 3. El hook transforma payload y actualiza estado incremental.
 
+Nota de frontend (estado global):
+- `useNetworkManager` actua como orquestador de alto nivel.
+- El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/network/useBootstrapNetwork.ts` para reducir acoplamiento.
+- Los hooks modulares se agrupan por dominio en `src/ui/hooks/modules/*`:
+  - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
+
 ## 4.1 Patron Frontend Modular (actual)
 Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:
 - `PanelContenedor`: compone sub-vistas y conecta callbacks.
@@ -98,26 +104,26 @@ Para reducir componentes "god file" y facilitar testeo, el frontend sigue un pat
 Ejemplos aplicados:
 - Radar:
   - `src/ui/components/hud/RadarPanel.tsx`
-  - `src/ui/hooks/modules/useRadarPanelState.ts`
+  - `src/ui/hooks/modules/radar/useRadarPanelState.ts`
   - `src/ui/components/hud/radar/*`
 - Console Logs:
   - `src/ui/components/panels/ConsoleLogs.tsx`
-  - `src/ui/hooks/modules/useConsoleLogsState.ts`
+  - `src/ui/hooks/modules/ui/useConsoleLogsState.ts`
   - `src/ui/components/panels/console_logs/*`
 - Traffic:
   - `src/ui/components/panels/TrafficPanel.tsx`
-  - `src/ui/hooks/modules/useTrafficPanelState.ts`
+  - `src/ui/hooks/modules/traffic/useTrafficPanelState.ts`
   - `src/ui/components/panels/traffic/*`
 - Device Detail:
   - `src/ui/components/hud/DeviceDetailPanel.tsx`
-  - `src/ui/hooks/modules/useDeviceDetailPanelState.ts`
+  - `src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts`
 - Escena 3D:
   - `src/ui/components/3d/NetworkScene.tsx`
   - `src/ui/components/3d/NetworkNode.tsx`
   - `src/ui/components/3d/NodeLabel.tsx`
-  - `src/ui/hooks/modules/useNetworkSceneState.ts`
-  - `src/ui/hooks/modules/useNetworkNodeState.ts`
-  - `src/ui/hooks/modules/useNodeLabelState.ts`
+  - `src/ui/hooks/modules/scene3d/useNetworkSceneState.ts`
+  - `src/ui/hooks/modules/scene3d/useNetworkNodeState.ts`
+  - `src/ui/hooks/modules/scene3d/useNodeLabelState.ts`
 
 Beneficios:
 - Menos acoplamiento entre render y logica.

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh } from 'three';
-import { useNetworkNodeState } from "../../hooks/modules/useNetworkNodeState";
+import { useNetworkNodeState } from "../../hooks/modules/scene3d/useNetworkNodeState";
 
 interface NetworkNodeProps {
   position: [number, number, number];
