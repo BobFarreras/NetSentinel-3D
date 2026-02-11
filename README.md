@@ -67,6 +67,15 @@ cargo check
 cargo test
 ```
 
+### Testing por capas (frontend)
+- Unit (hooks):
+  - `src/ui/hooks/modules/__tests__/*`
+  - valida estado, efectos y reglas de negocio UI.
+- Integracion (componentes/paginas):
+  - `src/ui/components/**/__tests__/*`
+  - `src/__tests__/App.integration.test.tsx`
+  - valida sincronizacion entre escena, paneles y consola.
+
 ## LIVE TRAFFIC (guia rapida)
 El panel `LIVE TRAFFIC` muestra paquetes capturados en tiempo real.
 

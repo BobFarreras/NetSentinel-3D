@@ -2,6 +2,27 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
+### ✅ Integracion UI
+- Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:
+  - seleccion en `NetworkScene` -> sincronizacion en `DeviceDetailPanel` y `ConsoleLogs`.
+
+### ⚡ Performance (bundle inicial)
+- `App.tsx` actualizado con `React.lazy` + `Suspense` para cargar bajo demanda:
+  - `NetworkScene`
+  - `RadarPanel`
+  - `ExternalAuditPanel`
+  - `DeviceDetailPanel`
+
+### 🧪 Debug 3D
+- `useNetworkNodeState` ya no escribe logs de hover/click por defecto.
+- Activacion de logs solo en desarrollo y con flag:
+  - `localStorage.setItem("netsentinel.debug3d", "true")`
+
+### 📚 Documentacion
+- `docs/ARCHITECTURE.md`: añadido diagrama rapido del flujo 3D -> manager -> HUD.
+- `README.md`: añadida seccion de testing por capas (unit/integracion frontend).
+
 ## [v0.8.3] - Refactor capa 3D + cobertura de hooks (2026-02-11)
 ### ♻️ Frontend 3D (Scene)
 - Extraida logica de escena a `src/ui/hooks/modules/useNetworkSceneState.ts`:

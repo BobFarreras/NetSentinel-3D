@@ -23,6 +23,15 @@ type UseNetworkNodeState = {
 export const useNetworkNodeState = ({ isSelected, color, name, onClick }: UseNetworkNodeStateArgs): UseNetworkNodeState => {
   const [hovered, setHovered] = useState(false);
 
+  const debug3d = useMemo(() => {
+    if (!import.meta.env.DEV) return false;
+    try {
+      return localStorage.getItem("netsentinel.debug3d") === "true";
+    } catch {
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       document.body.style.cursor = "auto";
@@ -36,13 +45,17 @@ export const useNetworkNodeState = ({ isSelected, color, name, onClick }: UseNet
   const emissiveIntensity = useMemo(() => (isSelected ? 2 : 0.5), [isSelected]);
 
   const handleClick = (e: { stopPropagation: () => void }) => {
-    console.log(`👆 CLICK 3D DETECTAT en: ${name}`);
+    if (debug3d) {
+      console.log(`👆 CLICK 3D DETECTAT en: ${name}`);
+    }
     e.stopPropagation();
     onClick?.();
   };
 
   const handlePointerOver = () => {
-    console.log(`👀 Ratolí sobre: ${name}`);
+    if (debug3d) {
+      console.log(`👀 Ratolí sobre: ${name}`);
+    }
     setHovered(true);
     document.body.style.cursor = "pointer";
   };

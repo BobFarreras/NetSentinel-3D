@@ -124,6 +124,21 @@ Beneficios:
 - Tests unitarios mas directos por hook.
 - Cambios visuales mas seguros al estar aislados por sub-vista.
 
+Diagrama rapido (UI 3D + HUD):
+```text
+NetworkScene (composicion)
+  -> useNetworkSceneState (estado/derivadas)
+  -> NetworkNode (presentacion nodo)
+      -> useNetworkNodeState (hover/click/animacion)
+  -> NodeLabel (presentacion label)
+      -> useNodeLabelState (paleta/confianza)
+
+Seleccion de nodo (onDeviceSelect)
+  -> useNetworkManager.selectDevice
+  -> DeviceDetailPanel (detalle)
+  -> ConsoleLogs (filtro por target / trazabilidad)
+```
+
 ## 5. Mapa de Comandos Actuales
 Fuente de verdad: `src-tauri/src/lib.rs` + `src-tauri/src/api/commands.rs`
 
