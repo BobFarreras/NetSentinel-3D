@@ -3,3 +3,4 @@
 pub mod wifi_scanner;
 pub mod windows_netsh;
 pub mod wifiscanner_fallback;
+pub mod wifi_connector;

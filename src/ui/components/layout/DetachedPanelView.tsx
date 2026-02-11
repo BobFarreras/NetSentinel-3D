@@ -18,7 +18,7 @@ const RadarPanel = lazy(async () => {
 });
 
 const ExternalAuditPanel = lazy(async () => {
-  const mod = await import("../hud/ExternalAuditPanel");
+  const mod = await import("../panels/external_audit/ExternalAuditPanel");
   return { default: mod.ExternalAuditPanel };
 });
 

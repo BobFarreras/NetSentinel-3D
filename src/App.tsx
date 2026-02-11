@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import { windowingAdapter } from "./adapters/windowingAdapter";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { windowingAdapter } from ".//adapters/windowingAdapter"; // Asegura ruta
 import type { DeviceDTO } from "./shared/dtos/NetworkDTOs";
 import { useNetworkManager } from "./ui/hooks/useNetworkManager";
 import { useAppLayoutState } from "./ui/hooks/modules/ui/useAppLayoutState";
@@ -42,6 +42,42 @@ function App() {
   const [externalAuditTarget, setExternalAuditTarget] = useState<DeviceDTO | null>(null);
   const [externalAuditScenarioId, setExternalAuditScenarioId] = useState<string | null>(null);
 
+  // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
+  useEffect(() => {
+    console.log("👂 [APP] Listening for Dock Panel events...");
+    const unlistenPromise = windowingAdapter.listenDockPanel((panelName) => {
+        console.log("🔀 [APP] Request to open panel:", panelName);
+        if (panelName === "external") {
+            setShowExternalAudit(true);
+            // Opcional: Cerrar otros si es política de UI
+            // setShowRadar(false); 
+        } else if (panelName === "radar") {
+            setShowRadar(true);
+        }
+    });
+
+    // TAMBIÉN ESCUCHAR CONTEXTO PARA ACTUALIZAR OBJETIVO
+    const unlistenContext = windowingAdapter.listenExternalAuditContext((payload) => {
+        console.log("🎯 [APP] External Context Update:", payload);
+        if (payload.targetDevice) {
+            setExternalAuditTarget(payload.targetDevice);
+        }
+        if (payload.scenarioId) {
+            setExternalAuditScenarioId(payload.scenarioId);
+        }
+        if (payload.autoRun) {
+            // Podrías pasar un token de autorun si lo necesitaras
+        }
+        // Aseguramos que se abra
+        setShowExternalAudit(true);
+    });
+
+    return () => {
+        unlistenPromise.then(u => u());
+        unlistenContext.then(u => u());
+    };
+  }, []);
+
   const layout = useAppLayoutState();
   const docking = usePanelDockingState({
     selectedDeviceIp: selectedDevice?.ip,
@@ -80,8 +116,9 @@ function App() {
     const next = !showExternalAudit;
     setShowExternalAudit(next);
     if (next) {
-      setExternalAuditTarget(null);
-      setExternalAuditScenarioId(null);
+      // Si se abre manualmente, quizás queramos limpiar o mantener el último
+      // setExternalAuditTarget(null);
+      // setExternalAuditScenarioId(null);
     }
   }, [showExternalAudit]);
 

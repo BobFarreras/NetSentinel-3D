@@ -102,7 +102,10 @@ pub fn run() {
             api::commands::save_gateway_credentials,
             api::commands::get_gateway_credentials,
             api::commands::delete_gateway_credentials,
+            // Wifi
             api::commands::scan_airwaves,
+            api::commands::wifi_connect,
+            // External audit
             api::commands::start_external_audit,
             api::commands::cancel_external_audit,
             // System / runtime

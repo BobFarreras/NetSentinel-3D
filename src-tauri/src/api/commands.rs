@@ -133,6 +133,16 @@ pub async fn scan_airwaves(
     wifi::scan_airwaves(service).await
 }
 
+// AÑADIR ESTO DEBAJO:
+#[tauri::command]
+pub async fn wifi_connect(
+    service: tauri::State<'_, crate::application::wifi_service::WifiService>,
+    ssid: String,
+    password: String,
+) -> Result<bool, String> {
+    wifi::wifi_connect(service, ssid, password).await
+}
+
 // --- EXTERNAL AUDIT (WRAPPER CLI) ---
 
 #[tauri::command]
