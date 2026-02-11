@@ -2,6 +2,21 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.7.9] - Refactor DeviceDetailPanel: acciones y derivadas en hook (2026-02-11)
+### ♻️ Frontend (Device Detail)
+- Extraida logica de derivadas/acciones de `DeviceDetailPanel` a `src/ui/hooks/modules/useDeviceDetailPanelState.ts`.
+- El panel mantiene su UI y contratos actuales, pero delega:
+  - nombre resuelto (`name/hostname/Unknown`),
+  - MAC normalizada,
+  - visibilidad de bloque WiFi,
+  - color de señal,
+  - handlers de `LAB AUDIT` y `AUDIT GATEWAY SECURITY`.
+- Objetivo: reducir responsabilidad del componente y facilitar pruebas/escalado.
+
+### ✅ Validaciones
+- `npm test -- --run src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx` (ok)
+- `npm run build` (ok)
+
 ## [v0.7.8] - Refactor TrafficPanel: estado y vistas separadas (2026-02-11)
 ### ♻️ Frontend (Traffic)
 - Extraida la logica de filtros, paginacion incremental y resolucion de nombres a `src/ui/hooks/modules/useTrafficPanelState.ts`.

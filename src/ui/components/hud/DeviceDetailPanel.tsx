@@ -1,7 +1,8 @@
-import React from 'react';
-import { DeviceDTO, OpenPortDTO } from '../../../shared/dtos/NetworkDTOs';
-import { ConsoleDisplay } from './details/ConsoleDisplay';
-import { PortResults } from './details/PortResults';
+import React from "react";
+import { DeviceDTO, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
+import { useDeviceDetailPanelState } from "../../hooks/modules/useDeviceDetailPanelState";
+import { ConsoleDisplay } from "./details/ConsoleDisplay";
+import { PortResults } from "./details/PortResults";
 
 interface Props {
   device: DeviceDTO;
@@ -18,17 +19,7 @@ interface Props {
 export const DeviceDetailPanel: React.FC<Props> = ({
   device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit
 }) => {
-
-  // Helper para colorear la potencia de senal (RSSI) cuando el dispositivo expone datos WiFi.
-  // Nota: el valor ya llega como number, no como string.
-  const getSignalColor = (signal?: number) => {
-    if (signal === undefined) return '#fff'; // Sin dato de senal
-
-    // RSSI tipico: cerca de 0 es excelente, -90 es muy debil.
-    if (signal > -60) return '#0f0';      // Verd (Excel·lent)
-    if (signal > -75) return '#ffff00';   // Groc (Acceptable)
-    return '#ff5555';                     // Vermell (Dolent)
-  };
+  const state = useDeviceDetailPanelState({ device, onRouterAudit, onOpenLabAudit });
 
   return (
     <>
@@ -92,7 +83,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{'>'} MAC ID:</span>
-            <span>{device.mac.toUpperCase()}</span>
+            <span>{state.normalizedMac}</span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -105,9 +96,9 @@ export const DeviceDetailPanel: React.FC<Props> = ({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
-              title={device.name || device.hostname || ''}
+              title={state.resolvedName}
             >
-              {device.name || device.hostname || 'Unknown'}
+              {state.resolvedName}
             </span>
           </div>
 
@@ -128,7 +119,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </div>
 
           {/* 👇 SECCIÓ WIFI (MAGENTA) 👇 */}
-          {(device.signal_strength || device.wifi_band) && (
+          {state.hasWifiSection && (
             <>
               <div style={{ borderBottom: '1px dashed #004400', margin: '5px 0' }}></div>
 
@@ -142,7 +133,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
               {device.signal_strength && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ opacity: 0.7 }}>{'>'} SIGNAL:</span>
-                  <span style={{ color: getSignalColor(device.signal_strength) }}>
+                  <span style={{ color: state.getSignalColor(device.signal_strength) }}>
                     {device.signal_strength}
                   </span>
                 </div>
@@ -166,7 +157,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </button>
 
           <button
-            onClick={() => onOpenLabAudit(device)}
+            onClick={state.handleOpenLabAudit}
             className="retro-button"
             style={{
               flex: 1,
@@ -204,7 +195,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         {/* BOTÓ ROUTER (Només si és Gateway) */}
         {device.isGateway && (
           <button
-            onClick={() => onRouterAudit(device.ip)}
+            onClick={state.handleRouterAudit}
             style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: 'Consolas', fontWeight: 'bold', cursor: 'pointer' }}
           >
             ☠️ AUDIT GATEWAY SECURITY
