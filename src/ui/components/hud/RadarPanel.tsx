@@ -1,182 +1,16 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useWifiRadar } from "../../hooks/modules/useWifiRadar";
-import { useWifiRadarSelection } from "../../hooks/modules/useWifiRadarSelection";
+import React from "react";
+import { useRadarPanelState } from "../../hooks/modules/useRadarPanelState";
+import { RadarHeader } from "./radar/RadarHeader";
+import { RadarIntelPanel } from "./radar/RadarIntelPanel";
+import { RadarLegalModal } from "./radar/RadarLegalModal";
+import { RadarScope } from "./radar/RadarScope";
 
 interface RadarPanelProps {
   onClose: () => void;
 }
 
-type RiskColor = {
-  dot: string;
-  glow: string;
-  label: string;
-};
-
-const riskStyle = (riskLevel: string): RiskColor => {
-  const lvl = (riskLevel || "").toUpperCase();
-  if (lvl === "HARDENED") return { dot: "#00ff88", glow: "rgba(0,255,136,0.35)", label: "HARDENED" };
-  if (lvl === "STANDARD") return { dot: "#ffe066", glow: "rgba(255,224,102,0.35)", label: "STANDARD" };
-  if (lvl === "LEGACY") return { dot: "#ff5555", glow: "rgba(255,85,85,0.35)", label: "LEGACY" };
-  if (lvl === "OPEN") return { dot: "#ff3333", glow: "rgba(255,51,51,0.35)", label: "OPEN" };
-  return { dot: "#aaaaaa", glow: "rgba(170,170,170,0.2)", label: "UNKNOWN" };
-};
-
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-
-const inferBandLabel = (channel?: number) => {
-  if (!channel) return "UNK";
-  if (channel >= 1 && channel <= 14) return "2.4";
-  if (channel >= 32 && channel <= 177) return "5";
-  // Sin frecuencia real, no inferimos 6GHz de forma fiable solo con canal.
-  return "UNK";
-};
-
-const hashToAngleDeg = (seed: string) => {
-  // Hash estable para distribuir nodos en el radar sin jitter.
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  return h % 360;
-};
-
-type RiskFilter = "ALL" | "HARDENED" | "STANDARD" | "LEGACY" | "OPEN";
-type BandFilter = "ALL" | "2.4" | "5" | "UNK";
-
-const selectStyle: React.CSSProperties = {
-  width: "100%",
-  background: "rgba(0,0,0,0.35)",
-  border: "1px solid rgba(0,255,136,0.18)",
-  color: "#b7ffe2",
-  padding: "6px 8px",
-  fontSize: 12,
-  outline: "none",
-  fontFamily: "'Consolas', 'Courier New', monospace",
-};
-
 export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
-  const { scanning, networks, error, lastScanAt, scan } = useWifiRadar();
-  const { selectedBssid, setSelectedBssid } = useWifiRadarSelection();
-  const [showIntelHelp, setShowIntelHelp] = useState(false);
-  const [accepted, setAccepted] = useState<boolean>(() => {
-    return localStorage.getItem("netsentinel.radar.legalAccepted") === "true";
-  });
-  const didInitialScan = useRef(false);
-
-  const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
-  const [bandFilter, setBandFilter] = useState<BandFilter>("ALL");
-  const [channelFilter, setChannelFilter] = useState<number | null>(null);
-  const [search, setSearch] = useState("");
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [autoTick, setAutoTick] = useState(0);
-
-  const isMounted = useRef(true);
-  const scanningRef = useRef(false);
-
-  useEffect(() => {
-    scanningRef.current = scanning;
-  }, [scanning]);
-
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  // Auto-scan inicial para evitar la sensacion de "no detecta nada" al abrir.
-  useEffect(() => {
-    if (!accepted) return;
-    if (didInitialScan.current) return;
-    if (scanning) return;
-    if (error) return;
-
-    didInitialScan.current = true;
-    // Si falla, el usuario siempre puede relanzar manualmente.
-    scan();
-  }, [accepted, scanning, error, scan]);
-
-  useEffect(() => {
-    if (!accepted || !autoRefresh) return;
-
-    // Disparar un scan inmediato al activar AUTO para que el usuario vea feedback sin esperar el primer intervalo.
-    scan();
-
-    const id = window.setInterval(() => {
-      // Evitar solapar escaneos.
-      if (!isMounted.current || scanningRef.current) return;
-      scan();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(id);
-    };
-  }, [accepted, autoRefresh, scan]);
-
-  useEffect(() => {
-    if (!accepted || !autoRefresh) {
-      setAutoTick(0);
-      return;
-    }
-
-    setAutoTick(5);
-    const id = window.setInterval(() => {
-      setAutoTick((s) => (s <= 1 ? 5 : s - 1));
-    }, 1000);
-
-    return () => window.clearInterval(id);
-  }, [accepted, autoRefresh]);
-
-  const filteredNetworks = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return networks
-      .filter((n) => {
-        if (riskFilter !== "ALL" && (n.riskLevel || "").toUpperCase() !== riskFilter) return false;
-        const band = inferBandLabel(n.channel);
-        if (bandFilter !== "ALL" && band !== bandFilter) return false;
-        if (channelFilter !== null && (n.channel ?? -1) !== channelFilter) return false;
-        if (q) {
-          const ssid = (n.ssid || "").toLowerCase();
-          const vendor = (n.vendor || "").toLowerCase();
-          const bssid = (n.bssid || "").toLowerCase();
-          if (!ssid.includes(q) && !vendor.includes(q) && !bssid.includes(q)) return false;
-        }
-        return true;
-      })
-      // Orden tactico: mas fuerte primero (RSSI mas cercano a 0).
-      .sort((a, b) => (b.signalLevel ?? -100) - (a.signalLevel ?? -100));
-  }, [networks, riskFilter, bandFilter, channelFilter, search]);
-
-  const nodes = useMemo(() => {
-    return filteredNetworks.map((n) => {
-      const angle = (hashToAngleDeg(n.bssid) * Math.PI) / 180;
-      const dist = clamp(n.distanceMock ?? 60, 5, 60);
-      // 0..1 => 0.1..0.95 del radio
-      const r = clamp((dist - 5) / (60 - 5), 0, 1);
-      const radius = 0.12 + r * 0.78;
-      return {
-        ...n,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-      };
-    });
-  }, [filteredNetworks]);
-
-  const selected = useMemo<WifiNetworkDTO | null>(() => {
-    if (!selectedBssid) return null;
-    return networks.find((n) => n.bssid === selectedBssid) || null;
-  }, [networks, selectedBssid]);
-
-  const availableChannels = useMemo(() => {
-    const uniq = new Set<number>();
-    networks.forEach((n) => {
-      if (typeof n.channel === "number") uniq.add(n.channel);
-    });
-    return Array.from(uniq).sort((a, b) => a - b).slice(0, 12);
-  }, [networks]);
-
-  const acceptLegal = () => {
-    localStorage.setItem("netsentinel.radar.legalAccepted", "true");
-    setAccepted(true);
-  };
+  const state = useRadarPanelState();
 
   return (
     <div
@@ -193,7 +27,6 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
         fontFamily: "'Consolas', 'Courier New', monospace",
       }}
     >
-      {/* Estetica CRT: scanlines + glow + sweep */}
       <style>{`
         .ns-crt::before {
           content: "";
@@ -219,492 +52,48 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
 
       <div className="ns-crt" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
 
-      {/* Cabecera */}
-      <div
-        style={{
-          height: 44,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 12px",
-          borderBottom: "1px solid rgba(0,255,136,0.25)",
-          background: "linear-gradient(180deg, rgba(0,20,10,0.7), rgba(0,0,0,0.2))",
+      <RadarHeader
+        accepted={state.accepted}
+        autoRefresh={state.autoRefresh}
+        autoTick={state.autoTick}
+        scanning={state.scanning}
+        onToggleAuto={state.setAutoRefresh}
+        onScan={() => {
+          void state.scan();
         }}
-      >
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1.2 }}>
-            RADAR VIEW
-          </div>
-          <div style={{ color: "#6fe9b7", fontSize: 12, opacity: 0.75 }}>
-            WIFI SPECTRUM / PHASE 0 RECON
-          </div>
-        </div>
+        onClose={onClose}
+      />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#6fe9b7", fontSize: 12, opacity: 0.85 }}>
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              disabled={!accepted}
-              style={{ accentColor: "#00ff88" }}
-            />
-            AUTO{accepted && autoRefresh ? ` (${autoTick}s)` : ""}
-          </label>
-
-          <button
-            onClick={scan}
-            disabled={scanning || !accepted}
-            style={{
-              background: scanning ? "rgba(0,80,40,0.5)" : "rgba(0,140,60,0.18)",
-              border: "1px solid rgba(0,255,136,0.45)",
-              color: accepted ? "#00ff88" : "#2f6",
-              fontWeight: 700,
-              padding: "6px 10px",
-              cursor: scanning || !accepted ? "not-allowed" : "pointer",
-              textTransform: "uppercase",
-              letterSpacing: 0.8,
-              fontSize: 12,
-            }}
-          >
-            {scanning ? "SCANNING..." : "SCAN AIRWAVES"}
-          </button>
-
-          <button
-            onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(0,255,136,0.25)",
-              color: "#6fe9b7",
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: 12,
-            }}
-          >
-            CLOSE
-          </button>
-        </div>
-      </div>
-
-      {/* Cuerpo */}
       <div style={{ display: "flex", height: "calc(100% - 44px)" }}>
-        {/* Radar */}
-        <div style={{ flex: 1, padding: 14, position: "relative" }}>
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              borderRadius: 10,
-              border: "1px solid rgba(0,255,136,0.12)",
-              background:
-                "radial-gradient(circle at 50% 50%, rgba(0,255,136,0.08) 0%, rgba(0,0,0,0.85) 62%, rgba(0,0,0,0.95) 100%)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Sweep line */}
-            <div
-              style={{
-                position: "absolute",
-                inset: "-20%",
-                transformOrigin: "50% 50%",
-                animation: accepted ? "nsSweep 2.2s linear infinite" : "none",
-                opacity: accepted ? 0.7 : 0.15,
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  width: "2px",
-                  height: "55%",
-                  transform: "translate(-50%, -100%)",
-                  background:
-                    "linear-gradient(180deg, rgba(0,255,136,0.0), rgba(0,255,136,0.55), rgba(0,255,136,0.0))",
-                  boxShadow: "0 0 18px rgba(0,255,136,0.35)",
-                }}
-              />
-            </div>
+        <RadarScope
+          accepted={state.accepted}
+          scanning={state.scanning}
+          error={state.error}
+          networks={state.networks}
+          filteredNetworks={state.filteredNetworks}
+          nodes={state.nodes}
+          selectedBssid={state.selectedBssid}
+          lastScanAt={state.lastScanAt}
+          onSelectNode={state.setSelectedBssid}
+        />
 
-            {/* Grid */}
-            {["22%", "44%", "66%", "88%"].map((s) => (
-              <div
-                key={s}
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  width: s,
-                  height: s,
-                  transform: "translate(-50%,-50%)",
-                  borderRadius: "50%",
-                  border: "1px dashed rgba(0,255,136,0.12)",
-                }}
-              />
-            ))}
-
-            {/* Centro (host) */}
-            <div
-              title="HOST"
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                width: 10,
-                height: 10,
-                transform: "translate(-50%,-50%)",
-                borderRadius: "50%",
-                background: "#00ff88",
-                boxShadow: "0 0 18px rgba(0,255,136,0.55)",
-                animation: "nsBlink 1.2s ease-in-out infinite",
-              }}
-            />
-
-            {/* Nodos */}
-            {nodes.map((n) => {
-              const style = riskStyle(n.riskLevel);
-              const isSelected = selectedBssid === n.bssid;
-              const isConnected = Boolean(n.isConnected);
-              return (
-                <button
-                  key={n.bssid}
-                  onClick={() => setSelectedBssid(n.bssid)}
-                  aria-label={`NODE ${n.ssid} CH ${n.channel ?? "?"}`}
-                  title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}${isConnected ? " / CONNECTED" : ""}`}
-                  style={{
-                    position: "absolute",
-                    left: `calc(50% + ${n.x * 45}%)`,
-                    top: `calc(50% + ${n.y * 45}%)`,
-                    width: isSelected ? 10 : 8,
-                    height: isSelected ? 10 : 8,
-                    transform: "translate(-50%,-50%)",
-                    borderRadius: "50%",
-                    border: `1px solid ${
-                      isSelected
-                        ? "#ffffff"
-                        : isConnected
-                        ? "rgba(0,229,255,0.85)"
-                        : "rgba(255,255,255,0.25)"
-                    }`,
-                    background: style.dot,
-                    boxShadow: [
-                      isConnected ? "0 0 0 2px rgba(0,229,255,0.55)" : "",
-                      isConnected ? "0 0 18px rgba(0,229,255,0.25)" : "",
-                      `0 0 ${isSelected ? 24 : 14}px ${style.glow}`,
-                    ]
-                      .filter(Boolean)
-                      .join(", "),
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                />
-              );
-            })}
-
-            {/* Estado vacio */}
-            {accepted && !scanning && !error && filteredNetworks.length === 0 && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "80%",
-                  maxWidth: 420,
-                  textAlign: "center",
-                  color: "rgba(183,255,226,0.75)",
-                  fontSize: 12,
-                  lineHeight: 1.55,
-                }}
-              >
-                <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 0.8, marginBottom: 6 }}>
-                  NO SE DETECTAN REDES
-                </div>
-                <div style={{ opacity: 0.9 }}>
-                  Si estas en Windows, puede requerirse permiso de ubicacion para escanear WiFi.
-                  Verifica que el WiFi esta activado y pulsa <b>SCAN AIRWAVES</b>.
-                </div>
-              </div>
-            )}
-
-            {/* Estado */}
-            <div
-              style={{
-                position: "absolute",
-                left: 12,
-                bottom: 10,
-                color: "#6fe9b7",
-                fontSize: 11,
-                opacity: 0.8,
-              }}
-            >
-              {error
-                ? `ERROR: ${error}`
-                : `NETWORKS: ${networks.length} / VISIBLE: ${filteredNetworks.length} / LAST: ${lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"}`}
-            </div>
-          </div>
-        </div>
-
-        {/* Detalle */}
-        <div
-          style={{
-            width: 290,
-            borderLeft: "1px solid rgba(0,255,136,0.18)",
-            padding: 12,
-            background: "linear-gradient(180deg, rgba(0,10,5,0.75), rgba(0,0,0,0.55))",
-            color: "#b7ffe2",
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span>NODE INTEL</span>
-            <button
-              onClick={() => setShowIntelHelp((v) => !v)}
-              aria-label="NODE_INTEL_HELP"
-              title="Que significa NODE INTEL"
-              style={{
-                background: "transparent",
-                border: "1px solid rgba(0,255,136,0.25)",
-                color: "rgba(183,255,226,0.85)",
-                cursor: "pointer",
-                fontSize: 11,
-                padding: "2px 8px",
-              }}
-            >
-              ?
-            </button>
-          </div>
-
-          {showIntelHelp && (
-            <div
-              style={{
-                marginBottom: 10,
-                padding: 10,
-                border: "1px solid rgba(0,255,136,0.18)",
-                background: "rgba(0,0,0,0.35)",
-                color: "rgba(183,255,226,0.85)",
-                fontSize: 11,
-                lineHeight: 1.45,
-              }}
-            >
-              <div style={{ color: "#00ff88", fontWeight: 900, marginBottom: 6 }}>
-                Guia rapida
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <b>Riesgo</b>: filtra por seguridad inferida (<b>OPEN/LEGACY</b> suele ser debil; <b>HARDENED</b> suele ser robusto).
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <b>Bandas</b>: se infieren por canal (<b>2.4GHz</b> 1..14, <b>5GHz</b> 32..177). <b>UNKGHz</b> indica que Windows/driver no expuso canal.
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <b>CH</b>: canal WiFi. Sirve para detectar solapamiento y congestion.
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <b>SEARCH</b>: filtra por SSID, vendor (OUI) o BSSID.
-              </div>
-              <div>
-                <b>AUTO</b>: reescaneo periodico para observar cambios de señal/RSSI sin tener que pulsar manualmente.
-              </div>
-            </div>
-          )}
-
-          {/* Filtros */}
-          <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-              <div>
-                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>RISK</div>
-                <select
-                  aria-label="FILTER_RISK_SELECT"
-                  value={riskFilter}
-                  onChange={(e) => setRiskFilter(e.target.value as RiskFilter)}
-                  style={selectStyle}
-                >
-                  <option value="ALL">ALL</option>
-                  <option value="HARDENED">HARDENED</option>
-                  <option value="STANDARD">STANDARD</option>
-                  <option value="LEGACY">LEGACY</option>
-                  <option value="OPEN">OPEN</option>
-                </select>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>BAND</div>
-                <select
-                  aria-label="FILTER_BAND_SELECT"
-                  value={bandFilter}
-                  onChange={(e) => setBandFilter(e.target.value as BandFilter)}
-                  style={selectStyle}
-                >
-                  <option value="ALL">ALL</option>
-                  <option value="2.4">2.4GHz</option>
-                  <option value="5">5GHz</option>
-                  <option value="UNK">UNKGHz</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginBottom: 8 }}>
-              <div>
-                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>CHANNEL</div>
-                <select
-                  aria-label="FILTER_CH_SELECT"
-                  value={channelFilter === null ? "ALL" : String(channelFilter)}
-                  onChange={(e) => setChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
-                  style={selectStyle}
-                >
-                  <option value="ALL">ALL</option>
-                  {availableChannels.map((ch) => (
-                    <option key={ch} value={String(ch)}>
-                      CH {ch}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="SEARCH: ssid/vendor/bssid"
-              style={selectStyle}
-            />
-          </div>
-
-          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingRight: 4 }}>
-          {!selected ? (
-            <div style={{ color: "rgba(183,255,226,0.7)", fontSize: 12, lineHeight: 1.45 }}>
-              Selecciona un nodo del radar (o una fila en RADAR LOGS) para ver detalles.
-              <div style={{ marginTop: 10, fontSize: 11, opacity: 0.75 }}>
-                Leyenda:
-                <div>VERDE: Hardened</div>
-                <div>AMARILLO: Standard</div>
-                <div>ROJO: Legacy/Open</div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-              <div style={{ fontWeight: 800, color: "#eafff4", marginBottom: 8 }}>
-                {selected.ssid}{" "}
-                <span style={{ color: "rgba(183,255,226,0.6)", fontWeight: 600 }}>
-                  [CH {selected.channel ?? "?"}]
-                </span>
-              </div>
-              <div>
-                Link:{" "}
-                <span style={{ color: selected.isConnected ? "#00e5ff" : "rgba(183,255,226,0.75)", fontWeight: 800 }}>
-                  {selected.isConnected ? "CONNECTED (TU ROUTER)" : "NEARBY"}
-                </span>
-              </div>
-              <div>
-                BSSID: <span style={{ color: "#00ff88" }}>{selected.bssid}</span>
-              </div>
-              <div>
-                Vendor: <span style={{ color: "#ffe066" }}>{selected.vendor}</span>
-              </div>
-              <div>
-                Security: <span style={{ color: "#b7ffe2" }}>{selected.securityType}</span>
-              </div>
-              <div>
-                RSSI: <span style={{ color: "#b7ffe2" }}>{selected.signalLevel} dBm</span>
-              </div>
-              <div>
-                Band:{" "}
-                <span style={{ color: "#b7ffe2" }}>
-                  {inferBandLabel(selected.channel)}GHz
-                </span>
-              </div>
-              <div>
-                Dist: <span style={{ color: "#b7ffe2" }}>{Math.round(selected.distanceMock)}m</span>
-              </div>
-              <div>
-                Risk:{" "}
-                <span style={{ color: riskStyle(selected.riskLevel).dot, fontWeight: 800 }}>
-                  {riskStyle(selected.riskLevel).label}
-                </span>
-              </div>
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(0,255,136,0.14)" }}>
-                {selected.isTargetable ? (
-                  <div style={{ color: "#ff6666", fontWeight: 800 }}>
-                    ALERTA: configuracion debil (modo educativo)
-                  </div>
-                ) : (
-                  <div style={{ color: "#00ff88", fontWeight: 800 }}>
-                    ESTADO: configuracion aceptable
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          </div>
-        </div>
+        <RadarIntelPanel
+          selected={state.selected}
+          showIntelHelp={state.showIntelHelp}
+          riskFilter={state.riskFilter}
+          bandFilter={state.bandFilter}
+          channelFilter={state.channelFilter}
+          search={state.search}
+          availableChannels={state.availableChannels}
+          onToggleHelp={state.toggleIntelHelp}
+          onChangeRiskFilter={state.setRiskFilter}
+          onChangeBandFilter={state.setBandFilter}
+          onChangeChannelFilter={state.setChannelFilter}
+          onChangeSearch={state.setSearch}
+        />
       </div>
 
-      {/* Aviso legal primer uso */}
-      {!accepted && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(0,0,0,0.88)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 18,
-          }}
-        >
-          <div
-            style={{
-              width: 560,
-              border: "1px solid rgba(0,255,136,0.25)",
-              background: "rgba(0,8,4,0.95)",
-              boxShadow: "0 0 40px rgba(0,255,136,0.12)",
-              padding: 14,
-              color: "#b7ffe2",
-            }}
-          >
-            <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1, marginBottom: 8 }}>
-              AVISO LEGAL
-            </div>
-            <div style={{ fontSize: 12, lineHeight: 1.55, opacity: 0.92 }}>
-              Esta funcionalidad esta destinada a auditoria y formacion en redes propias o con autorizacion explicita.
-              No uses esta herramienta para interferir o acceder a redes ajenas.
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
-              <button
-                onClick={onClose}
-                style={{
-                  background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  color: "rgba(183,255,226,0.75)",
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                  fontSize: 12,
-                }}
-              >
-                CANCELAR
-              </button>
-              <button
-                onClick={acceptLegal}
-                style={{
-                  background: "rgba(0,140,60,0.18)",
-                  border: "1px solid rgba(0,255,136,0.45)",
-                  color: "#00ff88",
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  letterSpacing: 0.6,
-                }}
-              >
-                ACEPTO Y CONTINUO
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {!state.accepted && <RadarLegalModal onClose={onClose} onAccept={state.acceptLegal} />}
     </div>
   );
 };

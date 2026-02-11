@@ -2,6 +2,21 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.7.6] - Refactor RadarPanel: separacion UI/logica (2026-02-11)
+### ♻️ Frontend (HUD Radar)
+- Extraida la logica de estado/efectos/memos a `src/ui/hooks/modules/useRadarPanelState.ts`.
+- `src/ui/components/hud/RadarPanel.tsx` queda como contenedor de composicion (sin logica de negocio de radar).
+- Troceado de UI en subcomponentes dedicados:
+  - `src/ui/components/hud/radar/RadarHeader.tsx`
+  - `src/ui/components/hud/radar/RadarScope.tsx`
+  - `src/ui/components/hud/radar/RadarIntelPanel.tsx`
+  - `src/ui/components/hud/radar/RadarLegalModal.tsx`
+  - utilidades/tipos en `src/ui/components/hud/radar/radarUtils.ts` y `src/ui/components/hud/radar/radarTypes.ts`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
 ### 🧠 Scanner (UX / estabilidad)
 - `Scan Net` ya no reduce el inventario si el escaneo devuelve menos dispositivos temporalmente (merge por union).
