@@ -36,7 +36,7 @@ Frontend (unit):
 - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
-- `src/ui/hooks/modules/useBootstrapNetwork.ts` (cubierto de forma indirecta por `useNetworkManager` y tests de scanner/adapters)
+- `src/ui/hooks/modules/network/useBootstrapNetwork.ts` (cubierto de forma indirecta por `useNetworkManager` y tests de scanner/adapters)
 - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
 - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
 - `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`

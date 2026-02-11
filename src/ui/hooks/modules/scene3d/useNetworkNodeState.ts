@@ -1,5 +1,6 @@
 // src/ui/hooks/modules/scene3d/useNetworkNodeState.ts
 import { useEffect, useMemo, useState } from "react";
+import { uiLogger } from "../../../utils/logger";
 
 type UseNetworkNodeStateArgs = {
   isSelected: boolean;
@@ -46,7 +47,7 @@ export const useNetworkNodeState = ({ isSelected, color, name, onClick }: UseNet
 
   const handleClick = (e: { stopPropagation: () => void }) => {
     if (debug3d) {
-      console.log(`👆 Click 3D detectado en: ${name}`);
+      uiLogger.info(`Click 3D detectado en ${name}`);
     }
     e.stopPropagation();
     onClick?.();
@@ -54,7 +55,7 @@ export const useNetworkNodeState = ({ isSelected, color, name, onClick }: UseNet
 
   const handlePointerOver = () => {
     if (debug3d) {
-      console.log(`👀 Cursor sobre: ${name}`);
+      uiLogger.info(`Cursor sobre nodo ${name}`);
     }
     setHovered(true);
     document.body.style.cursor = "pointer";

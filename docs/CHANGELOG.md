@@ -2,6 +2,20 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.8] - Cierre de refactor: docs alineadas y barrido de deuda residual (2026-02-11)
+### 📚 Documentacion
+- Actualizadas rutas de hooks en:
+  - `docs/ARCHITECTURE.md`
+  - `docs/EXTERNAL_AUDIT.md`
+  - `docs/TESTING.md`
+  - `docs/RADAR_VIEW.md`
+  - `docs/REFACTOR_AUDIT.md`
+- `AGENTS.md` actualizado con la estructura oficial de hooks por dominio en `src/ui/hooks/modules/*`.
+
+### ♻️ Deuda tecnica
+- Eliminado `console.log` de `src/core/logic/intruderDetection.ts`.
+- `useNetworkNodeState` migra trazas de debug a `uiLogger` para mantener politica unificada de logging UI.
+
 ## [v0.8.7] - Migracion fisica de hooks por dominio (2026-02-11)
 ### ♻️ Frontend (estructura)
 - Reorganizados hooks de `src/ui/hooks/modules` en subcarpetas:

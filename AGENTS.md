@@ -117,6 +117,8 @@ Regla:
 
 ### Patron frontend obligatorio (paneles)
 - Evitar "god components" en `src/ui/components`.
+- Mantener hooks en `src/ui/hooks/modules` agrupados por dominio:
+  - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
 - Aplicar estructura por panel:
   - `Panel.tsx`: composicion de UI (sin logica compleja).
   - `usePanelState.ts`: estado, efectos, memos y handlers.
