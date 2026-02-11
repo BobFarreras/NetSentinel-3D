@@ -19,7 +19,7 @@ impl ServiceDictionary {
             22 => ServiceInfo {
                 name: "SSH",
                 description: "Secure Shell. Acceso remoto cifrado.",
-                risk: "LOW", // Es seguro si la contrasena es buena.
+                risk: "LOW",
             },
             23 => ServiceInfo {
                 name: "TELNET",
@@ -28,7 +28,7 @@ impl ServiceDictionary {
             },
             25 => ServiceInfo {
                 name: "SMTP",
-                description: "Correo saliente. A menudo abierto en impresoras.",
+                description: "Envio de correo (Postfix/Exim).",
                 risk: "MEDIUM",
             },
             53 => ServiceInfo {
@@ -43,11 +43,16 @@ impl ServiceDictionary {
             },
             110 => ServiceInfo {
                 name: "POP3",
-                description: "Recepcion de correo antiguo. Texto plano.",
+                description: "Correo entrante antiguo (Texto plano).",
+                risk: "MEDIUM",
+            },
+            143 => ServiceInfo { // <--- AÑADIDO NUEVO
+                name: "IMAP",
+                description: "Correo entrante moderno (Texto plano si no es IMAPS).",
                 risk: "MEDIUM",
             },
             139 | 445 => ServiceInfo {
-                name: "SMB / NETBIOS",
+                name: "SMB",
                 description: "Comparticion de archivos Windows. Objetivo de ransomware.",
                 risk: "HIGH",
             },
@@ -56,14 +61,29 @@ impl ServiceDictionary {
                 description: "Web segura cifrada.",
                 risk: "SAFE",
             },
+            1433 => ServiceInfo { // <--- AÑADIDO SQL
+                name: "MSSQL",
+                description: "Microsoft SQL Server.",
+                risk: "HIGH",
+            },
+            3306 => ServiceInfo { // <--- AÑADIDO SQL
+                name: "MYSQL",
+                description: "Base de datos MySQL/MariaDB.",
+                risk: "MEDIUM",
+            },
             3389 => ServiceInfo {
                 name: "RDP",
                 description: "Escritorio remoto de Windows.",
-                risk: "HIGH", // Muy atacado por fuerza bruta.
+                risk: "HIGH",
             },
-            8080 => ServiceInfo {
+            5432 => ServiceInfo { // <--- AÑADIDO SQL
+                name: "POSTGRES",
+                description: "Base de datos PostgreSQL.",
+                risk: "MEDIUM",
+            },
+            8080 | 8000 | 8081 => ServiceInfo {
                 name: "HTTP-ALT",
-                description: "Servidor web alternativo (a menudo paneles de admin).",
+                description: "Servidor web alternativo (paneles admin/dev).",
                 risk: "MEDIUM",
             },
             _ => ServiceInfo {
