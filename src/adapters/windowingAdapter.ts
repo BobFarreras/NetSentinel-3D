@@ -4,6 +4,11 @@ import type { UnlistenFn } from "../shared/tauri/bridge";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 
 export type DetachablePanelId = "console" | "device" | "radar" | "external" | "scene3d";
+export type DetachedPanelContext = {
+  panel: DetachablePanelId;
+  targetIp?: string;
+  scenarioId?: string;
+};
 
 type OpenPanelWindowArgs = {
   panel: DetachablePanelId;
@@ -79,11 +84,7 @@ export const windowingAdapter = {
       panel,
       targetIp: params.get("targetIp") || undefined,
       scenarioId: params.get("scenarioId") || undefined,
-    } as {
-      panel: DetachablePanelId;
-      targetIp?: string;
-      scenarioId?: string;
-    };
+    } as DetachedPanelContext;
   },
 
   openDetachedPanelWindow: async (args: OpenPanelWindowArgs): Promise<boolean> => {

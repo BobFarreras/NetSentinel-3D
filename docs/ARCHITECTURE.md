@@ -93,6 +93,10 @@ Nota de frontend (estado global):
 - El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/network/useBootstrapNetwork.ts` para reducir acoplamiento.
 - Los hooks modulares se agrupan por dominio en `src/ui/hooks/modules/*`:
   - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
+- `App.tsx` queda como orquestador fino:
+  - delega layout acoplado en `src/ui/components/layout/MainDockedLayout.tsx`,
+  - delega modo desacoplado en `src/ui/components/layout/DetachedPanelView.tsx`,
+  - delega logica de UI multiwindow en hooks `ui/*`.
 
 ## 4.2 Multiwindow y paneles desacoplados (Tauri)
 Fuente de verdad:
@@ -112,6 +116,19 @@ Comportamiento actual:
 Eventos internos de coordinacion:
 - `netsentinel://dock-panel`: reacople generico de panel.
 - `netsentinel://external-context`: sincroniza target/escenario/autorun del panel `External` desacoplado.
+
+Hooks UI dedicados de esta capa:
+- `src/ui/hooks/modules/ui/useAppLayoutState.ts`:
+  - estado y handlers de resizers (`sidebar/console/radar/dock_split`).
+- `src/ui/hooks/modules/ui/usePanelDockingState.ts`:
+  - estado `detachedPanels/detachedModes`,
+  - undock/dock,
+  - reconciliacion de ventanas Tauri y cierre contextual de paneles.
+- `src/ui/hooks/modules/ui/useDetachedRuntime.ts`:
+  - arranque diferido de ventana detached,
+  - emision de reacople en `pagehide`.
+- `src/ui/hooks/modules/ui/useExternalDetachedSync.ts`:
+  - sincronizacion en caliente de `targetDevice/scenarioId/autoRun` para `External`.
 
 Reglas de layout actuales:
 - Si `scene3d` esta desacoplada, `Radar/External` ocupan todo el ancho de la zona superior.

@@ -2,6 +2,25 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.21] - Refactor de App.tsx: orquestador fino + hooks/modulos por responsabilidad (2026-02-11)
+### ♻️ Frontend (SOLID / separacion de responsabilidades)
+- `src/App.tsx` se simplifica como orquestador de alto nivel (estado global + composicion), eliminando la logica monolitica de layout/docking/detached.
+- Nueva separacion por responsabilidades:
+  - `src/ui/components/layout/MainDockedLayout.tsx` (composicion de UI acoplada),
+  - `src/ui/components/layout/DetachedPanelView.tsx` (modo ventana detached),
+  - `src/ui/hooks/modules/ui/useAppLayoutState.ts` (resizers/layout),
+  - `src/ui/hooks/modules/ui/usePanelDockingState.ts` (docking/undocking/reconciliacion),
+  - `src/ui/hooks/modules/ui/useDetachedRuntime.ts` (loader + ciclo de vida detached),
+  - `src/ui/hooks/modules/ui/useExternalDetachedSync.ts` (sync contexto External entre ventanas).
+- `NetworkScene` mantiene control de desacople como prop explicita (`onUndockScene`) sin acoplar logica de ventana en el componente 3D.
+
+### 🧪 Tests
+- Nuevos tests unitarios para hooks extraidos:
+  - `src/ui/hooks/modules/__tests__/useAppLayoutState.test.ts`
+  - `src/ui/hooks/modules/__tests__/usePanelDockingState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useDetachedRuntime.test.ts`
+  - `src/ui/hooks/modules/__tests__/useExternalDetachedSync.test.ts`
+
 ## [v0.8.20] - Sincronizacion documental de multiwindow/desacople (2026-02-11)
 ### 📚 Documentacion
 - `docs/ARCHITECTURE.md` actualizado con seccion de multiwindow:
