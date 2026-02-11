@@ -21,6 +21,14 @@ const toggleJammerMock = vi.fn();
 vi.mock('../../../adapters/networkAdapter', () => ({
   networkAdapter: {
     getHostIdentity: getHostIdentityMock,
+    getGatewayCredentials: vi.fn(async () => null),
+    saveLatestSnapshot: vi.fn(async () => undefined),
+  },
+}));
+
+vi.mock('../../../adapters/auditAdapter', () => ({
+  auditAdapter: {
+    fetchRouterDevices: vi.fn(async () => []),
   },
 }));
 
@@ -29,8 +37,11 @@ vi.mock('../modules/useSocketLogs', () => ({
     deviceLogs: {
       '192.168.1.10': ['L1', 'L2'],
     },
+    systemLogs: [],
     addLog: addLogMock,
+    addSystemLog: vi.fn(),
     clearLogs: clearLogsMock,
+    clearSystemLogs: vi.fn(),
     setActiveTarget: setActiveTargetMock,
   }),
 }));
@@ -77,6 +88,7 @@ vi.mock('../modules/useJamming', () => ({
 describe('useNetworkManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('netsentinel:autoScanOnStartup', 'false');
     getHostIdentityMock.mockResolvedValue({
       ip: '192.168.1.200',
       mac: 'AA:BB:CC',

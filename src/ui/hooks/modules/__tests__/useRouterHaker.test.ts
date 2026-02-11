@@ -12,6 +12,13 @@ vi.mock('../../../../adapters/auditAdapter', () => ({
   }
 }));
 
+vi.mock('../../../../adapters/networkAdapter', () => ({
+  networkAdapter: {
+    saveGatewayCredentials: vi.fn(async () => undefined),
+    saveLatestSnapshot: vi.fn(async () => undefined),
+  },
+}));
+
 // Dades Mock
 const mockExistingDevices: DeviceDTO[] = [
   { ip: '192.168.1.50', mac: 'AA:BB:CC', vendor: 'Generic', hostname: 'Unknown' }

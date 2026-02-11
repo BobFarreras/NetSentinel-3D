@@ -1,6 +1,361 @@
-# 📜 DIARI DE DESENVOLUPAMENT (CHANGELOG)
+# Diario de desarrollo (CHANGELOG)
 
-Tots els canvis notables en el projecte NetSentinel seran documentats aquí.
+Todos los cambios notables en NetSentinel deben documentarse aqui.
+
+## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
+### ✅ Integracion UI
+- Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:
+  - seleccion en `NetworkScene` -> sincronizacion en `DeviceDetailPanel` y `ConsoleLogs`.
+
+### ⚡ Performance (bundle inicial)
+- `App.tsx` actualizado con `React.lazy` + `Suspense` para cargar bajo demanda:
+  - `NetworkScene`
+  - `RadarPanel`
+  - `ExternalAuditPanel`
+  - `DeviceDetailPanel`
+
+### 🧪 Debug 3D
+- `useNetworkNodeState` ya no escribe logs de hover/click por defecto.
+- Activacion de logs solo en desarrollo y con flag:
+  - `localStorage.setItem("netsentinel.debug3d", "true")`
+
+### 📚 Documentacion
+- `docs/ARCHITECTURE.md`: añadido diagrama rapido del flujo 3D -> manager -> HUD.
+- `README.md`: añadida seccion de testing por capas (unit/integracion frontend).
+
+## [v0.8.3] - Refactor capa 3D + cobertura de hooks (2026-02-11)
+### ♻️ Frontend 3D (Scene)
+- Extraida logica de escena a `src/ui/hooks/modules/useNetworkSceneState.ts`:
+  - persistencia de `showLabels`,
+  - enriquecimiento de dispositivos,
+  - deteccion de nodo central (gateway),
+  - calculo de color por nodo.
+- Extraida logica de nodo a `src/ui/hooks/modules/useNetworkNodeState.ts`:
+  - hover/cursor/click,
+  - estado visual (escala y emisivo).
+- Extraida logica de label a `src/ui/hooks/modules/useNodeLabelState.ts`:
+  - paleta por tipo de dispositivo,
+  - normalizacion de confianza (LOW/MED/HIGH).
+- `NetworkScene`, `NetworkNode` y `NodeLabel` quedan mas orientados a presentacion.
+
+### 🎨 Tokens / estilo
+- Nuevo modulo `src/ui/components/3d/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
+
+### ✅ Testing
+- Nuevos tests:
+  - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
+
+### 📚 Documentacion
+- `README.md`: añadido resumen del patron frontend modular.
+- `docs/ARCHITECTURE.md`: documentada estructura frontend por feature y capa 3D.
+- `AGENTS.md`: regla explicita para aplicar patron modular tambien en componentes 3D.
+
+## [v0.8.2] - Cierre documental del refactor frontend (2026-02-11)
+### 📚 Documentacion
+- `docs/ARCHITECTURE.md` actualizado con el patron frontend modular:
+  - panel contenedor + hook `useXxxPanelState` + sub-vistas puras + tokens visuales.
+- Añadidos ejemplos reales aplicados (Radar, ConsoleLogs, Traffic y DeviceDetail).
+- `AGENTS.md` actualizado con reglas operativas para evitar componentes monoliticos y exigir test unitario por hook de panel.
+
+## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
+### ✅ Testing (frontend)
+- Nuevos tests unitarios para hooks extraidos:
+  - `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
+- Cobertura añadida en:
+  - cambios de pestaña y limpieza contextual en `ConsoleLogs`,
+  - filtros/paginacion/resolucion de nombres en `Traffic`,
+  - derivadas y handlers de acciones en `DeviceDetail`.
+
+### ✅ Validaciones
+- `npm test -- --run` (20 files / 54 tests en verde)
+- `npm run build` (ok)
+
+## [v0.8.0] - Tokens visuales HUD compartidos (2026-02-11)
+### 🎨 Frontend (estilos)
+- Añadido `src/ui/styles/hudTokens.ts` como fuente compartida de:
+  - tipografia mono (`HUD_TYPO.mono`)
+  - paleta base HUD (`HUD_COLORS`)
+- Integracion inicial de tokens en modulos refactorizados:
+  - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
+  - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
+  - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
+  - `DeviceDetail` (tipografia/colores clave en `src/ui/components/hud/DeviceDetailPanel.tsx`)
+- Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.9] - Refactor DeviceDetailPanel: acciones y derivadas en hook (2026-02-11)
+### ♻️ Frontend (Device Detail)
+- Extraida logica de derivadas/acciones de `DeviceDetailPanel` a `src/ui/hooks/modules/useDeviceDetailPanelState.ts`.
+- El panel mantiene su UI y contratos actuales, pero delega:
+  - nombre resuelto (`name/hostname/Unknown`),
+  - MAC normalizada,
+  - visibilidad de bloque WiFi,
+  - color de señal,
+  - handlers de `LAB AUDIT` y `AUDIT GATEWAY SECURITY`.
+- Objetivo: reducir responsabilidad del componente y facilitar pruebas/escalado.
+
+### ✅ Validaciones
+- `npm test -- --run src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx` (ok)
+- `npm run build` (ok)
+
+## [v0.7.8] - Refactor TrafficPanel: estado y vistas separadas (2026-02-11)
+### ♻️ Frontend (Traffic)
+- Extraida la logica de filtros, paginacion incremental y resolucion de nombres a `src/ui/hooks/modules/useTrafficPanelState.ts`.
+- `src/ui/components/panels/TrafficPanel.tsx` queda como ensamblador de UI.
+- Troceo de UI en componentes:
+  - `src/ui/components/panels/traffic/TrafficFilterBar.tsx`
+  - `src/ui/components/panels/traffic/TrafficTable.tsx`
+  - `src/ui/components/panels/traffic/TrafficStyles.ts`
+- Se mantiene comportamiento funcional: filtros `ALL/JAMMED/TARGET`, selector automatico de `TARGET`, scroll incremental y accion `CLR`.
+
+### ✅ Validaciones
+- `npm test -- --run src/ui/components/panels/__tests__/TrafficPanel.test.tsx` (ok)
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.7] - Refactor ConsoleLogs: separacion por vistas y estado (2026-02-11)
+### ♻️ Frontend (ConsoleLogs)
+- Extraida la logica de estado/acciones a `src/ui/hooks/modules/useConsoleLogsState.ts`.
+- `src/ui/components/panels/ConsoleLogs.tsx` pasa a ser un contenedor de composicion.
+- Nuevo troceo por responsabilidad:
+  - `src/ui/components/panels/console_logs/ConsoleLogsHeader.tsx`
+  - `src/ui/components/panels/console_logs/SystemLogsView.tsx`
+  - `src/ui/components/panels/console_logs/RadarLogsView.tsx`
+  - `src/ui/components/panels/console_logs/consoleLogsStyles.ts`
+- Se mantiene el comportamiento actual de pestañas, limpieza contextual y seleccion de nodo desde `RADAR LOGS`.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.6] - Refactor RadarPanel: separacion UI/logica (2026-02-11)
+### ♻️ Frontend (HUD Radar)
+- Extraida la logica de estado/efectos/memos a `src/ui/hooks/modules/useRadarPanelState.ts`.
+- `src/ui/components/hud/RadarPanel.tsx` queda como contenedor de composicion (sin logica de negocio de radar).
+- Troceado de UI en subcomponentes dedicados:
+  - `src/ui/components/hud/radar/RadarHeader.tsx`
+  - `src/ui/components/hud/radar/RadarScope.tsx`
+  - `src/ui/components/hud/radar/RadarIntelPanel.tsx`
+  - `src/ui/components/hud/radar/RadarLegalModal.tsx`
+  - utilidades/tipos en `src/ui/components/hud/radar/radarUtils.ts` y `src/ui/components/hud/radar/radarTypes.ts`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
+### 🧠 Scanner (UX / estabilidad)
+- `Scan Net` ya no reduce el inventario si el escaneo devuelve menos dispositivos temporalmente (merge por union).
+- Evitado el conflicto de hidratacion (snapshot/historial) que podia sobrescribir el inventario durante el auto-scan.
+- Añadido test de regresion para asegurar que el inventario no se recorta cuando el scan ve menos nodos.
+
+### 🧩 UI (Labels 3D)
+- Tarjetas (labels) mas grandes y legibles con estetica terminal/cyberpunk.
+- El router/gateway usa una tarjeta especial con filas (IP/MAC/Vendor/iface/GW).
+- Toggle para ocultar/mostrar tarjetas persistido en `localStorage`.
+
+### 🧾 Logs (trazabilidad)
+- `SYSTEM LOGS` pinta eventos `CRITICAL`/`💀` en rojo.
+- `audit_router/fetch_router_devices`: logging de dispositivos conectado tras enriquecimiento ARP para evitar `MAC=00:00:...` en consola cuando ya existe MAC real.
+
+## [v0.7.4] - Documentacion External Audit / LAB Audit (2026-02-10)
+### 📚 Documentacion
+- Añadido `docs/EXTERNAL_AUDIT.md`:
+  - arquitectura end-to-end (UI -> Tauri -> proceso -> eventos),
+  - mapa de archivos,
+  - DTOs y eventos,
+  - limitaciones,
+  - guia paso a paso para añadir escenarios LAB (simulados o externos).
+### 🧭 Onboarding
+- `README.md`: enlace directo a `docs/EXTERNAL_AUDIT.md`.
+
+## [v0.7.5] - Refactor backend (SOLID) + hardening runtime + fixtures (2026-02-10)
+### 🦀 API (Tauri)
+- `src-tauri/src/api/commands.rs`: comandos agrupados por dominio con submodulos `api/commands/*`.
+- `src-tauri/src/lib.rs`: wiring mas limpio (solo dependencias + registro de comandos).
+
+### 🦀 External Audit (wrapper CLI)
+- `src-tauri/src/application/external_audit/*`: runner/validacion/sink testeable.
+- Streaming real de `stdout/stderr`, cancelacion y timeout con tests.
+
+### 🦀 WiFi / Vendor
+- Resolver OUI data-driven con seed embebido y override en AppData (`oui.json`).
+- `WifiService` como caso de uso fino + normalizacion pura (`wifi_normalizer`).
+
+### 🦀 Runtime (identidad/traffic/jammer)
+- Identidad local robusta con parser puro + fixtures (`local_intelligence/*`).
+- Preflight del sniffer: si no se abre el canal, no se marca el monitor como running.
+- Hardening de `JammerService` y `PacketInjector` (menos `unwrap()`, mas checks, tests).
+
+### 📚 Docs
+- Sincronizada documentacion con arquitectura real (README, External Audit, Architecture, etc.).
+
+## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
+### 📚 Documentacion estrategica
+- Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:
+  - arquitectura backend/frontend,
+  - fases de entrega,
+  - criterios de aceptacion,
+  - reglas de seguridad.
+
+### 🧭 Priorizacion de producto
+- Actualizadas `Prioridades actuales` en `AGENTS.md` con foco en:
+  - `scan_airwaves` y vista Radar,
+  - simulaciones educativas controladas de PMKID/IoT/MLO (modo inferencia),
+  - hardening legal/sanitizacion/trazabilidad,
+  - cobertura de testing.
+
+### 🔐 Seguridad y alcance
+- Actualizado `docs/SECURITY.md` para dejar explicito:
+  - uso autorizado en laboratorio,
+  - simulaciones didacticas permitidas,
+  - exclusion de automatizaciones ofensivas reales.
+
+### 🏗️ Arquitectura y testing
+- Actualizado `docs/ARCHITECTURE.md` con roadmap de `scan_airwaves`.
+- Actualizado `docs/TESTING.md` con prioridades de pruebas para Radar View.
+- Actualizado `README.md` con seccion de roadmap inmediato y enlace a `docs/RADAR_VIEW.md`.
+
+## [v0.6.4] - Backend inicial Radar View: scan_airwaves (2026-02-10)
+### 🦀 Backend (Rust + Tauri)
+- Añadido servicio `WifiService` con normalizacion defensiva:
+  - saneo de SSID (control chars, longitud, `<hidden>`),
+  - clasificacion de riesgo (`HARDENED|STANDARD|LEGACY|OPEN`),
+  - calculo `distance_mock` para visualizacion.
+- Añadido puerto `WifiScannerPort` y scanner de sistema con `wifiscanner`.
+- Añadido comando Tauri `scan_airwaves` y DTO `WifiNetworkDTO`.
+
+### ✅ Verificacion
+- `cargo check --tests` en verde.
+
+## [v0.6.5] - Gobernanza GitHub: PR review obligatorio (2026-02-10)
+### 🧭 Proceso
+- Añadido `CONTRIBUTING.md` con politica de PR y revision senior.
+- Añadidos ficheros de soporte GitHub:
+  - `.github/CODEOWNERS`
+  - `.github/pull_request_template.md`
+- Actualizado `AGENTS.md` para prohibir commits finales automaticos por agentes IA sin confirmacion.
+
+### 🛠️ Calidad
+- Ajuste de tipos explicitos en `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` para evitar errores de inferencia en IDE.
+
+## [v0.6.6] - Radar View UI inicial (CRT terminal) + soporte E2E (2026-02-10)
+### 🎛️ Frontend
+- Añadido panel `RadarPanel` con estetica CRT/cyberpunk y aviso legal de primer uso:
+  - `src/ui/components/hud/RadarPanel.tsx`
+- Integrado el toggle `RADAR` en:
+  - `src/ui/components/layout/TopBar.tsx`
+  - `src/App.tsx`
+
+### 🧪 E2E
+- Extendida la bridge mock con `scan_airwaves`:
+  - `src/shared/tauri/bridge.ts`
+- Añadido test E2E de Radar View:
+  - `e2e/app.spec.ts`
+
+## [v0.6.7] - Radar View UI v2: filtros y auto-refresh (2026-02-10)
+### 🎛️ Frontend
+- `src/ui/components/hud/RadarPanel.tsx`:
+  - filtros por riesgo, banda, canal y busqueda (SSID/vendor/BSSID),
+  - contador `VISIBLE` para ver impacto de filtros,
+  - auto-refresh opcional (sin solapar escaneos),
+  - `aria-label` para tests estables.
+
+### 🧪 Tests
+- Añadido `src/ui/components/hud/__tests__/RadarPanel.test.tsx`.
+
+## [v0.6.8] - Radar View: escaneo Windows mas fiable + layout dock a la izquierda (2026-02-10)
+### 🦀 Backend (Windows)
+- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
+  - preferencia por `netsh wlan show networks mode=bssid` como fuente de verdad en Windows.
+  - parser tolerante a locales (claves como `Señal/Senal/Signal`, `Canal/Channel`, `Autenticacion/Auth`).
+  - fallback cuando Windows omite BSSID/canal/señal: se genera un pseudo-BSSID estable para no devolver lista vacia.
+  - enriquecimiento con `netsh wlan show interfaces` para obtener RSSI/canal/AP BSSID reales de la red conectada.
+
+### 🎛️ Frontend (Layout)
+- `src/App.tsx`:
+  - Radar View acoplado a la izquierda (resizable por anchura) sin invadir el espacio vertical de `ConsoleLogs`.
+
+### 📚 Documentacion
+- `docs/RADAR_VIEW.md`:
+  - seccion de troubleshooting en Windows (cache de escaneo, permisos, limitaciones de driver).
+  - glosario/guia de `NODE INTEL` (CH, bandas, riesgo, auto, busqueda).
+
+## [v0.6.9] - Radar View: RADAR LOGS + AP conectado resaltado + ayuda in-app (2026-02-10)
+### 🎛️ Frontend
+- `src/ui/components/panels/ConsoleLogs.tsx`:
+  - nueva pestaña `RADAR LOGS` para trazabilidad local de escaneos WiFi.
+- `src/ui/hooks/modules/useWifiRadar.ts`:
+  - registra resumen y detalle de cada escaneo en `RADAR LOGS` (SSID/BSSID/vendor/seguridad/canal/RSSI/riesgo).
+- `src/ui/components/hud/RadarPanel.tsx`:
+  - el AP conectado se resalta con anillo cian y etiqueta `CONNECTED (TU ROUTER)`.
+  - boton `?` para explicar `NODE INTEL` (riesgo/banda/canal/busqueda/auto) directamente en la UI.
+
+### 🦀 Backend (Contratos)
+- `src-tauri/src/domain/entities.rs`, `src-tauri/src/api/dtos.rs`:
+  - añadido `isConnected` en WiFi Radar para identificar el AP conectado cuando el SO lo expone.
+- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
+  - marca `is_connected` a partir de `netsh wlan show interfaces` en Windows.
+
+### 🧪 Tests
+- Añadidos tests:
+  - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
+  - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
+
+## [v0.7.0] - ExternalAuditService: wrapper async de herramientas CLI (2026-02-10)
+### 🦀 Backend (Rust + Tauri)
+- Añadido `ExternalAuditService` como orquestador de herramientas externas ya instaladas por el administrador:
+  - `src-tauri/src/application/external_audit_service.rs`
+- Nuevos comandos Tauri:
+  - `start_external_audit`
+  - `cancel_external_audit`
+- Streaming en tiempo real de logs via eventos Tauri:
+  - `external-audit-log` (stdout/stderr)
+  - `external-audit-exit` (exit code, success, duration)
+
+### 🔐 Seguridad (DevSecOps)
+- Ejecucion sin shell (args tokenizados) y validaciones defensivas (limites de args/env/timeout) para reducir riesgos operativos.
+
+## [v0.7.1] - External Audit UI: LAB por dispositivo + escenarios (2026-02-10)
+### 🎛️ Frontend
+- Añadido panel `ExternalAuditPanel` con dos modos:
+  - `LAB`: escenarios preconfigurados por dispositivo (externo o simulado).
+  - `CUSTOM`: ejecucion manual (binario + args).
+- Añadido boton `LAB AUDIT` en `DeviceDetailPanel` para abrir auditorias por dispositivo.
+- Añadido boton `EXT AUDIT` en TopBar para abrir el panel en modo manual.
+
+### 🧠 Logica (escenarios)
+- Nuevo catalogo de escenarios en `src/core/logic/externalAuditScenarios.ts`:
+  - presets no intrusivos (recon basico, fingerprint de cabeceras),
+  - simulaciones didacticas (PMKID/IoT) sin ejecucion ofensiva.
+
+## [v0.7.2] - Auto-scan + snapshot + credenciales locales (2026-02-10)
+### ⚡ Arranque (UX)
+- Al iniciar la app, se puede ejecutar auto-scan (preferencia `netsentinel:autoScanOnStartup` en `localStorage`).
+- El escaneo usa el CIDR derivado de `get_identity` (IP + netmask), con fallback a `/24`.
+
+### 💾 Persistencia
+- Nuevo snapshot rapido en AppData: `latest_snapshot.json` (carga inmediata de inventario al abrir la app).
+- Nuevos comandos:
+  - `save_latest_snapshot`, `load_latest_snapshot`
+
+### 🔐 Credenciales (local, seguro)
+- Al detectar credenciales del gateway, se guardan en el keyring del sistema (Windows Credential Manager) para:
+  - sincronizar `fetch_router_devices` automaticamente en el arranque (si existe credencial almacenada),
+  - reducir dependencia de repetir `audit_router`.
+- Nuevos comandos:
+  - `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`
+
+### 🧠 Identificacion
+- Mejorado `VendorResolver` con deteccion de MAC aleatoria (privacy) y soporte opcional de `oui.json` en AppData.
+- Filtro defensivo de hostnames: se descarta `localhost` en IPs remotas para evitar falsos positivos (TV/Alexa por cable, etc.).
 
 ## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
 ### 🧭 Gobierno y prioridades

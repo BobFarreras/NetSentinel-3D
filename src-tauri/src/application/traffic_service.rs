@@ -1,5 +1,7 @@
+// src-tauri/src/application/traffic_service.rs
+
 use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
-// 👇 IMPORT NOU
+
 use crate::infrastructure::repositories::local_intelligence;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -14,23 +16,19 @@ impl TrafficService {
         Self { is_running: Arc::new(AtomicBool::new(false)) }
     }
 
-    pub fn start_monitoring(&self, app_handle: AppHandle) {
+    pub fn start_monitoring(&self, app_handle: AppHandle) -> Result<(), String> {
         if self.is_running.load(Ordering::Relaxed) {
-            println!("⚠️ [APP] El monitor ja està en marxa.");
-            return;
+            return Err("El monitor ya esta en marcha".to_string());
         }
 
-        // 1. OBTENIR LA IP REAL (Per no connectar-nos a Hyper-V)
-        let identity: Result<crate::domain::entities::HostIdentity, String> = local_intelligence::get_host_identity();
-        let target_ip = match identity {
-            Ok(id) => id.ip,
-            Err(_) => {
-                eprintln!("❌ [APP] No puc iniciar Sniffer sense identitat.");
-                return;
-            }
-        };
+        // 1) Obtener la IP real (para no conectarnos a Hyper-V).
+        let identity = local_intelligence::get_host_identity()?;
+        let target_ip = identity.ip;
 
-        println!("🚀 [APP] Iniciant Monitor de Trànsit sobre IP: {}...", target_ip);
+        // Preflight: valida que podemos abrir el canal antes de marcar como "running".
+        TrafficSniffer::preflight("auto", &target_ip)?;
+
+        println!("🚀 [APP] Iniciando monitor de trafico sobre IP: {}...", target_ip);
         
         self.is_running.store(true, Ordering::Relaxed);
         let running_clone = self.is_running.clone();
@@ -39,12 +37,13 @@ impl TrafficService {
             let _ = app_handle.emit("traffic-event", packet);
         };
 
-        // Passem la IP al Sniffer
+        // Pasamos la IP al sniffer.
         TrafficSniffer::start_capture("auto".to_string(), target_ip, running_clone, callback);
+        Ok(())
     }
 
     pub fn stop_monitoring(&self) {
-        println!("🛑 [APP] Aturant Monitor...");
+        println!("🛑 [APP] Deteniendo monitor...");
         self.is_running.store(false, Ordering::Relaxed);
     }
 }

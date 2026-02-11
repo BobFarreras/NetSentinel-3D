@@ -1,3 +1,5 @@
+// src-tauri/src/infrastructure/network/service_dictionary.rs
+
 pub struct ServiceInfo {
     pub name: &'static str,
     pub description: &'static str,
@@ -11,62 +13,62 @@ impl ServiceDictionary {
         match port {
             21 => ServiceInfo {
                 name: "FTP",
-                description: "File Transfer Protocol. Text pla. Molt insegur.",
+                description: "File Transfer Protocol. Texto plano. Muy inseguro.",
                 risk: "HIGH",
             },
             22 => ServiceInfo {
                 name: "SSH",
-                description: "Secure Shell. Accés remot xifrat.",
-                risk: "LOW", // És segur si la contrasenya és bona
+                description: "Secure Shell. Acceso remoto cifrado.",
+                risk: "LOW", // Es seguro si la contrasena es buena.
             },
             23 => ServiceInfo {
                 name: "TELNET",
-                description: "Accés remot ANTIC i sense xifrar. Crític.",
+                description: "Acceso remoto antiguo y sin cifrar. Critico.",
                 risk: "CRITICAL",
             },
             25 => ServiceInfo {
                 name: "SMTP",
-                description: "Correu sortint. Sovint obert en impressores.",
+                description: "Correo saliente. A menudo abierto en impresoras.",
                 risk: "MEDIUM",
             },
             53 => ServiceInfo {
                 name: "DNS",
-                description: "Resolució de noms de domini.",
+                description: "Resolucion de nombres de dominio.",
                 risk: "LOW",
             },
             80 => ServiceInfo {
                 name: "HTTP",
-                description: "Web sense xifrar.",
+                description: "Web sin cifrar.",
                 risk: "MEDIUM",
             },
             110 => ServiceInfo {
                 name: "POP3",
-                description: "Recepció de correu antic. Text pla.",
+                description: "Recepcion de correo antiguo. Texto plano.",
                 risk: "MEDIUM",
             },
             139 | 445 => ServiceInfo {
                 name: "SMB / NETBIOS",
-                description: "Compartició de fitxers Windows. Objectiu de Ransomware.",
+                description: "Comparticion de archivos Windows. Objetivo de ransomware.",
                 risk: "HIGH",
             },
             443 => ServiceInfo {
                 name: "HTTPS",
-                description: "Web segura xifrada.",
+                description: "Web segura cifrada.",
                 risk: "SAFE",
             },
             3389 => ServiceInfo {
                 name: "RDP",
-                description: "Escriptori Remot de Windows.",
-                risk: "HIGH", // Molt atacat per força bruta
+                description: "Escritorio remoto de Windows.",
+                risk: "HIGH", // Muy atacado por fuerza bruta.
             },
             8080 => ServiceInfo {
                 name: "HTTP-ALT",
-                description: "Servidor web alternatiu (sovint panells d'admin).",
+                description: "Servidor web alternativo (a menudo paneles de admin).",
                 risk: "MEDIUM",
             },
             _ => ServiceInfo {
                 name: "UNKNOWN",
-                description: "Servei no estàndard o desconegut.",
+                description: "Servicio no estandar o desconocido.",
                 risk: "UNKNOWN",
             },
         }

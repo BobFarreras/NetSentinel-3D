@@ -1,50 +1,83 @@
+// src-tauri/src/infrastructure/network/vendor_resolver.rs
+
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
+// Submodulos para separar responsabilidades (SOLID) sin cambiar la API publica del modulo.
+#[path = "vendor_resolver/normalize.rs"]
+mod normalize;
+#[path = "vendor_resolver/store.rs"]
+mod store;
+
+// Resolver de fabricante a partir de MAC/BSSID.
+//
+// Objetivos:
+// - Resolver rapido para UI (sin red).
+// - Deteccion de MAC aleatoria (privacy / locally administered).
+// - Permitir una base OUI ampliable via fichero en AppData (oui.json) con seed embebido.
 pub struct VendorResolver;
+
+static OUI_CACHE: OnceLock<HashMap<String, String>> = OnceLock::new();
 
 impl VendorResolver {
     pub fn resolve(mac: &str) -> String {
-        if mac == "00:00:00:00:00:00" { return "Unknown".to_string(); }
-        
-        // Netejem la MAC (treiem : i -)
-        let clean = mac.replace(":", "").replace("-", "").to_uppercase();
-        
-        // Comprovem els primers 6 caràcters (OUI)
-        if clean.len() < 6 { return "Invalid MAC".to_string(); }
-        let oui = &clean[0..6];
-
-        match oui {
-            // 🍎 APPLE
-            "B06EBF" | "F01898" | "D8305F" | "ACBC32" | "A4D18C" | "28CFE9" | "0017F2" | "001C4D" | "002332" | "002500" => "Apple Device".to_string(),
-            
-            // 📱 SAMSUNG
-            "24F5AA" | "380195" | "508569" | "8425DB" | "A02195" | "BC20A4" | "C4731E" => "Samsung Mobile".to_string(),
-            
-            // 👲 XIAOMI / POCO
-            "ACF7F3" | "146B9C" | "28D0EA" | "342E81" | "50EC50" | "6490C1" => "Xiaomi / Poco".to_string(),
-            
-            // 🌐 ROUTERS / XARXA
-            "3C585D" | "001D6A" => "Technicolor (Router)".to_string(),
-            "00E04C" | "E4F042" => "Realtek (Network Card)".to_string(),
-            "48E7DA" | "000C43" => "Ralink/MediaTek (Wi-Fi)".to_string(),
-            "B04E26" | "D807B6" => "TP-Link".to_string(),
-            "C891F9" | "04D9F5" => "Asus Network".to_string(),
-            
-            // 🤖 IOT / SMART HOME
-            "229D5C" | "2462AB" | "30AEA4" | "540F57" | "600194" => "Espressif (Smart Home/IoT)".to_string(),
-            "B827EB" | "DCAM60" => "Raspberry Pi".to_string(),
-            "001132" => "Synology NAS".to_string(),
-            "50C7BF" => "TP-Link Smart Plug".to_string(),
-            
-            // 💻 PC Components
-            "00E018" => "Asus Motherboard".to_string(),
-            "00D861" => "MSI".to_string(),
-            "1C1B0D" => "GigaByte".to_string(),
-            "00147C" => "3Com".to_string(),
-
-            // GENÈRIC (Si no el trobem)
-            _ => {
-                // Heurística simple: Apple fa servir adreces aleatòries localment, a vegades costa de trobar.
-                "Generic Device".to_string()
-            }
+        let raw = mac.trim();
+        if raw.is_empty() || raw == "00:00:00:00:00:00" {
+            return "Unknown".to_string();
         }
+
+        let clean = normalize::normalize_mac(raw);
+        if clean.len() < 12 {
+            return "Invalid MAC".to_string();
+        }
+
+        // Si es 1, suele ser direccion aleatoria por privacidad o virtualizada.
+        if normalize::is_locally_administered(&clean) {
+            return "Private Device (Random MAC)".to_string();
+        }
+
+        let oui = &clean[0..6];
+        Self::oui_map()
+            .get(oui)
+            .cloned()
+            .unwrap_or_else(|| "Generic / Unknown Device".to_string())
+    }
+
+    fn oui_map() -> &'static HashMap<String, String> {
+        OUI_CACHE.get_or_init(store::load_merged_oui_map)
+    }
+
+    // Seed opcional: si no existe `oui.json` en AppData, crea uno con una base minima.
+    // Esto mejora el onboarding sin inflar el binario con un dataset completo.
+    pub fn ensure_oui_seeded() {
+        store::ensure_seeded();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resolve_detects_locally_administered_mac() {
+        // 02:xx... => bit U/L activo.
+        assert_eq!(
+            VendorResolver::resolve("02:11:22:33:44:55"),
+            "Private Device (Random MAC)"
+        );
+    }
+
+    #[test]
+    fn resolve_uses_embedded_seed_map_for_known_ouis() {
+        assert_eq!(VendorResolver::resolve("0C:47:C9:00:00:01"), "Amazon");
+        assert_eq!(VendorResolver::resolve("B8:27:EB:00:00:01"), "Raspberry Pi");
+    }
+
+    #[test]
+    fn resolve_rejects_invalid() {
+        assert_eq!(VendorResolver::resolve(""), "Unknown");
+        assert_eq!(VendorResolver::resolve("00:00:00:00:00:00"), "Unknown");
+        assert_eq!(VendorResolver::resolve("AA:BB"), "Invalid MAC");
+    }
+}
+

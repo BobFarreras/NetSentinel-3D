@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
-use crate::domain::entities::{Device, RouterAuditResult};
+use crate::domain::entities::{Device, RouterAuditResult, WifiEntity};
 
-// 1. DISPOSITIU DTO (Aquest SÍ que volem camelCase per React)
+// 1) DISPOSITIVO DTO (queremos `camelCase` para React).
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DeviceDTO {
@@ -61,3 +61,55 @@ impl From<RouterAuditResult> for RouterAuditResultDTO {
         }
     }
 }
+
+// 4. WIFI RADAR DTO
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiNetworkDTO {
+    pub bssid: String,
+    pub ssid: String,
+    pub channel: Option<u16>,
+    pub signal_level: i32,
+    pub security_type: String,
+    pub vendor: String,
+    pub distance_mock: f32,
+    pub risk_level: String,
+    pub is_targetable: bool,
+    pub is_connected: bool,
+}
+
+impl From<WifiEntity> for WifiNetworkDTO {
+    fn from(w: WifiEntity) -> Self {
+        Self {
+            bssid: w.bssid,
+            ssid: w.ssid,
+            channel: w.channel,
+            signal_level: w.signal_level,
+            security_type: w.security_type,
+            vendor: w.vendor,
+            distance_mock: w.distance_mock,
+            risk_level: w.risk_level,
+            is_targetable: w.is_targetable,
+            is_connected: w.is_connected,
+        }
+    }
+}
+
+// 5. External Audit (Wrapper de herramientas CLI)
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalAuditEnvVarDTO {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalAuditRequestDTO {
+    pub binary_path: String,
+    pub args: Vec<String>,
+    pub cwd: Option<String>,
+    pub timeout_ms: Option<u64>,
+    pub env: Option<Vec<ExternalAuditEnvVarDTO>>,
+}
+// src-tauri/src/api/dtos.rs

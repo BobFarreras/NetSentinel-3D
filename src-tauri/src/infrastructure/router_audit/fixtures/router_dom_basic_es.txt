@@ -1,0 +1,13 @@
+2.4 GHz
+Redmi-15
+IP: 192.168.1.130
+Signal strength: -83 dBm
+Signal rate: 6 Mbps
+MAC address DE:95:77:0F:09:71
+
+DESKTOP-K0NB4J1
+IP: 192.168.1.131
+Signal strength: -62 dBm
+Signal rate: 0 Mbps
+MAC address 48-E7-DA-F5-7D-0F
+

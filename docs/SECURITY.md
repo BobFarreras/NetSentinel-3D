@@ -1,3 +1,5 @@
+<!-- docs/SECURITY.md -->
+
 # Politica de Seguridad de NetSentinel 3D
 
 ## 1. Alcance y Objetivo
@@ -7,6 +9,10 @@ NetSentinel 3D es una herramienta defensiva de auditoria de red. Su uso debe est
 - redes propias,
 - redes con autorizacion explicita,
 - entornos de laboratorio o formacion.
+
+Politica adicional para modulos educativos avanzados:
+- Se permiten simulaciones controladas de tecnicas (p. ej. PMKID/IoT/MLO) con fines didacticos.
+- No se deben incluir instrucciones ni automatizaciones ofensivas reales orientadas a comprometer redes de terceros.
 
 ## 2. Modelo de Seguridad Base
 ### 2.1 Separacion de privilegios
@@ -21,11 +27,19 @@ Comandos actualmente registrados:
 - `fetch_router_devices`
 - `save_scan`
 - `get_history`
+- `save_latest_snapshot`
+- `load_latest_snapshot`
+- `save_gateway_credentials`
+- `get_gateway_credentials`
+- `delete_gateway_credentials`
+- `scan_airwaves`
 - `get_identity`
 - `start_traffic_sniffing`
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
+- `start_external_audit`
+- `cancel_external_audit`
 
 Riesgo:
 - Si la UI se compromete, un atacante puede intentar abusar de estos comandos.
@@ -68,6 +82,17 @@ Impacto:
 Siguiente mejora recomendada:
 - Eliminar gradualmente `'unsafe-inline'` en `style-src` migrando estilos inline a hojas CSS controladas.
 
+## 3.3 External Audit (wrapper CLI)
+El modulo `External Audit` esta disenado como **orquestador** (wrapper) para herramientas externas ya instaladas:
+- no reimplementa herramientas,
+- no usa shell por defecto,
+- hace streaming de stdout/stderr a UI,
+- soporta cancelacion y timeout.
+
+Fuente de verdad:
+- `src-tauri/src/application/external_audit/*`
+- `docs/EXTERNAL_AUDIT.md`
+
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)
 Riesgos:
@@ -87,6 +112,7 @@ Riesgos:
 Controles existentes:
 - inicio/parada explicitos por comando,
 - buffer acotado en frontend.
+- preflight backend (si no se puede abrir el canal, el comando falla y no queda "running" a medias).
 
 Controles recomendados:
 - añadir filtros por interfaz/objetivo,
@@ -112,6 +138,17 @@ Controles existentes:
 Controles recomendados:
 - documentar ubicacion exacta por SO,
 - definir politica de retencion y borrado manual.
+
+### 4.5 Credenciales (gateway) - keyring local
+Objetivo:
+- Reducir friccion: si el auditor ya ha validado credenciales del gateway en un lab, no repetir la misma auditoria cada vez.
+
+Regla:
+- No guardar contraseñas en JSON plano en `AppData`.
+
+Implementacion:
+- Backend: `KeyringCredentialStore` (crate `keyring`) guarda un blob JSON en el keyring del sistema (Windows Credential Manager).
+- Comandos: `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`.
 
 ## 5. Cadena de Suministro (Dependencias)
 Controles recomendados en CI o rutina semanal:
@@ -153,3 +190,9 @@ Si se detecta comportamiento inseguro:
 2. Registrar fecha, entorno y evidencia minima del fallo.
 3. Crear fix con test o validacion reproducible.
 4. Actualizar `docs/SECURITY.md`, `AGENTS.md` y docs afectadas en el mismo cambio.
+
+## 9. Radar View (WiFi Spectrum) - Reglas de seguridad
+- Toda visualizacion de SSID/BSSID debe tratarse como entrada no confiable.
+- El render en UI debe hacerse como texto plano (sin HTML incrustado).
+- El modulo debe mostrar aviso legal de uso autorizado en su primer uso.
+- Las simulaciones de riesgo (PMKID/IoT/MLO) deben mantenerse en modo inferencia didactica.

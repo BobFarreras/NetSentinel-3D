@@ -3,5 +3,9 @@ pub mod audit_service;
 pub mod history_service;
 pub mod traffic_service;
 pub mod jammer_service;
-
-
+pub mod wifi_service;
+pub mod wifi_normalizer;
+pub mod external_audit;
+pub mod external_audit_service;
+pub mod latest_snapshot_service;
+pub mod credential_service;

@@ -1,8 +1,10 @@
+// src-tauri/src/domain/entities.rs
+
 use serde::{Serialize, Deserialize};
 
 // 1. DISPOSITIU
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")] // 👈 AQUESTA LÍNIA ÉS CLAU!
+#[serde(rename_all = "camelCase")] // Linea clave: alinea el JSON con el frontend TypeScript.
 pub struct Device {
     pub ip: String,
     pub mac: String,
@@ -11,9 +13,13 @@ pub struct Device {
     pub name: Option<String>,
     pub is_gateway: bool,
     pub ping: Option<u16>, 
-    pub signal_strength: Option<String>, 
-    pub signal_rate: Option<String>,     
-    pub wifi_band: Option<String>,       
+    // Compat: el frontend historico usa snake_case en algunos campos.
+    #[serde(alias = "signal_strength")]
+    pub signal_strength: Option<String>,
+    #[serde(alias = "signal_rate")]
+    pub signal_rate: Option<String>,
+    #[serde(alias = "wifi_band")]
+    pub wifi_band: Option<String>,
     pub open_ports: Option<Vec<OpenPort>>,
 }
 
@@ -59,6 +65,24 @@ pub struct ScanSession {
     pub label: String,    
 }
 
+// 5b. ULTIMA FOTO (snapshot) - Persistencia rapida para arranque
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LatestSnapshot {
+    pub timestamp: u64,
+    pub devices: Vec<Device>,
+}
+
+// 5c. CREDENCIALES (gateway) - Solo almacenamiento local en el equipo del auditor
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GatewayCredentials {
+    pub gateway_ip: String,
+    pub user: String,
+    pub pass: String,
+    pub saved_at: u64,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HostIdentity {
@@ -73,7 +97,7 @@ pub struct HostIdentity {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TrafficPacket {
-    pub id: usize, // ID seqüencial per a llistes React (key)
+    pub id: usize, // ID secuencial para listas React (key).
     pub timestamp: u64,
     pub source_ip: String,
     pub destination_ip: String,
@@ -81,4 +105,37 @@ pub struct TrafficPacket {
     pub length: usize,
     pub info: String,     // Ex: "HTTPS Traffic" o "DNS Query"
     pub is_intercepted: bool,
+}
+
+// 6. WIFI (Radar View)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiScanRecord {
+    // Identificador del AP (BSSID). Se trata como entrada no confiable.
+    pub bssid: String,
+    // SSID puede estar vacio en redes ocultas. Se sanea en application antes de exponerlo a UI.
+    pub ssid: String,
+    pub channel: Option<u16>,
+    // RSSI aproximado (ej: -40 fuerte, -90 debil). Si no hay dato fiable, usar -100.
+    pub signal_level: i32,
+    // Cadena de seguridad reportada por el sistema (WPA2/WPA3/WEP/OPEN/etc.).
+    pub security_type: String,
+    // Marca si el registro corresponde al AP al que el host esta conectado actualmente.
+    // Solo puede inferirse en plataformas donde el sistema expone el enlace activo (ej: Windows via netsh).
+    pub is_connected: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiEntity {
+    pub bssid: String,
+    pub ssid: String,
+    pub channel: Option<u16>,
+    pub signal_level: i32,
+    pub security_type: String,
+    pub vendor: String,
+    pub distance_mock: f32,
+    pub risk_level: String,     // HARDENED | STANDARD | LEGACY | OPEN
+    pub is_targetable: bool,    // true si la configuracion es debil (legacy/open) en modo educativo
+    pub is_connected: bool,     // true si es el AP actual del host
 }

@@ -11,6 +11,11 @@ impl HostnameResolver {
             if let Ok(hostname) = lookup_addr(&ip_addr) {
                 // De vegades retorna la mateixa IP si falla, ho filtrem
                 if hostname != ip {
+                    // Filtro defensivo: algunos entornos devuelven "localhost" para hosts remotos.
+                    // Solo aceptamos "localhost" si la IP es loopback.
+                    if hostname.eq_ignore_ascii_case("localhost") && !ip_addr.is_loopback() {
+                        return None;
+                    }
                     return Some(hostname);
                 }
             }

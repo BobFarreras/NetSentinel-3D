@@ -1,3 +1,5 @@
+<!-- docs/TESTING.md -->
+
 # Guia de Testing de NetSentinel 3D
 
 ## 1. Objetivo
@@ -16,16 +18,37 @@ La meta es reducir regresiones y asegurar que frontend, contratos y backend evol
 - Setup global: `src/test/setup.ts`
 
 ### 2.2 Tests existentes
+Frontend (unit):
 - `src/core/logic/intruderDetection.test.ts`
+- `src/core/logic/deviceIntel.test.ts`
+- `src/adapters/__tests__/networkAdapter.test.ts`
+- `src/adapters/__tests__/auditAdapter.test.ts`
+- `src/adapters/__tests__/wifiAdapter.test.ts`
+- `src/ui/hooks/__tests__/useNetworkManager.test.ts`
 - `src/ui/hooks/modules/__tests__/useScanner.test.ts`
 - `src/ui/hooks/modules/__tests__/useRouterHaker.test.ts`
+- `src/ui/hooks/modules/__tests__/useWifiRadar.test.ts`
+- `src/ui/hooks/modules/__tests__/useTrafficMonitor.test.ts`
+- `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
+- `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
+- `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
+- `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
+- `src/ui/components/hud/__tests__/ExternalAuditPanel.test.tsx`
+- `src/ui/components/hud/__tests__/RadarPanel.test.tsx`
+- `src/ui/components/__tests__/DangerModal.test.tsx`
+
+E2E:
+- `e2e/app.spec.ts`
 
 Cobertura actual:
 - logica pura (deteccion de intrusos),
 - hooks de orquestacion con mocks de adapters.
 
 Gap actual:
-- falta cobertura en adapters, componentes criticos de UI y backend Rust en modo test unitario estable.
+- la cobertura ha mejorado (adapters + paneles principales), pero sigue siendo recomendable:
+  - añadir tests de regresion cuando se toquen contratos DTO o comandos Tauri,
+  - añadir mas tests puros de merge/enriquecimiento de inventario,
+  - mantener E2E centrado en flujos clave (sin backend nativo en CI).
 
 ## 3. Comandos de Verificacion
 Desde la raiz del proyecto:
@@ -41,6 +64,7 @@ Backend Rust:
 ```bash
 cd src-tauri
 cargo check
+cargo test
 ```
 
 Nota de entorno Windows:
@@ -93,6 +117,9 @@ Reglas:
 - evitar depender de red real o drivers del sistema,
 - aislar comportamiento de riesgo/calculo/transformacion.
 
+Notas:
+- Cuando un modulo depende de salidas del sistema (por ejemplo PowerShell o `netsh`), preferir tests con fixtures y parsers puros.
+
 ## 4.6 E2E UI (`e2e/`)
 Objetivo:
 - validar flujos reales de interfaz en navegador con Playwright.
@@ -135,6 +162,7 @@ Checks automatizados:
   - `npm audit --omit=dev --audit-level=high` (no bloqueante)
 - Rust (Windows):
   - `cargo check --tests`
+  - `cargo test` (si el runner lo permite)
   - `cargo audit` (no bloqueante)
 
 Nota:
@@ -202,6 +230,12 @@ Prioridad media:
 
 Prioridad baja:
 - ampliar unit tests Rust en `audit_service`, `history_service`, `traffic_service`.
+
+Prioridad inmediata (Radar View):
+- tests de `wifiAdapter` (contrato `scan_airwaves`).
+- tests de `useWifiRadar` (estado, errores y normalizacion de datos).
+- tests de render de `RadarView` (colores por riesgo y filtros por canal/banda).
+- E2E de flujo Radar: abrir vista, escanear, seleccionar nodo y ver detalle.
 
 ## 9. Checklist Rapido para PR
 - [ ] He añadido o actualizado tests del comportamiento modificado.

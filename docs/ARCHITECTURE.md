@@ -1,3 +1,5 @@
+<!-- docs/ARCHITECTURE.md -->
+
 # Arquitectura Tecnica de NetSentinel 3D
 
 ## 1. Vision General
@@ -27,12 +29,21 @@ Principio base:
 \- /infrastructure          # Implementaciones concretas (red, fs, auditoria)
 ```
 
+### 2.1 Estructura frontend por feature (actual)
+- `src/ui/components/hud/*`: paneles HUD (Radar, DeviceDetail, History, ExternalAudit).
+- `src/ui/components/panels/*`: consola/logs/trafico.
+- `src/ui/components/3d/*`: escena de red (nodos, labels, camara, controles).
+- `src/ui/hooks/modules/*`: hooks de estado por modulo/panel/escena.
+
+Regla practica:
+- Si un componente supera responsabilidad de presentacion, extraer hook `useXxxState` y sub-vistas.
+
 ## 3. Capas del Backend (Rust)
 ### 3.1 Domain
 Ubicacion: `src-tauri/src/domain`
 - `entities.rs`: modelos de dominio (`Device`, `OpenPort`, `ScanSession`, etc.).
 - `ports.rs`: contratos de abstraccion para infraestructura.
-- `network_math.rs`: utilidades de calculo de red.
+- Nota: el dominio debe mantenerse lo mas "puro" posible (sin I/O ni dependencias de Tauri).
 
 ### 3.2 Application
 Ubicacion: `src-tauri/src/application`
@@ -41,19 +52,26 @@ Ubicacion: `src-tauri/src/application`
 - `history_service.rs`: guardado y lectura de sesiones.
 - `traffic_service.rs`: control del monitor de trafico.
 - `jammer_service.rs`: contramedidas activas.
+- `wifi_service.rs`: orquestacion de Radar View (WiFi) + normalizacion.
+  - normalizacion pura en `wifi_normalizer.rs`.
+- `external_audit/*`: wrapper de ejecucion de herramientas externas (stdout/stderr en tiempo real).
 
 ### 3.3 Infrastructure
 Ubicacion: `src-tauri/src/infrastructure`
-- `system_scanner.rs`: escaneo de red del sistema.
-- `chrome_auditor.rs`: automatizacion para auditoria de gateway.
+- `system_scanner.rs`: adaptador del puerto `NetworkScannerPort` (orquesta submodulos en `system_scanner/*`).
+- `router_audit/*`: automatizacion de auditoria de gateway (Chrome) + parsing con fixtures.
 - `fs_repository.rs`: persistencia en disco.
 - `network/*`: sniffing, ARP, puertos, vendor/hostname resolver, etc.
-- `repositories/local_intelligence.rs`: identidad local del host.
+  - `network/vendor_resolver*`: resolucion de fabricante por OUI (seed embebido + override en AppData).
+- `wifi/*`: escaneo WiFi por SO (Windows `netsh`, fallback `wifiscanner`) + fixtures.
+- `repositories/local_intelligence*`: identidad local del host (PowerShell + parsing con fixtures y cache corto).
 
 ### 3.4 API (Tauri commands)
 Ubicacion: `src-tauri/src/api` y `src-tauri/src/lib.rs`
-- `api/commands.rs`: comandos async de scanner, auditoria e historial.
-- `lib.rs`: wiring de dependencias y comandos adicionales de sistema.
+- `api/commands.rs`: fachada de comandos (`#[tauri::command]`) y delegacion a `api/commands/*` por dominio.
+  - Importante: los atributos `#[tauri::command]` viven en `api/commands.rs` para que `generate_handler!` encuentre los `__cmd__*`.
+- `api/state.rs`: estados gestionados por Tauri (`TrafficState`, `JammerState`).
+- `lib.rs`: wiring de dependencias (infra -> application) y registro de comandos en `invoke_handler`.
 
 ## 4. Flujo Frontend <-> Backend
 Flujo tipico de comando:
@@ -70,6 +88,57 @@ Flujo tipico de eventos:
 2. Hook frontend escucha con `listen(...)`.
 3. El hook transforma payload y actualiza estado incremental.
 
+## 4.1 Patron Frontend Modular (actual)
+Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:
+- `PanelContenedor`: compone sub-vistas y conecta callbacks.
+- `useXxxPanelState`: concentra estado, efectos y memos del panel.
+- `Subvistas`: renderizan UI pura y reciben props.
+- `styles/tokens`: colores, tipografia y constantes visuales compartidas.
+
+Ejemplos aplicados:
+- Radar:
+  - `src/ui/components/hud/RadarPanel.tsx`
+  - `src/ui/hooks/modules/useRadarPanelState.ts`
+  - `src/ui/components/hud/radar/*`
+- Console Logs:
+  - `src/ui/components/panels/ConsoleLogs.tsx`
+  - `src/ui/hooks/modules/useConsoleLogsState.ts`
+  - `src/ui/components/panels/console_logs/*`
+- Traffic:
+  - `src/ui/components/panels/TrafficPanel.tsx`
+  - `src/ui/hooks/modules/useTrafficPanelState.ts`
+  - `src/ui/components/panels/traffic/*`
+- Device Detail:
+  - `src/ui/components/hud/DeviceDetailPanel.tsx`
+  - `src/ui/hooks/modules/useDeviceDetailPanelState.ts`
+- Escena 3D:
+  - `src/ui/components/3d/NetworkScene.tsx`
+  - `src/ui/components/3d/NetworkNode.tsx`
+  - `src/ui/components/3d/NodeLabel.tsx`
+  - `src/ui/hooks/modules/useNetworkSceneState.ts`
+  - `src/ui/hooks/modules/useNetworkNodeState.ts`
+  - `src/ui/hooks/modules/useNodeLabelState.ts`
+
+Beneficios:
+- Menos acoplamiento entre render y logica.
+- Tests unitarios mas directos por hook.
+- Cambios visuales mas seguros al estar aislados por sub-vista.
+
+Diagrama rapido (UI 3D + HUD):
+```text
+NetworkScene (composicion)
+  -> useNetworkSceneState (estado/derivadas)
+  -> NetworkNode (presentacion nodo)
+      -> useNetworkNodeState (hover/click/animacion)
+  -> NodeLabel (presentacion label)
+      -> useNodeLabelState (paleta/confianza)
+
+Seleccion de nodo (onDeviceSelect)
+  -> useNetworkManager.selectDevice
+  -> DeviceDetailPanel (detalle)
+  -> ConsoleLogs (filtro por target / trazabilidad)
+```
+
 ## 5. Mapa de Comandos Actuales
 Fuente de verdad: `src-tauri/src/lib.rs` + `src-tauri/src/api/commands.rs`
 
@@ -82,6 +151,11 @@ Comandos de red y auditoria:
 Comandos de historial:
 - `save_scan`
 - `get_history`
+- `save_latest_snapshot`
+- `load_latest_snapshot`
+- `save_gateway_credentials`
+- `get_gateway_credentials`
+- `delete_gateway_credentials`
 
 Comandos de sistema/tiempo real:
 - `get_identity`
@@ -89,6 +163,13 @@ Comandos de sistema/tiempo real:
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
+
+Comandos de WiFi (Radar View):
+- `scan_airwaves` (ver `docs/RADAR_VIEW.md`).
+
+Comandos de auditoria externa (wrapper CLI):
+- `start_external_audit`
+- `cancel_external_audit`
 
 Regla de mantenimiento:
 - Cualquier cambio en comandos debe actualizar en el mismo commit:
@@ -112,6 +193,7 @@ Regla:
   - `npm run build`
 - Backend:
   - `cargo check` en `src-tauri`
+  - `cargo test` en `src-tauri` (si el entorno de linking lo permite)
 
 ### 7.2 Limitacion actual en Windows
 - `cargo test` puede fallar por linking de `Packet.lib` (dependencia nativa de captura/red).
@@ -119,10 +201,15 @@ Regla:
 
 ### 7.3 Deuda tecnica visible
 - Hay zonas con naming mixto y discrepancias puntuales entre DTOs Rust/TS.
-- Existen warnings en backend que conviene limpiar para mejorar mantenibilidad.
+- Existen warnings puntuales que conviene limpiar para mejorar mantenibilidad.
 
 ## 8. Principios de Evolucion
 - Mantener frontend delgado y backend fuerte.
 - Introducir cambios por capa, no por archivos aislados.
 - Priorizar contratos estables y tests reproducibles.
 - Documentar siempre comandos nuevos y eventos nuevos el mismo dia en que se implementan.
+- En frontend, preferir refactor incremental por panel:
+  - 1) extraer hook de estado,
+  - 2) partir sub-vistas puras,
+  - 3) centralizar tokens visuales,
+  - 4) cubrir hook con tests unitarios.

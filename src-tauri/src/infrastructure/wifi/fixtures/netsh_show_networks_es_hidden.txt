@@ -1,0 +1,8 @@
+Nombre de interfaz : Wi-Fi
+Actualmente hay 1 redes visibles.
+
+SSID 1 : MIWIFI_UHeX
+    Tipo de red             : Infraestructura
+    Autenticación           : WPA2-Personal
+    Cifrado                 : CCMP
+

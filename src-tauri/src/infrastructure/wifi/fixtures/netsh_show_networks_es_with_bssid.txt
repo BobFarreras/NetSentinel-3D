@@ -1,0 +1,15 @@
+Nombre de interfaz : Wi-Fi
+Actualmente hay 2 redes visibles.
+
+SSID 1 : LAB_OPEN
+    Autenticación           : Abierta
+    BSSID 1                 : 4c:b9:ea:e4:4c:f0
+         Señal             : 39%
+         Canal            : 6
+
+SSID 2 : LAB_WPA2
+    Autenticación           : WPA2-Personal
+    BSSID 1                 : 3c:58:5d:d3:68:e5
+         Señal             : 85%
+         Canal            : 100
+

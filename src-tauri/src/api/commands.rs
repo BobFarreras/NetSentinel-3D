@@ -1,107 +1,190 @@
-use tauri::State;
-use crate::application::scanner_service::ScannerService;
-use crate::application::audit_service::AuditService;
-use crate::application::history_service::HistoryService;
-use crate::api::dtos::{DeviceDTO, SecurityReportDTO, RouterAuditResultDTO};
-use crate::api::validators::{validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4};
-use crate::domain::entities::ScanSession;
+// src-tauri/src/api/commands.rs
+
+// Este modulo expone comandos Tauri (con `#[tauri::command]`) y delega su implementacion a submodulos
+// agrupados por dominio. Esto evita un archivo monolitico sin romper el wiring de `generate_handler!`
+// (Tauri genera wrappers `__cmd__*` en el mismo modulo donde esta el atributo).
+
+// Submodulos (separacion por responsabilidades / SOLID)
+#[path = "commands/scanner.rs"]
+mod scanner;
+#[path = "commands/router_audit.rs"]
+mod router_audit;
+#[path = "commands/history.rs"]
+mod history;
+#[path = "commands/snapshot.rs"]
+mod snapshot;
+#[path = "commands/credentials.rs"]
+mod credentials;
+#[path = "commands/wifi.rs"]
+mod wifi;
+#[path = "commands/external_audit.rs"]
+mod external_audit;
+#[path = "commands/system.rs"]
+mod system;
+#[path = "commands/internal_validation.rs"]
+mod internal_validation;
 
 // --- NETWORK SCANNER ---
 
 #[tauri::command]
-pub async fn scan_network(service: State<'_, ScannerService>, _range: Option<String>) -> Result<Vec<DeviceDTO>, String> {
-    validate_scan_range(&_range)?;
-
-    // 1. Cridem al cas d'ús
-    let devices = service.run_network_scan(_range).await;
-    
-    // 2. Convertim a DTO
-    let dtos = devices.into_iter().map(DeviceDTO::from).collect();
-    
-    Ok(dtos)
+pub async fn scan_network(
+    service: tauri::State<'_, crate::application::scanner_service::ScannerService>,
+    range: Option<String>,
+) -> Result<Vec<crate::api::dtos::DeviceDTO>, String> {
+    scanner::scan_network(service, range).await
 }
 
 #[tauri::command]
-pub async fn audit_target(service: State<'_, ScannerService>, ip: String) -> Result<SecurityReportDTO, String> {
-    validate_usable_host_ipv4(&ip, "ip")?;
-
-    let (ports, risk) = service.audit_ip(ip.clone()).await;
-    
-    Ok(SecurityReportDTO {
-        target_ip: ip,
-        open_ports: ports,
-        risk_level: risk,
-    })
+pub async fn audit_target(
+    service: tauri::State<'_, crate::application::scanner_service::ScannerService>,
+    ip: String,
+) -> Result<crate::api::dtos::SecurityReportDTO, String> {
+    scanner::audit_target(service, ip).await
 }
 
 // --- ROUTER AUDIT ---
 
 #[tauri::command]
-pub async fn audit_router(service: State<'_, AuditService>, gateway_ip: String) -> Result<RouterAuditResultDTO, String> {
-    validate_usable_host_ipv4(&gateway_ip, "gateway_ip")?;
-
-    // Nota: El logging es fa via event global definit al wiring del lib.rs
-    let result = service.brute_force_gateway(gateway_ip).await;
-    Ok(RouterAuditResultDTO::from(result))
+pub async fn audit_router(
+    service: tauri::State<'_, crate::application::audit_service::AuditService>,
+    gateway_ip: String,
+) -> Result<crate::api::dtos::RouterAuditResultDTO, String> {
+    router_audit::audit_router(service, gateway_ip).await
 }
 
 #[tauri::command]
-pub async fn fetch_router_devices(service: State<'_, AuditService>, gateway_ip: String, user: String, pass: String) -> Result<Vec<DeviceDTO>, String> {
-    validate_router_credentials_input(&gateway_ip, &user, &pass)?;
-
-    let devices = service.extract_router_data(gateway_ip, user, pass).await;
-    let dtos = devices.into_iter().map(DeviceDTO::from).collect();
-    Ok(dtos)
+pub async fn fetch_router_devices(
+    service: tauri::State<'_, crate::application::audit_service::AuditService>,
+    gateway_ip: String,
+    user: String,
+    pass: String,
+) -> Result<Vec<crate::api::dtos::DeviceDTO>, String> {
+    router_audit::fetch_router_devices(service, gateway_ip, user, pass).await
 }
 
 // --- HISTORY ---
 
 #[tauri::command]
-pub async fn save_scan(service: State<'_, HistoryService>, devices: Vec<crate::domain::entities::Device>) -> Result<String, String> {
-    // Nota: El frontend envia JSON que coincideix amb l'estructura de Device.
-    // Tauri fa el parsing automàtic a l'entitat gràcies al Deserialize de 'entities.rs'.
-    service.save_session(devices).await
+pub async fn save_scan(
+    service: tauri::State<'_, crate::application::history_service::HistoryService>,
+    devices: Vec<crate::domain::entities::Device>,
+) -> Result<String, String> {
+    history::save_scan(service, devices).await
 }
 
 #[tauri::command]
-pub async fn get_history(service: State<'_, HistoryService>) -> Result<Vec<ScanSession>, String> {
-    Ok(service.get_history().await)
+pub async fn get_history(
+    service: tauri::State<'_, crate::application::history_service::HistoryService>,
+) -> Result<Vec<crate::domain::entities::ScanSession>, String> {
+    history::get_history(service).await
 }
 
-fn validate_scan_range(range: &Option<String>) -> Result<(), String> {
-    if let Some(raw) = range {
-        validate_ipv4_or_cidr(raw, "range")?;
-    }
-    Ok(())
+// --- SNAPSHOT (arranque rapido) ---
+
+#[tauri::command]
+pub async fn save_latest_snapshot(
+    service: tauri::State<'_, crate::application::latest_snapshot_service::LatestSnapshotService>,
+    devices: Vec<crate::domain::entities::Device>,
+) -> Result<(), String> {
+    snapshot::save_latest_snapshot(service, devices).await
 }
 
-fn validate_router_credentials_input(gateway_ip: &str, user: &str, pass: &str) -> Result<(), String> {
-    validate_usable_host_ipv4(gateway_ip, "gateway_ip")?;
-    validate_non_empty(user, "user", 64)?;
-    validate_non_empty(pass, "pass", 128)?;
-    Ok(())
+#[tauri::command]
+pub async fn load_latest_snapshot(
+    service: tauri::State<'_, crate::application::latest_snapshot_service::LatestSnapshotService>,
+) -> Result<Option<crate::domain::entities::LatestSnapshot>, String> {
+    snapshot::load_latest_snapshot(service).await
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// --- CREDENCIALES (gateway) ---
 
-    #[test]
-    fn validate_scan_range_accepts_none_and_valid_value() {
-        assert!(validate_scan_range(&None).is_ok());
-        assert!(validate_scan_range(&Some("192.168.1.0/24".to_string())).is_ok());
-    }
+#[tauri::command]
+pub async fn save_gateway_credentials(
+    service: tauri::State<'_, crate::application::credential_service::CredentialService>,
+    gateway_ip: String,
+    user: String,
+    pass: String,
+) -> Result<(), String> {
+    credentials::save_gateway_credentials(service, gateway_ip, user, pass).await
+}
 
-    #[test]
-    fn validate_scan_range_rejects_invalid_value() {
-        assert!(validate_scan_range(&Some("192.168.1.0/99".to_string())).is_err());
-    }
+#[tauri::command]
+pub async fn get_gateway_credentials(
+    service: tauri::State<'_, crate::application::credential_service::CredentialService>,
+    gateway_ip: String,
+) -> Result<Option<crate::domain::entities::GatewayCredentials>, String> {
+    credentials::get_gateway_credentials(service, gateway_ip).await
+}
 
-    #[test]
-    fn validate_router_credentials_rejects_invalid_input() {
-        assert!(validate_router_credentials_input("x.y.z.w", "admin", "1234").is_err());
-        assert!(validate_router_credentials_input("192.168.1.1", "", "1234").is_err());
-        assert!(validate_router_credentials_input("192.168.1.1", "admin", "").is_err());
-        assert!(validate_router_credentials_input("127.0.0.1", "admin", "1234").is_err());
-    }
+#[tauri::command]
+pub async fn delete_gateway_credentials(
+    service: tauri::State<'_, crate::application::credential_service::CredentialService>,
+    gateway_ip: String,
+) -> Result<(), String> {
+    credentials::delete_gateway_credentials(service, gateway_ip).await
+}
+
+// --- WIFI RADAR VIEW ---
+
+#[tauri::command]
+pub async fn scan_airwaves(
+    service: tauri::State<'_, crate::application::wifi_service::WifiService>,
+) -> Result<Vec<crate::api::dtos::WifiNetworkDTO>, String> {
+    wifi::scan_airwaves(service).await
+}
+
+// --- EXTERNAL AUDIT (WRAPPER CLI) ---
+
+#[tauri::command]
+pub async fn start_external_audit(
+    service: tauri::State<'_, crate::application::external_audit_service::ExternalAuditService>,
+    app: tauri::AppHandle,
+    request: crate::api::dtos::ExternalAuditRequestDTO,
+) -> Result<String, String> {
+    external_audit::start_external_audit(service, app, request).await
+}
+
+#[tauri::command]
+pub async fn cancel_external_audit(
+    service: tauri::State<'_, crate::application::external_audit_service::ExternalAuditService>,
+    audit_id: String,
+) -> Result<(), String> {
+    external_audit::cancel_external_audit(service, audit_id).await
+}
+
+// --- SYSTEM / RUNTIME ---
+
+#[tauri::command]
+pub fn get_identity() -> Result<crate::domain::entities::HostIdentity, String> {
+    system::get_identity()
+}
+
+#[tauri::command]
+pub fn start_traffic_sniffing(
+    state: tauri::State<'_, crate::api::state::TrafficState>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    system::start_traffic_sniffing(state, app)
+}
+
+#[tauri::command]
+pub fn stop_traffic_sniffing(state: tauri::State<'_, crate::api::state::TrafficState>) -> Result<(), String> {
+    system::stop_traffic_sniffing(state)
+}
+
+#[tauri::command]
+pub fn start_jamming(
+    state: tauri::State<'_, crate::api::state::JammerState>,
+    ip: String,
+    mac: String,
+    gateway_ip: String,
+) -> Result<(), String> {
+    internal_validation::validate_start_jamming_input(&ip, &mac, &gateway_ip)?;
+    system::start_jamming(state, ip, mac, gateway_ip)
+}
+
+#[tauri::command]
+pub fn stop_jamming(state: tauri::State<'_, crate::api::state::JammerState>, ip: String) -> Result<(), String> {
+    internal_validation::validate_stop_jamming_input(&ip)?;
+    system::stop_jamming(state, ip)
 }

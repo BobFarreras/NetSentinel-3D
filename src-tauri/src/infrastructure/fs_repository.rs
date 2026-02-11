@@ -7,7 +7,7 @@ use directories::ProjectDirs;
 pub struct FileHistoryRepository;
 
 impl FileHistoryRepository {
-    // Helper privat per obtenir la ruta (Lògica portada de history_commands.rs)
+    // Helper privado para obtener la ruta (logica portada de history_commands.rs).
     fn get_history_path() -> PathBuf {
         if let Some(proj_dirs) = ProjectDirs::from("com", "netsentinel", "app") {
             let data_dir = proj_dirs.data_dir();
@@ -28,7 +28,7 @@ impl HistoryRepositoryPort for FileHistoryRepository {
     async fn save_session(&self, session: ScanSession) -> Result<(), String> {
         println!("💾 INFRA: Guardant sessió al disc...");
         
-        // 1. Recuperem l'historial actual per no matxacar-lo
+        // 1) Recuperamos el historial actual para no sobreescribirlo.
         let mut history = self.get_all_sessions().await?;
         
         // 2. Afegim la nova sessió al principi
@@ -56,3 +56,4 @@ impl HistoryRepositoryPort for FileHistoryRepository {
         }
     }
 }
+// src-tauri/src/infrastructure/fs_repository.rs

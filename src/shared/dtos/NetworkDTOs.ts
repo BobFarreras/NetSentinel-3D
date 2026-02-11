@@ -49,7 +49,14 @@ export interface DeviceDTO {
   signal_strength?: number; 
   signal_rate?: number; 
   wifi_band?: string; 
+
+  // Intel local (frontend): calculado en UI a partir de señales (vendor/hostname/servicios).
+  // No depende de backend y no rompe contratos, porque es opcional.
+  deviceType?: DeviceType;
+  deviceTypeConfidence?: number; // 0..100
 }
+
+export type DeviceType = 'PHONE' | 'PC' | 'TV' | 'SPEAKER' | 'ROUTER' | 'IOT' | 'UNKNOWN';
 
 export interface RouterAuditResult {
   vulnerable: boolean;
@@ -74,6 +81,18 @@ export interface HostIdentity {
   dnsServers: string[];
 }
 
+export interface LatestSnapshotDTO {
+  timestamp: number;
+  devices: DeviceDTO[];
+}
+
+export interface GatewayCredentialsDTO {
+  gatewayIp: string;
+  user: string;
+  pass: string;
+  savedAt: number;
+}
+
 export interface TrafficPacket {
   id: number;
   timestamp: number;
@@ -83,4 +102,46 @@ export interface TrafficPacket {
   length: number;
   info: string;
   isIntercepted: boolean;
+}
+
+// 6. WiFi Radar View (scan_airwaves)
+export interface WifiNetworkDTO {
+  bssid: string;
+  ssid: string;
+  channel?: number;
+  signalLevel: number;
+  securityType: string;
+  vendor: string;
+  distanceMock: number;
+  riskLevel: 'HARDENED' | 'STANDARD' | 'LEGACY' | 'OPEN' | (string & {});
+  isTargetable: boolean;
+  isConnected: boolean;
+}
+
+// 7. External Audit (Wrapper CLI)
+export interface ExternalAuditEnvVarDTO {
+  key: string;
+  value: string;
+}
+
+export interface ExternalAuditRequestDTO {
+  binaryPath: string;
+  args: string[];
+  cwd?: string;
+  timeoutMs?: number;
+  env?: ExternalAuditEnvVarDTO[];
+}
+
+export interface ExternalAuditLogEvent {
+  auditId: string;
+  stream: 'stdout' | 'stderr';
+  line: string;
+}
+
+export interface ExternalAuditExitEvent {
+  auditId: string;
+  success: boolean;
+  exitCode?: number;
+  durationMs: number;
+  error?: string;
 }

@@ -1,62 +1,112 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { TopBar } from './ui/components/layout/TopBar';
-import { NetworkScene } from './ui/components/3d/NetworkScene';
-import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
 import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
-import { DangerModal } from './ui/components/DangerModal';
+import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
+
+const NetworkScene = lazy(async () => {
+  const mod = await import('./ui/components/3d/NetworkScene');
+  return { default: mod.NetworkScene };
+});
+
+const DeviceDetailPanel = lazy(async () => {
+  const mod = await import('./ui/components/hud/DeviceDetailPanel');
+  return { default: mod.DeviceDetailPanel };
+});
+
+const RadarPanel = lazy(async () => {
+  const mod = await import('./ui/components/hud/RadarPanel');
+  return { default: mod.RadarPanel };
+});
+
+const ExternalAuditPanel = lazy(async () => {
+  const mod = await import('./ui/components/hud/ExternalAuditPanel');
+  return { default: mod.ExternalAuditPanel };
+});
 
 function App() {
   const {
     devices, selectedDevice, scanning, auditing,
     auditResults, consoleLogs,
     startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    toggleJammer, checkRouterSecurity, dismissRisk, routerRisk,
-    clearLogs,
+    toggleJammer, checkRouterSecurity,
+    systemLogs, clearSystemLogs,
     intruders, identity
   } = useNetworkManager();
 
   const [showHistory, setShowHistory] = useState(false);
+  const [showRadar, setShowRadar] = useState(false);
+  const [showExternalAudit, setShowExternalAudit] = useState(false);
+  const [externalAuditTarget, setExternalAuditTarget] = useState<DeviceDTO | null>(null);
+  const [externalAuditScenarioId, setExternalAuditScenarioId] = useState<string | null>(null);
 
-  // --- ESTATS DE MIDA (RESIZABLE) ---
+  // --- ESTADOS DE TAMAÑO (RESIZABLE) ---
   const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
   const [consoleHeight, setConsoleHeight] = useState(250); // Alçada inicial Consola
+  const [radarWidth, setRadarWidth] = useState(520); // Anchura inicial del radar (panel izquierdo)
 
-  // Refs per gestionar l'arrossegament sense lag
-  const isResizingSidebar = useRef(false);
-  const isResizingConsole = useRef(false);
+  // Refs para gestionar el arrastre sin lag
+  const resizeMode = useRef<null | 'sidebar' | 'console' | 'radar'>(null);
+  const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
+  const startSidebarWidth = useRef(450);
+  const startConsoleHeight = useRef(250);
+  const startRadarWidth = useRef(520);
 
-  // --- GESTIÓ DEL RESIZE ---
-  const startResizingSidebar = useCallback(() => { isResizingSidebar.current = true; }, []);
-  const startResizingConsole = useCallback(() => { isResizingConsole.current = true; }, []);
+  // --- GESTION DEL RESIZE ---
+  const startResizingSidebar = useCallback((e: React.MouseEvent) => {
+    resizeMode.current = 'sidebar';
+    dragStartX.current = e.clientX;
+    startSidebarWidth.current = sidebarWidth;
+  }, [sidebarWidth]);
+
+  const startResizingConsole = useCallback((e: React.MouseEvent) => {
+    resizeMode.current = 'console';
+    dragStartY.current = e.clientY;
+    startConsoleHeight.current = consoleHeight;
+  }, [consoleHeight]);
+
+  const startResizingRadar = useCallback((e: React.MouseEvent) => {
+    resizeMode.current = 'radar';
+    dragStartX.current = e.clientX;
+    startRadarWidth.current = radarWidth;
+  }, [radarWidth]);
 
   const stopResizing = useCallback(() => {
-    isResizingSidebar.current = false;
-    isResizingConsole.current = false;
+    resizeMode.current = null;
     document.body.style.cursor = 'default'; // Restaurar cursor
   }, []);
 
   const resize = useCallback((e: MouseEvent) => {
-    if (isResizingSidebar.current) {
-      // Calculem la nova amplada (des de la dreta)
-      const newWidth = window.innerWidth - e.clientX;
-      if (newWidth > 300 && newWidth < 800) { // Límits mínim i màxim
-        setSidebarWidth(newWidth);
-        document.body.style.cursor = 'col-resize';
-      }
+    if (resizeMode.current === 'sidebar') {
+      // Arrastrar hacia la izquierda aumenta la anchura del sidebar.
+      const delta = dragStartX.current - e.clientX;
+      const next = Math.max(300, Math.min(800, startSidebarWidth.current + delta));
+      setSidebarWidth(next);
+      document.body.style.cursor = 'col-resize';
+      return;
     }
-    if (isResizingConsole.current) {
-      // Calculem la nova alçada (des de baix)
-      const newHeight = window.innerHeight - e.clientY;
-      if (newHeight > 100 && newHeight < window.innerHeight - 100) { // Límits
-        setConsoleHeight(newHeight);
-        document.body.style.cursor = 'row-resize';
-      }
-    }
-  }, []);
 
-  // Listeners globals per al ratolí
+    if (resizeMode.current === 'console') {
+      // Resizer entre panel superior y consola: mover hacia arriba aumenta altura.
+      const delta = dragStartY.current - e.clientY;
+      const next = Math.max(120, Math.min(window.innerHeight - 160, startConsoleHeight.current + delta));
+      setConsoleHeight(next);
+      document.body.style.cursor = 'row-resize';
+      return;
+    }
+
+    if (resizeMode.current === 'radar') {
+      // Resizer entre radar (izquierda) y escena (derecha): mover hacia la derecha aumenta anchura.
+      const delta = e.clientX - dragStartX.current;
+      const next = Math.max(360, Math.min(820, startRadarWidth.current + delta));
+      setRadarWidth(next);
+      document.body.style.cursor = 'col-resize';
+    }
+  }, [setSidebarWidth, setConsoleHeight, setRadarWidth]);
+
+  // Listeners globales de raton
   useEffect(() => {
     window.addEventListener('mousemove', resize);
     window.addEventListener('mouseup', stopResizing);
@@ -67,7 +117,7 @@ function App() {
   }, [resize, stopResizing]);
 
   return (
-    // CONTENIDOR PRINCIPAL
+    // Contenedor principal
     <div style={{
       display: 'flex',
       width: '100vw',
@@ -77,12 +127,10 @@ function App() {
       overflow: 'hidden',
       fontFamily: "'Consolas', 'Courier New', monospace",
       fontSize: '16px',
-      userSelect: (isResizingSidebar.current || isResizingConsole.current) ? 'none' : 'auto' // Evitar seleccionar text mentre arrosseguem
+      userSelect: (resizeMode.current !== null) ? 'none' : 'auto' // Evitar seleccionar texto mientras se arrastra
     }}>
 
-      {/* 🚨 MODAL */}
-      <DangerModal result={routerRisk} onClose={dismissRisk} />
-
+      {/* Modal de riesgo */}
       {/* =================================================================================
           COLUMNA ESQUERRA: TOPBAR + MAPA + CONSOLA (FLEX 1)
          ================================================================================= */}
@@ -96,18 +144,29 @@ function App() {
         overflow: 'hidden'
       }}>
 
-        {/* 1. BARRA SUPERIOR */}
+        {/* 1. Barra superior */}
         <TopBar
           scanning={scanning}
           activeNodes={devices.length}
           onScan={startScan}
           onHistoryToggle={() => setShowHistory(!showHistory)}
           showHistory={showHistory}
+          onRadarToggle={() => setShowRadar(!showRadar)}
+          showRadar={showRadar}
+          onExternalAuditToggle={() => {
+            const next = !showExternalAudit;
+            setShowExternalAudit(next);
+            if (next) {
+              setExternalAuditTarget(null);
+              setExternalAuditScenarioId(null);
+            }
+          }}
+          showExternalAudit={showExternalAudit}
           identity={identity}
         />
 
-        {/* 2. MAPA 3D (Ocupa l'espai restant) */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* 2. Zona superior: Radar (izquierda) + Mapa 3D (centro) */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
           {showHistory && (
             <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 20 }}>
               <HistoryPanel
@@ -117,15 +176,70 @@ function App() {
             </div>
           )}
 
-          <NetworkScene
-            devices={devices}
-            onDeviceSelect={selectDevice}
-            selectedIp={selectedDevice?.ip}
-            intruders={intruders}
-          />
+          {showExternalAudit && (
+            <Suspense fallback={null}>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 20,
+                  zIndex: 60,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  pointerEvents: 'none',
+                }}
+              >
+                <div style={{ pointerEvents: 'auto' }}>
+                  <ExternalAuditPanel
+                    onClose={() => setShowExternalAudit(false)}
+                    targetDevice={externalAuditTarget}
+                    identity={identity}
+                    defaultScenarioId={externalAuditScenarioId}
+                    autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
+                  />
+                </div>
+              </div>
+            </Suspense>
+          )}
+
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', minHeight: 0 }}>
+            {showRadar && (
+              <>
+                <div style={{ width: `${radarWidth}px`, minWidth: 360, maxWidth: 820, minHeight: 0, background: '#000', overflow: 'hidden', zIndex: 12 }}>
+                  <Suspense fallback={null}>
+                    <RadarPanel onClose={() => setShowRadar(false)} />
+                  </Suspense>
+                </div>
+                <div
+                  onMouseDown={startResizingRadar}
+                  style={{
+                    width: '2px',
+                    background: '#004400',
+                    cursor: 'col-resize',
+                    zIndex: 13,
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
+                />
+              </>
+            )}
+
+            <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
+              <Suspense fallback={null}>
+                <NetworkScene
+                  devices={devices}
+                  onDeviceSelect={selectDevice}
+                  selectedIp={selectedDevice?.ip}
+                  intruders={intruders}
+                  identity={identity}
+                />
+              </Suspense>
+            </div>
+          </div>
         </div>
 
-        {/* 🤏 RESIZER HORITZONTAL (Barra verda per arrossegar la consola) */}
+        {/* Resizer horizontal (para arrastrar la consola) */}
         <div
           onMouseDown={startResizingConsole}
           style={{
@@ -139,25 +253,26 @@ function App() {
           onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
         />
 
-        {/* 3. CONSOLA / SNIFFER - ALÇADA DINÀMICA */}
+        {/* 3. Consola / sniffer (altura dinamica) */}
      
         <div style={{
           height: `${consoleHeight}px`,
+          minHeight: 0,
           zIndex: 10,
           boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
           background: '#000'
         }}>
           <ConsoleLogs
-            logs={consoleLogs}
+            logs={systemLogs}
             devices={devices}
-            selectedDevice={selectedDevice} // 👈 AFEGEIX AIXÒ O EL FILTRE NO FUNCIONARÀ
-            onClearSystemLogs={clearLogs}
+            selectedDevice={selectedDevice} // Necesario para filtros por objetivo
+            onClearSystemLogs={clearSystemLogs}
           />
         </div>
 
       </div>
 
-      {/* 🤏 RESIZER VERTICAL (Barra lateral per arrossegar el sidebar) */}
+      {/* Resizer vertical (para arrastrar el sidebar) */}
       <div
         onMouseDown={startResizingSidebar}
         style={{
@@ -172,7 +287,7 @@ function App() {
       />
 
       {/* =================================================================================
-          COLUMNA DRETA: SIDEBAR (AMPLADA DINÀMICA)
+          Columna derecha: sidebar (anchura dinamica)
          ================================================================================= */}
       <div style={{
         width: `${sidebarWidth}px`,
@@ -197,16 +312,23 @@ function App() {
 
         {selectedDevice ? (
           <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <DeviceDetailPanel
-              device={selectedDevice}
-              auditResults={auditResults}
-              consoleLogs={consoleLogs}
-              auditing={auditing}
-              onAudit={() => startAudit(selectedDevice.ip)}
-              isJammed={jammedDevices.includes(selectedDevice.ip)}
-              onToggleJam={() => toggleJammer(selectedDevice.ip)}
-              onRouterAudit={checkRouterSecurity}
-            />
+            <Suspense fallback={null}>
+              <DeviceDetailPanel
+                device={selectedDevice}
+                auditResults={auditResults}
+                consoleLogs={consoleLogs}
+                auditing={auditing}
+                onAudit={() => startAudit(selectedDevice.ip)}
+                isJammed={jammedDevices.includes(selectedDevice.ip)}
+                onToggleJam={() => toggleJammer(selectedDevice.ip)}
+                onRouterAudit={checkRouterSecurity}
+                onOpenLabAudit={(d) => {
+                  setExternalAuditTarget(d);
+                  setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
+                  setShowExternalAudit(true);
+                }}
+              />
+            </Suspense>
           </div>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#004400', textAlign: 'center', padding: 40 }}>

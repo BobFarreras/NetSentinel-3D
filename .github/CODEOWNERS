@@ -1,0 +1,16 @@
+# Reglas de revision en GitHub (requiere branch protection para ser obligatorio).
+# Objetivo: evitar merges sin revision senior y reducir riesgo de cambios sensibles.
+
+# Todo el repo requiere al menos un reviewer (ajusta el usuario/equipo real).
+* @netsentinel-senior
+
+# Backend Rust y configuracion Tauri: revision obligatoria.
+/src-tauri/ @netsentinel-senior
+
+# Workflows/seguridad/docs de gobierno: revision obligatoria.
+/.github/ @netsentinel-senior
+/docs/SECURITY.md @netsentinel-senior
+/docs/ARCHITECTURE.md @netsentinel-senior
+/docs/TESTING.md @netsentinel-senior
+/docs/CHANGELOG.md @netsentinel-senior
+
