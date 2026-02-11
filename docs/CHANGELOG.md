@@ -2,6 +2,21 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.7.8] - Refactor TrafficPanel: estado y vistas separadas (2026-02-11)
+### ♻️ Frontend (Traffic)
+- Extraida la logica de filtros, paginacion incremental y resolucion de nombres a `src/ui/hooks/modules/useTrafficPanelState.ts`.
+- `src/ui/components/panels/TrafficPanel.tsx` queda como ensamblador de UI.
+- Troceo de UI en componentes:
+  - `src/ui/components/panels/traffic/TrafficFilterBar.tsx`
+  - `src/ui/components/panels/traffic/TrafficTable.tsx`
+  - `src/ui/components/panels/traffic/TrafficStyles.ts`
+- Se mantiene comportamiento funcional: filtros `ALL/JAMMED/TARGET`, selector automatico de `TARGET`, scroll incremental y accion `CLR`.
+
+### ✅ Validaciones
+- `npm test -- --run src/ui/components/panels/__tests__/TrafficPanel.test.tsx` (ok)
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.7.7] - Refactor ConsoleLogs: separacion por vistas y estado (2026-02-11)
 ### ♻️ Frontend (ConsoleLogs)
 - Extraida la logica de estado/acciones a `src/ui/hooks/modules/useConsoleLogsState.ts`.
