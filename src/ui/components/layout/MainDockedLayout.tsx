@@ -64,6 +64,7 @@ interface MainDockedLayoutProps {
   auditing: boolean;
   startAudit: (ip: string) => void;
   jammedDevices: string[];
+  jamPendingDevices: string[];
   toggleJammer: (ip: string) => void;
   checkRouterSecurity: (ip: string) => void;
   externalAuditTarget: DeviceDTO | null;
@@ -192,6 +193,7 @@ export const MainDockedLayout = ({
   auditing,
   startAudit,
   jammedDevices,
+  jamPendingDevices,
   toggleJammer,
   checkRouterSecurity,
   externalAuditTarget,
@@ -389,6 +391,7 @@ export const MainDockedLayout = ({
                     auditing={auditing}
                     onAudit={() => startAudit(selectedDevice.ip)}
                     isJammed={jammedDevices.includes(selectedDevice.ip)}
+                    isJamPending={jamPendingDevices.includes(selectedDevice.ip)}
                     onToggleJam={() => toggleJammer(selectedDevice.ip)}
                     onRouterAudit={checkRouterSecurity}
                     onOpenLabAudit={onOpenLabAudit}
@@ -426,6 +429,7 @@ export const MainDockedLayout = ({
                   auditing={auditing}
                   onAudit={() => startAudit(selectedDevice.ip)}
                   isJammed={jammedDevices.includes(selectedDevice.ip)}
+                  isJamPending={jamPendingDevices.includes(selectedDevice.ip)}
                   onToggleJam={() => toggleJammer(selectedDevice.ip)}
                   onRouterAudit={checkRouterSecurity}
                   onOpenLabAudit={onOpenLabAudit}

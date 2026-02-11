@@ -57,7 +57,7 @@ pub fn run() {
             let history_infra = Arc::new(FileHistoryRepository);
             let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
             let credential_store_infra = Arc::new(KeyringCredentialStore::new("netsentinel"));
-            let jammer_service = JammerService::new();
+            let jammer_service = Arc::new(JammerService::new());
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
             // =====================================================
@@ -86,7 +86,7 @@ pub fn run() {
 
             // Estados runtime: sniffer/jammer.
             app.manage(crate::api::state::TrafficState(Mutex::new(traffic_service)));
-            app.manage(crate::api::state::JammerState(Mutex::new(jammer_service)));
+            app.manage(crate::api::state::JammerState(jammer_service));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

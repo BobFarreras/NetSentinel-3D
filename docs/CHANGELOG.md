@@ -2,6 +2,60 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.22] - Hardening de Kill Net + E2E de jammer (2026-02-11)
+### 🛡️ Frontend (jammer)
+- Refactor de `useJamming` para evitar bloqueos por reentrada:
+  - nuevo estado `jamPendingDevices` por IP objetivo,
+  - bloqueo de doble click mientras `start_jamming/stop_jamming` esta en vuelo,
+  - timeout defensivo de comandos Tauri (`5s`) para evitar espera infinita en UI,
+  - bloqueo explicito cuando el target es gateway (`JAMMER BLOQUEADO`).
+- `useNetworkManager` expone `jamPendingDevices` para la UI.
+- `DeviceDetailPanel` ahora desactiva `KILL NET` durante estado pendiente y muestra estado de transicion (`JAMMING...` / `DISCONNECTING`).
+- Propagacion de `jamPendingDevices` en layout principal y modo detached:
+  - `src/App.tsx`
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+- Instrumentacion de debug en `useJamming`:
+  - trazas `uiLogger.info/warn/error` en cada transicion (`toggle`, `pending`, `invoke start/stop`, `ok/error`),
+  - validacion explicita de MAC antes de invocar backend,
+  - payload de `start_jamming` enviado con `gatewayIp` y fallback `gateway_ip`.
+
+### 🦀 Backend (telemetria en terminal)
+- Trazas de runtime para jammer:
+  - `src-tauri/src/api/commands.rs`: log de request + errores de validacion en `start_jamming/stop_jamming`.
+  - `src-tauri/src/api/commands/system.rs`: log de dispatch/accepted al delegar en `JammerService`.
+- Eliminado lock global de `JammerState`:
+  - `JammerState` pasa de `Mutex<JammerService>` a `Arc<JammerService>`,
+  - `start_jamming/stop_jamming` dejan de esperar un mutex externo y delegan directo en el servicio.
+- `JammerService` endurecido contra contencion:
+  - `start_attack_loop` usa `try_lock` (sin bloqueo),
+  - `start_jamming/stop_jamming` vuelven a `lock` bloqueante corto para no perder ordenes reales del operador (fix regresion funcional).
+  - cache interna de interfaz en runtime (refresh cada `15s`) para evitar recalculo continuo de identidad/interfaz.
+  - cadencia de loop ajustada (`350ms`) para reducir presion sobre runtime sin perder efectividad.
+  - eliminado log de contencion por iteracion para evitar ruido y sobrecarga en consola.
+  - refactor a modo actor (`mpsc`):
+    - `start_jamming/stop_jamming` solo encolan comando (retorno inmediato, sin `Mutex` compartido),
+    - el hilo de ataque es el unico owner de `active_targets`,
+    - eliminada via principal de bloqueo por contencion de mapa en comandos Tauri.
+
+### 🧪 Testing
+- Test unitario de `useJamming` ya valida:
+  - bloqueo de gateway,
+  - no reentrada durante operacion pendiente.
+- Nuevo E2E de jammer:
+  - `e2e/app.spec.ts`
+  - caso: start/stop de `Kill Net` en panel `device` detached con target no-gateway (`192.168.1.99`) y verificacion de no congelacion de vista.
+- Ajustados mocks de tests de `App` para incluir `jamPendingDevices`:
+  - `src/__tests__/App.panels.test.tsx`
+  - `src/__tests__/App.integration.test.tsx`
+
+### ✅ Verificacion
+- `npm test -- --run` en verde (`81` tests).
+- `npm run build` en verde.
+- `cargo check` en verde.
+- `npx playwright test e2e/app.spec.ts -g "Kill Net"` en verde.
+- `npm run test:e2e`: persisten 3 fallos previos/flaky en asserts de `NODES: 3` (no relacionados con el flujo de jammer).
+
 ## [v0.8.21] - Refactor de App.tsx: orquestador fino + hooks/modulos por responsabilidad (2026-02-11)
 ### ♻️ Frontend (SOLID / separacion de responsabilidades)
 - `src/App.tsx` se simplifica como orquestador de alto nivel (estado global + composicion), eliminando la logica monolitica de layout/docking/detached.

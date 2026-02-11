@@ -71,6 +71,8 @@ Ubicacion: `src-tauri/src/api` y `src-tauri/src/lib.rs`
 - `api/commands.rs`: fachada de comandos (`#[tauri::command]`) y delegacion a `api/commands/*` por dominio.
   - Importante: los atributos `#[tauri::command]` viven en `api/commands.rs` para que `generate_handler!` encuentre los `__cmd__*`.
 - `api/state.rs`: estados gestionados por Tauri (`TrafficState`, `JammerState`).
+  - `TrafficState`: `Mutex<TrafficService>` (control directo start/stop).
+  - `JammerState`: `Arc<JammerService>` (sin mutex global en ruta de comando).
 - `lib.rs`: wiring de dependencias (infra -> application) y registro de comandos en `invoke_handler`.
 
 ## 4. Flujo Frontend <-> Backend
@@ -82,6 +84,25 @@ Flujo tipico de comando:
 5. Application delega en infrastructure (si procede).
 6. Rust devuelve DTO serializado al frontend.
 7. El hook actualiza estado y la UI renderiza.
+
+### 4.4 Ruta runtime de Jamming (post-incidente 2026-02-11)
+Problema observado:
+- La app podia congelarse al activar `start_jamming` por contencion en estado compartido + trabajo pesado en ruta caliente.
+
+Solucion aplicada:
+1. `start_jamming/stop_jamming` encolan comandos y retornan inmediato.
+2. `JammerService` opera en modo actor (`mpsc`):
+   - un hilo dedicado consume `Start/Stop`,
+   - ese hilo es el unico owner de `active_targets`.
+3. Se evita recalculo continuo de identidad/interfaz:
+   - cache de interfaz en loop,
+   - refresh periodico (15s), no por iteracion.
+
+Reglas para no reintroducir el bug:
+- No poner `Mutex` global alrededor de `JammerService` en comandos Tauri.
+- No recalcular `get_host_identity()` en cada tick del loop de inyeccion.
+- No abrir/cerrar recursos pesados por paquete; reutilizar estado del worker.
+- En ruta de comando, hacer solo validacion + encolado (sin I/O bloqueante).
 
 Flujo tipico de eventos:
 1. Backend emite eventos (`traffic-event`, `audit-log`).

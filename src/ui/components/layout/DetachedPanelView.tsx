@@ -35,6 +35,7 @@ interface DetachedPanelViewProps {
   auditing: boolean;
   startAudit: (ip: string) => void;
   jammedDevices: string[];
+  jamPendingDevices: string[];
   toggleJammer: (ip: string) => void;
   checkRouterSecurity: (ip: string) => void;
   onOpenLabAudit: (d: DeviceDTO) => void;
@@ -59,6 +60,7 @@ export const DetachedPanelView = ({
   auditing,
   startAudit,
   jammedDevices,
+  jamPendingDevices,
   toggleJammer,
   checkRouterSecurity,
   onOpenLabAudit,
@@ -191,6 +193,7 @@ export const DetachedPanelView = ({
                     auditing={auditing}
                     onAudit={() => startAudit(detachedTargetDevice.ip)}
                     isJammed={jammedDevices.includes(detachedTargetDevice.ip)}
+                    isJamPending={jamPendingDevices.includes(detachedTargetDevice.ip)}
                     onToggleJam={() => toggleJammer(detachedTargetDevice.ip)}
                     onRouterAudit={checkRouterSecurity}
                     onOpenLabAudit={onOpenLabAudit}

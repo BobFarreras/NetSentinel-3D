@@ -12,13 +12,14 @@ interface Props {
   auditing: boolean;
   onAudit: () => void;
   isJammed: boolean;
+  isJamPending: boolean;
   onToggleJam: () => void;
   onRouterAudit: (ip: string) => void;
   onOpenLabAudit: (device: DeviceDTO) => void;
 }
 
 export const DeviceDetailPanel: React.FC<Props> = ({
-  device, auditResults, consoleLogs, auditing, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit
+  device, auditResults, consoleLogs, auditing, isJamPending, onAudit, isJammed, onToggleJam, onRouterAudit, onOpenLabAudit
 }) => {
   const state = useDeviceDetailPanelState({ device, onRouterAudit, onOpenLabAudit });
 
@@ -171,17 +172,17 @@ export const DeviceDetailPanel: React.FC<Props> = ({
             🧪 LAB AUDIT
           </button>
 
-          <button onClick={onToggleJam} className="retro-button"
+          <button onClick={onToggleJam} disabled={isJamPending} className="retro-button"
             style={{
               flex: 1,
-              borderColor: isJammed ? '#ff0000' : '#550000',
-              color: isJammed ? '#fff' : '#ff5555',
-              background: isJammed ? '#ff0000' : 'transparent',
-              boxShadow: isJammed ? '0 0 15px #ff0000' : 'none',
+              borderColor: isJammed || isJamPending ? '#ff0000' : '#550000',
+              color: isJammed || isJamPending ? '#fff' : '#ff5555',
+              background: isJammed || isJamPending ? '#ff0000' : 'transparent',
+              boxShadow: isJammed || isJamPending ? '0 0 15px #ff0000' : 'none',
               animation: isJammed ? 'blink 0.5s infinite' : 'none'
             }}
           >
-            {isJammed ? '⚫ DISCONNECTING' : '☠ KILL NET'}
+            {isJamPending ? (isJammed ? '⚫ DISCONNECTING' : '⏳ JAMMING...') : (isJammed ? '⚫ DISCONNECTING' : '☠ KILL NET')}
           </button>
         </div>
 

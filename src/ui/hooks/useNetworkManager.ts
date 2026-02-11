@@ -30,7 +30,7 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   const { routerRisk, setRouterRisk, checkRouterSecurity } = useRouterHacker(addLog, setDevices, setActiveTarget);
 
   // 5. Jammer (Active Countermeasures)
-  const { jammedDevices, toggleJammer } = useJamming(devices, addLog);
+  const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog);
 
   // 6. Bootstrap (identidad + autoscan + autosync de gateway)
   const { identity, deriveCidr } = useBootstrapNetwork({
@@ -53,7 +53,7 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   return {
     // Datos
     devices, selectedDevice, history, intruders,
-    auditResults, routerRisk, jammedDevices,
+    auditResults, routerRisk, jammedDevices, jamPendingDevices,
     consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
     systemLogs,
     identity,

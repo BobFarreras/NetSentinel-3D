@@ -66,6 +66,7 @@ vi.mock("../ui/hooks/useNetworkManager", async () => {
         selectDevice: vi.fn(),
         loadSession: vi.fn(),
         jammedDevices: [],
+        jamPendingDevices: [],
         toggleJammer: vi.fn(),
         checkRouterSecurity: vi.fn(),
         systemLogs: [],

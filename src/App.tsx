@@ -24,6 +24,7 @@ function App() {
     selectDevice,
     loadSession,
     jammedDevices,
+    jamPendingDevices,
     toggleJammer,
     checkRouterSecurity,
     systemLogs,
@@ -99,6 +100,7 @@ function App() {
         auditing={auditing}
         startAudit={startAudit}
         jammedDevices={jammedDevices}
+        jamPendingDevices={jamPendingDevices}
         toggleJammer={toggleJammer}
         checkRouterSecurity={checkRouterSecurity}
         onOpenLabAudit={openLabAuditForDevice}
@@ -151,6 +153,7 @@ function App() {
       auditing={auditing}
       startAudit={startAudit}
       jammedDevices={jammedDevices}
+      jamPendingDevices={jamPendingDevices}
       toggleJammer={toggleJammer}
       checkRouterSecurity={checkRouterSecurity}
       externalAuditTarget={externalAuditTarget}

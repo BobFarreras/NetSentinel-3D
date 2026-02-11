@@ -22,13 +22,18 @@ pub fn stop_traffic_sniffing(state: State<'_, TrafficState>) -> Result<(), Strin
 }
 
 pub fn start_jamming(state: State<'_, JammerState>, ip: String, mac: String, gateway_ip: String) -> Result<(), String> {
-    let service = state.0.lock().map_err(|_| "Failed to lock jammer state".to_string())?;
-    service.start_jamming(ip, mac, gateway_ip);
+    println!(
+        "[system][jammer] start_jamming dispatch ip={} mac={} gateway_ip={}",
+        ip, mac, gateway_ip
+    );
+    state.0.start_jamming(ip, mac, gateway_ip);
+    println!("[system][jammer] start_jamming accepted");
     Ok(())
 }
 
 pub fn stop_jamming(state: State<'_, JammerState>, ip: String) -> Result<(), String> {
-    let service = state.0.lock().map_err(|_| "Failed to lock jammer state".to_string())?;
-    service.stop_jamming(ip);
+    println!("[system][jammer] stop_jamming dispatch ip={}", ip);
+    println!("[system][jammer] stop_jamming accepted ip={}", ip);
+    state.0.stop_jamming(ip);
     Ok(())
 }
