@@ -79,6 +79,35 @@ Flujo tipico de eventos:
 2. Hook frontend escucha con `listen(...)`.
 3. El hook transforma payload y actualiza estado incremental.
 
+## 4.1 Patron Frontend Modular (actual)
+Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:
+- `PanelContenedor`: compone sub-vistas y conecta callbacks.
+- `useXxxPanelState`: concentra estado, efectos y memos del panel.
+- `Subvistas`: renderizan UI pura y reciben props.
+- `styles/tokens`: colores, tipografia y constantes visuales compartidas.
+
+Ejemplos aplicados:
+- Radar:
+  - `src/ui/components/hud/RadarPanel.tsx`
+  - `src/ui/hooks/modules/useRadarPanelState.ts`
+  - `src/ui/components/hud/radar/*`
+- Console Logs:
+  - `src/ui/components/panels/ConsoleLogs.tsx`
+  - `src/ui/hooks/modules/useConsoleLogsState.ts`
+  - `src/ui/components/panels/console_logs/*`
+- Traffic:
+  - `src/ui/components/panels/TrafficPanel.tsx`
+  - `src/ui/hooks/modules/useTrafficPanelState.ts`
+  - `src/ui/components/panels/traffic/*`
+- Device Detail:
+  - `src/ui/components/hud/DeviceDetailPanel.tsx`
+  - `src/ui/hooks/modules/useDeviceDetailPanelState.ts`
+
+Beneficios:
+- Menos acoplamiento entre render y logica.
+- Tests unitarios mas directos por hook.
+- Cambios visuales mas seguros al estar aislados por sub-vista.
+
 ## 5. Mapa de Comandos Actuales
 Fuente de verdad: `src-tauri/src/lib.rs` + `src-tauri/src/api/commands.rs`
 
@@ -148,3 +177,8 @@ Regla:
 - Introducir cambios por capa, no por archivos aislados.
 - Priorizar contratos estables y tests reproducibles.
 - Documentar siempre comandos nuevos y eventos nuevos el mismo dia en que se implementan.
+- En frontend, preferir refactor incremental por panel:
+  - 1) extraer hook de estado,
+  - 2) partir sub-vistas puras,
+  - 3) centralizar tokens visuales,
+  - 4) cubrir hook con tests unitarios.

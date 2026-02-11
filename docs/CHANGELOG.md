@@ -2,6 +2,13 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.2] - Cierre documental del refactor frontend (2026-02-11)
+### 📚 Documentacion
+- `docs/ARCHITECTURE.md` actualizado con el patron frontend modular:
+  - panel contenedor + hook `useXxxPanelState` + sub-vistas puras + tokens visuales.
+- Añadidos ejemplos reales aplicados (Radar, ConsoleLogs, Traffic y DeviceDetail).
+- `AGENTS.md` actualizado con reglas operativas para evitar componentes monoliticos y exigir test unitario por hook de panel.
+
 ## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
 ### ✅ Testing (frontend)
 - Nuevos tests unitarios para hooks extraidos:

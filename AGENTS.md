@@ -104,6 +104,15 @@ Regla:
 3. Documentacion/comentarios:
    - castellano tecnico, directo y accionable
 
+### Patron frontend obligatorio (paneles)
+- Evitar "god components" en `src/ui/components`.
+- Aplicar estructura por panel:
+  - `Panel.tsx`: composicion de UI (sin logica compleja).
+  - `usePanelState.ts`: estado, efectos, memos y handlers.
+  - `panel/*`: subcomponentes de presentacion puros.
+- Cuando haya estilos repetidos, mover a tokens compartidos (`src/ui/styles/hudTokens.ts`) o modulo local de estilos.
+- Todo hook nuevo de panel debe tener test unitario en `src/ui/hooks/modules/__tests__`.
+
 ### Validaciones minimas obligatorias
 ```bash
 npm test -- --run
