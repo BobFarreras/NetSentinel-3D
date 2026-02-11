@@ -88,6 +88,10 @@ Flujo tipico de eventos:
 2. Hook frontend escucha con `listen(...)`.
 3. El hook transforma payload y actualiza estado incremental.
 
+Nota de frontend (estado global):
+- `useNetworkManager` actua como orquestador de alto nivel.
+- El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/useBootstrapNetwork.ts` para reducir acoplamiento.
+
 ## 4.1 Patron Frontend Modular (actual)
 Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:
 - `PanelContenedor`: compone sub-vistas y conecta callbacks.

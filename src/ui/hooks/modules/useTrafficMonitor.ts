@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TrafficPacket } from '../../../shared/dtos/NetworkDTOs';
 import { invokeCommand, listenEvent } from '../../../shared/tauri/bridge';
+import { uiLogger } from '../../utils/logger';
 
 export interface UITrafficPacket extends TrafficPacket {
   _uiId: string;
@@ -39,8 +40,8 @@ export const useTrafficMonitor = () => {
         await invokeCommand('start_traffic_sniffing');
         setIsActive(true);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      uiLogger.error('Error al cambiar estado del monitor de trafico', error);
       setIsActive(false);
     }
   };

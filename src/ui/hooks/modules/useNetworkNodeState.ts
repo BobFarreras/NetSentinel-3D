@@ -46,7 +46,7 @@ export const useNetworkNodeState = ({ isSelected, color, name, onClick }: UseNet
 
   const handleClick = (e: { stopPropagation: () => void }) => {
     if (debug3d) {
-      console.log(`👆 CLICK 3D DETECTAT en: ${name}`);
+      console.log(`👆 Click 3D detectado en: ${name}`);
     }
     e.stopPropagation();
     onClick?.();
@@ -54,7 +54,7 @@ export const useNetworkNodeState = ({ isSelected, color, name, onClick }: UseNet
 
   const handlePointerOver = () => {
     if (debug3d) {
-      console.log(`👀 Ratolí sobre: ${name}`);
+      console.log(`👀 Cursor sobre: ${name}`);
     }
     setHovered(true);
     document.body.style.cursor = "pointer";

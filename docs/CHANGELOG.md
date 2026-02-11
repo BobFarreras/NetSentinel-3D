@@ -2,6 +2,28 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.5] - Hardening documental + limpieza UI + troceo bootstrap manager (2026-02-11)
+### 📚 Documentacion
+- `PRODUCT.md` reescrito para reflejar el estado real de Tauri/Rust:
+  - comandos actuales,
+  - Radar View,
+  - snapshot/keyring,
+  - External Audit.
+- `docs/SECURITY.md` actualizado con reglas de observabilidad segura en frontend.
+- `CONTRIBUTING.md` actualizado con reglas de rendimiento frontend (lazy/chunks) y politica de logs de debug.
+
+### ♻️ Frontend (deuda tecnica)
+- Nuevo logger unificado: `src/ui/utils/logger.ts`.
+- Eliminados `any` en `HistoryPanel` y tipado con `ScanSession`/`DeviceDTO`.
+- Reemplazo de `console.error/warn` dispersos por `uiLogger` en hooks de scanner, trafico y jamming.
+
+### 🧩 Frontend (arquitectura)
+- Nuevo hook `src/ui/hooks/modules/useBootstrapNetwork.ts` para aislar:
+  - carga de identidad,
+  - auto-scan de arranque,
+  - auto-sync de dispositivos desde gateway.
+- `useNetworkManager` queda mas delgado y orientado a composicion.
+
 ## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
 ### ✅ Integracion UI
 - Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:

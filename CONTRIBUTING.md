@@ -24,3 +24,9 @@ Motivo:
 - `cargo check --tests` (si hubo cambios en Rust)
 - `docs/CHANGELOG.md` actualizado (si aplica)
 
+## Reglas de frontend (rendimiento y trazas)
+- Componentes pesados (3D, paneles de auditoria) deben cargarse con `React.lazy` + `Suspense`.
+- En `vite.config.ts`, mantener `manualChunks` para separar `three`, `@react-three/*` y `react`.
+- Evitar logs de debug permanentes en produccion:
+  - usar `uiLogger` (`src/ui/utils/logger.ts`),
+  - si se necesita depuracion 3D, activar `localStorage.setItem("netsentinel.debug3d", "true")` solo en desarrollo.

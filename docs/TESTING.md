@@ -36,6 +36,7 @@ Frontend (unit):
 - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
+- `src/ui/hooks/modules/useBootstrapNetwork.ts` (cubierto de forma indirecta por `useNetworkManager` y tests de scanner/adapters)
 - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
 - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
 - `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
@@ -63,6 +64,11 @@ Desde la raiz del proyecto:
 npm test -- --run
 npm run build
 npm run test:e2e
+```
+
+Chequeo rapido de deuda tecnica frontend:
+```bash
+rg -n "\\bany\\b|console\\." src/ui src/adapters --glob "!**/__tests__/**"
 ```
 
 Backend Rust:

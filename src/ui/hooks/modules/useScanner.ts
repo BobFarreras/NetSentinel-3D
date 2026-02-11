@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { DeviceDTO, ScanSession } from '../../../shared/dtos/NetworkDTOs';
 import { networkAdapter } from '../../../adapters/networkAdapter';
 import { detectIntruders } from '../../../core/logic/intruderDetection';
+import { uiLogger } from '../../utils/logger';
 
 export const useScanner = () => {
   const [devices, setDevices] = useState<DeviceDTO[]>([]);
@@ -55,7 +56,9 @@ export const useScanner = () => {
             setDevices(h[0].devices);
           }
         }
-      } catch (e) { console.error(e); }
+      } catch (error) {
+        uiLogger.error('Error en hidratacion de snapshot/historial', error);
+      }
     };
     load();
     return () => { mounted = false; };
@@ -106,8 +109,8 @@ export const useScanner = () => {
       await networkAdapter.saveLatestSnapshot(merged);
       await networkAdapter.saveScan(merged);
       setHistory(await networkAdapter.getHistory());
-    } catch (e) {
-      console.error("Scan error", e);
+    } catch (error) {
+      uiLogger.error('Error durante scan_network', error);
     } finally {
       setScanning(false);
     }

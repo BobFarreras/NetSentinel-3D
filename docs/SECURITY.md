@@ -196,3 +196,10 @@ Si se detecta comportamiento inseguro:
 - El render en UI debe hacerse como texto plano (sin HTML incrustado).
 - El modulo debe mostrar aviso legal de uso autorizado en su primer uso.
 - Las simulaciones de riesgo (PMKID/IoT/MLO) deben mantenerse en modo inferencia didactica.
+
+## 10. Logging y observabilidad segura en frontend
+- Los logs de debug no deben exponer credenciales ni datos sensibles.
+- Cualquier traza nueva en UI debe pasar por `uiLogger` (`src/ui/utils/logger.ts`) para mantener formato y control.
+- El debug detallado de interacciones 3D solo debe habilitarse en desarrollo y bajo flag local:
+  - `localStorage.setItem("netsentinel.debug3d", "true")`
+- En runtime normal, los logs de hover/click 3D deben permanecer desactivados para evitar ruido operativo.

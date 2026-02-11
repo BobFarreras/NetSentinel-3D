@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { networkAdapter } from '../../../adapters/networkAdapter';
+import { DeviceDTO, ScanSession } from '../../../shared/dtos/NetworkDTOs';
+import { uiLogger } from '../../utils/logger';
 
 interface HistoryPanelProps {
-  onLoadSession: (devices: any[]) => void;
+  onLoadSession: (devices: DeviceDTO[]) => void;
   onClose: () => void;
 }
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClose }) => {
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<ScanSession[]>([]);
 
   useEffect(() => {
-    // 👇 CRIDA REAL A RUST
+    // Consulta real al backend Rust para recuperar sesiones persistidas.
     networkAdapter.getHistory()
-        .then((data: any) => setSessions(data))
-        .catch(err => console.error("History Error:", err));
+        .then((data) => setSessions(data))
+        .catch((error) => uiLogger.error("Error cargando historial", error));
   }, []);
 
   return (
