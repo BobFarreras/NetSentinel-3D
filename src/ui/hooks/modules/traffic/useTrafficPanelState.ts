@@ -1,7 +1,7 @@
-// src/ui/hooks/modules/useTrafficPanelState.ts
+// src/ui/hooks/modules/traffic/useTrafficPanelState.ts
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject, UIEvent } from "react";
-import type { DeviceDTO, TrafficPacket } from "../../../shared/dtos/NetworkDTOs";
+import type { DeviceDTO, TrafficPacket } from "../../../../shared/dtos/NetworkDTOs";
 
 // Interfaz de paquete para capa UI.
 export interface UITrafficPacket extends TrafficPacket {

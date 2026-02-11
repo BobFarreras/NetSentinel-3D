@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
+import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
 
 // Logs estructurados del Radar (frontend).
 // Objetivo: trazabilidad local + una vista tipo "tabla" (similar a LIVE TRAFFIC).

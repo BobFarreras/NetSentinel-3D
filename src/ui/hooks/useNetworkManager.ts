@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
 
 // Importamos los modulos de negocio de UI.
-import { useSocketLogs } from './modules/useSocketLogs';
-import { useScanner } from './modules/useScanner';
-import { usePortAuditor } from './modules/usePortAuditor';
-import { useRouterHacker } from './modules/useRouterHacker';
-import { useJamming } from './modules/useJamming';
-import { useBootstrapNetwork } from './modules/useBootstrapNetwork';
+import { useSocketLogs } from './modules/network/useSocketLogs';
+import { useScanner } from './modules/network/useScanner';
+import { usePortAuditor } from './modules/network/usePortAuditor';
+import { useRouterHacker } from './modules/network/useRouterHacker';
+import { useJamming } from './modules/network/useJamming';
+import { useBootstrapNetwork } from './modules/network/useBootstrapNetwork';
 
 export const useNetworkManager = () => {
   // 1. Logs (Base)

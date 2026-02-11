@@ -1,6 +1,6 @@
-// src/ui/hooks/modules/useDeviceDetailPanelState.ts
+// src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts
 import { useMemo } from "react";
-import type { DeviceDTO } from "../../../shared/dtos/NetworkDTOs";
+import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
 
 type UseDeviceDetailPanelStateArgs = {
   device: DeviceDTO;

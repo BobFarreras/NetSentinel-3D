@@ -1,8 +1,8 @@
-// src/ui/hooks/modules/useRadarPanelState.ts
+// src/ui/hooks/modules/radar/useRadarPanelState.ts
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
-import type { BandFilter, RiskFilter } from "../../components/hud/radar/radarTypes";
-import { clamp, hashToAngleDeg, inferBandLabel } from "../../components/hud/radar/radarUtils";
+import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
+import type { BandFilter, RiskFilter } from "../../../components/hud/radar/radarTypes";
+import { clamp, hashToAngleDeg, inferBandLabel } from "../../../components/hud/radar/radarUtils";
 import { useWifiRadar } from "./useWifiRadar";
 import { useWifiRadarSelection } from "./useWifiRadarSelection";
 

@@ -6,7 +6,7 @@ import { DeviceDTO, HostIdentity } from '../../../shared/dtos/NetworkDTOs';
 import * as THREE from 'three';
 import { NodeLabel } from './NodeLabel';
 import { SCENE_TOKENS } from "./sceneTokens";
-import { useNetworkSceneState } from "../../hooks/modules/useNetworkSceneState";
+import { useNetworkSceneState } from "../../hooks/modules/scene3d/useNetworkSceneState";
 
 interface NetworkSceneProps {
   devices?: DeviceDTO[];

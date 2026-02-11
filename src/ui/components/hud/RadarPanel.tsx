@@ -1,5 +1,5 @@
 import React from "react";
-import { useRadarPanelState } from "../../hooks/modules/useRadarPanelState";
+import { useRadarPanelState } from "../../hooks/modules/radar/useRadarPanelState";
 import { HUD_TYPO } from "../../styles/hudTokens";
 import { RadarHeader } from "./radar/RadarHeader";
 import { RadarIntelPanel } from "./radar/RadarIntelPanel";

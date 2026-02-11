@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { DeviceDTO } from '../../../shared/dtos/NetworkDTOs';
-import { invokeCommand } from '../../../shared/tauri/bridge';
-import { uiLogger } from '../../utils/logger';
+import { DeviceDTO } from '../../../../shared/dtos/NetworkDTOs';
+import { invokeCommand } from '../../../../shared/tauri/bridge';
+import { uiLogger } from '../../../utils/logger';
 
 // Define contrato explicito del logger de nodo.
 export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: string) => void) => {

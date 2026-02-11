@@ -90,7 +90,9 @@ Flujo tipico de eventos:
 
 Nota de frontend (estado global):
 - `useNetworkManager` actua como orquestador de alto nivel.
-- El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/useBootstrapNetwork.ts` para reducir acoplamiento.
+- El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/network/useBootstrapNetwork.ts` para reducir acoplamiento.
+- Los hooks modulares se agrupan por dominio en `src/ui/hooks/modules/*`:
+  - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
 
 ## 4.1 Patron Frontend Modular (actual)
 Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:

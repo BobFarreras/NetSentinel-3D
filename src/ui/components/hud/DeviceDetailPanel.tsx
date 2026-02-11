@@ -1,6 +1,6 @@
 import React from "react";
 import { DeviceDTO, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useDeviceDetailPanelState } from "../../hooks/modules/useDeviceDetailPanelState";
+import { useDeviceDetailPanelState } from "../../hooks/modules/ui/useDeviceDetailPanelState";
 import { HUD_COLORS, HUD_TYPO } from "../../styles/hudTokens";
 import { ConsoleDisplay } from "./details/ConsoleDisplay";
 import { PortResults } from "./details/PortResults";

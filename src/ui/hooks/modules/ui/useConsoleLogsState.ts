@@ -1,8 +1,8 @@
-// src/ui/hooks/modules/useConsoleLogsState.ts
+// src/ui/hooks/modules/ui/useConsoleLogsState.ts
 import { useState } from "react";
-import { useRadarLogs } from "./useRadarLogs";
-import { useTrafficMonitor } from "./useTrafficMonitor";
-import { useWifiRadarSelection } from "./useWifiRadarSelection";
+import { useRadarLogs } from "../radar/useRadarLogs";
+import { useTrafficMonitor } from "../traffic/useTrafficMonitor";
+import { useWifiRadarSelection } from "../radar/useWifiRadarSelection";
 
 export type ConsoleTab = "SYSTEM" | "TRAFFIC" | "RADAR";
 

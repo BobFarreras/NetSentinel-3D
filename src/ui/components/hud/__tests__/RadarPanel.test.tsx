@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-vi.mock("../../../hooks/modules/useWifiRadar", () => ({
+vi.mock("../../../hooks/modules/radar/useWifiRadar", () => ({
   useWifiRadar: () => ({
     scanning: false,
     error: null,

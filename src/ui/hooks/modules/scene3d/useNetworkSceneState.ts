@@ -1,7 +1,7 @@
-// src/ui/hooks/modules/useNetworkSceneState.ts
+// src/ui/hooks/modules/scene3d/useNetworkSceneState.ts
 import { useEffect, useMemo, useState } from "react";
-import type { DeviceDTO, HostIdentity } from "../../../shared/dtos/NetworkDTOs";
-import { applyDeviceIntel, classifyDeviceIntel } from "../../../core/logic/deviceIntel";
+import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
+import { applyDeviceIntel, classifyDeviceIntel } from "../../../../core/logic/deviceIntel";
 
 type UseNetworkSceneStateArgs = {
   devices: DeviceDTO[];

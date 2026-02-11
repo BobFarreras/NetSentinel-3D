@@ -1,4 +1,4 @@
-// src/ui/hooks/modules/useNetworkNodeState.ts
+// src/ui/hooks/modules/scene3d/useNetworkNodeState.ts
 import { useEffect, useMemo, useState } from "react";
 
 type UseNetworkNodeStateArgs = {

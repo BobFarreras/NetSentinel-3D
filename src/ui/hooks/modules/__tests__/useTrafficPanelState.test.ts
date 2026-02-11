@@ -32,7 +32,7 @@ const packets = [
 
 describe("useTrafficPanelState", () => {
   it("debe filtrar por JAMMED", async () => {
-    const { useTrafficPanelState } = await import("../useTrafficPanelState");
+    const { useTrafficPanelState } = await import("../traffic/useTrafficPanelState");
     const { result } = renderHook(() =>
       useTrafficPanelState({
         packets: packets as any,
@@ -50,7 +50,7 @@ describe("useTrafficPanelState", () => {
   });
 
   it("debe activar TARGET automaticamente si hay selectedDevice", async () => {
-    const { useTrafficPanelState } = await import("../useTrafficPanelState");
+    const { useTrafficPanelState } = await import("../traffic/useTrafficPanelState");
     const { result } = renderHook(() =>
       useTrafficPanelState({
         packets: packets as any,
@@ -66,7 +66,7 @@ describe("useTrafficPanelState", () => {
   });
 
   it("debe resolver nombres por IP y casos especiales", async () => {
-    const { useTrafficPanelState } = await import("../useTrafficPanelState");
+    const { useTrafficPanelState } = await import("../traffic/useTrafficPanelState");
     const { result } = renderHook(() =>
       useTrafficPanelState({
         packets: [] as any,

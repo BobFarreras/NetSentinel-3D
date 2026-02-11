@@ -1,6 +1,6 @@
 // src/ui/components/panels/console_logs/ConsoleLogsHeader.tsx
 import React from "react";
-import type { ConsoleTab } from "../../../hooks/modules/useConsoleLogsState";
+import type { ConsoleTab } from "../../../hooks/modules/ui/useConsoleLogsState";
 import { CONSOLE_COLORS, formatSpeed } from "./consoleLogsStyles";
 
 type ConsoleLogsHeaderProps = {

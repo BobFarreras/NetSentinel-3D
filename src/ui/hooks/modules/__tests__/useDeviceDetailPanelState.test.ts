@@ -13,7 +13,7 @@ describe("useDeviceDetailPanelState", () => {
       signal_strength: -55,
     };
 
-    const { useDeviceDetailPanelState } = await import("../useDeviceDetailPanelState");
+    const { useDeviceDetailPanelState } = await import("../ui/useDeviceDetailPanelState");
     const { result } = renderHook(() =>
       useDeviceDetailPanelState({
         device: device as any,
@@ -38,7 +38,7 @@ describe("useDeviceDetailPanelState", () => {
       vendor: "Router",
     };
 
-    const { useDeviceDetailPanelState } = await import("../useDeviceDetailPanelState");
+    const { useDeviceDetailPanelState } = await import("../ui/useDeviceDetailPanelState");
     const { result } = renderHook(() =>
       useDeviceDetailPanelState({
         device: device as any,

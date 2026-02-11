@@ -1,9 +1,9 @@
-// src/ui/hooks/modules/useBootstrapNetwork.ts
+// src/ui/hooks/modules/network/useBootstrapNetwork.ts
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import { DeviceDTO, HostIdentity } from "../../../shared/dtos/NetworkDTOs";
-import { networkAdapter } from "../../../adapters/networkAdapter";
-import { auditAdapter } from "../../../adapters/auditAdapter";
-import { uiLogger } from "../../utils/logger";
+import { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
+import { networkAdapter } from "../../../../adapters/networkAdapter";
+import { auditAdapter } from "../../../../adapters/auditAdapter";
+import { uiLogger } from "../../../utils/logger";
 
 interface UseBootstrapNetworkParams {
   startScan: (range?: string) => Promise<void>;

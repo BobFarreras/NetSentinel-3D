@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { TrafficPacket } from '../../../shared/dtos/NetworkDTOs';
-import { invokeCommand, listenEvent } from '../../../shared/tauri/bridge';
-import { uiLogger } from '../../utils/logger';
+import { TrafficPacket } from '../../../../shared/dtos/NetworkDTOs';
+import { invokeCommand, listenEvent } from '../../../../shared/tauri/bridge';
+import { uiLogger } from '../../../utils/logger';
 
 export interface UITrafficPacket extends TrafficPacket {
   _uiId: string;
