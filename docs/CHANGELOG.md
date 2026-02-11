@@ -2,6 +2,21 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.7.7] - Refactor ConsoleLogs: separacion por vistas y estado (2026-02-11)
+### ♻️ Frontend (ConsoleLogs)
+- Extraida la logica de estado/acciones a `src/ui/hooks/modules/useConsoleLogsState.ts`.
+- `src/ui/components/panels/ConsoleLogs.tsx` pasa a ser un contenedor de composicion.
+- Nuevo troceo por responsabilidad:
+  - `src/ui/components/panels/console_logs/ConsoleLogsHeader.tsx`
+  - `src/ui/components/panels/console_logs/SystemLogsView.tsx`
+  - `src/ui/components/panels/console_logs/RadarLogsView.tsx`
+  - `src/ui/components/panels/console_logs/consoleLogsStyles.ts`
+- Se mantiene el comportamiento actual de pestañas, limpieza contextual y seleccion de nodo desde `RADAR LOGS`.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.7.6] - Refactor RadarPanel: separacion UI/logica (2026-02-11)
 ### ♻️ Frontend (HUD Radar)
 - Extraida la logica de estado/efectos/memos a `src/ui/hooks/modules/useRadarPanelState.ts`.
