@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 // Evitamos dependencias de runtime (Tauri/eventos) en tests de UI.
-vi.mock("../../../hooks/modules/useTrafficMonitor", () => ({
+vi.mock("../../../hooks/modules/traffic/useTrafficMonitor", () => ({
   useTrafficMonitor: () => ({
     isActive: false,
     speed: 0,
@@ -13,7 +13,7 @@ vi.mock("../../../hooks/modules/useTrafficMonitor", () => ({
   }),
 }));
 
-import { addRadarScanLog, clearRadarLogs } from "../../../hooks/modules/useRadarLogs";
+import { addRadarScanLog, clearRadarLogs } from "../../../hooks/modules/radar/useRadarLogs";
 import { ConsoleLogs } from "../ConsoleLogs";
 
 describe("ConsoleLogs", () => {

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import type { WifiNetworkDTO } from "../../../shared/dtos/NetworkDTOs";
-import { wifiAdapter } from "../../../adapters/wifiAdapter";
+import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { wifiAdapter } from "../../../../adapters/wifiAdapter";
 import { addRadarErrorLog, addRadarNetworkLog, addRadarScanLog } from "./useRadarLogs";
 
 export const useWifiRadar = () => {

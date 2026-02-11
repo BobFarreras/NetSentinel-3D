@@ -1,13 +1,29 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { TopBar } from './ui/components/layout/TopBar';
-import { NetworkScene } from './ui/components/3d/NetworkScene';
-import { DeviceDetailPanel } from './ui/components/hud/DeviceDetailPanel';
 import { HistoryPanel } from './ui/components/hud/HistoryPanel';
-import { RadarPanel } from './ui/components/hud/RadarPanel';
-import { ExternalAuditPanel } from './ui/components/hud/ExternalAuditPanel';
 import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
 import { useNetworkManager } from './ui/hooks/useNetworkManager';
 import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
+
+const NetworkScene = lazy(async () => {
+  const mod = await import('./ui/components/3d/NetworkScene');
+  return { default: mod.NetworkScene };
+});
+
+const DeviceDetailPanel = lazy(async () => {
+  const mod = await import('./ui/components/hud/DeviceDetailPanel');
+  return { default: mod.DeviceDetailPanel };
+});
+
+const RadarPanel = lazy(async () => {
+  const mod = await import('./ui/components/hud/RadarPanel');
+  return { default: mod.RadarPanel };
+});
+
+const ExternalAuditPanel = lazy(async () => {
+  const mod = await import('./ui/components/hud/ExternalAuditPanel');
+  return { default: mod.ExternalAuditPanel };
+});
 
 function App() {
   const {
@@ -161,34 +177,38 @@ function App() {
           )}
 
           {showExternalAudit && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 20,
-                zIndex: 60,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                pointerEvents: 'none',
-              }}
-            >
-              <div style={{ pointerEvents: 'auto' }}>
-                <ExternalAuditPanel
-                  onClose={() => setShowExternalAudit(false)}
-                  targetDevice={externalAuditTarget}
-                  identity={identity}
-                  defaultScenarioId={externalAuditScenarioId}
-                  autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
-                />
+            <Suspense fallback={null}>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 20,
+                  zIndex: 60,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  pointerEvents: 'none',
+                }}
+              >
+                <div style={{ pointerEvents: 'auto' }}>
+                  <ExternalAuditPanel
+                    onClose={() => setShowExternalAudit(false)}
+                    targetDevice={externalAuditTarget}
+                    identity={identity}
+                    defaultScenarioId={externalAuditScenarioId}
+                    autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
+                  />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           <div style={{ position: 'absolute', inset: 0, display: 'flex', minHeight: 0 }}>
             {showRadar && (
               <>
                 <div style={{ width: `${radarWidth}px`, minWidth: 360, maxWidth: 820, minHeight: 0, background: '#000', overflow: 'hidden', zIndex: 12 }}>
-                  <RadarPanel onClose={() => setShowRadar(false)} />
+                  <Suspense fallback={null}>
+                    <RadarPanel onClose={() => setShowRadar(false)} />
+                  </Suspense>
                 </div>
                 <div
                   onMouseDown={startResizingRadar}
@@ -206,13 +226,15 @@ function App() {
             )}
 
             <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
-              <NetworkScene
-                devices={devices}
-                onDeviceSelect={selectDevice}
-                selectedIp={selectedDevice?.ip}
-                intruders={intruders}
-                identity={identity}
-              />
+              <Suspense fallback={null}>
+                <NetworkScene
+                  devices={devices}
+                  onDeviceSelect={selectDevice}
+                  selectedIp={selectedDevice?.ip}
+                  intruders={intruders}
+                  identity={identity}
+                />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -290,21 +312,23 @@ function App() {
 
         {selectedDevice ? (
           <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <DeviceDetailPanel
-              device={selectedDevice}
-              auditResults={auditResults}
-              consoleLogs={consoleLogs}
-              auditing={auditing}
-              onAudit={() => startAudit(selectedDevice.ip)}
-              isJammed={jammedDevices.includes(selectedDevice.ip)}
-              onToggleJam={() => toggleJammer(selectedDevice.ip)}
-              onRouterAudit={checkRouterSecurity}
-              onOpenLabAudit={(d) => {
-                setExternalAuditTarget(d);
-                setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
-                setShowExternalAudit(true);
-              }}
-            />
+            <Suspense fallback={null}>
+              <DeviceDetailPanel
+                device={selectedDevice}
+                auditResults={auditResults}
+                consoleLogs={consoleLogs}
+                auditing={auditing}
+                onAudit={() => startAudit(selectedDevice.ip)}
+                isJammed={jammedDevices.includes(selectedDevice.ip)}
+                onToggleJam={() => toggleJammer(selectedDevice.ip)}
+                onRouterAudit={checkRouterSecurity}
+                onOpenLabAudit={(d) => {
+                  setExternalAuditTarget(d);
+                  setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
+                  setShowExternalAudit(true);
+                }}
+              />
+            </Suspense>
           </div>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#004400', textAlign: 'center', padding: 40 }}>

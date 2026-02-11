@@ -132,7 +132,7 @@ Crear carpeta:
 - `RadarLegalModal.tsx` (aviso legal)
 
 Y mover logica a hooks:
-- `src/ui/hooks/modules/useWifiRadar.ts` (ya existe): mantener como “fuente de datos”.
+- `src/ui/hooks/modules/radar/useWifiRadar.ts` (ya existe): mantener como “fuente de datos”.
 - `useRadarFilters.ts` (nuevo): filtros puros (testeables).
 
 **Criterios de aceptacion**
@@ -145,8 +145,8 @@ Y mover logica a hooks:
 ### P1 - Centralizar helpers de dispositivos (evitar duplicacion)
 **Problema**
 Validacion/merge de `mac/vendor/name` repetido en:
-- `src/ui/hooks/modules/useScanner.ts`
-- `src/ui/hooks/modules/useRouterHacker.ts`
+- `src/ui/hooks/modules/network/useScanner.ts`
+- `src/ui/hooks/modules/network/useRouterHacker.ts`
 
 **Refactor propuesto**
 Crear util puro:

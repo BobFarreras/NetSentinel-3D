@@ -1,17 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 
-// 1. COMPONENT TYPEWRITER (Ara accepta mode "instantani")
-const TypewriterLine = ({ text, onComplete, isActive, instant }: { text: string; onComplete?: () => void, isActive: boolean, instant?: boolean }) => {
-  const [displayedText, setDisplayedText] = useState(instant ? text : '');
+// 1. COMPONENT TYPEWRITER
+const TypewriterLine = ({ text, onComplete, isActive }: { text: string; onComplete?: () => void; isActive: boolean }) => {
+  const [displayedText, setDisplayedText] = useState("");
   
   useEffect(() => {
-    // Si és mode instantani (històric), no fem animació
-    if (instant) {
-      setDisplayedText(text);
-      if (onComplete) onComplete();
-      return;
-    }
-
     // Animació normal
     if (text.length > 80) { // Si és molt llarg, pinta-ho de cop
       setDisplayedText(text);
@@ -30,12 +24,12 @@ const TypewriterLine = ({ text, onComplete, isActive, instant }: { text: string;
     }, 15); // 15ms per caràcter
 
     return () => clearInterval(intervalId);
-  }, [text, instant]); // Afegim 'instant' a dependències
+  }, [text, onComplete]);
 
   return (
     <span>
       {displayedText}
-      {isActive && !instant && <span className="cursor-block">█</span>}
+      {isActive && <span className="cursor-block">█</span>}
     </span>
   );
 };
@@ -97,19 +91,19 @@ export const ConsoleDisplay: React.FC<ConsoleProps> = ({ logs, isBusy = false })
       <style>{`
         .cyber-console::-webkit-scrollbar { width: 8px; }
         .cyber-console::-webkit-scrollbar-track { background: #001100; border-left: 1px solid #003300; }
-        .cyber-console::-webkit-scrollbar-thumb { background: #004400; border: 1px solid #0f0; }
-        .cyber-console::-webkit-scrollbar-thumb:hover { background: #0f0; cursor: pointer; }
+        .cyber-console::-webkit-scrollbar-thumb { background: #004400; border: 1px solid ${HUD_COLORS.accentGreen}; }
+        .cyber-console::-webkit-scrollbar-thumb:hover { background: ${HUD_COLORS.accentGreen}; cursor: pointer; }
         @keyframes blink-block { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .cursor-block { display: inline-block; width: 8px; height: 14px; background-color: #0f0; animation: blink-block 1s step-end infinite; vertical-align: middle; margin-left: 2px; box-shadow: 0 0 5px #0f0; }
+        .cursor-block { display: inline-block; width: 8px; height: 14px; background-color: ${HUD_COLORS.accentGreen}; animation: blink-block 1s step-end infinite; vertical-align: middle; margin-left: 2px; box-shadow: 0 0 5px ${HUD_COLORS.accentGreen}; }
       `}</style>
 
       <div 
         className="cyber-console"
         style={{
-          background: '#050505', border: '1px solid #333', borderTop: '2px solid #0f0',
+          background: HUD_COLORS.bgPanel, border: '1px solid #333', borderTop: `2px solid ${HUD_COLORS.accentGreen}`,
           boxShadow: 'inset 0 0 20px #000', height: '200px', overflowY: 'auto', 
-          padding: '15px', fontSize: '0.85rem', color: '#0f0', marginTop: '15px', 
-          fontFamily: '"Courier New", Courier, monospace', display: 'flex', flexDirection: 'column',
+          padding: '15px', fontSize: '0.85rem', color: HUD_COLORS.accentGreen, marginTop: '15px', 
+          fontFamily: HUD_TYPO.mono, display: 'flex', flexDirection: 'column',
           textShadow: '0 0 4px rgba(0, 255, 0, 0.6)'
         }}
       >

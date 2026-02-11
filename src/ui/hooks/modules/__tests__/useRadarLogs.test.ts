@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
-import { addRadarErrorLog, addRadarNetworkLog, addRadarScanLog, clearRadarLogs, useRadarLogs } from "../useRadarLogs";
+import { addRadarErrorLog, addRadarNetworkLog, addRadarScanLog, clearRadarLogs, useRadarLogs } from "../radar/useRadarLogs";
 
 describe("useRadarLogs", () => {
   it("debe añadir y limpiar logs", () => {

@@ -29,6 +29,15 @@ Principio base:
 \- /infrastructure          # Implementaciones concretas (red, fs, auditoria)
 ```
 
+### 2.1 Estructura frontend por feature (actual)
+- `src/ui/components/hud/*`: paneles HUD (Radar, DeviceDetail, History, ExternalAudit).
+- `src/ui/components/panels/*`: consola/logs/trafico.
+- `src/ui/components/3d/*`: escena de red (nodos, labels, camara, controles).
+- `src/ui/hooks/modules/*`: hooks de estado por modulo/panel/escena.
+
+Regla practica:
+- Si un componente supera responsabilidad de presentacion, extraer hook `useXxxState` y sub-vistas.
+
 ## 3. Capas del Backend (Rust)
 ### 3.1 Domain
 Ubicacion: `src-tauri/src/domain`
@@ -78,6 +87,63 @@ Flujo tipico de eventos:
 1. Backend emite eventos (`traffic-event`, `audit-log`).
 2. Hook frontend escucha con `listen(...)`.
 3. El hook transforma payload y actualiza estado incremental.
+
+Nota de frontend (estado global):
+- `useNetworkManager` actua como orquestador de alto nivel.
+- El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/network/useBootstrapNetwork.ts` para reducir acoplamiento.
+- Los hooks modulares se agrupan por dominio en `src/ui/hooks/modules/*`:
+  - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
+
+## 4.1 Patron Frontend Modular (actual)
+Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:
+- `PanelContenedor`: compone sub-vistas y conecta callbacks.
+- `useXxxPanelState`: concentra estado, efectos y memos del panel.
+- `Subvistas`: renderizan UI pura y reciben props.
+- `styles/tokens`: colores, tipografia y constantes visuales compartidas.
+
+Ejemplos aplicados:
+- Radar:
+  - `src/ui/components/hud/RadarPanel.tsx`
+  - `src/ui/hooks/modules/radar/useRadarPanelState.ts`
+  - `src/ui/components/hud/radar/*`
+- Console Logs:
+  - `src/ui/components/panels/ConsoleLogs.tsx`
+  - `src/ui/hooks/modules/ui/useConsoleLogsState.ts`
+  - `src/ui/components/panels/console_logs/*`
+- Traffic:
+  - `src/ui/components/panels/TrafficPanel.tsx`
+  - `src/ui/hooks/modules/traffic/useTrafficPanelState.ts`
+  - `src/ui/components/panels/traffic/*`
+- Device Detail:
+  - `src/ui/components/hud/DeviceDetailPanel.tsx`
+  - `src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts`
+- Escena 3D:
+  - `src/ui/components/3d/NetworkScene.tsx`
+  - `src/ui/components/3d/NetworkNode.tsx`
+  - `src/ui/components/3d/NodeLabel.tsx`
+  - `src/ui/hooks/modules/scene3d/useNetworkSceneState.ts`
+  - `src/ui/hooks/modules/scene3d/useNetworkNodeState.ts`
+  - `src/ui/hooks/modules/scene3d/useNodeLabelState.ts`
+
+Beneficios:
+- Menos acoplamiento entre render y logica.
+- Tests unitarios mas directos por hook.
+- Cambios visuales mas seguros al estar aislados por sub-vista.
+
+Diagrama rapido (UI 3D + HUD):
+```text
+NetworkScene (composicion)
+  -> useNetworkSceneState (estado/derivadas)
+  -> NetworkNode (presentacion nodo)
+      -> useNetworkNodeState (hover/click/animacion)
+  -> NodeLabel (presentacion label)
+      -> useNodeLabelState (paleta/confianza)
+
+Seleccion de nodo (onDeviceSelect)
+  -> useNetworkManager.selectDevice
+  -> DeviceDetailPanel (detalle)
+  -> ConsoleLogs (filtro por target / trazabilidad)
+```
 
 ## 5. Mapa de Comandos Actuales
 Fuente de verdad: `src-tauri/src/lib.rs` + `src-tauri/src/api/commands.rs`
@@ -148,3 +214,8 @@ Regla:
 - Introducir cambios por capa, no por archivos aislados.
 - Priorizar contratos estables y tests reproducibles.
 - Documentar siempre comandos nuevos y eventos nuevos el mismo dia en que se implementan.
+- En frontend, preferir refactor incremental por panel:
+  - 1) extraer hook de estado,
+  - 2) partir sub-vistas puras,
+  - 3) centralizar tokens visuales,
+  - 4) cubrir hook con tests unitarios.

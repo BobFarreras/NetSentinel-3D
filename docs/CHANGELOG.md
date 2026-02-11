@@ -2,6 +2,217 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.8] - Cierre de refactor: docs alineadas y barrido de deuda residual (2026-02-11)
+### 📚 Documentacion
+- Actualizadas rutas de hooks en:
+  - `docs/ARCHITECTURE.md`
+  - `docs/EXTERNAL_AUDIT.md`
+  - `docs/TESTING.md`
+  - `docs/RADAR_VIEW.md`
+  - `docs/REFACTOR_AUDIT.md`
+- `AGENTS.md` actualizado con la estructura oficial de hooks por dominio en `src/ui/hooks/modules/*`.
+
+### ♻️ Deuda tecnica
+- Eliminado `console.log` de `src/core/logic/intruderDetection.ts`.
+- `useNetworkNodeState` migra trazas de debug a `uiLogger` para mantener politica unificada de logging UI.
+
+## [v0.8.7] - Migracion fisica de hooks por dominio (2026-02-11)
+### ♻️ Frontend (estructura)
+- Reorganizados hooks de `src/ui/hooks/modules` en subcarpetas:
+  - `network/`
+  - `radar/`
+  - `traffic/`
+  - `ui/`
+  - `scene3d/`
+  - `shared/`
+- Actualizados imports en componentes, hooks y tests para nuevas rutas.
+
+### ✅ Verificacion
+- `npm test -- --run` en verde.
+- `npm run build` en verde.
+
+## [v0.8.6] - Refactor scanner/router con utilidades compartidas (2026-02-11)
+### ♻️ Frontend (hooks)
+- Extraidas reglas de fusion y validacion de intel de dispositivos a:
+  - `src/ui/hooks/modules/shared/deviceMerge.ts`
+- `useScanner` ahora usa `mergeScanInventory` para mantener inventario estable sin duplicar logica.
+- `useRouterHacker` ahora usa `mergeRouterInventory` para fusion de nodos importados desde gateway.
+
+### 🧪 Testing
+- Nuevo test unitario:
+  - `src/ui/hooks/modules/__tests__/deviceMerge.test.ts`
+- Mantiene cobertura de regresion de `useScanner` y `useRouterHaker`.
+
+## [v0.8.5] - Hardening documental + limpieza UI + troceo bootstrap manager (2026-02-11)
+### 📚 Documentacion
+- `PRODUCT.md` reescrito para reflejar el estado real de Tauri/Rust:
+  - comandos actuales,
+  - Radar View,
+  - snapshot/keyring,
+  - External Audit.
+- `docs/SECURITY.md` actualizado con reglas de observabilidad segura en frontend.
+- `CONTRIBUTING.md` actualizado con reglas de rendimiento frontend (lazy/chunks) y politica de logs de debug.
+
+### ♻️ Frontend (deuda tecnica)
+- Nuevo logger unificado: `src/ui/utils/logger.ts`.
+- Eliminados `any` en `HistoryPanel` y tipado con `ScanSession`/`DeviceDTO`.
+- Reemplazo de `console.error/warn` dispersos por `uiLogger` en hooks de scanner, trafico y jamming.
+
+### 🧩 Frontend (arquitectura)
+- Nuevo hook `src/ui/hooks/modules/useBootstrapNetwork.ts` para aislar:
+  - carga de identidad,
+  - auto-scan de arranque,
+  - auto-sync de dispositivos desde gateway.
+- `useNetworkManager` queda mas delgado y orientado a composicion.
+
+## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
+### ✅ Integracion UI
+- Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:
+  - seleccion en `NetworkScene` -> sincronizacion en `DeviceDetailPanel` y `ConsoleLogs`.
+
+### ⚡ Performance (bundle inicial)
+- `App.tsx` actualizado con `React.lazy` + `Suspense` para cargar bajo demanda:
+  - `NetworkScene`
+  - `RadarPanel`
+  - `ExternalAuditPanel`
+  - `DeviceDetailPanel`
+
+### 🧪 Debug 3D
+- `useNetworkNodeState` ya no escribe logs de hover/click por defecto.
+- Activacion de logs solo en desarrollo y con flag:
+  - `localStorage.setItem("netsentinel.debug3d", "true")`
+
+### 📚 Documentacion
+- `docs/ARCHITECTURE.md`: añadido diagrama rapido del flujo 3D -> manager -> HUD.
+- `README.md`: añadida seccion de testing por capas (unit/integracion frontend).
+
+## [v0.8.3] - Refactor capa 3D + cobertura de hooks (2026-02-11)
+### ♻️ Frontend 3D (Scene)
+- Extraida logica de escena a `src/ui/hooks/modules/useNetworkSceneState.ts`:
+  - persistencia de `showLabels`,
+  - enriquecimiento de dispositivos,
+  - deteccion de nodo central (gateway),
+  - calculo de color por nodo.
+- Extraida logica de nodo a `src/ui/hooks/modules/useNetworkNodeState.ts`:
+  - hover/cursor/click,
+  - estado visual (escala y emisivo).
+- Extraida logica de label a `src/ui/hooks/modules/useNodeLabelState.ts`:
+  - paleta por tipo de dispositivo,
+  - normalizacion de confianza (LOW/MED/HIGH).
+- `NetworkScene`, `NetworkNode` y `NodeLabel` quedan mas orientados a presentacion.
+
+### 🎨 Tokens / estilo
+- Nuevo modulo `src/ui/components/3d/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
+
+### ✅ Testing
+- Nuevos tests:
+  - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
+
+### 📚 Documentacion
+- `README.md`: añadido resumen del patron frontend modular.
+- `docs/ARCHITECTURE.md`: documentada estructura frontend por feature y capa 3D.
+- `AGENTS.md`: regla explicita para aplicar patron modular tambien en componentes 3D.
+
+## [v0.8.2] - Cierre documental del refactor frontend (2026-02-11)
+### 📚 Documentacion
+- `docs/ARCHITECTURE.md` actualizado con el patron frontend modular:
+  - panel contenedor + hook `useXxxPanelState` + sub-vistas puras + tokens visuales.
+- Añadidos ejemplos reales aplicados (Radar, ConsoleLogs, Traffic y DeviceDetail).
+- `AGENTS.md` actualizado con reglas operativas para evitar componentes monoliticos y exigir test unitario por hook de panel.
+
+## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
+### ✅ Testing (frontend)
+- Nuevos tests unitarios para hooks extraidos:
+  - `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
+  - `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
+- Cobertura añadida en:
+  - cambios de pestaña y limpieza contextual en `ConsoleLogs`,
+  - filtros/paginacion/resolucion de nombres en `Traffic`,
+  - derivadas y handlers de acciones en `DeviceDetail`.
+
+### ✅ Validaciones
+- `npm test -- --run` (20 files / 54 tests en verde)
+- `npm run build` (ok)
+
+## [v0.8.0] - Tokens visuales HUD compartidos (2026-02-11)
+### 🎨 Frontend (estilos)
+- Añadido `src/ui/styles/hudTokens.ts` como fuente compartida de:
+  - tipografia mono (`HUD_TYPO.mono`)
+  - paleta base HUD (`HUD_COLORS`)
+- Integracion inicial de tokens en modulos refactorizados:
+  - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
+  - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
+  - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
+  - `DeviceDetail` (tipografia/colores clave en `src/ui/components/hud/DeviceDetailPanel.tsx`)
+- Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.9] - Refactor DeviceDetailPanel: acciones y derivadas en hook (2026-02-11)
+### ♻️ Frontend (Device Detail)
+- Extraida logica de derivadas/acciones de `DeviceDetailPanel` a `src/ui/hooks/modules/useDeviceDetailPanelState.ts`.
+- El panel mantiene su UI y contratos actuales, pero delega:
+  - nombre resuelto (`name/hostname/Unknown`),
+  - MAC normalizada,
+  - visibilidad de bloque WiFi,
+  - color de señal,
+  - handlers de `LAB AUDIT` y `AUDIT GATEWAY SECURITY`.
+- Objetivo: reducir responsabilidad del componente y facilitar pruebas/escalado.
+
+### ✅ Validaciones
+- `npm test -- --run src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx` (ok)
+- `npm run build` (ok)
+
+## [v0.7.8] - Refactor TrafficPanel: estado y vistas separadas (2026-02-11)
+### ♻️ Frontend (Traffic)
+- Extraida la logica de filtros, paginacion incremental y resolucion de nombres a `src/ui/hooks/modules/useTrafficPanelState.ts`.
+- `src/ui/components/panels/TrafficPanel.tsx` queda como ensamblador de UI.
+- Troceo de UI en componentes:
+  - `src/ui/components/panels/traffic/TrafficFilterBar.tsx`
+  - `src/ui/components/panels/traffic/TrafficTable.tsx`
+  - `src/ui/components/panels/traffic/TrafficStyles.ts`
+- Se mantiene comportamiento funcional: filtros `ALL/JAMMED/TARGET`, selector automatico de `TARGET`, scroll incremental y accion `CLR`.
+
+### ✅ Validaciones
+- `npm test -- --run src/ui/components/panels/__tests__/TrafficPanel.test.tsx` (ok)
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.7] - Refactor ConsoleLogs: separacion por vistas y estado (2026-02-11)
+### ♻️ Frontend (ConsoleLogs)
+- Extraida la logica de estado/acciones a `src/ui/hooks/modules/useConsoleLogsState.ts`.
+- `src/ui/components/panels/ConsoleLogs.tsx` pasa a ser un contenedor de composicion.
+- Nuevo troceo por responsabilidad:
+  - `src/ui/components/panels/console_logs/ConsoleLogsHeader.tsx`
+  - `src/ui/components/panels/console_logs/SystemLogsView.tsx`
+  - `src/ui/components/panels/console_logs/RadarLogsView.tsx`
+  - `src/ui/components/panels/console_logs/consoleLogsStyles.ts`
+- Se mantiene el comportamiento actual de pestañas, limpieza contextual y seleccion de nodo desde `RADAR LOGS`.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.7.6] - Refactor RadarPanel: separacion UI/logica (2026-02-11)
+### ♻️ Frontend (HUD Radar)
+- Extraida la logica de estado/efectos/memos a `src/ui/hooks/modules/useRadarPanelState.ts`.
+- `src/ui/components/hud/RadarPanel.tsx` queda como contenedor de composicion (sin logica de negocio de radar).
+- Troceado de UI en subcomponentes dedicados:
+  - `src/ui/components/hud/radar/RadarHeader.tsx`
+  - `src/ui/components/hud/radar/RadarScope.tsx`
+  - `src/ui/components/hud/radar/RadarIntelPanel.tsx`
+  - `src/ui/components/hud/radar/RadarLegalModal.tsx`
+  - utilidades/tipos en `src/ui/components/hud/radar/radarUtils.ts` y `src/ui/components/hud/radar/radarTypes.ts`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
 ### 🧠 Scanner (UX / estabilidad)
 - `Scan Net` ya no reduce el inventario si el escaneo devuelve menos dispositivos temporalmente (merge por union).

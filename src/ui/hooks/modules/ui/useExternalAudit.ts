@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ExternalAuditExitEvent, ExternalAuditLogEvent, ExternalAuditRequestDTO } from "../../../shared/dtos/NetworkDTOs";
-import { externalAuditAdapter } from "../../../adapters/externalAuditAdapter";
-import type { SimStep } from "../../../core/logic/externalAuditScenarios";
+import type { ExternalAuditExitEvent, ExternalAuditLogEvent, ExternalAuditRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { externalAuditAdapter } from "../../../../adapters/externalAuditAdapter";
+import type { SimStep } from "../../../../core/logic/externalAuditScenarios";
 
 type LogRow = {
   ts: number;

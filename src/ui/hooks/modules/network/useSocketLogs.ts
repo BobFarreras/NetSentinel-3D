@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { systemAdapter } from '../../../adapters/systemAdapter';
+import { systemAdapter } from '../../../../adapters/systemAdapter';
 
 export const useSocketLogs = () => {
   const [deviceLogs, setDeviceLogs] = useState<Record<string, string[]>>({});

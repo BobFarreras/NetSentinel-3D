@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useScanner } from '../useScanner';
+import { useScanner } from '../network/useScanner';
 import { networkAdapter } from '../../../../adapters/networkAdapter';
 import { DeviceDTO } from '../../../../shared/dtos/NetworkDTOs';
 

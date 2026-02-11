@@ -20,6 +20,16 @@ Documentos de referencia:
 - Backend: Rust + Tauri
 - IPC: `invoke` + eventos Tauri (streaming en tiempo real)
 
+## Patron frontend (resumen)
+Para mantener escalabilidad y reducir deuda tecnica:
+- Cada panel/escena usa un hook de estado (`useXxxState`) para efectos, memos y handlers.
+- Los componentes de UI quedan como capas de presentacion (subcomponentes puros).
+- Los estilos/tokens compartidos se centralizan en `src/ui/styles/hudTokens.ts`.
+
+Aplicado ya en:
+- `RadarPanel`, `ConsoleLogs`, `TrafficPanel`, `DeviceDetailPanel`.
+- Capa 3D: `NetworkScene`, `NetworkNode`, `NodeLabel`.
+
 ## Estructura del repo (resumen)
 ```text
 /src                 # Frontend (React + Vite)
@@ -56,6 +66,15 @@ cd src-tauri
 cargo check
 cargo test
 ```
+
+### Testing por capas (frontend)
+- Unit (hooks):
+  - `src/ui/hooks/modules/__tests__/*`
+  - valida estado, efectos y reglas de negocio UI.
+- Integracion (componentes/paginas):
+  - `src/ui/components/**/__tests__/*`
+  - `src/__tests__/App.integration.test.tsx`
+  - valida sincronizacion entre escena, paneles y consola.
 
 ## LIVE TRAFFIC (guia rapida)
 El panel `LIVE TRAFFIC` muestra paquetes capturados en tiempo real.
