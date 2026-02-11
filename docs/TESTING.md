@@ -30,12 +30,18 @@ Frontend (unit):
 - `src/ui/hooks/modules/__tests__/useWifiRadar.test.ts`
 - `src/ui/hooks/modules/__tests__/useTrafficMonitor.test.ts`
 - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
+- `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
+- `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
+- `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
+- `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
+- `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
+- `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
 - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
 - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
 - `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
 - `src/ui/components/hud/__tests__/ExternalAuditPanel.test.tsx`
 - `src/ui/components/hud/__tests__/RadarPanel.test.tsx`
-- `src/ui/components/__tests__/DangerModal.test.tsx`
+- `src/__tests__/App.integration.test.tsx`
 
 E2E:
 - `e2e/app.spec.ts`
@@ -106,7 +112,7 @@ Objetivo:
 Prioridad inicial:
 - `TrafficPanel.tsx`
 - `DeviceDetailPanel.tsx`
-- `DangerModal.tsx`
+- `NetworkScene.tsx`
 
 ## 4.5 Backend Rust (`src-tauri/src/application`)
 Objetivo:
