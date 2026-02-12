@@ -1,6 +1,7 @@
 // src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts
-import { useMemo } from "react";
-import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { useMemo, useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core"; // Asegúrate de importar invoke
+import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
 
 type UseDeviceDetailPanelStateArgs = {
   device: DeviceDTO;
@@ -15,6 +16,7 @@ type UseDeviceDetailPanelState = {
   getSignalColor: (signal?: number) => string;
   handleRouterAudit: () => void;
   handleOpenLabAudit: () => void;
+  identity: HostIdentity | null; // <--- AHORA EXPOSTO
 };
 
 export const useDeviceDetailPanelState = ({
@@ -22,6 +24,16 @@ export const useDeviceDetailPanelState = ({
   onRouterAudit,
   onOpenLabAudit,
 }: UseDeviceDetailPanelStateArgs): UseDeviceDetailPanelState => {
+  
+  const [identity, setIdentity] = useState<HostIdentity | null>(null);
+
+  // Cargamos la identidad para saber quién es el HOST
+  useEffect(() => {
+    invoke<HostIdentity>("get_identity")
+      .then(setIdentity)
+      .catch(console.error);
+  }, []);
+
   const resolvedName = useMemo(() => {
     return device.name || device.hostname || "Unknown";
   }, [device.name, device.hostname]);
@@ -48,5 +60,6 @@ export const useDeviceDetailPanelState = ({
     getSignalColor,
     handleRouterAudit: () => onRouterAudit(device.ip),
     handleOpenLabAudit: () => onOpenLabAudit(device),
+    identity, // <--- RETORNADO AQUÍ
   };
 };

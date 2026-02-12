@@ -1,8 +1,11 @@
 // src-tauri/src/domain/ports.rs
-use async_trait::async_trait;
-use crate::domain::entities::{Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials}; 
 
-// PORT 1: ESCANER DE RED
+use async_trait::async_trait;
+use crate::domain::entities::{
+    Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials, HostIdentity
+}; 
+
+// PORT 1: ESCANER DE RED (Ahora incluye identidad propia)
 #[async_trait]
 pub trait NetworkScannerPort: Send + Sync {
     // Escanea un rango y retorna dispositivos.
@@ -10,6 +13,9 @@ pub trait NetworkScannerPort: Send + Sync {
 
     // Metodo integrado en el mismo puerto para evitar duplicar adaptadores.
     async fn scan_ports(&self, ip: &str) -> Vec<OpenPort>;
+
+    // 👇 NUEVO: Necesario para OpSecService
+    fn get_host_identity(&self) -> Result<HostIdentity, String>;
 }
 
 // PORT 2: AUDITOR DE ROUTER
@@ -26,14 +32,14 @@ pub trait HistoryRepositoryPort: Send + Sync {
     async fn get_all_sessions(&self) -> Result<Vec<ScanSession>, String>;
 }
 
-// PORT 3b: REPOSITORIO DE ULTIMO SNAPSHOT (arranque rapido)
+// PORT 3b: REPOSITORIO DE ULTIMO SNAPSHOT
 #[async_trait]
 pub trait LatestSnapshotRepositoryPort: Send + Sync {
     async fn save_latest(&self, snapshot: LatestSnapshot) -> Result<(), String>;
     async fn load_latest(&self) -> Result<Option<LatestSnapshot>, String>;
 }
 
-// PORT 3c: ALMACENAMIENTO DE CREDENCIALES (gateway) en el equipo local
+// PORT 3c: ALMACENAMIENTO DE CREDENCIALES
 #[async_trait]
 pub trait CredentialStorePort: Send + Sync {
     async fn save_gateway_credentials(&self, creds: GatewayCredentials) -> Result<(), String>;
@@ -41,14 +47,13 @@ pub trait CredentialStorePort: Send + Sync {
     async fn delete_gateway_credentials(&self, gateway_ip: &str) -> Result<(), String>;
 }
 
-// PORT 4: ESCANER WIFI (RECONOCIMIENTO DE INFRAESTRUCTURA)
+// PORT 4: ESCANER WIFI
 #[async_trait]
 pub trait WifiScannerPort: Send + Sync {
     async fn scan_airwaves(&self) -> Result<Vec<crate::domain::entities::WifiScanRecord>, String>;
 }
 
-// PORT 5: RESOLUCION DE VENDOR (OUI)
-// Se usa tanto para dispositivos (MAC) como para BSSID (WiFi).
+// PORT 5: RESOLUCION DE VENDOR
 pub trait VendorLookupPort: Send + Sync {
     fn resolve_vendor(&self, mac_or_bssid: &str) -> String;
 }

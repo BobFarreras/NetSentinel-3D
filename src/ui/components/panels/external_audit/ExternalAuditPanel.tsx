@@ -1,4 +1,7 @@
+// src/ui/components/panels/external_audit/ExternalAuditPanel.tsx
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core"; // <--- IMPORTANTE
 import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
 import { useExternalAudit } from "../../../hooks/modules/ui/useExternalAudit";
 import { getExternalAuditScenarios } from "../../../../core/logic/externalAuditScenarios";
@@ -7,7 +10,7 @@ import { AuditConsole } from "./AuditConsole";
 import { LabModeView } from "./LabModeView"; 
 import { CustomModeView } from "./CustomModeView"; 
 import { windowingAdapter } from "../../../../adapters/windowingAdapter";
-import { CyberConfirmModal } from "../../shared/CyberConfirmModal";
+import { CyberConfirmModal, type MacSecurityStatusDTO } from "../../shared/CyberConfirmModal"; // Importamos el tipo del modal
 
 interface ExternalAuditPanelProps {
   onClose: () => void;
@@ -23,7 +26,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   targetDevice: propTargetDevice,
   identity = null,
   defaultScenarioId = null,
-  autoRun: initialAutoRunProp = false, // Renombramos para evitar confusión
+  autoRun: _initialAutoRunProp = false,
   embedded = false,
 }) => {
   const audit = useExternalAudit();
@@ -34,9 +37,11 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   
   const [nativeRows, setNativeRows] = useState<{ ts: number; stream: "stdout" | "stderr"; line: string }[]>([]);
   const [isNativeRunning, setIsNativeRunning] = useState(false);
+  
+  // ESTADOS MODAL & OPSEC
   const [showConfirm, setShowConfirm] = useState(false);
+  const [macStatus, setMacStatus] = useState<MacSecurityStatusDTO | null>(null);
 
-  // CORRECCIÓ 1: Token comença SEMPRE a 0. Ignorem props inicials per seguretat.
   const [autoRunToken, setAutoRunToken] = useState<number>(0);
   const lastExecutedToken = useRef<number>(0);
   
@@ -45,7 +50,6 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   const scenarios = useMemo(() => getExternalAuditScenarios(), []);
   const selectedScenario = useMemo(() => scenarios.find((s) => s.id === scenarioId) || null, [scenarios, scenarioId]);
 
-  // Sincronitzar props (només dades, mai execució)
   useEffect(() => {
     if (propTargetDevice) {
         console.log("📥 [PANEL] Prop Target Updated:", propTargetDevice.ip);
@@ -54,7 +58,6 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     }
   }, [propTargetDevice]);
 
-  // CORRECCIÓ 2: Listener d'Events
   useEffect(() => {
     const unlistenPromise = windowingAdapter.listenExternalAuditContext((payload) => {
       console.log("⚡ [PANEL] Event Context Received:", payload);
@@ -65,7 +68,6 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
         setMode("LAB");
       }
       
-      // Només disparem si el payload ho demana explícitament a true
       if (payload.autoRun === true) {
         console.log("🔥 [PANEL] Event requested AutoRun!");
         setAutoRunToken(Date.now());
@@ -76,7 +78,6 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     return () => { unlistenPromise.then((unlisten) => unlisten()); };
   }, []);
 
-  // --- EJECUCIÓN ---
   const executeNativeAttack = async () => {
     if (!selectedScenario) return;
     const targetIp = localTarget?.ip || "unknown";
@@ -108,7 +109,22 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   const handleRunLab = async () => {
     if (!selectedScenario || isNativeRunning) return;
 
+    // --- CHECK NATIVO (WIFI) ---
     if (selectedScenario.mode === "native" && selectedScenario.category === "WIFI") {
+        
+        // 1. CHEQUEO OPSEC (Llamada al Backend)
+        try {
+            console.log("🕵️‍♂️ [OPSEC] Verificando identidad de interfaz...");
+            const status = await invoke<MacSecurityStatusDTO>("check_mac_security");
+            console.log("🕵️‍♂️ [OPSEC] Estado:", status);
+            setMacStatus(status);
+        } catch (e) {
+            console.error("⚠️ [OPSEC] Fallo al verificar MAC:", e);
+            // Fallback: Asumimos lo peor (Riesgo Alto)
+            setMacStatus({ current_mac: "UNKNOWN", is_spoofed: false, risk_level: "HIGH" });
+        }
+
+        // 2. MOSTRAR MODAL
         setShowConfirm(true);
         return; 
     }
@@ -131,27 +147,17 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     }
   };
 
-  // EFECTE AUTO-RUN (Molt estricte)
   useEffect(() => {
-    // 1. Si el token és 0, no fem res.
     if (autoRunToken === 0) return;
-
-    // 2. Si ja hem executat aquest token, no repetim.
     if (autoRunToken === lastExecutedToken.current) return;
-
-    // 3. Validacions d'estat
     if (!selectedScenario || audit.isRunning || isNativeRunning || !localTarget) {
-        console.warn("⚠️ [PANEL] AutoRun requested but conditions not met (no scenario/target or running)");
+        console.warn("⚠️ [PANEL] AutoRun skipped (conditions not met)");
         return;
     }
 
     console.log("🚀 [PANEL] Executing AutoRun via Token:", autoRunToken);
     lastExecutedToken.current = autoRunToken;
-    
-    // ATENCIÓ: AutoRun NUNCA hauria de saltar-se la confirmació per temes de seguretat (WiFi).
-    // Així que cridem a handleRunLab, que obrirà el modal si cal.
     void handleRunLab();
-
   }, [autoRunToken, selectedScenario, audit.isRunning, isNativeRunning, localTarget]);
 
   const handleCancel = async () => {
@@ -176,7 +182,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
       <AuditHeader 
         mode={mode} setMode={setMode} 
         status={isNativeRunning ? "⚠️ ATTACK IN PROGRESS" : audit.summary} 
-        isAutoRun={false} // Visualment no mostrem "AUTO" per no confondre
+        isAutoRun={false} 
         onClose={onClose} 
       />
 
@@ -203,10 +209,12 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
 
       <AuditConsole rows={displayRows} error={audit.error} />
 
+      {/* MODAL CON STATUS OPSEC */}
       <CyberConfirmModal 
         isOpen={showConfirm}
-        title="⚠ CONNECTION INTERRUPT"
-        message={`Este ataque requiere control exclusivo del adaptador WiFi.\n\nSe interrumpirá tu conexión a internet actual para inyectar credenciales contra el objetivo.\n\n¿Autorizar desconexión temporal?`}
+        title={macStatus?.risk_level === "HIGH" ? "⚠ OPSEC WARNING: REAL IDENTITY" : "✅ OPSEC: IDENTITY OBFUSCATED"}
+        macStatus={macStatus}
+        message={`Este ataque requiere control exclusivo del adaptador WiFi.\n\nSe interrumpirá tu conexión a internet actual para inyectar credenciales contra el objetivo.`}
         onConfirm={() => { setShowConfirm(false); executeNativeAttack(); }}
         onCancel={() => setShowConfirm(false)}
       />

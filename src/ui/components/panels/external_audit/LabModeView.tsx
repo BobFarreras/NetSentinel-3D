@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
 import type { ExternalAuditScenario } from "../../../../core/logic/externalAuditScenarios";
-import { WordlistManagerModal } from "./WordlistManagerModal"; // <--- IMPORTAR MODAL
+import { WordlistManagerModal } from "./WordlistManagerModal";
 
 const inputStyle: React.CSSProperties = { width: "100%", background: "rgba(0,0,0,0.35)", border: "1px solid rgba(0,255,136,0.18)", color: "#b7ffe2", padding: "6px 8px", fontSize: 12, outline: "none", fontFamily: "inherit" };
 

@@ -13,8 +13,15 @@ use crate::application::credential_service::CredentialService;
 use crate::application::external_audit_service::ExternalAuditService;
 use crate::application::jammer_service::JammerService;
 use crate::application::latest_snapshot_service::LatestSnapshotService;
+use crate::application::mac_changer_service::MacChangerService;
+use crate::application::opsec_service::OpSecService;
+use crate::application::settings_service::SettingsService;
 use crate::application::traffic_service::TrafficService;
 use crate::application::wifi_service::WifiService;
+use crate::application::wordlist_service::WordlistService;
+use crate::application::{
+    audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
+};
 
 // 2. Imports propios (Infraestructura)
 use crate::infrastructure::credential_store::KeyringCredentialStore;
@@ -27,13 +34,8 @@ use crate::infrastructure::{
     system_scanner::SystemScanner,
 };
 
-use crate::application::wordlist_service::WordlistService;
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
-
-// 3. Imports propios (Aplicacion)
-use crate::application::{
-    audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
-};
+                                                                                     // 3. Imports propios (Aplicacion)
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
 
@@ -64,7 +66,7 @@ pub fn run() {
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
             // =====================================================
-            let scanner_service = ScannerService::new(scanner_infra);
+            let scanner_service = ScannerService::new(scanner_infra.clone());
             let audit_service = AuditService::new(auditor_infra);
             let history_service = HistoryService::new(history_infra);
             let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
@@ -73,14 +75,21 @@ pub fn run() {
             let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra);
             let external_audit_service = ExternalAuditService::new();
 
-            // Traffic: no depende de una infra externa inyectada, se crea directo.
+            // Traffic
             let traffic_service = TrafficService::new();
 
-            // Infra
+            // Infra y Wordlist
             let wordlist_repo = FileWordlistRepository::new(app.handle());
-
-            // Service
             let wordlist_service = WordlistService::new(wordlist_repo);
+            //
+            let settings_service = Arc::new(Mutex::new(SettingsService::new(app.handle())));
+            let mac_changer_service = Arc::new(MacChangerService::new());
+            // OpSec (ahora recibe 3 argumentos)
+            let opsec_service = OpSecService::new(
+                scanner_infra.clone(),
+                settings_service.clone(),
+                mac_changer_service.clone(),
+            );
             // =====================================================
             // 3. GESTION DE ESTADO (registrar en Tauri)
             // =====================================================
@@ -98,6 +107,9 @@ pub fn run() {
 
             // Manage State
             app.manage(wordlist_service);
+
+            // Registramos el estado
+            app.manage(opsec_service);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -128,6 +140,11 @@ pub fn run() {
             // WORDLIST COMMANDS
             api::commands::get_dictionary,
             api::commands::add_to_dictionary,
+            api::commands::remove_from_dictionary, 
+            api::commands::update_in_dictionary,
+            // OPSEC
+            api::commands::check_mac_security,
+            api::commands::randomize_mac,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
