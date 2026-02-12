@@ -61,6 +61,7 @@
       "icons/icon.ico"
     ],
     "windows": {
+   
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",

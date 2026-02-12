@@ -13,8 +13,15 @@ use crate::application::credential_service::CredentialService;
 use crate::application::external_audit_service::ExternalAuditService;
 use crate::application::jammer_service::JammerService;
 use crate::application::latest_snapshot_service::LatestSnapshotService;
+use crate::application::mac_changer_service::MacChangerService;
+use crate::application::opsec_service::OpSecService;
+use crate::application::settings_service::SettingsService;
 use crate::application::traffic_service::TrafficService;
 use crate::application::wifi_service::WifiService;
+use crate::application::wordlist_service::WordlistService;
+use crate::application::{
+    audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
+};
 
 // 2. Imports propios (Infraestructura)
 use crate::infrastructure::credential_store::KeyringCredentialStore;
@@ -27,13 +34,8 @@ use crate::infrastructure::{
     system_scanner::SystemScanner,
 };
 
-use crate::application::opsec_service::OpSecService;
-use crate::application::wordlist_service::WordlistService;
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
-// 3. Imports propios (Aplicacion)
-use crate::application::{
-    audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
-};
+                                                                                     // 3. Imports propios (Aplicacion)
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
 
@@ -79,11 +81,15 @@ pub fn run() {
             // Infra y Wordlist
             let wordlist_repo = FileWordlistRepository::new(app.handle());
             let wordlist_service = WordlistService::new(wordlist_repo);
-
-            // OpSec Service
-            // CORRECCIÓN: Ahora podemos usar scanner_infra porque lo clonamos antes
-            // (O podemos volver a clonarlo si queremos ser explícitos, pero ya no dará error de 'moved value')
-            let opsec_service = OpSecService::new(scanner_infra);
+            //
+            let settings_service = Arc::new(Mutex::new(SettingsService::new(app.handle())));
+            let mac_changer_service = Arc::new(MacChangerService::new());
+            // OpSec (ahora recibe 3 argumentos)
+            let opsec_service = OpSecService::new(
+                scanner_infra.clone(),
+                settings_service.clone(),
+                mac_changer_service.clone(),
+            );
             // =====================================================
             // 3. GESTION DE ESTADO (registrar en Tauri)
             // =====================================================
@@ -135,7 +141,8 @@ pub fn run() {
             api::commands::get_dictionary,
             api::commands::add_to_dictionary,
             // OPSEC
-            api::commands::check_mac_security
+            api::commands::check_mac_security,
+            api::commands::randomize_mac,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

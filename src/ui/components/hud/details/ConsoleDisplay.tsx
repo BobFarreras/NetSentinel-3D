@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 
-// 1. COMPONENT TYPEWRITER
+// --- TYPEWRITER (Efecto de escritura) ---
 const TypewriterLine = ({ text, onComplete, isActive }: { text: string; onComplete?: () => void; isActive: boolean }) => {
   const [displayedText, setDisplayedText] = useState("");
   
   useEffect(() => {
-    // Animació normal
-    if (text.length > 80) { // Si és molt llarg, pinta-ho de cop
+    if (text.length > 120) { // Si es muy largo, pintar de golpe
       setDisplayedText(text);
       if (onComplete) onComplete();
       return;
@@ -21,7 +20,7 @@ const TypewriterLine = ({ text, onComplete, isActive }: { text: string; onComple
         clearInterval(intervalId);
         if (onComplete) onComplete();
       }
-    }, 15); // 15ms per caràcter
+    }, 10); // Velocidad rápida
 
     return () => clearInterval(intervalId);
   }, [text, onComplete]);
@@ -34,7 +33,7 @@ const TypewriterLine = ({ text, onComplete, isActive }: { text: string; onComple
   );
 };
 
-// 2. PUNTS DE CÀRREGA
+// --- LOADING DOTS ---
 const LoadingDots = () => {
   const [dots, setDots] = useState('.');
   useEffect(() => {
@@ -46,45 +45,62 @@ const LoadingDots = () => {
   return <span>{dots}</span>;
 };
 
-interface ConsoleProps { 
-  logs: string[]; 
-  isBusy?: boolean; 
+// --- INTERFACE PARA EL PROMPT INTERACTIVO ---
+export interface ConsolePrompt {
+  type: 'CONFIRM' | 'SELECT';
+  message: string;
+  options: string[];
+  onSelect: (index: number) => void;
 }
 
-export const ConsoleDisplay: React.FC<ConsoleProps> = ({ logs, isBusy = false }) => {
+interface ConsoleProps { 
+  logs: string[]; 
+  isBusy?: boolean;
+  prompt?: ConsolePrompt | null; // <--- Nuevo Prop
+}
+
+export const ConsoleDisplay: React.FC<ConsoleProps> = ({ logs, isBusy = false, prompt = null }) => {
   const logsEndRef = useRef<HTMLDivElement>(null);
-  
-  // Aquest índex controla quina línia s'està ANIMANT ara mateix
   const [animatingLineIndex, setAnimatingLineIndex] = useState(0);
-
-  // Aquest Ref recorda quantes línies ja teníem abans de desmuntar el component
-  // Per defecte és 0, però la gràcia és que si el component es remunta amb els mateixos logs,
-  // podem detectar-ho. (NOTA: React destruirà l'estat local al desmuntar, així que la persistència
-  // real entre canvis de pestanya necessitaria guardar això al pare. 
-  // PERÒ: Com que 'logs' venen del pare, podem fer el truc següent:
   
-  // TRUC: Si al muntar el component ja hi ha logs, assumim que els VLELS (tots menys l'últim potser) són històrics.
-  // O millor: Si l'usuari canvia de pestanya i torna, volem veure el text, no l'animació.
-  
-  // Solució simple: Animem només si l'índex és >= al que teníem.
-  // Però com que l'estat es reinicia, usarem un efecte d'inicialització.
+  // Estado para la selección del usuario (flechas)
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
 
+  // Resetear selección cuando cambia el prompt
   useEffect(() => {
-    // Quan es munta el component, si ja hi ha logs, no volem animar-los tots des de zero.
-    // Volem animar només els nous que arribin DESPRÉS del muntatge.
-    // Però volem que es vegi el text.
-    
-    // Si tenim 10 logs, posar l'índex a 10 faria que no s'animés res (es mostrarien instantanis).
-    setAnimatingLineIndex(logs.length);
-  }, []); // Només al muntar!
+    if (prompt) setSelectedOptionIndex(0);
+  }, [prompt]);
 
-  // Si arriben nous logs (logs.length creix), l'animació continuarà des d'on estava
-  // No cal fer res especial perquè el renderitzat de baix s'encarrega.
+  // Manejador de Teclado (Flechas y Enter)
+  useEffect(() => {
+    if (!prompt) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedOptionIndex(prev => Math.max(0, prev - 1));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedOptionIndex(prev => Math.min(prompt.options.length - 1, prev + 1));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        prompt.onSelect(selectedOptionIndex); // Devolver la selección al padre
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [prompt, selectedOptionIndex]);
+
+  // Inicialización de logs (para no re-animar lo viejo)
+  useEffect(() => {
+    setAnimatingLineIndex(logs.length);
+  }, []); // Solo al montar
 
   // Auto-scroll
   useEffect(() => { 
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
-  }, [logs, animatingLineIndex, isBusy]);
+  }, [logs, animatingLineIndex, isBusy, prompt]); // Scroll también si sale prompt
 
   return (
     <>
@@ -95,53 +111,62 @@ export const ConsoleDisplay: React.FC<ConsoleProps> = ({ logs, isBusy = false })
         .cyber-console::-webkit-scrollbar-thumb:hover { background: ${HUD_COLORS.accentGreen}; cursor: pointer; }
         @keyframes blink-block { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         .cursor-block { display: inline-block; width: 8px; height: 14px; background-color: ${HUD_COLORS.accentGreen}; animation: blink-block 1s step-end infinite; vertical-align: middle; margin-left: 2px; box-shadow: 0 0 5px ${HUD_COLORS.accentGreen}; }
+        
+        /* Estilos para las opciones */
+        .console-option { padding: 2px 0; cursor: pointer; transition: color 0.1s; }
+        .console-option.selected { color: #00e5ff; font-weight: bold; text-shadow: 0 0 8px rgba(0, 229, 255, 0.6); }
+        .console-option:hover { color: #ccffdd; }
       `}</style>
 
       <div 
         className="cyber-console"
         style={{
           background: HUD_COLORS.bgPanel, border: '1px solid #333', borderTop: `2px solid ${HUD_COLORS.accentGreen}`,
-          boxShadow: 'inset 0 0 20px #000', height: '200px', overflowY: 'auto', 
+          boxShadow: 'inset 0 0 20px #000', height: '240px', overflowY: 'auto', 
           padding: '15px', fontSize: '0.85rem', color: HUD_COLORS.accentGreen, marginTop: '15px', 
           fontFamily: HUD_TYPO.mono, display: 'flex', flexDirection: 'column',
           textShadow: '0 0 4px rgba(0, 255, 0, 0.6)'
         }}
       >
         {logs.map((log, i) => {
-          // CAS 1: Línies ja animades o històriques (anteriors a l'índex actual)
-          // Aquestes es mostren INSTANTÀNIAMENT (sense Typewriter o amb instant=true)
           if (i < animatingLineIndex) {
-             // Use key per evitar re-renders innecessaris
-             return (
-               <div key={i} style={{ marginBottom: '4px', opacity: 0.8 }}>
-                 {'> '} {log}
-               </div>
-             );
+             return <div key={i} style={{ marginBottom: '4px', opacity: 0.8 }}>{'>'} {log}</div>;
           }
-          
-          // CAS 2: Línia actual que s'està animant
           if (i === animatingLineIndex) {
             return (
               <div key={i} style={{ marginBottom: '4px' }}>
-                {'> '} 
-                <TypewriterLine 
-                    text={log} 
-                    isActive={true} 
-                    onComplete={() => setAnimatingLineIndex(p => p + 1)} 
-                />
+                {'>'} <TypewriterLine text={log} isActive={true} onComplete={() => setAnimatingLineIndex(p => p + 1)} />
               </div>
             );
           }
-          
-          // CAS 3: Línies futures (encara no ha arribat el torn)
           return null;
         })}
 
-        {/* Estat d'espera i Idle */}
-        {animatingLineIndex >= logs.length && isBusy && (
+        {/* --- ÁREA INTERACTIVA (PROMPT) --- */}
+        {prompt && animatingLineIndex >= logs.length && (
+          <div style={{ marginTop: '15px', borderTop: '1px dashed #004400', paddingTop: '10px' }}>
+            <div style={{ color: '#ff5555', marginBottom: '8px' }}>[SYSTEM_QUERY]: {prompt.message}</div>
+            <div style={{ paddingLeft: '10px' }}>
+              {prompt.options.map((opt, idx) => (
+                <div 
+                  key={idx} 
+                  className={`console-option ${idx === selectedOptionIndex ? 'selected' : ''}`}
+                  onClick={() => prompt.onSelect(idx)} // Click support también
+                >
+                  {idx === selectedOptionIndex ? '>> ' : '   '} [{opt}]
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- LOADING --- */}
+        {animatingLineIndex >= logs.length && isBusy && !prompt && (
            <div style={{ marginTop: '5px', color: '#adff2f' }}>{'>'} PROCESSING <LoadingDots /><span className="cursor-block">█</span></div>
         )}
-        {animatingLineIndex >= logs.length && !isBusy && (
+        
+        {/* --- IDLE CURSOR --- */}
+        {animatingLineIndex >= logs.length && !isBusy && !prompt && (
            <div style={{ marginTop: '5px' }}>{'>'} _ <span className="cursor-block">█</span></div>
         )}
 

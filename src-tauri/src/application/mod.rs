@@ -11,5 +11,7 @@ pub mod latest_snapshot_service;
 pub mod credential_service;
 pub mod wordlist_service;
 pub mod opsec_service;
+pub mod mac_changer_service;
+pub mod settings_service;
 
 

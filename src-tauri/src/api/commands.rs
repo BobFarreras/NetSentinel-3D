@@ -232,3 +232,10 @@ pub async fn check_mac_security(
 ) -> Result<crate::api::dtos::MacSecurityStatusDTO, String> {
     opsec::check_mac_security(service) // Lógica síncrona envuelta en async para Tauri
 }
+
+#[tauri::command]
+pub async fn randomize_mac(
+    service: tauri::State<'_, crate::application::opsec_service::OpSecService>
+) -> Result<String, String> {
+    opsec::randomize_mac(service).await
+}

@@ -84,6 +84,8 @@ Regla de integracion:
 - `stop_jamming`
 - `start_external_audit`
 - `cancel_external_audit`
+- `check_mac_security`
+- `randomize_mac`
 
 Regla:
 - Si se añade, elimina o renombra un comando, actualizar adapters y documentacion en el mismo cambio.
@@ -115,6 +117,10 @@ Regla:
    - Resultado: wrapper async de herramientas CLI externas con logs en tiempo real
    - Catalogo/plantillas: `src/core/logic/externalAuditScenarios.ts`
    - Referencia tactica: `DOC-ATTACK.md`
+7. OpSecSkill:
+    - Tecnico: `check_mac_security`, `randomize_mac`
+    - Resultado: Anonimato en capa 2 (MAC Spoofing) y validacion de identidad.
+    - Capacidad: Manipulacion de Registro de Windows (WlanSvc) y elevacion de privilegios.
 
 ### Flujo obligatorio: plantilla por target desde Radar
 1. Operador selecciona nodo en `NetworkScene`.
