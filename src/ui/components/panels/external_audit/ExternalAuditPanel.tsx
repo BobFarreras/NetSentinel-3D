@@ -1,5 +1,3 @@
-// src/ui/components/panels/external_audit/ExternalAuditPanel.tsx
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
 import { useExternalAudit } from "../../../hooks/modules/ui/useExternalAudit";
@@ -9,7 +7,7 @@ import { AuditConsole } from "./AuditConsole";
 import { LabModeView } from "./LabModeView"; 
 import { CustomModeView } from "./CustomModeView"; 
 import { windowingAdapter } from "../../../../adapters/windowingAdapter";
-import { CyberConfirmModal } from "../../shared/CyberConfirmModal"; // IMPORTANTE: El nuevo componente
+import { CyberConfirmModal } from "../../shared/CyberConfirmModal";
 
 interface ExternalAuditPanelProps {
   onClose: () => void;
@@ -25,7 +23,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   targetDevice: propTargetDevice,
   identity = null,
   defaultScenarioId = null,
-  autoRun = false,
+  autoRun: initialAutoRunProp = false, // Renombramos para evitar confusión
   embedded = false,
 }) => {
   const audit = useExternalAudit();
@@ -36,38 +34,49 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   
   const [nativeRows, setNativeRows] = useState<{ ts: number; stream: "stdout" | "stderr"; line: string }[]>([]);
   const [isNativeRunning, setIsNativeRunning] = useState(false);
-  
-  // ESTADO DEL MODAL
   const [showConfirm, setShowConfirm] = useState(false);
 
-
-  const hasAutoRun = useRef(false);
+  // CORRECCIÓ 1: Token comença SEMPRE a 0. Ignorem props inicials per seguretat.
+  const [autoRunToken, setAutoRunToken] = useState<number>(0);
+  const lastExecutedToken = useRef<number>(0);
+  
   const abortController = useRef<AbortController | null>(null);
 
   const scenarios = useMemo(() => getExternalAuditScenarios(), []);
   const selectedScenario = useMemo(() => scenarios.find((s) => s.id === scenarioId) || null, [scenarios, scenarioId]);
 
+  // Sincronitzar props (només dades, mai execució)
   useEffect(() => {
     if (propTargetDevice) {
+        console.log("📥 [PANEL] Prop Target Updated:", propTargetDevice.ip);
         setLocalTarget(propTargetDevice);
         setMode("LAB");
     }
   }, [propTargetDevice]);
 
+  // CORRECCIÓ 2: Listener d'Events
   useEffect(() => {
     const unlistenPromise = windowingAdapter.listenExternalAuditContext((payload) => {
+      console.log("⚡ [PANEL] Event Context Received:", payload);
+      
       if (payload.targetDevice) setLocalTarget(payload.targetDevice);
       if (payload.scenarioId) {
         setScenarioId(payload.scenarioId);
         setMode("LAB");
       }
-      if (payload.autoRun) hasAutoRun.current = false;
-      else hasAutoRun.current = true;
+      
+      // Només disparem si el payload ho demana explícitament a true
+      if (payload.autoRun === true) {
+        console.log("🔥 [PANEL] Event requested AutoRun!");
+        setAutoRunToken(Date.now());
+      } else {
+        console.log("✋ [PANEL] Event requested data update only (No AutoRun)");
+      }
     });
     return () => { unlistenPromise.then((unlisten) => unlisten()); };
   }, []);
 
-  // --- EJECUCIÓN REAL (Después de confirmar) ---
+  // --- EJECUCIÓN ---
   const executeNativeAttack = async () => {
     if (!selectedScenario) return;
     const targetIp = localTarget?.ip || "unknown";
@@ -76,7 +85,6 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     setIsNativeRunning(true);
     abortController.current = new AbortController();
 
-    // LOG INICIAL EN PANTALLA NEGRA
     setNativeRows([{ ts: Date.now(), stream: "stdout", line: `🚀 INICIANDO PROTOCOLO: ${selectedScenario.title}` }]);
 
     try {
@@ -97,23 +105,20 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     }
   };
 
-  // --- MANEJADOR DEL BOTÓN EXECUTE ---
   const handleRunLab = async () => {
     if (!selectedScenario || isNativeRunning) return;
 
-    // SI ES MODO NATIVO (WIFI) -> PEDIR CONFIRMACIÓN CYBERPUNK
     if (selectedScenario.mode === "native" && selectedScenario.category === "WIFI") {
         setShowConfirm(true);
-        return; // Esperamos a que el usuario diga "Authorize"
+        return; 
     }
 
-    // SI ES OTRO MODO -> EJECUTAR DIRECTAMENTE
     if (selectedScenario.mode === "native") {
         await executeNativeAttack();
         return;
     }
 
-    // MODOS CLI / SIMULADO
+    // Legacy
     if (selectedScenario.mode === "simulated") {
       const steps = selectedScenario.simulate?.({ device: localTarget!, identity }) || [];
       await audit.startSimulated(selectedScenario.title, steps);
@@ -126,22 +131,33 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     }
   };
 
-  const handleCancel = async () => {
-      if (isNativeRunning && abortController.current) {
-          abortController.current.abort(); 
-      }
-      if (audit.isRunning) {
-          await audit.cancel();
-      }
-  };
-
-  // Auto-Run
+  // EFECTE AUTO-RUN (Molt estricte)
   useEffect(() => {
-    if (autoRun && mode === "LAB" && selectedScenario && !audit.isRunning && !isNativeRunning && !hasAutoRun.current && localTarget) {
-      hasAutoRun.current = true;
-      void handleRunLab();
+    // 1. Si el token és 0, no fem res.
+    if (autoRunToken === 0) return;
+
+    // 2. Si ja hem executat aquest token, no repetim.
+    if (autoRunToken === lastExecutedToken.current) return;
+
+    // 3. Validacions d'estat
+    if (!selectedScenario || audit.isRunning || isNativeRunning || !localTarget) {
+        console.warn("⚠️ [PANEL] AutoRun requested but conditions not met (no scenario/target or running)");
+        return;
     }
-  }, [autoRun, mode, selectedScenario, audit.isRunning, isNativeRunning, localTarget]);
+
+    console.log("🚀 [PANEL] Executing AutoRun via Token:", autoRunToken);
+    lastExecutedToken.current = autoRunToken;
+    
+    // ATENCIÓ: AutoRun NUNCA hauria de saltar-se la confirmació per temes de seguretat (WiFi).
+    // Així que cridem a handleRunLab, que obrirà el modal si cal.
+    void handleRunLab();
+
+  }, [autoRunToken, selectedScenario, audit.isRunning, isNativeRunning, localTarget]);
+
+  const handleCancel = async () => {
+      if (isNativeRunning && abortController.current) abortController.current.abort(); 
+      if (audit.isRunning) await audit.cancel();
+  };
 
   const isAnyRunning = audit.isRunning || isNativeRunning;
   const displayRows = nativeRows.length > 0 ? nativeRows : audit.rows;
@@ -155,12 +171,13 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
       border: "1px solid rgba(0,255,136,0.25)",
       boxShadow: "0 0 0 1px rgba(0,255,136,0.12), 0 25px 80px rgba(0,0,0,0.65)",
       display: "flex", flexDirection: "column", fontFamily: "'Consolas', 'Courier New', monospace",
-      position: "relative" // Necesario para el modal absolute
+      position: "relative"
     }}>
       <AuditHeader 
         mode={mode} setMode={setMode} 
         status={isNativeRunning ? "⚠️ ATTACK IN PROGRESS" : audit.summary} 
-        isAutoRun={autoRun} onClose={onClose} 
+        isAutoRun={false} // Visualment no mostrem "AUTO" per no confondre
+        onClose={onClose} 
       />
 
       {mode === "LAB" ? (
@@ -186,15 +203,11 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
 
       <AuditConsole rows={displayRows} error={audit.error} />
 
-      {/* EL MODAL CYBERPUNK */}
       <CyberConfirmModal 
         isOpen={showConfirm}
         title="⚠ CONNECTION INTERRUPT"
         message={`Este ataque requiere control exclusivo del adaptador WiFi.\n\nSe interrumpirá tu conexión a internet actual para inyectar credenciales contra el objetivo.\n\n¿Autorizar desconexión temporal?`}
-        onConfirm={() => {
-            setShowConfirm(false);
-            executeNativeAttack();
-        }}
+        onConfirm={() => { setShowConfirm(false); executeNativeAttack(); }}
         onCancel={() => setShowConfirm(false)}
       />
     </div>

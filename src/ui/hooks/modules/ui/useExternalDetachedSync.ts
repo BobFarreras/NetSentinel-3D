@@ -10,18 +10,25 @@ export const useExternalDetachedSync = () => {
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     const boot = async () => {
+      // Aquest hook s'executa DINS de la finestra desacoblada
       unlisten = await windowingAdapter.listenExternalAuditContext((payload) => {
-        setDetachedExternalTarget(payload.targetDevice || null);
-        setDetachedExternalScenarioId(payload.scenarioId || null);
+        console.log("📡 [DETACHED SYNC] Received context update:", payload);
+        
+        if (payload.targetDevice) {
+            setDetachedExternalTarget(payload.targetDevice);
+        }
+        if (payload.scenarioId) {
+            setDetachedExternalScenarioId(payload.scenarioId);
+        }
+        
+        // Passem el token només si es demana autoRun
         if (payload.autoRun) {
-          setDetachedExternalAutoRunToken((prev) => prev + 1);
+          setDetachedExternalAutoRunToken(Date.now());
         }
       });
     };
     void boot();
-    return () => {
-      if (unlisten) unlisten();
-    };
+    return () => { if (unlisten) unlisten(); };
   }, []);
 
   const emitExternalContext = (payload: {
