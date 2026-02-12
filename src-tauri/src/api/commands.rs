@@ -2,7 +2,6 @@
 
 // Este modulo expone comandos Tauri (con `#[tauri::command]`) y delega su implementacion a submodulos
 // agrupados por dominio. Esto evita un archivo monolitico sin romper el wiring de `generate_handler!`
-// (Tauri genera wrappers `__cmd__*` en el mismo modulo donde esta el atributo).
 
 // Submodulos (separacion por responsabilidades / SOLID)
 #[path = "commands/scanner.rs"]
@@ -23,6 +22,8 @@ mod external_audit;
 mod system;
 #[path = "commands/internal_validation.rs"]
 mod internal_validation;
+#[path = "commands/wordlist.rs"]
+mod wordlist; 
 
 // --- NETWORK SCANNER ---
 
@@ -133,7 +134,6 @@ pub async fn scan_airwaves(
     wifi::scan_airwaves(service).await
 }
 
-// AÑADIR ESTO DEBAJO:
 #[tauri::command]
 pub async fn wifi_connect(
     service: tauri::State<'_, crate::application::wifi_service::WifiService>,
@@ -189,15 +189,9 @@ pub fn start_jamming(
     mac: String,
     gateway_ip: String,
 ) -> Result<(), String> {
-    println!(
-        "[api][jammer] start_jamming request ip={} mac={} gateway_ip={}",
-        ip, mac, gateway_ip
-    );
+    println!("[api][jammer] start_jamming request ip={} mac={} gateway_ip={}", ip, mac, gateway_ip);
     if let Err(err) = internal_validation::validate_start_jamming_input(&ip, &mac, &gateway_ip) {
-        eprintln!(
-            "[api][jammer] start_jamming validation error ip={} mac={} gateway_ip={} err={}",
-            ip, mac, gateway_ip, err
-        );
+        eprintln!("[api][jammer] start_jamming validation error err={}", err);
         return Err(err);
     }
     system::start_jamming(state, ip, mac, gateway_ip)
@@ -207,8 +201,25 @@ pub fn start_jamming(
 pub fn stop_jamming(state: tauri::State<'_, crate::api::state::JammerState>, ip: String) -> Result<(), String> {
     println!("[api][jammer] stop_jamming request ip={}", ip);
     if let Err(err) = internal_validation::validate_stop_jamming_input(&ip) {
-        eprintln!("[api][jammer] stop_jamming validation error ip={} err={}", ip, err);
+        eprintln!("[api][jammer] stop_jamming validation error err={}", err);
         return Err(err);
     }
     system::stop_jamming(state, ip)
+}
+
+// --- WORDLIST (DICCIONARIO) ---
+
+#[tauri::command]
+pub async fn get_dictionary(
+    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+) -> Result<Vec<String>, String> {
+    wordlist::get_dictionary(service) // Nota: Delegación directa
+}
+
+#[tauri::command]
+pub async fn add_to_dictionary(
+    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    word: String,
+) -> Result<(), String> {
+    wordlist::add_to_dictionary(service, word)
 }
