@@ -230,3 +230,110 @@ El cancel es cooperativo:
 Porque la docencia no depende de ejecutar herramientas reales siempre:
 - se puede ensenar el flujo, señales y mitigaciones,
 - y reservar ejecuciones reales para un laboratorio controlado y autorizado.
+
+---
+
+## 12) Vinculo con `DOC-ATTACK.md` (catalogo tactico -> runtime)
+
+`DOC-ATTACK.md` funciona como catalogo de tecnicas/familias.  
+`EXTERNAL_AUDIT` es el motor de ejecucion real.
+
+Regla de traduccion a codigo:
+1. Tecnica del catalogo -> escenario en `src/core/logic/externalAuditScenarios.ts`.
+2. Escenario:
+   - `mode: "external"` si ejecuta herramienta instalada.
+   - `mode: "simulated"` si es flujo educativo/inferencia.
+3. El escenario se ejecuta desde `ExternalAuditPanel` y reporta por:
+   - `external-audit-log`
+   - `external-audit-exit`
+
+No se implementan "ataques hardcodeados" dentro de componentes de UI:
+- la UI solo selecciona target + plantilla,
+- el backend solo orquesta ejecucion/cancelacion y streaming.
+
+---
+
+## 13) Flujo real actual: router seleccionado en Radar -> plantilla LAB
+
+Flujo implementado en el estado actual del repo:
+1. Seleccion de nodo en escena/radar (`NetworkScene` -> `selectedDevice`).
+2. Apertura de `DeviceDetailPanel`.
+3. Click en `LAB AUDIT`.
+4. `App.tsx` abre `ExternalAuditPanel` con:
+   - `targetDevice=<dispositivo seleccionado>`
+   - `defaultScenarioId`:
+     - gateway: `router_recon_ping_tracert`
+     - no-gateway: `device_http_headers`
+   - `autoRun=true` si viene con target + escenario.
+5. `ExternalAuditPanel` resuelve escenario y ejecuta:
+   - externo con `start_external_audit`, o
+   - simulado con `startSimulated`.
+
+Puntos exactos de codigo:
+- `src/App.tsx`
+- `src/ui/components/hud/DeviceDetailPanel.tsx`
+- `src/ui/components/hud/ExternalAuditPanel.tsx`
+- `src/core/logic/externalAuditScenarios.ts`
+- `src/ui/hooks/modules/ui/useExternalAudit.ts`
+
+Si quieres "plantillas de ataques por router" mas amplias:
+- Anade escenarios categoria `ROUTER` en `externalAuditScenarios.ts`.
+- Define `isSupported` + `buildRequest` (o `simulate`) por cada plantilla.
+- Mantiene `DOC-ATTACK.md` como referencia funcional y actualiza `docs/CHANGELOG.md`.
+
+---
+
+## 14) Que significa exactamente tu ejemplo de salida
+
+Caso reportado:
+- Escenario: `HTTP: Fingerprint de cabeceras (HEAD)`
+- Target: `192.168.1.139`
+- Comando preview: `powershell.exe ... Invoke-WebRequest ... -Method Head ...`
+- Resultado: `exit=1`, `ok=false`, error de conexion remota.
+
+Interpretacion operativa:
+1. Esto **no es simulado**. Es un escenario `mode: "external"` real.
+2. NetSentinel lanza PowerShell real en tu sistema (proceso hijo).
+3. PowerShell intenta hacer una peticion HTTP HEAD real a `http://192.168.1.139/`.
+4. El host no responde por HTTP en ese puerto/ruta (o esta filtrado), por eso `Invoke-WebRequest` lanza excepcion.
+5. El proceso termina con codigo de salida distinto de 0 (`exit=1`), y `external-audit-exit` marca `success=false`.
+
+Traduccion de campos UI:
+- `AUTO`: se ejecuto automaticamente al abrir panel con `target + defaultScenarioId`.
+- `Finalizado: ... exit=1, ok=false`: la ejecucion termino, pero fallo el comando del escenario.
+- `STDOUT START auditId=...`: inicio de auditoria.
+- `STDERR ... No es posible conectar con el servidor remoto`: error real del comando ejecutado.
+
+Que es "ROUTER" aqui:
+- En este flujo, `router` significa **gateway detectado** de tu red local.
+- Se identifica por `device.isGateway === true` o por coincidencia con `identity.gatewayIp`.
+- Si el nodo seleccionado no es gateway, `App.tsx` asigna el escenario por defecto de `DEVICE` (`device_http_headers`).
+
+---
+
+## 15) Decision tecnica para el siguiente salto
+
+Si quieres eliminar friccion de herramientas externas para alumnos:
+- El camino es migrar de `ExternalAudit` (wrapper de CLI) a un motor **Native Audit** en Rust.
+- El frontend seguiria parecido (selector de plantilla + logs), pero en backend ya no habria `binaryPath/args`.
+- Ver guia de migracion: `docs/EXTERNAL_AUDIT_REFACTOR.md`.
+
+---
+
+## 16) External Audit desacoplado (ventana independiente)
+
+Estado actual de UX:
+1. `ExternalAuditPanel` puede ejecutarse acoplado o en ventana desacoplada.
+2. En modo desacoplado Tauri, la ventana se abre como `WebviewWindow` nativa.
+3. El cierre recomendado es el boton `X` nativo del SO.
+
+Sincronizacion de contexto en caliente:
+- Si el operador lanza `LAB AUDIT` desde `DeviceDetailPanel` y `External` ya esta desacoplado,
+  la principal envia contexto al panel externo via evento:
+  - `netsentinel://external-context`
+  - payload: `targetDevice`, `scenarioId`, `autoRun`.
+- Esto evita que el panel desacoplado quede sin target/escenario.
+
+Reacople y cierre:
+- Al cerrar la ventana desacoplada con `X`, se emite `netsentinel://dock-panel` en `pagehide`.
+- La ventana principal reacopla el panel y limpia estado detached.

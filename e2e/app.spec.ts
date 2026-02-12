@@ -6,6 +6,18 @@ test.describe('NetSentinel App', () => {
     await expect(page.getByText(new RegExp(`NODES:\\s*${count}`))).toBeVisible();
   };
 
+  const triggerScan = async (page: Page) => {
+    const scanIdle = page.getByRole('button', { name: 'SCAN NET' });
+    const scanBusy = page.getByRole('button', { name: 'SCANNING...' });
+
+    const busy = await scanBusy.isVisible({ timeout: 400 }).catch(() => false);
+    if (busy) {
+      await expect(scanIdle).toBeVisible({ timeout: 8000 });
+    }
+
+    await scanIdle.click();
+  };
+
   test('debe cargar la interfaz principal', async ({ page }) => {
     await page.goto('/');
 
@@ -17,14 +29,14 @@ test.describe('NetSentinel App', () => {
   test('debe ejecutar scan y reflejar nodos detectados', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'SCAN NET' }).click();
+    await triggerScan(page);
     await expectNodesCount(page, 3);
   });
 
   test('debe cargar snapshot desde historial y aplicar la sesion', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'SCAN NET' }).click();
+    await triggerScan(page);
     await expectNodesCount(page, 3);
 
     await page.getByRole('button', { name: 'HISTORY' }).click();
@@ -58,7 +70,7 @@ test.describe('NetSentinel App', () => {
   test('debe permitir seleccionar nodo, auditar y detectar riesgo de gateway', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'SCAN NET' }).click();
+    await triggerScan(page);
     await expectNodesCount(page, 3);
 
     const canvas = page.locator('canvas').first();
@@ -120,5 +132,22 @@ test.describe('NetSentinel App', () => {
 
     // Al menos debe mostrar contador actualizado.
     await expect(page.getByText(/NETWORKS:\s*[1-9]\d*/)).toBeVisible();
+  });
+
+  test('debe activar y desactivar Kill Net sin bloquear la UI', async ({ page }) => {
+    // Ruta determinista para E2E: panel detached con target no-gateway del historial mock.
+    await page.goto('/?detached=1&panel=device&targetIp=192.168.1.99');
+
+    await expect(page.getByText('DEVICE_INTEL')).toBeVisible();
+    await expect(page.getByText('192.168.1.99')).toBeVisible();
+
+    await page.getByRole('button', { name: /KILL NET/i }).click();
+    await expect(page.getByRole('button', { name: /DISCONNECTING|JAMMING/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /DISCONNECTING/i }).click();
+    await expect(page.getByRole('button', { name: /KILL NET/i })).toBeVisible();
+
+    // Verificacion anti-bloqueo: tras start/stop la vista sigue operativa.
+    await expect(page.getByText('DEVICE_INTEL')).toBeVisible();
   });
 });

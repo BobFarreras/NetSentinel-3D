@@ -9,23 +9,26 @@ mod infrastructure;
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
-use crate::application::wifi_service::WifiService;
-use crate::application::external_audit_service::ExternalAuditService;
-use crate::application::latest_snapshot_service::LatestSnapshotService;
 use crate::application::credential_service::CredentialService;
+use crate::application::external_audit_service::ExternalAuditService;
 use crate::application::jammer_service::JammerService;
+use crate::application::latest_snapshot_service::LatestSnapshotService;
 use crate::application::traffic_service::TrafficService;
+use crate::application::wifi_service::WifiService;
 
 // 2. Imports propios (Infraestructura)
+use crate::infrastructure::credential_store::KeyringCredentialStore;
+use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
+use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
+use crate::infrastructure::network::vendor_resolver::VendorResolver;
+use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 use crate::infrastructure::{
-    router_audit::chrome_auditor::ChromeAuditor, fs_repository::FileHistoryRepository,
+    fs_repository::FileHistoryRepository, router_audit::chrome_auditor::ChromeAuditor,
     system_scanner::SystemScanner,
 };
-use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
-use crate::infrastructure::credential_store::KeyringCredentialStore;
-use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
-use crate::infrastructure::network::vendor_resolver::VendorResolver;
-use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
+
+use crate::application::wordlist_service::WordlistService;
+use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
 
 // 3. Imports propios (Aplicacion)
 use crate::application::{
@@ -57,7 +60,7 @@ pub fn run() {
             let history_infra = Arc::new(FileHistoryRepository);
             let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
             let credential_store_infra = Arc::new(KeyringCredentialStore::new("netsentinel"));
-            let jammer_service = JammerService::new();
+            let jammer_service = Arc::new(JammerService::new());
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
             // =====================================================
@@ -73,6 +76,11 @@ pub fn run() {
             // Traffic: no depende de una infra externa inyectada, se crea directo.
             let traffic_service = TrafficService::new();
 
+            // Infra
+            let wordlist_repo = FileWordlistRepository::new(app.handle());
+
+            // Service
+            let wordlist_service = WordlistService::new(wordlist_repo);
             // =====================================================
             // 3. GESTION DE ESTADO (registrar en Tauri)
             // =====================================================
@@ -86,7 +94,10 @@ pub fn run() {
 
             // Estados runtime: sniffer/jammer.
             app.manage(crate::api::state::TrafficState(Mutex::new(traffic_service)));
-            app.manage(crate::api::state::JammerState(Mutex::new(jammer_service)));
+            app.manage(crate::api::state::JammerState(jammer_service));
+
+            // Manage State
+            app.manage(wordlist_service);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -102,7 +113,10 @@ pub fn run() {
             api::commands::save_gateway_credentials,
             api::commands::get_gateway_credentials,
             api::commands::delete_gateway_credentials,
+            // Wifi
             api::commands::scan_airwaves,
+            api::commands::wifi_connect,
+            // External audit
             api::commands::start_external_audit,
             api::commands::cancel_external_audit,
             // System / runtime
@@ -110,7 +124,10 @@ pub fn run() {
             api::commands::start_traffic_sniffing,
             api::commands::stop_traffic_sniffing,
             api::commands::start_jamming,
-            api::commands::stop_jamming
+            api::commands::stop_jamming,
+            // WORDLIST COMMANDS
+            api::commands::get_dictionary,
+            api::commands::add_to_dictionary,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

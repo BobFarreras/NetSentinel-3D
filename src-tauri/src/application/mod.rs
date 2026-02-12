@@ -9,3 +9,6 @@ pub mod external_audit;
 pub mod external_audit_service;
 pub mod latest_snapshot_service;
 pub mod credential_service;
+pub mod wordlist_service;
+
+

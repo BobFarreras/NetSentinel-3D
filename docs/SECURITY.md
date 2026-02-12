@@ -123,6 +123,15 @@ Riesgos:
 - modulo de mayor impacto operativo (interferencia activa),
 - potencial degradacion de servicio en red local.
 
+Incidente real (2026-02-11):
+- se reprodujo congelacion total de UI al activar jammer en Windows (app "no responde"),
+- causa raiz: contencion/bloqueo en ruta runtime de jamming.
+
+Mitigacion implementada:
+- `start_jamming/stop_jamming` ahora encolan ordenes y retornan inmediato (modelo actor),
+- eliminado `Mutex` global en `JammerState` para esta ruta,
+- worker de jammer con cache de interfaz + refresh periodico (evita loops de deteccion de identidad en caliente).
+
 Controles recomendados:
 - doble confirmacion en UI antes de activar,
 - registro auditable de inicio/parada por objetivo,
@@ -174,6 +183,7 @@ Validaciones backend actualmente aplicadas:
 - Rango de escaneo en formato IPv4 o CIDR valido (`scan_network`).
 - Credenciales no vacias y con longitud acotada en `fetch_router_devices`.
 - Formato de MAC address validado en `start_jamming`.
+- La ruta de comando de jamming no debe incluir operaciones bloqueantes (solo validacion + encolado).
 
 ## 7. Checklist Minimo Antes de Release
 - [ ] `npm test -- --run` en verde.

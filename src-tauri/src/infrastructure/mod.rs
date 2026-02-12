@@ -8,3 +8,4 @@ pub mod credential_store;
 pub mod repositories;
 pub mod network;
 pub mod wifi;
+pub mod persistence;

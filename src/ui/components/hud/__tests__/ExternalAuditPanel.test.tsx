@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { ExternalAuditPanel } from "../ExternalAuditPanel";
+import { ExternalAuditPanel } from "../../panels/external_audit/ExternalAuditPanel";
 
 const startSimulated = vi.fn(async () => {});
 const start = vi.fn(async () => "audit-id");

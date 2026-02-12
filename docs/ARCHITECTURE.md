@@ -71,6 +71,8 @@ Ubicacion: `src-tauri/src/api` y `src-tauri/src/lib.rs`
 - `api/commands.rs`: fachada de comandos (`#[tauri::command]`) y delegacion a `api/commands/*` por dominio.
   - Importante: los atributos `#[tauri::command]` viven en `api/commands.rs` para que `generate_handler!` encuentre los `__cmd__*`.
 - `api/state.rs`: estados gestionados por Tauri (`TrafficState`, `JammerState`).
+  - `TrafficState`: `Mutex<TrafficService>` (control directo start/stop).
+  - `JammerState`: `Arc<JammerService>` (sin mutex global en ruta de comando).
 - `lib.rs`: wiring de dependencias (infra -> application) y registro de comandos en `invoke_handler`.
 
 ## 4. Flujo Frontend <-> Backend
@@ -83,6 +85,25 @@ Flujo tipico de comando:
 6. Rust devuelve DTO serializado al frontend.
 7. El hook actualiza estado y la UI renderiza.
 
+### 4.4 Ruta runtime de Jamming (post-incidente 2026-02-11)
+Problema observado:
+- La app podia congelarse al activar `start_jamming` por contencion en estado compartido + trabajo pesado en ruta caliente.
+
+Solucion aplicada:
+1. `start_jamming/stop_jamming` encolan comandos y retornan inmediato.
+2. `JammerService` opera en modo actor (`mpsc`):
+   - un hilo dedicado consume `Start/Stop`,
+   - ese hilo es el unico owner de `active_targets`.
+3. Se evita recalculo continuo de identidad/interfaz:
+   - cache de interfaz en loop,
+   - refresh periodico (15s), no por iteracion.
+
+Reglas para no reintroducir el bug:
+- No poner `Mutex` global alrededor de `JammerService` en comandos Tauri.
+- No recalcular `get_host_identity()` en cada tick del loop de inyeccion.
+- No abrir/cerrar recursos pesados por paquete; reutilizar estado del worker.
+- En ruta de comando, hacer solo validacion + encolado (sin I/O bloqueante).
+
 Flujo tipico de eventos:
 1. Backend emite eventos (`traffic-event`, `audit-log`).
 2. Hook frontend escucha con `listen(...)`.
@@ -93,6 +114,47 @@ Nota de frontend (estado global):
 - El bootstrap de arranque (identidad, auto-scan y sync con gateway) se aisla en `src/ui/hooks/modules/network/useBootstrapNetwork.ts` para reducir acoplamiento.
 - Los hooks modulares se agrupan por dominio en `src/ui/hooks/modules/*`:
   - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
+- `App.tsx` queda como orquestador fino:
+  - delega layout acoplado en `src/ui/components/layout/MainDockedLayout.tsx`,
+  - delega modo desacoplado en `src/ui/components/layout/DetachedPanelView.tsx`,
+  - delega logica de UI multiwindow en hooks `ui/*`.
+
+## 4.2 Multiwindow y paneles desacoplados (Tauri)
+Fuente de verdad:
+- `src/App.tsx`
+- `src/adapters/windowingAdapter.ts`
+- `src-tauri/capabilities/default.json`
+
+Comportamiento actual:
+1. Cada panel (`console`, `device`, `radar`, `external`, `scene3d`) se puede desacoplar.
+2. En desktop Tauri se abre ventana nativa (`WebviewWindow`) fuera de la ventana principal.
+3. Si falla runtime Tauri (web/tests), hay fallback por `DetachedWindowPortal`.
+4. El cierre oficial en desacoplado es por `X` nativo del sistema.
+5. Al cerrar ventana desacoplada:
+   - se emite `netsentinel://dock-panel` via `pagehide`,
+   - la principal reacopla y limpia estado detached.
+
+Eventos internos de coordinacion:
+- `netsentinel://dock-panel`: reacople generico de panel.
+- `netsentinel://external-context`: sincroniza target/escenario/autorun del panel `External` desacoplado.
+
+Hooks UI dedicados de esta capa:
+- `src/ui/hooks/modules/ui/useAppLayoutState.ts`:
+  - estado y handlers de resizers (`sidebar/console/radar/dock_split`).
+- `src/ui/hooks/modules/ui/usePanelDockingState.ts`:
+  - estado `detachedPanels/detachedModes`,
+  - undock/dock,
+  - reconciliacion de ventanas Tauri y cierre contextual de paneles.
+- `src/ui/hooks/modules/ui/useDetachedRuntime.ts`:
+  - arranque diferido de ventana detached,
+  - emision de reacople en `pagehide`.
+- `src/ui/hooks/modules/ui/useExternalDetachedSync.ts`:
+  - sincronizacion en caliente de `targetDevice/scenarioId/autoRun` para `External`.
+
+Reglas de layout actuales:
+- Si `scene3d` esta desacoplada, `Radar/External` ocupan todo el ancho de la zona superior.
+- Si `console` esta desacoplada, la zona inferior y su resizer se ocultan.
+- Si `device` esta desacoplada, sidebar y resizer derecho se ocultan.
 
 ## 4.1 Patron Frontend Modular (actual)
 Para reducir componentes "god file" y facilitar testeo, el frontend sigue un patron estable:

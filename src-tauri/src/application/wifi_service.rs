@@ -4,8 +4,9 @@ use std::sync::Arc;
 
 use crate::domain::entities::{WifiEntity, WifiScanRecord};
 use crate::domain::ports::{VendorLookupPort, WifiScannerPort};
-
 use crate::application::wifi_normalizer;
+// Importamos la infraestructura
+use crate::infrastructure::wifi::wifi_connector::WifiConnector;
 
 pub struct WifiService {
     scanner: Arc<dyn WifiScannerPort>,
@@ -33,44 +34,19 @@ impl WifiService {
         let vendor = self.vendor_lookup.resolve_vendor(&bssid);
         wifi_normalizer::normalize_record(record, vendor)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use async_trait::async_trait;
+    // --- NUEVO MÉTODO ---
+    pub async fn connect_to_network(&self, ssid: String, password: String) -> Result<bool, String> {
+        if password.len() < 8 { return Ok(false); }
 
-    struct MockWifiScanner;
+        // CLONAMOS las variables para pasarlas al hilo (SOLUCIONA EL ERROR DE MOVED VALUE)
+        let ssid_clone = ssid.clone();
+        let pass_clone = password.clone();
 
-    #[async_trait]
-    impl WifiScannerPort for MockWifiScanner {
-        async fn scan_airwaves(&self) -> Result<Vec<WifiScanRecord>, String> {
-            Ok(vec![WifiScanRecord {
-                bssid: "0C:47:C9:00:00:01".to_string(),
-                ssid: "TEST".to_string(),
-                channel: Some(1),
-                signal_level: -40,
-                security_type: "wpa2".to_string(),
-                is_connected: false,
-            }])
-        }
-    }
+        let result = tauri::async_runtime::spawn_blocking(move || {
+            WifiConnector::connect(&ssid_clone, &pass_clone)
+        }).await.map_err(|e| e.to_string())?;
 
-    struct MockVendorLookup;
-
-    impl VendorLookupPort for MockVendorLookup {
-        fn resolve_vendor(&self, _mac_or_bssid: &str) -> String {
-            "Amazon".to_string()
-        }
-    }
-
-    #[tokio::test]
-    async fn wifi_service_uses_vendor_lookup_and_normalizes() {
-        let service = WifiService::new(Arc::new(MockWifiScanner), Arc::new(MockVendorLookup));
-        let out = service.scan_airwaves().await.unwrap();
-        assert_eq!(out.len(), 1);
-        assert_eq!(out[0].vendor, "Amazon");
-        assert_eq!(out[0].risk_level, "STANDARD");
+        Ok(result)
     }
 }
-

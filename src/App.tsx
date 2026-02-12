@@ -1,39 +1,40 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
-import { TopBar } from './ui/components/layout/TopBar';
-import { HistoryPanel } from './ui/components/hud/HistoryPanel';
-import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
-import { useNetworkManager } from './ui/hooks/useNetworkManager';
-import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
-
-const NetworkScene = lazy(async () => {
-  const mod = await import('./ui/components/3d/NetworkScene');
-  return { default: mod.NetworkScene };
-});
-
-const DeviceDetailPanel = lazy(async () => {
-  const mod = await import('./ui/components/hud/DeviceDetailPanel');
-  return { default: mod.DeviceDetailPanel };
-});
-
-const RadarPanel = lazy(async () => {
-  const mod = await import('./ui/components/hud/RadarPanel');
-  return { default: mod.RadarPanel };
-});
-
-const ExternalAuditPanel = lazy(async () => {
-  const mod = await import('./ui/components/hud/ExternalAuditPanel');
-  return { default: mod.ExternalAuditPanel };
-});
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { windowingAdapter } from ".//adapters/windowingAdapter"; // Asegura ruta
+import type { DeviceDTO } from "./shared/dtos/NetworkDTOs";
+import { useNetworkManager } from "./ui/hooks/useNetworkManager";
+import { useAppLayoutState } from "./ui/hooks/modules/ui/useAppLayoutState";
+import { usePanelDockingState } from "./ui/hooks/modules/ui/usePanelDockingState";
+import { useDetachedRuntime } from "./ui/hooks/modules/ui/useDetachedRuntime";
+import { useExternalDetachedSync } from "./ui/hooks/modules/ui/useExternalDetachedSync";
+import { DetachedPanelView } from "./ui/components/layout/DetachedPanelView";
+import { MainDockedLayout } from "./ui/components/layout/MainDockedLayout";
 
 function App() {
+  const detachedContext = windowingAdapter.parseDetachedContextFromLocation();
+
   const {
-    devices, selectedDevice, scanning, auditing,
-    auditResults, consoleLogs,
-    startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    toggleJammer, checkRouterSecurity,
-    systemLogs, clearSystemLogs,
-    intruders, identity
-  } = useNetworkManager();
+    devices,
+    selectedDevice,
+    scanning,
+    auditing,
+    auditResults,
+    consoleLogs,
+    startScan,
+    startAudit,
+    selectDevice,
+    loadSession,
+    jammedDevices,
+    jamPendingDevices,
+    toggleJammer,
+    checkRouterSecurity,
+    systemLogs,
+    clearSystemLogs,
+    intruders,
+    identity,
+  } = useNetworkManager({
+    enableAutoBootstrap: !detachedContext,
+    enableScannerHydration: !detachedContext || detachedContext.panel === "device" || detachedContext.panel === "scene3d",
+  });
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
@@ -41,305 +42,164 @@ function App() {
   const [externalAuditTarget, setExternalAuditTarget] = useState<DeviceDTO | null>(null);
   const [externalAuditScenarioId, setExternalAuditScenarioId] = useState<string | null>(null);
 
-  // --- ESTADOS DE TAMAÑO (RESIZABLE) ---
-  const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
-  const [consoleHeight, setConsoleHeight] = useState(250); // Alçada inicial Consola
-  const [radarWidth, setRadarWidth] = useState(520); // Anchura inicial del radar (panel izquierdo)
+  // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
+  useEffect(() => {
+    console.log("👂 [APP] Listening for Dock Panel events...");
+    const unlistenPromise = windowingAdapter.listenDockPanel((panelName) => {
+        console.log("🔀 [APP] Request to open panel:", panelName);
+        if (panelName === "external") {
+            setShowExternalAudit(true);
+            // Opcional: Cerrar otros si es política de UI
+            // setShowRadar(false); 
+        } else if (panelName === "radar") {
+            setShowRadar(true);
+        }
+    });
 
-  // Refs para gestionar el arrastre sin lag
-  const resizeMode = useRef<null | 'sidebar' | 'console' | 'radar'>(null);
-  const dragStartX = useRef(0);
-  const dragStartY = useRef(0);
-  const startSidebarWidth = useRef(450);
-  const startConsoleHeight = useRef(250);
-  const startRadarWidth = useRef(520);
+    // TAMBIÉN ESCUCHAR CONTEXTO PARA ACTUALIZAR OBJETIVO
+    const unlistenContext = windowingAdapter.listenExternalAuditContext((payload) => {
+        console.log("🎯 [APP] External Context Update:", payload);
+        if (payload.targetDevice) {
+            setExternalAuditTarget(payload.targetDevice);
+        }
+        if (payload.scenarioId) {
+            setExternalAuditScenarioId(payload.scenarioId);
+        }
+        if (payload.autoRun) {
+            // Podrías pasar un token de autorun si lo necesitaras
+        }
+        // Aseguramos que se abra
+        setShowExternalAudit(true);
+    });
 
-  // --- GESTION DEL RESIZE ---
-  const startResizingSidebar = useCallback((e: React.MouseEvent) => {
-    resizeMode.current = 'sidebar';
-    dragStartX.current = e.clientX;
-    startSidebarWidth.current = sidebarWidth;
-  }, [sidebarWidth]);
-
-  const startResizingConsole = useCallback((e: React.MouseEvent) => {
-    resizeMode.current = 'console';
-    dragStartY.current = e.clientY;
-    startConsoleHeight.current = consoleHeight;
-  }, [consoleHeight]);
-
-  const startResizingRadar = useCallback((e: React.MouseEvent) => {
-    resizeMode.current = 'radar';
-    dragStartX.current = e.clientX;
-    startRadarWidth.current = radarWidth;
-  }, [radarWidth]);
-
-  const stopResizing = useCallback(() => {
-    resizeMode.current = null;
-    document.body.style.cursor = 'default'; // Restaurar cursor
+    return () => {
+        unlistenPromise.then(u => u());
+        unlistenContext.then(u => u());
+    };
   }, []);
 
-  const resize = useCallback((e: MouseEvent) => {
-    if (resizeMode.current === 'sidebar') {
-      // Arrastrar hacia la izquierda aumenta la anchura del sidebar.
-      const delta = dragStartX.current - e.clientX;
-      const next = Math.max(300, Math.min(800, startSidebarWidth.current + delta));
-      setSidebarWidth(next);
-      document.body.style.cursor = 'col-resize';
-      return;
-    }
+  const layout = useAppLayoutState();
+  const docking = usePanelDockingState({
+    selectedDeviceIp: selectedDevice?.ip,
+    externalAuditTargetIp: externalAuditTarget?.ip,
+    externalAuditScenarioId,
+    showRadar,
+    showExternalAudit,
+  });
+  const externalSync = useExternalDetachedSync();
+  const { detachedPanelReady } = useDetachedRuntime(detachedContext);
 
-    if (resizeMode.current === 'console') {
-      // Resizer entre panel superior y consola: mover hacia arriba aumenta altura.
-      const delta = dragStartY.current - e.clientY;
-      const next = Math.max(120, Math.min(window.innerHeight - 160, startConsoleHeight.current + delta));
-      setConsoleHeight(next);
-      document.body.style.cursor = 'row-resize';
-      return;
-    }
+  const detachedTargetDevice = useMemo(
+    () => (detachedContext?.targetIp ? devices.find((d) => d.ip === detachedContext.targetIp) || null : selectedDevice),
+    [detachedContext?.targetIp, devices, selectedDevice]
+  );
 
-    if (resizeMode.current === 'radar') {
-      // Resizer entre radar (izquierda) y escena (derecha): mover hacia la derecha aumenta anchura.
-      const delta = e.clientX - dragStartX.current;
-      const next = Math.max(360, Math.min(820, startRadarWidth.current + delta));
-      setRadarWidth(next);
-      document.body.style.cursor = 'col-resize';
-    }
-  }, [setSidebarWidth, setConsoleHeight, setRadarWidth]);
+  const detachedExternalTargetDevice = externalSync.detachedExternalTarget || detachedTargetDevice;
+  const detachedExternalScenario =
+    externalSync.detachedExternalScenarioId || detachedContext?.scenarioId || externalAuditScenarioId;
 
-  // Listeners globales de raton
-  useEffect(() => {
-    window.addEventListener('mousemove', resize);
-    window.addEventListener('mouseup', stopResizing);
-    return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-    };
-  }, [resize, stopResizing]);
+  const openLabAuditForDevice = useCallback(
+    (device: DeviceDTO) => {
+      const scenarioId = device.isGateway ? "router_recon_ping_tracert" : "device_http_headers";
+      setExternalAuditTarget(device);
+      setExternalAuditScenarioId(scenarioId);
+      setShowExternalAudit(true);
+
+      if (docking.detachedPanels.external && docking.detachedModes.external === "tauri") {
+        void externalSync.emitExternalContext({ targetDevice: device, scenarioId, autoRun: true });
+      }
+    },
+    [docking.detachedModes.external, docking.detachedPanels.external, externalSync]
+  );
+
+  const toggleExternalAudit = useCallback(() => {
+    const next = !showExternalAudit;
+    setShowExternalAudit(next);
+    if (next) {
+      // Si se abre manualmente, quizás queramos limpiar o mantener el último
+      // setExternalAuditTarget(null);
+      // setExternalAuditScenarioId(null);
+    }
+  }, [showExternalAudit]);
+
+  if (detachedContext) {
+    return (
+      <DetachedPanelView
+        panel={detachedContext.panel}
+        detachedPanelReady={detachedPanelReady}
+        systemLogs={systemLogs}
+        devices={devices}
+        selectedDevice={selectedDevice}
+        clearSystemLogs={clearSystemLogs}
+        detachedTargetDevice={detachedTargetDevice}
+        auditResults={auditResults}
+        consoleLogs={consoleLogs}
+        auditing={auditing}
+        startAudit={startAudit}
+        jammedDevices={jammedDevices}
+        jamPendingDevices={jamPendingDevices}
+        toggleJammer={toggleJammer}
+        checkRouterSecurity={checkRouterSecurity}
+        onOpenLabAudit={openLabAuditForDevice}
+        detachedExternalTargetDevice={detachedExternalTargetDevice}
+        identity={identity}
+        detachedExternalScenario={detachedExternalScenario}
+        detachedExternalAutoRunToken={externalSync.detachedExternalAutoRunToken}
+        intruders={intruders}
+        selectDevice={selectDevice}
+      />
+    );
+  }
 
   return (
-    // Contenedor principal
-    <div style={{
-      display: 'flex',
-      width: '100vw',
-      height: '100vh',
-      background: '#050505',
-      color: '#0f0',
-      overflow: 'hidden',
-      fontFamily: "'Consolas', 'Courier New', monospace",
-      fontSize: '16px',
-      userSelect: (resizeMode.current !== null) ? 'none' : 'auto' // Evitar seleccionar texto mientras se arrastra
-    }}>
-
-      {/* Modal de riesgo */}
-      {/* =================================================================================
-          COLUMNA ESQUERRA: TOPBAR + MAPA + CONSOLA (FLEX 1)
-         ================================================================================= */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        height: '100%',
-        minWidth: 0,
-        overflow: 'hidden'
-      }}>
-
-        {/* 1. Barra superior */}
-        <TopBar
-          scanning={scanning}
-          activeNodes={devices.length}
-          onScan={startScan}
-          onHistoryToggle={() => setShowHistory(!showHistory)}
-          showHistory={showHistory}
-          onRadarToggle={() => setShowRadar(!showRadar)}
-          showRadar={showRadar}
-          onExternalAuditToggle={() => {
-            const next = !showExternalAudit;
-            setShowExternalAudit(next);
-            if (next) {
-              setExternalAuditTarget(null);
-              setExternalAuditScenarioId(null);
-            }
-          }}
-          showExternalAudit={showExternalAudit}
-          identity={identity}
-        />
-
-        {/* 2. Zona superior: Radar (izquierda) + Mapa 3D (centro) */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-          {showHistory && (
-            <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 20 }}>
-              <HistoryPanel
-                onClose={() => setShowHistory(false)}
-                onLoadSession={(oldDevices) => { loadSession(oldDevices); setShowHistory(false); }}
-              />
-            </div>
-          )}
-
-          {showExternalAudit && (
-            <Suspense fallback={null}>
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 20,
-                  zIndex: 60,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'flex-start',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div style={{ pointerEvents: 'auto' }}>
-                  <ExternalAuditPanel
-                    onClose={() => setShowExternalAudit(false)}
-                    targetDevice={externalAuditTarget}
-                    identity={identity}
-                    defaultScenarioId={externalAuditScenarioId}
-                    autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
-                  />
-                </div>
-              </div>
-            </Suspense>
-          )}
-
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', minHeight: 0 }}>
-            {showRadar && (
-              <>
-                <div style={{ width: `${radarWidth}px`, minWidth: 360, maxWidth: 820, minHeight: 0, background: '#000', overflow: 'hidden', zIndex: 12 }}>
-                  <Suspense fallback={null}>
-                    <RadarPanel onClose={() => setShowRadar(false)} />
-                  </Suspense>
-                </div>
-                <div
-                  onMouseDown={startResizingRadar}
-                  style={{
-                    width: '2px',
-                    background: '#004400',
-                    cursor: 'col-resize',
-                    zIndex: 13,
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
-                />
-              </>
-            )}
-
-            <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
-              <Suspense fallback={null}>
-                <NetworkScene
-                  devices={devices}
-                  onDeviceSelect={selectDevice}
-                  selectedIp={selectedDevice?.ip}
-                  intruders={intruders}
-                  identity={identity}
-                />
-              </Suspense>
-            </div>
-          </div>
-        </div>
-
-        {/* Resizer horizontal (para arrastrar la consola) */}
-        <div
-          onMouseDown={startResizingConsole}
-          style={{
-            height: '2px',
-            background: '#004400',
-            cursor: 'row-resize',
-            zIndex: 15,
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
-        />
-
-        {/* 3. Consola / sniffer (altura dinamica) */}
-     
-        <div style={{
-          height: `${consoleHeight}px`,
-          minHeight: 0,
-          zIndex: 10,
-          boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
-          background: '#000'
-        }}>
-          <ConsoleLogs
-            logs={systemLogs}
-            devices={devices}
-            selectedDevice={selectedDevice} // Necesario para filtros por objetivo
-            onClearSystemLogs={clearSystemLogs}
-          />
-        </div>
-
-      </div>
-
-      {/* Resizer vertical (para arrastrar el sidebar) */}
-      <div
-        onMouseDown={startResizingSidebar}
-        style={{
-          width: '2px',
-          background: '#004400',
-          cursor: 'col-resize',
-          zIndex: 40,
-          transition: 'background 0.2s'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-        onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
-      />
-
-      {/* =================================================================================
-          Columna derecha: sidebar (anchura dinamica)
-         ================================================================================= */}
-      <div style={{
-        width: `${sidebarWidth}px`,
-        minWidth: '300px',
-        flexShrink: 0,
-        height: '100vh',
-        background: '#020202',
-        // borderLeft: '2px solid #004400', // Ja no cal, fem servir el resizer com a vora
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '-10px 0 30px rgba(0, 50, 0, 0.2)',
-        position: 'relative',
-        zIndex: 30
-      }}>
-
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'linear-gradient(rgba(0, 20, 0, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 20, 0, 0.1) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          opacity: 0.3
-        }}></div>
-
-        {selectedDevice ? (
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <Suspense fallback={null}>
-              <DeviceDetailPanel
-                device={selectedDevice}
-                auditResults={auditResults}
-                consoleLogs={consoleLogs}
-                auditing={auditing}
-                onAudit={() => startAudit(selectedDevice.ip)}
-                isJammed={jammedDevices.includes(selectedDevice.ip)}
-                onToggleJam={() => toggleJammer(selectedDevice.ip)}
-                onRouterAudit={checkRouterSecurity}
-                onOpenLabAudit={(d) => {
-                  setExternalAuditTarget(d);
-                  setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
-                  setShowExternalAudit(true);
-                }}
-              />
-            </Suspense>
-          </div>
-        ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#004400', textAlign: 'center', padding: 40 }}>
-            <div style={{ fontSize: '5rem', marginBottom: 20, opacity: 0.3, textShadow: '0 0 20px #0f0' }}>⌖</div>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: 10, color: '#0f0' }}>AWAITING TARGET</h3>
-            <p style={{ fontSize: '1rem', opacity: 0.7 }}>SELECT A NODE FROM THE NETWORK GRID</p>
-          </div>
-        )}
-      </div>
-
-    </div>
+    <MainDockedLayout
+      scanning={scanning}
+      devices={devices}
+      showHistory={showHistory}
+      setShowHistory={setShowHistory}
+      showRadar={showRadar}
+      setShowRadar={setShowRadar}
+      showExternalAudit={showExternalAudit}
+      onToggleExternalAudit={toggleExternalAudit}
+      closeExternalAudit={() => setShowExternalAudit(false)}
+      identity={identity}
+      startScan={startScan}
+      loadSession={loadSession}
+      showDockRadar={docking.showDockRadar}
+      showDockExternal={docking.showDockExternal}
+      showDockScene={docking.showDockScene}
+      showDockConsole={docking.showDockConsole}
+      showDockDevice={docking.showDockDevice}
+      radarWidth={layout.radarWidth}
+      dockSplitRatio={layout.dockSplitRatio}
+      consoleHeight={layout.consoleHeight}
+      sidebarWidth={layout.sidebarWidth}
+      startResizingDockSplit={layout.startResizingDockSplit}
+      startResizingRadar={layout.startResizingRadar}
+      startResizingConsole={layout.startResizingConsole}
+      startResizingSidebar={layout.startResizingSidebar}
+      undockPanel={(panel) => void docking.undockPanel(panel)}
+      dockPanel={(panel) => void docking.dockPanel(panel)}
+      selectedDevice={selectedDevice}
+      selectDevice={selectDevice}
+      intruders={intruders}
+      systemLogs={systemLogs}
+      clearSystemLogs={clearSystemLogs}
+      auditResults={auditResults}
+      consoleLogs={consoleLogs}
+      auditing={auditing}
+      startAudit={startAudit}
+      jammedDevices={jammedDevices}
+      jamPendingDevices={jamPendingDevices}
+      toggleJammer={toggleJammer}
+      checkRouterSecurity={checkRouterSecurity}
+      externalAuditTarget={externalAuditTarget}
+      externalAuditScenarioId={externalAuditScenarioId}
+      onOpenLabAudit={openLabAuditForDevice}
+      detachedPanels={docking.detachedPanels}
+      detachedModes={docking.detachedModes}
+      isResizing={layout.isResizing}
+    />
   );
 }
 

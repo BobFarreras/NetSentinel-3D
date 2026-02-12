@@ -7,10 +7,14 @@ use pnet::util::MacAddr;
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+const JAM_LOOP_SLEEP_MS: u64 = 350;
+const IFACE_REFRESH_SECS: u64 = 15;
 
 #[derive(Clone)]
 struct Target {
@@ -19,63 +23,94 @@ struct Target {
     gateway_ip: String,
 }
 
+enum JammerCommand {
+    Start(Target),
+    Stop(String),
+}
+
 pub struct JammerService {
-    active_targets: Arc<Mutex<HashMap<String, Target>>>,
+    command_tx: Sender<JammerCommand>,
     running: Arc<AtomicBool>,
 }
 
 impl JammerService {
     pub fn new() -> Self {
+        let (command_tx, command_rx) = mpsc::channel::<JammerCommand>();
         let service = Self {
-            active_targets: Arc::new(Mutex::new(HashMap::new())),
+            command_tx,
             running: Arc::new(AtomicBool::new(true)),
         };
-        service.start_attack_loop();
+        service.start_attack_loop(command_rx);
         service
     }
 
-    fn start_attack_loop(&self) {
-        let targets_clone = Arc::clone(&self.active_targets);
+    fn start_attack_loop(&self, command_rx: Receiver<JammerCommand>) {
         let running_clone = Arc::clone(&self.running);
 
         thread::spawn(move || {
+            let mut active_targets: HashMap<String, Target> = HashMap::new();
+            let mut cached_iface: Option<datalink::NetworkInterface> = None;
+            let mut next_iface_refresh = Instant::now();
+
             while running_clone.load(Ordering::Relaxed) {
-                let targets = {
-                    let Ok(lock) = targets_clone.lock() else {
-                        thread::sleep(Duration::from_millis(200));
-                        continue;
-                    };
-                    if lock.is_empty() {
-                        thread::sleep(Duration::from_millis(1000));
-                        continue;
+                // Drenamos comandos pendientes sin bloquear.
+                while let Ok(cmd) = command_rx.try_recv() {
+                    match cmd {
+                        JammerCommand::Start(target) => {
+                            println!(
+                                "💀 [JAMMER] Objetivo registrado: {} (gateway: {})",
+                                target.ip, target.gateway_ip
+                            );
+                            active_targets.insert(target.ip.clone(), target);
+                        }
+                        JammerCommand::Stop(target_ip) => {
+                            if active_targets.remove(&target_ip).is_some() {
+                                println!("🏳️ [JAMMER] Objetivo eliminado: {}", target_ip);
+                            }
+                        }
                     }
-                    lock.clone()
-                };
+                }
 
-                let identity = match local_intelligence::get_host_identity() {
-                    Ok(id) => id,
-                    Err(_) => {
-                        thread::sleep(Duration::from_millis(500));
-                        continue;
+                if active_targets.is_empty() {
+                    thread::sleep(Duration::from_millis(500));
+                    continue;
+                }
+
+                // Refrescamos identidad/interfaz a intervalos para evitar bloquear runtime.
+                if cached_iface.is_none() || Instant::now() >= next_iface_refresh {
+                    match local_intelligence::get_host_identity() {
+                        Ok(identity) => {
+                            let interfaces = datalink::interfaces();
+                            let interface = interfaces.into_iter().find(|iface| {
+                                iface.ips.iter().any(|ip| ip.ip().to_string() == identity.ip)
+                            });
+
+                            if let Some(iface) = interface {
+                                cached_iface = Some(iface);
+                            } else {
+                                cached_iface = None;
+                            }
+                            next_iface_refresh = Instant::now() + Duration::from_secs(IFACE_REFRESH_SECS);
+                        }
+                        Err(_) => {
+                            // Si falla resolucion, no bloqueamos: reintentamos en breve.
+                            next_iface_refresh = Instant::now() + Duration::from_millis(1200);
+                        }
                     }
-                };
+                }
 
-                let interfaces = datalink::interfaces();
-                let interface = interfaces.into_iter().find(|iface| {
-                    iface.ips.iter().any(|ip| ip.ip().to_string() == identity.ip)
-                });
-
-                let Some(iface) = interface else {
+                let Some(iface) = cached_iface.as_ref() else {
                     thread::sleep(Duration::from_millis(500));
                     continue;
                 };
 
                 let Some(my_mac) = iface.mac else {
+                    cached_iface = None;
                     thread::sleep(Duration::from_millis(500));
                     continue;
                 };
 
-                for (_, target) in &targets {
+                for target in active_targets.values() {
                     let Ok(target_ip) = Ipv4Addr::from_str(&target.ip) else {
                         continue;
                     };
@@ -97,35 +132,31 @@ impl JammerService {
                 }
 
                 // Cadencia conservadora para no saturar el host local.
-                thread::sleep(Duration::from_millis(250));
+                thread::sleep(Duration::from_millis(JAM_LOOP_SLEEP_MS));
             }
         });
     }
 
     pub fn start_jamming(&self, target_ip: String, target_mac: String, gateway_ip: String) {
-        let Ok(mut lock) = self.active_targets.lock() else {
-            return;
-        };
-        println!(
-            "💀 [JAMMER] Objetivo registrado: {} (gateway: {})",
-            target_ip, gateway_ip
-        );
-        lock.insert(
-            target_ip.clone(),
-            Target {
-                ip: target_ip,
-                mac: target_mac,
-                gateway_ip,
-            },
-        );
+        let cmd = JammerCommand::Start(Target {
+            ip: target_ip.clone(),
+            mac: target_mac,
+            gateway_ip: gateway_ip.clone(),
+        });
+        if let Err(err) = self.command_tx.send(cmd) {
+            eprintln!(
+                "[jammer] start_jamming fallo al encolar ip={} gateway_ip={} err={}",
+                target_ip, gateway_ip, err
+            );
+        }
     }
 
     pub fn stop_jamming(&self, target_ip: String) {
-        let Ok(mut lock) = self.active_targets.lock() else {
-            return;
-        };
-        if lock.remove(&target_ip).is_some() {
-            println!("🏳️ [JAMMER] Objetivo eliminado: {}", target_ip);
+        if let Err(err) = self.command_tx.send(JammerCommand::Stop(target_ip.clone())) {
+            eprintln!(
+                "[jammer] stop_jamming fallo al encolar ip={} err={}",
+                target_ip, err
+            );
         }
     }
 }
@@ -139,23 +170,23 @@ impl Drop for JammerService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::thread;
+    use std::time::Duration;
 
     #[test]
-    fn start_jamming_registers_target() {
+    fn start_jamming_accepts_command_without_blocking() {
         let service = JammerService::new();
         service.start_jamming(
             "192.168.1.20".to_string(),
             "AA:BB:CC:DD:EE:20".to_string(),
             "192.168.1.1".to_string(),
         );
-
-        let lock = service.active_targets.lock().unwrap();
-        assert_eq!(lock.len(), 1);
-        assert!(lock.contains_key("192.168.1.20"));
+        thread::sleep(Duration::from_millis(20));
+        assert!(service.running.load(Ordering::Relaxed));
     }
 
     #[test]
-    fn stop_jamming_removes_target() {
+    fn stop_jamming_accepts_command_without_blocking() {
         let service = JammerService::new();
         service.start_jamming(
             "192.168.1.30".to_string(),
@@ -163,9 +194,7 @@ mod tests {
             "192.168.1.1".to_string(),
         );
         service.stop_jamming("192.168.1.30".to_string());
-
-        let lock = service.active_targets.lock().unwrap();
-        assert!(lock.is_empty());
+        thread::sleep(Duration::from_millis(20));
+        assert!(service.running.load(Ordering::Relaxed));
     }
 }
-
