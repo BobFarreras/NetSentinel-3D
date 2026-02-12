@@ -140,6 +140,8 @@ pub fn run() {
             // WORDLIST COMMANDS
             api::commands::get_dictionary,
             api::commands::add_to_dictionary,
+            api::commands::remove_from_dictionary, 
+            api::commands::update_in_dictionary,
             // OPSEC
             api::commands::check_mac_security,
             api::commands::randomize_mac,

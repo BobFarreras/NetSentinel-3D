@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import type { ExternalAuditLogEvent } from "../../../../shared/dtos/NetworkDTOs"; // Ajusta ruta si necesario
 
 interface AuditConsoleProps {
   rows: { ts: number; stream: "stdout" | "stderr"; line: string }[];

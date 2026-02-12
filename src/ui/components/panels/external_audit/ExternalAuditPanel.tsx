@@ -26,7 +26,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   targetDevice: propTargetDevice,
   identity = null,
   defaultScenarioId = null,
-  autoRun: initialAutoRunProp = false,
+  autoRun: _initialAutoRunProp = false,
   embedded = false,
 }) => {
   const audit = useExternalAudit();

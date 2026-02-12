@@ -4,28 +4,28 @@
 // agrupados por dominio. Esto evita un archivo monolitico sin romper el wiring de `generate_handler!`
 
 // Submodulos (separacion por responsabilidades / SOLID)
-#[path = "commands/scanner.rs"]
-mod scanner;
-#[path = "commands/router_audit.rs"]
-mod router_audit;
-#[path = "commands/history.rs"]
-mod history;
-#[path = "commands/snapshot.rs"]
-mod snapshot;
 #[path = "commands/credentials.rs"]
 mod credentials;
-#[path = "commands/wifi.rs"]
-mod wifi;
 #[path = "commands/external_audit.rs"]
 mod external_audit;
-#[path = "commands/system.rs"]
-mod system;
+#[path = "commands/history.rs"]
+mod history;
 #[path = "commands/internal_validation.rs"]
 mod internal_validation;
-#[path = "commands/wordlist.rs"]
-mod wordlist; 
 #[path = "commands/opsec.rs"]
 mod opsec;
+#[path = "commands/router_audit.rs"]
+mod router_audit;
+#[path = "commands/scanner.rs"]
+mod scanner;
+#[path = "commands/snapshot.rs"]
+mod snapshot;
+#[path = "commands/system.rs"]
+mod system;
+#[path = "commands/wifi.rs"]
+mod wifi;
+#[path = "commands/wordlist.rs"]
+mod wordlist;
 
 // --- NETWORK SCANNER ---
 
@@ -180,7 +180,9 @@ pub fn start_traffic_sniffing(
 }
 
 #[tauri::command]
-pub fn stop_traffic_sniffing(state: tauri::State<'_, crate::api::state::TrafficState>) -> Result<(), String> {
+pub fn stop_traffic_sniffing(
+    state: tauri::State<'_, crate::api::state::TrafficState>,
+) -> Result<(), String> {
     system::stop_traffic_sniffing(state)
 }
 
@@ -191,7 +193,10 @@ pub fn start_jamming(
     mac: String,
     gateway_ip: String,
 ) -> Result<(), String> {
-    println!("[api][jammer] start_jamming request ip={} mac={} gateway_ip={}", ip, mac, gateway_ip);
+    println!(
+        "[api][jammer] start_jamming request ip={} mac={} gateway_ip={}",
+        ip, mac, gateway_ip
+    );
     if let Err(err) = internal_validation::validate_start_jamming_input(&ip, &mac, &gateway_ip) {
         eprintln!("[api][jammer] start_jamming validation error err={}", err);
         return Err(err);
@@ -200,7 +205,10 @@ pub fn start_jamming(
 }
 
 #[tauri::command]
-pub fn stop_jamming(state: tauri::State<'_, crate::api::state::JammerState>, ip: String) -> Result<(), String> {
+pub fn stop_jamming(
+    state: tauri::State<'_, crate::api::state::JammerState>,
+    ip: String,
+) -> Result<(), String> {
     println!("[api][jammer] stop_jamming request ip={}", ip);
     if let Err(err) = internal_validation::validate_stop_jamming_input(&ip) {
         eprintln!("[api][jammer] stop_jamming validation error err={}", err);
@@ -228,14 +236,31 @@ pub async fn add_to_dictionary(
 
 #[tauri::command]
 pub async fn check_mac_security(
-    service: tauri::State<'_, crate::application::opsec_service::OpSecService>
+    service: tauri::State<'_, crate::application::opsec_service::OpSecService>,
 ) -> Result<crate::api::dtos::MacSecurityStatusDTO, String> {
     opsec::check_mac_security(service) // Lógica síncrona envuelta en async para Tauri
 }
 
 #[tauri::command]
+pub async fn remove_from_dictionary(
+    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    word: String,
+) -> Result<Vec<String>, String> {
+    service.remove_word(word)
+}
+
+#[tauri::command]
+pub async fn update_in_dictionary(
+    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    old_word: String,
+    new_word: String,
+) -> Result<Vec<String>, String> {
+    service.update_word(old_word, new_word)
+}
+
+#[tauri::command]
 pub async fn randomize_mac(
-    service: tauri::State<'_, crate::application::opsec_service::OpSecService>
+    service: tauri::State<'_, crate::application::opsec_service::OpSecService>,
 ) -> Result<String, String> {
     opsec::randomize_mac(service).await
 }
