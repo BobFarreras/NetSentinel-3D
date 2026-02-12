@@ -57,7 +57,7 @@ pub async fn scan_via_netsh() -> Result<Vec<WifiScanRecord>, String> {
                     channel: iface.channel,
                     signal_level: iface.rssi.unwrap_or(-100),
                     security_type: "OPEN".to_string(),
-                    is_connected: true,
+                    is_connected: iface.is_connected,
                 });
             } else {
                 for r in records.iter_mut() {
@@ -74,7 +74,7 @@ pub async fn scan_via_netsh() -> Result<Vec<WifiScanRecord>, String> {
                         if r.bssid == pseudo_bssid::stable_pseudo_bssid(&r.ssid, &r.security_type) {
                             r.bssid = iface.ap_bssid.clone();
                         }
-                        r.is_connected = r.bssid == iface.ap_bssid;
+                        r.is_connected = iface.is_connected && r.bssid == iface.ap_bssid;
                     }
                 }
             }
