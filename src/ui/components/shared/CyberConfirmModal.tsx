@@ -14,12 +14,13 @@ interface CyberConfirmModalProps {
   title: string;
   message: string;
   macStatus?: MacSecurityStatusDTO | null; // <--- NUEVO PROP
+  isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({ 
-    isOpen, title, message, macStatus, onConfirm, onCancel 
+    isOpen, title, message, macStatus, isLoading = false, onConfirm, onCancel 
 }) => {
   if (!isOpen) return null;
 
@@ -76,7 +77,21 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
           </div>
 
           {/* --- BLOQUE DE IDENTIDAD OPSEC --- */}
-          {macStatus && (
+          {isLoading ? (
+              <div style={{
+                  marginBottom: 15,
+                  padding: 10,
+                  border: `1px dashed ${themeColor}`,
+                  background: "rgba(0,0,0,0.4)",
+                  color: "#b7ffe2",
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                }}
+              >
+                <div>ANALYZING INTERFACE IDENTITY</div>
+                <div style={{ opacity: 0.8 }}>PLEASE WAIT...</div>
+              </div>
+          ) : macStatus && (
               <div style={{ 
                   marginBottom: 15, padding: 10, 
                   border: `1px dashed ${themeColor}`, 
@@ -109,13 +124,14 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
           <div style={{ display: "flex", gap: 10 }}>
             <button 
               onClick={onCancel}
+              disabled={isLoading}
               style={{
                 flex: 1,
                 background: "transparent",
                 border: "1px solid #666",
-                color: "#888",
+                color: isLoading ? "#555" : "#888",
                 padding: "10px",
-                cursor: "pointer",
+                cursor: isLoading ? "not-allowed" : "pointer",
                 fontWeight: 700,
                 fontFamily: "monospace"
               }}
@@ -124,19 +140,20 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
             </button>
             <button 
               onClick={onConfirm}
+              disabled={isLoading}
               style={{
                 flex: 1,
                 background: themeBg,
                 border: `1px solid ${themeColor}`,
-                color: isHighRisk ? "#ffaaaa" : "#ccffdd",
+                color: isLoading ? "#666" : (isHighRisk ? "#ffaaaa" : "#ccffdd"),
                 padding: "10px",
-                cursor: "pointer",
+                cursor: isLoading ? "not-allowed" : "pointer",
                 fontWeight: 800,
                 fontFamily: "monospace",
                 letterSpacing: 1
               }}
             >
-              {isHighRisk ? "AUTHORIZE (UNSAFE)" : "AUTHORIZE"}
+              {isLoading ? "ANALYZING..." : (isHighRisk ? "AUTHORIZE (UNSAFE)" : "AUTHORIZE")}
             </button>
           </div>
         </div>

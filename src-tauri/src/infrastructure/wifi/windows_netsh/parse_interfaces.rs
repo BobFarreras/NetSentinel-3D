@@ -8,15 +8,31 @@ pub struct NetshInterfaceIntel {
     pub ap_bssid: String,
     pub channel: Option<u16>,
     pub rssi: Option<i32>,
+    pub is_connected: bool,
 }
 
 pub fn parse_netsh_interfaces(text: &str) -> Option<NetshInterfaceIntel> {
+    let normalized_text = text.replace("\r\n", "\n");
+    let mut parsed: Vec<NetshInterfaceIntel> = normalized_text
+        .split("\n\n")
+        .filter_map(parse_interface_block)
+        .collect();
+
+    // Priorizamos bloque conectado; fallback a primer bloque con SSID.
+    if let Some(idx) = parsed.iter().position(|i| i.is_connected) {
+        return Some(parsed.swap_remove(idx));
+    }
+    parsed.into_iter().next()
+}
+
+fn parse_interface_block(block: &str) -> Option<NetshInterfaceIntel> {
+    let mut is_connected = false;
     let mut ssid: Option<String> = None;
     let mut ap_bssid: Option<String> = None;
     let mut channel: Option<u16> = None;
     let mut rssi: Option<i32> = None;
 
-    for raw_line in text.lines() {
+    for raw_line in block.lines() {
         let line = raw_line.trim();
         if line.is_empty() {
             continue;
@@ -27,6 +43,12 @@ pub fn parse_netsh_interfaces(text: &str) -> Option<NetshInterfaceIntel> {
         };
         let key = left.to_lowercase().replace(' ', "");
         let value = right.trim();
+
+        if key == "estado" || key == "state" {
+            let normalized_state = value.to_lowercase();
+            is_connected = normalized_state == "conectado" || normalized_state == "connected";
+            continue;
+        }
 
         if key == "ssid" {
             if !value.is_empty() {
@@ -62,6 +84,7 @@ pub fn parse_netsh_interfaces(text: &str) -> Option<NetshInterfaceIntel> {
         ap_bssid: ap_bssid_value,
         channel,
         rssi,
+        is_connected,
     })
 }
 
@@ -77,6 +100,27 @@ mod tests {
         assert_eq!(intel.ap_bssid, "3c:58:5d:d3:68:e5");
         assert_eq!(intel.channel, Some(100));
         assert_eq!(intel.rssi, Some(-40));
+        assert!(intel.is_connected);
+    }
+
+    #[test]
+    fn parse_netsh_interfaces_prioritizes_connected_block_when_multiple_interfaces() {
+        let sample = r#"
+Hay 2 interfaces en el sistema:
+
+    Nombre                   : Wi-Fi
+    Estado                  : conectado
+    SSID                   : MIWIFI_UHeX
+    AP BSSID               : 3c:58:5d:d3:68:e5
+    Canal                  : 100
+    RSSI                   : -40
+
+    Nombre                   : Wi-Fi 2
+    Estado                  : desconectado
+"#;
+
+        let intel = parse_netsh_interfaces(sample).expect("intel");
+        assert_eq!(intel.ssid, "MIWIFI_UHeX");
+        assert!(intel.is_connected);
     }
 }
-

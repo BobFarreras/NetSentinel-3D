@@ -1,6 +1,30 @@
 # Diario de desarrollo (CHANGELOG)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
+## [v0.8.25] - Hardening de conexion WiFi real (2026-02-12)
+### 🦀 Backend (validacion de enlace)
+- Refactor en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para eliminar falsos positivos de conexion:
+  - desconexion explicita previa (`netsh wlan disconnect`) antes de cada intento,
+  - validacion estricta por estado real de interfaz (`connected/conectado`) y SSID exacto.
+- `src-tauri/src/infrastructure/wifi/windows_netsh.rs` ajusta la marca de red conectada para depender tambien de `iface.is_connected`.
+- `src-tauri/src/infrastructure/wifi/windows_netsh/parse_interfaces.rs` ahora parsea correctamente multiples bloques de interfaz y prioriza el bloque realmente conectado.
+- `src-tauri/src/infrastructure/wifi/wifi_connector.rs` deja de exigir IPv4 para declarar enlace WiFi exitoso (evita falsos negativos por latencia DHCP).
+- Añadidas trazas de diagnostico en el flujo nativo WiFi:
+  - `src/core/logic/externalAuditScenarios.ts` ahora loguea tiempo por intento y snapshot `scan_airwaves` tras cada fallo.
+  - `src-tauri/src/infrastructure/wifi/wifi_connector.rs` ahora loguea estado de `netsh connect` y snapshots de interfaz durante el polling.
+- UX/logging en `ExternalAudit`:
+  - nuevas trazas `🧪 TRACE` redirigidas a `SYSTEM LOGS` por bus local (`src/ui/utils/systemLogBus.ts`) para limpiar el `Console Output` del panel.
+  - `src/ui/hooks/modules/network/useSocketLogs.ts` ahora escucha ese bus y persiste eventos de sistema con timestamp.
+  - `src/ui/components/panels/external_audit/AuditConsole.tsx` renderiza salida de forma progresiva (stagger) para evitar bloque visual al autorizar.
+  - `src/ui/components/shared/CyberConfirmModal.tsx` añade estado `isLoading` para mostrar el modal OPSEC de inmediato mientras se resuelve `check_mac_security`.
+- Impacto: `wifi_connect` solo devuelve `true` cuando hay enlace WiFi realmente establecido sobre el SSID objetivo, evitando continuar el flujo por falsos negativos de parseo o demora DHCP.
+
+## [v0.8.24] - Fix de corte en diccionario WiFi (2026-02-12)
+### 🦀 Backend (WiFi connector)
+- Corregida la verificacion de conexion en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para no depender solo de salida en ingles de `netsh`.
+- `is_connected(...)` ahora reconoce estado conectado en ingles y espanol (`connected` / `conectado`) y normaliza comparacion por minusculas.
+- Impacto: cuando se acierta la clave WPA2, `wifi_connect` devuelve `true` correctamente y el escenario `wifi_brute_force_dict` corta el bucle con `return` en el primer acierto.
+
 ## [0.8.23] - OpSec & Ghost Mode Implementation
 ### Added
 - **Ghost Mode:** Capacidad de rotar la dirección MAC aleatoriamente usando la configuración nativa de Windows (WlanSvc).
@@ -433,4 +457,3 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
-

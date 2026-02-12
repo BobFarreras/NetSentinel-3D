@@ -11,6 +11,7 @@ import { LabModeView } from "./LabModeView";
 import { CustomModeView } from "./CustomModeView"; 
 import { windowingAdapter } from "../../../../adapters/windowingAdapter";
 import { CyberConfirmModal, type MacSecurityStatusDTO } from "../../shared/CyberConfirmModal"; // Importamos el tipo del modal
+import { emitSystemLog } from "../../../utils/systemLogBus";
 
 interface ExternalAuditPanelProps {
   onClose: () => void;
@@ -41,6 +42,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
   // ESTADOS MODAL & OPSEC
   const [showConfirm, setShowConfirm] = useState(false);
   const [macStatus, setMacStatus] = useState<MacSecurityStatusDTO | null>(null);
+  const [isCheckingOpsec, setIsCheckingOpsec] = useState(false);
 
   const [autoRunToken, setAutoRunToken] = useState<number>(0);
   const lastExecutedToken = useRef<number>(0);
@@ -52,16 +54,18 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
 
   useEffect(() => {
     if (propTargetDevice) {
-        console.log("📥 [PANEL] Prop Target Updated:", propTargetDevice.ip);
         setLocalTarget(propTargetDevice);
         setMode("LAB");
+        emitSystemLog({
+          source: "EXTERNAL_AUDIT",
+          level: "DEBUG",
+          message: `target actualizado por props ip=${propTargetDevice.ip}`,
+        });
     }
   }, [propTargetDevice]);
 
   useEffect(() => {
     const unlistenPromise = windowingAdapter.listenExternalAuditContext((payload) => {
-      console.log("⚡ [PANEL] Event Context Received:", payload);
-      
       if (payload.targetDevice) setLocalTarget(payload.targetDevice);
       if (payload.scenarioId) {
         setScenarioId(payload.scenarioId);
@@ -69,10 +73,7 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
       }
       
       if (payload.autoRun === true) {
-        console.log("🔥 [PANEL] Event requested AutoRun!");
         setAutoRunToken(Date.now());
-      } else {
-        console.log("✋ [PANEL] Event requested data update only (No AutoRun)");
       }
     });
     return () => { unlistenPromise.then((unlisten) => unlisten()); };
@@ -87,6 +88,11 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     abortController.current = new AbortController();
 
     setNativeRows([{ ts: Date.now(), stream: "stdout", line: `🚀 INICIANDO PROTOCOLO: ${selectedScenario.title}` }]);
+    emitSystemLog({
+      source: "EXTERNAL_AUDIT",
+      level: "INFO",
+      message: `Inicio protocolo '${selectedScenario.id}' target=${targetIp}`,
+    });
 
     try {
       if (selectedScenario.executeNative) {
@@ -94,7 +100,26 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
             target: targetIp, 
             signal: abortController.current.signal, 
             onLog: (stream, line) => {
+              // Las trazas de diagnostico van a SYSTEM LOGS para no saturar la consola del panel.
+              if (line.includes("🧪 TRACE")) {
+                emitSystemLog({
+                  source: "WIFI_NATIVE",
+                  level: stream === "stderr" ? "ERROR" : "DEBUG",
+                  message: line,
+                });
+                return;
+              }
+
               setNativeRows(prev => [...prev, { ts: Date.now(), stream, line }]);
+
+              // Duplicamos solo eventos de control importantes.
+              if (line.includes("PREDATOR HIT") || line.includes("ATAQUE ABORTADO") || line.includes("DICCIONARIO AGOTADO")) {
+                emitSystemLog({
+                  source: "WIFI_NATIVE",
+                  level: stream === "stderr" ? "WARN" : "INFO",
+                  message: line,
+                });
+              }
             }
           });
       }
@@ -111,21 +136,32 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
 
     // --- CHECK NATIVO (WIFI) ---
     if (selectedScenario.mode === "native" && selectedScenario.category === "WIFI") {
-        
-        // 1. CHEQUEO OPSEC (Llamada al Backend)
-        try {
-            console.log("🕵️‍♂️ [OPSEC] Verificando identidad de interfaz...");
-            const status = await invoke<MacSecurityStatusDTO>("check_mac_security");
-            console.log("🕵️‍♂️ [OPSEC] Estado:", status);
-            setMacStatus(status);
-        } catch (e) {
-            console.error("⚠️ [OPSEC] Fallo al verificar MAC:", e);
-            // Fallback: Asumimos lo peor (Riesgo Alto)
-            setMacStatus({ current_mac: "UNKNOWN", is_spoofed: false, risk_level: "HIGH" });
-        }
-
-        // 2. MOSTRAR MODAL
+        // Mostramos el modal de inmediato y resolvemos el check OPSEC en segundo plano.
+        setMacStatus(null);
+        setIsCheckingOpsec(true);
         setShowConfirm(true);
+
+        void (async () => {
+          try {
+            const status = await invoke<MacSecurityStatusDTO>("check_mac_security");
+            setMacStatus(status);
+            emitSystemLog({
+              source: "OPSEC",
+              level: status.risk_level === "HIGH" ? "WARN" : "INFO",
+              message: `check_mac_security risk=${status.risk_level} mac=${status.current_mac}`,
+            });
+          } catch (e) {
+            setMacStatus({ current_mac: "UNKNOWN", is_spoofed: false, risk_level: "HIGH" });
+            emitSystemLog({
+              source: "OPSEC",
+              level: "ERROR",
+              message: `check_mac_security error=${String(e)}`,
+            });
+          } finally {
+            setIsCheckingOpsec(false);
+          }
+        })();
+
         return; 
     }
 
@@ -151,11 +187,9 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
     if (autoRunToken === 0) return;
     if (autoRunToken === lastExecutedToken.current) return;
     if (!selectedScenario || audit.isRunning || isNativeRunning || !localTarget) {
-        console.warn("⚠️ [PANEL] AutoRun skipped (conditions not met)");
         return;
     }
 
-    console.log("🚀 [PANEL] Executing AutoRun via Token:", autoRunToken);
     lastExecutedToken.current = autoRunToken;
     void handleRunLab();
   }, [autoRunToken, selectedScenario, audit.isRunning, isNativeRunning, localTarget]);
@@ -214,9 +248,17 @@ export const ExternalAuditPanel: React.FC<ExternalAuditPanelProps> = ({
         isOpen={showConfirm}
         title={macStatus?.risk_level === "HIGH" ? "⚠ OPSEC WARNING: REAL IDENTITY" : "✅ OPSEC: IDENTITY OBFUSCATED"}
         macStatus={macStatus}
+        isLoading={isCheckingOpsec}
         message={`Este ataque requiere control exclusivo del adaptador WiFi.\n\nSe interrumpirá tu conexión a internet actual para inyectar credenciales contra el objetivo.`}
-        onConfirm={() => { setShowConfirm(false); executeNativeAttack(); }}
-        onCancel={() => setShowConfirm(false)}
+        onConfirm={() => {
+          setShowConfirm(false);
+          emitSystemLog({ source: "OPSEC", level: "INFO", message: "Operador autorizo ejecucion nativa WiFi" });
+          executeNativeAttack();
+        }}
+        onCancel={() => {
+          setShowConfirm(false);
+          emitSystemLog({ source: "OPSEC", level: "WARN", message: "Operador cancelo ejecucion nativa WiFi" });
+        }}
       />
     </div>
   );

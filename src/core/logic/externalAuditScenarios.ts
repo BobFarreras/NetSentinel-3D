@@ -1,7 +1,7 @@
 // src/core/logic/externalAuditScenarios.ts
 
 import { invoke } from "@tauri-apps/api/core"; // O la teva importació de 'invoke'
-import type { DeviceDTO, ExternalAuditRequestDTO, HostIdentity } from "../../shared/dtos/NetworkDTOs";
+import type { DeviceDTO, ExternalAuditRequestDTO, HostIdentity, WifiNetworkDTO } from "../../shared/dtos/NetworkDTOs";
 
 // 1. Ampliem els modes per incloure 'native'
 export type ScenarioMode = "external" | "simulated" | "native";
@@ -87,17 +87,22 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
         onLog("stdout", `📚 Total vectores a probar: ${dictionary.length}`);
         onLog("stdout", "------------------------------------------------");
 
-        for (const pass of dictionary) {
+        for (const [index, pass] of dictionary.entries()) {
             // Chequeo de cancelación
             if (signal?.aborted) {
                 onLog("stderr", "🛑 ATAQUE ABORTADO POR EL USUARIO.");
                 break; 
             }
 
+            const attemptNumber = index + 1;
             onLog("stdout", `🔑 Probando: ${pass}`);
+            onLog("stdout", `🧪 TRACE intento ${attemptNumber}/${dictionary.length} -> SSID='${ssid}' PASS_LEN=${pass.length}`);
             
             try {
+                const startedAt = performance.now();
                 const success = await invoke<boolean>("wifi_connect", { ssid, password: pass });
+                const elapsedMs = Math.round(performance.now() - startedAt);
+                onLog("stdout", `🧪 TRACE wifi_connect result=${success} elapsedMs=${elapsedMs}`);
                 
                 if (success) {
                     onLog("stdout", "------------------------------------------------");
@@ -106,6 +111,22 @@ export const getExternalAuditScenarios = (): ExternalAuditScenario[] => {
                     return; 
                 } else {
                     onLog("stderr", `❌ Fallo auth: ${pass}`);
+                    try {
+                      const airwaves = await invoke<WifiNetworkDTO[]>("scan_airwaves");
+                      const targetIntel = airwaves.find(
+                        (n) => n.ssid.toLowerCase() === ssid.toLowerCase(),
+                      );
+                      if (targetIntel) {
+                        onLog(
+                          "stdout",
+                          `🧪 TRACE post-fallo ssid='${targetIntel.ssid}' connected=${targetIntel.isConnected} bssid=${targetIntel.bssid} signal=${targetIntel.signalLevel} security=${targetIntel.securityType}`,
+                        );
+                      } else {
+                        onLog("stdout", "🧪 TRACE post-fallo target no visible en scan_airwaves");
+                      }
+                    } catch (scanError) {
+                      onLog("stderr", `🧪 TRACE post-fallo scan_airwaves error: ${scanError}`);
+                    }
                 }
             } catch (e) {
                 onLog("stderr", `⚠️ Error driver: ${e}`);

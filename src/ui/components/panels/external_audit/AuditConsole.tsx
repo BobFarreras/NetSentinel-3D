@@ -7,9 +7,30 @@ interface AuditConsoleProps {
 
 export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
   const logRef = useRef<HTMLDivElement>(null);
+  const visibleRowsRef = useRef(0);
+  const [visibleRows, setVisibleRows] = React.useState(0);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [visibleRows]);
+
+  useEffect(() => {
+    if (rows.length < visibleRowsRef.current) {
+      visibleRowsRef.current = rows.length;
+      setVisibleRows(rows.length);
+      return;
+    }
+
+    if (rows.length === visibleRowsRef.current) return;
+
+    const tick = () => {
+      visibleRowsRef.current = Math.min(rows.length, visibleRowsRef.current + 1);
+      setVisibleRows(visibleRowsRef.current);
+      if (visibleRowsRef.current < rows.length) {
+        window.setTimeout(tick, 22);
+      }
+    };
+    tick();
   }, [rows]);
 
   return (
@@ -33,7 +54,7 @@ export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
         {rows.length === 0 ? (
           <div style={{ color: "rgba(183,255,226,0.55)" }}>Waiting for command execution...</div>
         ) : (
-          rows.map((r, i) => (
+          rows.slice(0, visibleRows).map((r, i) => (
             <div key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "2px 0" }}>
               <span style={{ color: "rgba(183,255,226,0.55)", marginRight: 8 }}>{new Date(r.ts).toLocaleTimeString()}</span>
               <span style={{ color: r.stream === "stderr" ? "#ff7777" : "#00ff88", fontWeight: 800, marginRight: 8 }}>
