@@ -10,5 +10,6 @@ pub mod external_audit_service;
 pub mod latest_snapshot_service;
 pub mod credential_service;
 pub mod wordlist_service;
+pub mod opsec_service;
 
 

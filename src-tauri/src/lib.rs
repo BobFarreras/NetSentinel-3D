@@ -27,9 +27,9 @@ use crate::infrastructure::{
     system_scanner::SystemScanner,
 };
 
+use crate::application::opsec_service::OpSecService;
 use crate::application::wordlist_service::WordlistService;
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
-
 // 3. Imports propios (Aplicacion)
 use crate::application::{
     audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
@@ -64,7 +64,7 @@ pub fn run() {
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
             // =====================================================
-            let scanner_service = ScannerService::new(scanner_infra);
+            let scanner_service = ScannerService::new(scanner_infra.clone());
             let audit_service = AuditService::new(auditor_infra);
             let history_service = HistoryService::new(history_infra);
             let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
@@ -73,14 +73,17 @@ pub fn run() {
             let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra);
             let external_audit_service = ExternalAuditService::new();
 
-            // Traffic: no depende de una infra externa inyectada, se crea directo.
+            // Traffic
             let traffic_service = TrafficService::new();
 
-            // Infra
+            // Infra y Wordlist
             let wordlist_repo = FileWordlistRepository::new(app.handle());
-
-            // Service
             let wordlist_service = WordlistService::new(wordlist_repo);
+
+            // OpSec Service
+            // CORRECCIÓN: Ahora podemos usar scanner_infra porque lo clonamos antes
+            // (O podemos volver a clonarlo si queremos ser explícitos, pero ya no dará error de 'moved value')
+            let opsec_service = OpSecService::new(scanner_infra);
             // =====================================================
             // 3. GESTION DE ESTADO (registrar en Tauri)
             // =====================================================
@@ -98,6 +101,9 @@ pub fn run() {
 
             // Manage State
             app.manage(wordlist_service);
+
+            // Registramos el estado
+            app.manage(opsec_service);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -128,6 +134,8 @@ pub fn run() {
             // WORDLIST COMMANDS
             api::commands::get_dictionary,
             api::commands::add_to_dictionary,
+            // OPSEC
+            api::commands::check_mac_security
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

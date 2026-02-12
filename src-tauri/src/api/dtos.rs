@@ -1,3 +1,4 @@
+// src-tauri/src/api/dtos.rs
 use serde::{Serialize, Deserialize};
 use crate::domain::entities::{Device, RouterAuditResult, WifiEntity};
 
@@ -112,4 +113,10 @@ pub struct ExternalAuditRequestDTO {
     pub timeout_ms: Option<u64>,
     pub env: Option<Vec<ExternalAuditEnvVarDTO>>,
 }
-// src-tauri/src/api/dtos.rs
+
+#[derive(serde::Serialize)]
+pub struct MacSecurityStatusDTO {
+    pub current_mac: String,
+    pub is_spoofed: bool,
+    pub risk_level: String, // "HIGH" (Real) o "LOW" (Spoofed)
+}

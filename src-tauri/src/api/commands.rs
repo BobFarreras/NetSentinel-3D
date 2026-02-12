@@ -24,6 +24,8 @@ mod system;
 mod internal_validation;
 #[path = "commands/wordlist.rs"]
 mod wordlist; 
+#[path = "commands/opsec.rs"]
+mod opsec;
 
 // --- NETWORK SCANNER ---
 
@@ -222,4 +224,11 @@ pub async fn add_to_dictionary(
     word: String,
 ) -> Result<(), String> {
     wordlist::add_to_dictionary(service, word)
+}
+
+#[tauri::command]
+pub async fn check_mac_security(
+    service: tauri::State<'_, crate::application::opsec_service::OpSecService>
+) -> Result<crate::api::dtos::MacSecurityStatusDTO, String> {
+    opsec::check_mac_security(service) // Lógica síncrona envuelta en async para Tauri
 }
