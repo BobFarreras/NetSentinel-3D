@@ -1,4 +1,5 @@
 <!-- docs/ARCHITECTURE.md -->
+<!-- Descripcion: mapa de capas, flujo de datos y convenciones estructurales del repo (frontend + backend). -->
 
 # Arquitectura Tecnica de NetSentinel 3D
 
@@ -267,6 +268,8 @@ Ejemplos aplicados:
   - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
   - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
   - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
+- History:
+  - `src/ui/features/history/components/HistoryPanel.tsx`
 - Wordlists (shared):
   - `src/ui/features/wordlist/hooks/useWordlistManager.ts`
 - Device Detail:

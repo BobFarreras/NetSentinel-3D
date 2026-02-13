@@ -1,4 +1,5 @@
 <!-- docs/TESTING.md -->
+<!-- Descripcion: guia de tests, comandos de validacion y ubicacion recomendada de suites por feature/modulo. -->
 
 # Guia de Testing de NetSentinel 3D
 
@@ -42,7 +43,7 @@ Frontend (unit):
 - `src/ui/features/wordlist/__tests__/useWordlistManager.test.ts`
 - `src/ui/features/device_detail/__tests__/DeviceDetailPanel.test.tsx`
 - `src/ui/features/attack_lab/__tests__/AttackLabPanel.test.tsx`
-- `src/ui/components/hud/__tests__/RadarPanel.test.tsx`
+- `src/ui/features/radar/__tests__/RadarPanel.test.tsx`
 - `src/__tests__/App.integration.test.tsx`
 
 E2E:

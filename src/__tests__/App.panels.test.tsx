@@ -1,3 +1,6 @@
+// src/__tests__/App.panels.test.tsx
+// Test de UI: docking/undocking de paneles principales (console, radar, attack_lab) y render esperado.
+
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -19,7 +22,7 @@ vi.mock("../ui/components/layout/DetachedWindowPortal", () => ({
   ),
 }));
 
-vi.mock("../ui/components/hud/HistoryPanel", () => ({
+vi.mock("../ui/features/history/components/HistoryPanel", () => ({
   HistoryPanel: () => <div data-testid="history-panel">HISTORY</div>,
 }));
 

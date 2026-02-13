@@ -1,10 +1,10 @@
-// src/ui/components/hud/HistoryPanel.tsx
-// Panel legacy de historial: lista sesiones guardadas y permite cargar snapshots de dispositivos desde el backend.
+// src/ui/features/history/components/HistoryPanel.tsx
+// Panel de historial: lista sesiones guardadas y permite cargar snapshots de dispositivos desde el backend.
 
 import React, { useEffect, useState } from 'react';
-import { networkAdapter } from '../../../adapters/networkAdapter';
-import { DeviceDTO, ScanSession } from '../../../shared/dtos/NetworkDTOs';
-import { uiLogger } from '../../utils/logger';
+import { networkAdapter } from '../../../../adapters/networkAdapter';
+import { DeviceDTO, ScanSession } from '../../../../shared/dtos/NetworkDTOs';
+import { uiLogger } from '../../../utils/logger';
 
 interface HistoryPanelProps {
   onLoadSession: (devices: DeviceDTO[]) => void;
@@ -17,8 +17,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClo
   useEffect(() => {
     // Consulta real al backend Rust para recuperar sesiones persistidas.
     networkAdapter.getHistory()
-        .then((data) => setSessions(data))
-        .catch((error) => uiLogger.error("Error cargando historial", error));
+      .then((data: ScanSession[]) => setSessions(data))
+      .catch((error: unknown) => uiLogger.error("Error cargando historial", error));
   }, []);
 
   return (

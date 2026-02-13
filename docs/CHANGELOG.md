@@ -1,6 +1,22 @@
+<!-- docs/CHANGELOG.md -->
+<!-- Descripcion: registro cronologico de cambios (arquitectura, features, refactors) y validaciones ejecutadas. -->
+
 # Diario de desarrollo (CHANGELOG)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
+
+## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- History movido a feature-folder:
+  - `src/ui/features/history/components/HistoryPanel.tsx`
+- Layouts/tests actualizados para el nuevo path:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/__tests__/App.panels.test.tsx`
+  - `src/__tests__/App.integration.test.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
 ## [v0.8.27] - Reestructura frontend: Radar + Console Logs por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)

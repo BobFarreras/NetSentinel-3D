@@ -1,3 +1,6 @@
+// src/__tests__/App.integration.test.tsx
+// Test de integracion: valida el flujo end-to-end entre escena 3D, detalle de dispositivo y consola/paneles.
+
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
@@ -7,7 +10,7 @@ vi.mock("../ui/components/layout/TopBar", () => ({
   TopBar: () => <div data-testid="topbar">TOPBAR</div>,
 }));
 
-vi.mock("../ui/components/hud/HistoryPanel", () => ({
+vi.mock("../ui/features/history/components/HistoryPanel", () => ({
   HistoryPanel: () => <div data-testid="history-panel">HISTORY</div>,
 }));
 
