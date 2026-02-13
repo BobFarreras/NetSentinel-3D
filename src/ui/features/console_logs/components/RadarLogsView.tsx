@@ -1,6 +1,7 @@
-// src/ui/components/panels/console_logs/RadarLogsView.tsx
+// src/ui/features/console_logs/components/RadarLogsView.tsx
+// Vista RADAR LOGS: tabla de eventos (scan/network/error) y seleccion de BSSID para sincronizar con Radar View.
 import React from "react";
-import type { RadarLogEntry } from "../../../features/radar/hooks/useRadarLogs";
+import type { RadarLogEntry } from "../../radar/hooks/useRadarLogs";
 import { CONSOLE_COLORS } from "./consoleLogsStyles";
 
 type RadarLogsViewProps = {

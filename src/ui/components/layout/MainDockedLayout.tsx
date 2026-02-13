@@ -5,7 +5,7 @@ import { lazy, Suspense } from "react";
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 import { TopBar } from "./TopBar";
 import { HistoryPanel } from "../hud/HistoryPanel";
-import { ConsoleLogs } from "../panels/ConsoleLogs";
+import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs";
 import { DetachedWindowPortal } from "./DetachedWindowPortal";
 import type { DetachablePanelId } from "../../../adapters/windowingAdapter";
 

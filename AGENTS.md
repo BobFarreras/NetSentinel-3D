@@ -159,8 +159,12 @@ Regla:
 
 ### Patron frontend obligatorio (paneles)
 - Evitar "god components" en `src/ui/components`.
-- Mantener hooks en `src/ui/hooks/modules` agrupados por dominio:
-  - `network/`, `radar/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
+- Preferir estructura por feature en `src/ui/features/<feature>/`:
+  - `components/`: composicion y sub-vistas.
+  - `hooks/`: estado/handlers del panel (SOLID: UI sin logica compleja).
+  - `__tests__/`: tests unitarios del panel y sus hooks.
+- Mantener `src/ui/hooks/modules/*` para hooks compartidos/legacy agrupados por dominio:
+  - `network/`, `traffic/`, `ui/`, `scene3d/`, `shared/`.
 - Aplicar estructura por panel:
   - `Panel.tsx`: composicion de UI (sin logica compleja).
   - `usePanelState.ts`: estado, efectos, memos y handlers.
@@ -169,7 +173,9 @@ Regla:
   - `Scene.tsx` para composicion,
   - hooks `useSceneState/useNodeState/useLabelState` para logica.
 - Cuando haya estilos repetidos, mover a tokens compartidos (`src/ui/styles/hudTokens.ts`) o modulo local de estilos.
-- Todo hook nuevo de panel debe tener test unitario en `src/ui/hooks/modules/__tests__`.
+- Todo hook nuevo debe tener test unitario:
+  - si vive en feature-folder: `src/ui/features/<feature>/__tests__/*`
+  - si vive en shared/legacy: `src/ui/hooks/modules/__tests__/*`
 
 ### Validaciones minimas obligatorias
 ```bash

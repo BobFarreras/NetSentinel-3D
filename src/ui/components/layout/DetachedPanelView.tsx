@@ -2,7 +2,7 @@
 // Vista contenedora para ventanas desacopladas: monta el panel adecuado segun el contexto parseado desde la URL.
 
 import { lazy, Suspense } from "react";
-import { ConsoleLogs } from "../panels/ConsoleLogs";
+import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs";
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 
 const NetworkScene = lazy(async () => {

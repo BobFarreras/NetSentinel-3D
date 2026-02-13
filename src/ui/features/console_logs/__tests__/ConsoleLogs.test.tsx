@@ -1,3 +1,6 @@
+// src/ui/features/console_logs/__tests__/ConsoleLogs.test.tsx
+// Tests de UI para ConsoleLogs: valida render de pestaña RADAR y placeholders sin depender de runtime Tauri.
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
@@ -13,8 +16,8 @@ vi.mock("../../../hooks/modules/traffic/useTrafficMonitor", () => ({
   }),
 }));
 
-import { addRadarScanLog, clearRadarLogs } from "../../../features/radar/hooks/useRadarLogs";
-import { ConsoleLogs } from "../ConsoleLogs";
+import { addRadarScanLog, clearRadarLogs } from "../../radar/hooks/useRadarLogs";
+import { ConsoleLogs } from "../components/ConsoleLogs";
 
 describe("ConsoleLogs", () => {
   beforeEach(() => {

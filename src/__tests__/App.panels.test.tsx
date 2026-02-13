@@ -41,7 +41,7 @@ vi.mock("../ui/components/hud/DeviceDetailPanel", () => ({
   ),
 }));
 
-vi.mock("../ui/components/panels/ConsoleLogs", () => ({
+vi.mock("../ui/features/console_logs/components/ConsoleLogs", () => ({
   ConsoleLogs: () => <div data-testid="console-logs">CONSOLE</div>,
 }));
 

@@ -1,6 +1,7 @@
-// src/ui/components/panels/console_logs/ConsoleLogsHeader.tsx
+// src/ui/features/console_logs/components/ConsoleLogsHeader.tsx
+// Header del Console Logs: tabs, estado de LIVE TRAFFIC (speed) y acciones (start/stop/clear).
 import React from "react";
-import type { ConsoleTab } from "../../../hooks/modules/ui/useConsoleLogsState";
+import type { ConsoleTab } from "../hooks/useConsoleLogsState";
 import { CONSOLE_COLORS, formatSpeed } from "./consoleLogsStyles";
 
 type ConsoleLogsHeaderProps = {

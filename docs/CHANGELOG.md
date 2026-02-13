@@ -2,6 +2,24 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.27] - Reestructura frontend: Radar + Console Logs por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Radar movido a feature-folder:
+  - `src/ui/features/radar/components/*`
+  - `src/ui/features/radar/hooks/*`
+  - tests: `src/ui/features/radar/__tests__/*`
+- Console Logs movido a feature-folder:
+  - `src/ui/features/console_logs/components/*`
+  - `src/ui/features/console_logs/hooks/*`
+  - tests: `src/ui/features/console_logs/__tests__/*`
+- Integracion actualizada en layouts:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
 ### ♻️ Frontend (estructura y naming)
 - Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).

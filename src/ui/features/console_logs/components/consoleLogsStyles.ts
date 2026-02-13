@@ -1,4 +1,5 @@
-// src/ui/components/panels/console_logs/consoleLogsStyles.ts
+// src/ui/features/console_logs/components/consoleLogsStyles.ts
+// Tokens de estilo para Console Logs (colores y helpers como formatSpeed).
 import { HUD_COLORS } from "../../../styles/hudTokens";
 
 export const CONSOLE_COLORS = {

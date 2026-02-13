@@ -1,3 +1,6 @@
+// src/ui/features/console_logs/__tests__/useConsoleLogsState.test.ts
+// Tests del hook useConsoleLogsState: tab por defecto, limpieza por tab y loading temporal al togglear trafico.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 
@@ -8,7 +11,7 @@ const { toggleMonitoringMock, clearPacketsMock, radarClearMock, setSelectedBssid
   setSelectedBssidMock: vi.fn((_bssid: string) => {}),
 }));
 
-vi.mock("../traffic/useTrafficMonitor", () => ({
+vi.mock("../../../hooks/modules/traffic/useTrafficMonitor", () => ({
   useTrafficMonitor: () => ({
     isActive: false,
     speed: 0,
@@ -19,14 +22,14 @@ vi.mock("../traffic/useTrafficMonitor", () => ({
   }),
 }));
 
-vi.mock("../../../features/radar/hooks/useRadarLogs", () => ({
+vi.mock("../../radar/hooks/useRadarLogs", () => ({
   useRadarLogs: () => ({
     logs: [],
     clear: radarClearMock,
   }),
 }));
 
-vi.mock("../../../features/radar/hooks/useWifiRadarSelection", () => ({
+vi.mock("../../radar/hooks/useWifiRadarSelection", () => ({
   useWifiRadarSelection: () => ({
     selectedBssid: null,
     setSelectedBssid: setSelectedBssidMock,
@@ -45,13 +48,13 @@ describe("useConsoleLogsState", () => {
   });
 
   it("debe iniciar en pestaña SYSTEM", async () => {
-    const { useConsoleLogsState } = await import("../ui/useConsoleLogsState");
+    const { useConsoleLogsState } = await import("../hooks/useConsoleLogsState");
     const { result } = renderHook(() => useConsoleLogsState());
     expect(result.current.activeTab).toBe("SYSTEM");
   });
 
   it("debe limpiar logs segun pestaña activa", async () => {
-    const { useConsoleLogsState } = await import("../ui/useConsoleLogsState");
+    const { useConsoleLogsState } = await import("../hooks/useConsoleLogsState");
     const onClearSystemLogs = vi.fn();
     const { result } = renderHook(() => useConsoleLogsState());
 
@@ -78,7 +81,7 @@ describe("useConsoleLogsState", () => {
   });
 
   it("debe activar loading temporal al hacer toggle de trafico", async () => {
-    const { useConsoleLogsState } = await import("../ui/useConsoleLogsState");
+    const { useConsoleLogsState } = await import("../hooks/useConsoleLogsState");
     const { result } = renderHook(() => useConsoleLogsState());
 
     await act(async () => {

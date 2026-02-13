@@ -43,7 +43,7 @@ vi.mock("../ui/components/hud/DeviceDetailPanel", () => ({
   ),
 }));
 
-vi.mock("../ui/components/panels/ConsoleLogs", () => ({
+vi.mock("../ui/features/console_logs/components/ConsoleLogs", () => ({
   ConsoleLogs: ({ selectedDevice }: { selectedDevice?: DeviceDTO | null }) => (
     <div data-testid="console-logs">CONSOLE_SELECTED:{selectedDevice?.ip ?? "NONE"}</div>
   ),

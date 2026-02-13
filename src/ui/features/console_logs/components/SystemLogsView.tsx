@@ -1,4 +1,5 @@
-// src/ui/components/panels/console_logs/SystemLogsView.tsx
+// src/ui/features/console_logs/components/SystemLogsView.tsx
+// Vista SYSTEM LOGS: render simple de logs del sistema con resaltado basico de severidad.
 import React from "react";
 import { CONSOLE_COLORS } from "./consoleLogsStyles";
 

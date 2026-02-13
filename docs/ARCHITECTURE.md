@@ -37,11 +37,13 @@ Principio base:
 
 ### 2.1 Estructura frontend por feature (actual)
 
-- `src/ui/components/hud/*`: paneles HUD (Radar, DeviceDetail, History,
-  ...).
-- `src/ui/components/panels/*`: consola/logs/trafico/auditoria.
-- `src/ui/components/3d/*`: escena de red (nodos, labels, camara, controles).
-- `src/ui/hooks/modules/*`: hooks de estado por modulo/panel/escena.
+- `src/ui/features/*`: feature-folders (UI + hooks + tests) para funcionalidades
+  completas.
+  - Ejemplos: `attack_lab/`, `radar/`, `console_logs/`.
+- `src/ui/components/*`: componentes compartidos y/o legacy en transicion.
+  - `hud/`, `panels/`, `3d/`.
+- `src/ui/hooks/modules/*`: hooks compartidos/legacy por dominio (network,
+  traffic, scene3d, ui, etc.).
 
 Regla practica:
 
@@ -253,9 +255,9 @@ Ejemplos aplicados:
   - `src/ui/features/radar/hooks/useRadarPanelState.ts`
   - `src/ui/features/radar/components/radar/*`
 - Console Logs:
-  - `src/ui/components/panels/ConsoleLogs.tsx`
-  - `src/ui/hooks/modules/ui/useConsoleLogsState.ts`
-  - `src/ui/components/panels/console_logs/*`
+  - `src/ui/features/console_logs/components/ConsoleLogs.tsx`
+  - `src/ui/features/console_logs/hooks/useConsoleLogsState.ts`
+  - `src/ui/features/console_logs/components/*`
 - Traffic:
   - `src/ui/components/panels/TrafficPanel.tsx`
   - `src/ui/hooks/modules/traffic/useTrafficPanelState.ts`

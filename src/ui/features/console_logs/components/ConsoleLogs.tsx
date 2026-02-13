@@ -1,12 +1,15 @@
+// src/ui/features/console_logs/components/ConsoleLogs.tsx
+// Panel Console Logs: composicion de pestañas (SYSTEM/TRAFFIC/RADAR) y render de vistas con su estado asociado.
+
 import React from "react";
-import { DeviceDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useConsoleLogsState } from "../../hooks/modules/ui/useConsoleLogsState";
-import { TrafficPanel } from "./TrafficPanel";
-import { ConsoleLogsHeader } from "./console_logs/ConsoleLogsHeader";
-import { CONSOLE_COLORS } from "./console_logs/consoleLogsStyles";
-import { RadarLogsView } from "./console_logs/RadarLogsView";
-import { SystemLogsView } from "./console_logs/SystemLogsView";
-import { HUD_TYPO } from "../../styles/hudTokens";
+import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { TrafficPanel } from "../../../components/panels/TrafficPanel";
+import { HUD_TYPO } from "../../../styles/hudTokens";
+import { useConsoleLogsState } from "../hooks/useConsoleLogsState";
+import { ConsoleLogsHeader } from "./ConsoleLogsHeader";
+import { CONSOLE_COLORS } from "./consoleLogsStyles";
+import { RadarLogsView } from "./RadarLogsView";
+import { SystemLogsView } from "./SystemLogsView";
 
 interface ConsoleLogsProps {
   logs: string[];
