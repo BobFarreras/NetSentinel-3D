@@ -4,6 +4,7 @@
 pub mod scan;
 pub mod scanner_service;
 pub mod history;
+pub mod snapshot;
 pub mod audit_service;
 pub mod history_service;
 pub mod traffic_service;

@@ -25,6 +25,16 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.35] - Backend: Fase 1 (application/snapshot) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de snapshot migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/snapshot/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/snapshot/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/latest_snapshot_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:
