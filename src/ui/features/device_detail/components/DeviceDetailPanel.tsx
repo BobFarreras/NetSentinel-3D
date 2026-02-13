@@ -93,6 +93,22 @@ export const DeviceDetailPanel: React.FC<Props> = ({
       logToConsole(`IDENTITY SWAPPED SUCCESSFULLY!`, "SUCCESS");
       logToConsole(`New Physical Address: ${newMac}`, "SUCCESS");
       logToConsole(`Network restart in progress...`, "WARN");
+
+      // Actualizamos el inventario de UI (optimista): el host debe reflejar el nuevo MAC sin esperar a un scan.
+      // La identidad real puede tardar en actualizarse hasta que el adaptador reinicie.
+      try {
+        const hostIp = state.identity?.ip ?? device.ip;
+        window.dispatchEvent(new CustomEvent("netsentinel://ghost-mode-applied", { detail: { hostIp, newMac } }));
+      } catch {
+        // ignore
+      }
+
+      // Refrescamos identidad en el core para que la escena 3D y el resto de UI no se queden con el host "viejo".
+      // Disparamos varios intentos porque el adaptador puede reiniciarse y cambiar IP/DHCP con delay.
+      const refresh = () => window.dispatchEvent(new Event("netsentinel://refresh-identity"));
+      refresh();
+      window.setTimeout(refresh, 4000);
+      window.setTimeout(refresh, 9000);
       
     } catch (e) {
       logToConsole(`OPERATION FAILED.`, "ERROR");

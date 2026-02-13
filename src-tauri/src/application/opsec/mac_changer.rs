@@ -1,5 +1,8 @@
 // src-tauri/src/application/opsec/mac_changer.rs
-// Servicio de cambio de MAC (Windows): habilita randomizacion nativa (WlanSvc) y reinicia adaptador para aplicar.
+// Servicio de cambio de MAC (Windows): aplica un override explicito via NetworkAddress y reinicia adaptador.
+//
+// Nota: la opcion nativa "Random Hardware Addresses" (WlanSvc) puede NO cambiar la MAC inmediatamente
+// o reutilizar el mismo valor. Aqui generamos un MAC LAA unicast distinto del actual y verificamos el cambio.
 
 use std::process::Command;
 
@@ -17,76 +20,114 @@ impl MacChangerService {
 
     #[cfg(target_os = "windows")]
     pub async fn randomize_mac(&self, identifier: String) -> Result<String, String> {
-        println!("👻 [GHOST MODE] Activando 'Windows Random Hardware Addresses' para: {}", identifier);
+        println!("[ghost] solicitando cambio de MAC para: {}", identifier);
 
+        // PowerShell:
+        // - Busca adaptador por InterfaceGuid o Name.
+        // - Genera un MAC local-administered unicast diferente.
+        // - Intenta aplicar por Set-NetAdapterAdvancedProperty (NetworkAddress) y fallback a registro.
+        // - Reinicia adaptador y hace polling hasta ver cambio.
         let ps_script = format!(
             r#"
-            $ErrorActionPreference = 'Continue'
-            
-            # --- 0. CHECK ADMIN ---
-            $currentPrincipal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
-            if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {{
-                Write-Error "REQUIERE ADMIN. Windows no deja cambiar config de WLAN sin permisos."
-                exit 1
-            }}
+$ErrorActionPreference = 'Stop'
 
-            $inputRouter = "{input_id}"
-            
-            # --- 1. BUSCAR ADAPTADOR ---
-            $adapter = Get-NetAdapter | Where-Object {{ $_.InterfaceGuid -eq $inputRouter }} | Select-Object -First 1
-            if (-not $adapter) {{
-                $adapter = Get-NetAdapter -Name $inputRouter -ErrorAction SilentlyContinue
-            }}
-            
-            if (-not $adapter) {{
-                Write-Error "CRITICAL: Adaptador no encontrado."
-                exit 1
-            }}
+$currentPrincipal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {{
+  Write-Error "REQUIERE ADMIN: no se puede aplicar NetworkAddress sin permisos."
+  exit 1
+}}
 
-            $guid = $adapter.InterfaceGuid
-            $name = $adapter.Name
-            
-            Write-Output "DEBUG: Configurando Windows WLAN Service para: $name ($guid)"
+$inputId = "{input_id}"
 
-            # --- 2. ACTIVAR ALEATORIZACIÓN NATIVA DE WINDOWS ---
-            # En lugar de tocar el driver, tocamos la config del servicio WlanSvc.
-            # Ruta: HKLM\SOFTWARE\Microsoft\WlanSvc\Interfaces\{{GUID}}
-            
-            $wlanKeyPath = "HKLM:\SOFTWARE\Microsoft\WlanSvc\Interfaces\$guid"
-            
-            if (-not (Test-Path $wlanKeyPath)) {{
-                Write-Error "CRITICAL: No se encontró configuración WLAN para este adaptador. ¿Es una tarjeta Wi-Fi real?"
-                exit 1
-            }}
+$adapter = Get-NetAdapter | Where-Object {{ $_.InterfaceGuid -eq $inputId }} | Select-Object -First 1
+if (-not $adapter) {{
+  $adapter = Get-NetAdapter -Name $inputId -ErrorAction SilentlyContinue | Select-Object -First 1
+}}
+if (-not $adapter) {{
+  Write-Error "CRITICAL: adaptador no encontrado."
+  exit 1
+}}
 
-            # Valor: RandomMacSourceObject
-            # 0 = Desactivado
-            # 1 = Activado (Aleatorio)
-            try {{
-                Set-ItemProperty -Path $wlanKeyPath -Name "RandomMacSourceObject" -Value 1 -Type DWord -ErrorAction Stop
-                Write-Output "DEBUG: Interruptor 'Direcciones aleatorias' -> ACTIVADO (ON)"
-            }} catch {{
-                Write-Error "ERROR: No se pudo activar el interruptor nativo. $_"
-                exit 1
-            }}
+$guid = $adapter.InterfaceGuid
+$name = $adapter.Name
+$oldMac = (Get-NetAdapter -Name $name).MacAddress
 
-            # --- 3. REINICIO PARA APLICAR ---
-            # Al reiniciar, Windows leerá la nueva config y generará la MAC él mismo.
-            
-            Disable-NetAdapter -Name $name -Confirm:$false
-            Start-Sleep -Seconds 3
-            Enable-NetAdapter -Name $name -Confirm:$false
-            
-            # Esperamos un poco a que Windows genere la MAC
-            Start-Sleep -Seconds 2
-            
-            # --- 4. VERIFICACIÓN ---
-            $newDetails = Get-NetAdapter -Name $name
-            $currentMac = $newDetails.MacAddress
-            
-            # Devolvemos la MAC que Windows ha decidido usar
-            Write-Output $currentMac
-            "#,
+function New-RandomMacHex([string]$notEqMac) {{
+  $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
+  $bytes = New-Object 'Byte[]' 6
+  $hexNotEq = ($notEqMac -replace '[:-]','').ToUpperInvariant()
+
+  for ($i=0; $i -lt 40; $i++) {{
+    $rng.GetBytes($bytes)
+    # LAA + unicast
+    $bytes[0] = ($bytes[0] -bor 2) -band 254
+    $hex = -join ($bytes | ForEach-Object {{ $_.ToString('X2') }})
+    if ($hex -ne $hexNotEq -and $hex -ne '000000000000') {{
+      return $hex
+    }}
+  }}
+  throw "No se pudo generar un MAC aleatorio diferente (40 intentos)."
+}}
+
+$newHex = New-RandomMacHex $oldMac
+
+$applied = $false
+try {{
+  Set-NetAdapterAdvancedProperty -Name $name -RegistryKeyword "NetworkAddress" -RegistryValue $newHex -ErrorAction Stop | Out-Null
+  $applied = $true
+}} catch {{
+  $applied = $false
+}}
+
+if (-not $applied) {{
+  # Fallback: clave de driver por NetCfgInstanceId
+  $classGuid = "{{4d36e972-e325-11ce-bfc1-08002be10318}}"
+  $base = "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\$classGuid"
+  $found = $false
+
+  Get-ChildItem -Path $base -ErrorAction SilentlyContinue | ForEach-Object {{
+    try {{
+      $id = (Get-ItemProperty -Path $_.PSPath -Name "NetCfgInstanceId" -ErrorAction Stop).NetCfgInstanceId
+      if ($id -and ($id.ToString() -eq $guid.ToString())) {{
+        Set-ItemProperty -Path $_.PSPath -Name "NetworkAddress" -Value $newHex -ErrorAction Stop
+        $found = $true
+      }}
+    }} catch {{
+      # ignore
+    }}
+  }}
+
+  if (-not $found) {{
+    Write-Error "CRITICAL: no se pudo localizar la clave del driver para aplicar NetworkAddress."
+    exit 1
+  }}
+}}
+
+Disable-NetAdapter -Name $name -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+Start-Sleep -Seconds 2
+Enable-NetAdapter -Name $name -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+
+$newMac = $null
+for ($t=0; $t -lt 20; $t++) {{
+  Start-Sleep -Seconds 1
+  try {{
+    $m = (Get-NetAdapter -Name $name).MacAddress
+    if ($m -and ($m -ne $oldMac)) {{
+      $newMac = $m
+      break
+    }}
+  }} catch {{
+    # ignore
+  }}
+}}
+
+if (-not $newMac) {{
+  Write-Error ("CRITICAL: la MAC no cambio. old=" + $oldMac + " attemptedHex=" + $newHex)
+  exit 1
+}}
+
+Write-Output $newMac
+"#,
             input_id = identifier
         );
 
@@ -94,23 +135,21 @@ impl MacChangerService {
             .args(["-NoProfile", "-Command", &ps_script])
             .creation_flags(CREATE_NO_WINDOW)
             .output()
-            .map_err(|e| format!("Error proceso: {}", e))?;
+            .map_err(|e| format!("Error proceso: {e}"))?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-            return Err(format!("FALLO SCRIPT:\nSTDERR: {}", stderr));
+            return Err(format!("FALLO SCRIPT:\nSTDOUT: {stdout}\nSTDERR: {stderr}"));
         }
 
-        // Buscamos la línea que parece una MAC
         if let Some(mac_line) = stdout.lines().last() {
-            let clean = mac_line.trim().replace("-", ":");
-            if clean.len() >= 12 { // 17 con separadores
-                return Ok(clean.to_string());
+            let clean = mac_line.trim().replace('-', ":");
+            if clean.len() >= 12 {
+                return Ok(clean);
             }
         }
-        
+
         Ok(stdout)
     }
 
