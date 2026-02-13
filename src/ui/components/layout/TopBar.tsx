@@ -135,7 +135,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             fontFamily: 'inherit'
           }}
         >
-          {showAttackLab ? 'HIDE LAB' : 'ATTACK LAB'}
+          {showAttackLab ? 'CLOSE LAB' : 'ATTACK LAB'}
         </button>
       </div>
 

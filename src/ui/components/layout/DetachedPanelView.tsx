@@ -170,7 +170,7 @@ export const DetachedPanelView = ({
                   targetDevice={detachedAttackLabTargetDevice}
                   identity={identity}
                   defaultScenarioId={detachedAttackLabScenario}
-                  autoRun={Boolean(detachedAttackLabTargetDevice && detachedAttackLabScenario)}
+                  autoRunToken={detachedAttackLabAutoRunToken}
                   embedded={true}
                 />
               </Suspense>

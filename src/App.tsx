@@ -45,6 +45,7 @@ function App() {
   const [showAttackLab, setShowAttackLab] = useState(false);
   const [attackLabTarget, setAttackLabTarget] = useState<DeviceDTO | null>(null);
   const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
+  const [attackLabAutoRunToken, setAttackLabAutoRunToken] = useState<number>(0);
 
   // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
   useEffect(() => {
@@ -70,7 +71,7 @@ function App() {
             setAttackLabScenarioId(payload.scenarioId);
         }
         if (payload.autoRun) {
-            // Podrías pasar un token de autorun si lo necesitaras
+            setAttackLabAutoRunToken((t) => t + 1);
         }
         // Aseguramos que se abra
         setShowAttackLab(true);
@@ -108,6 +109,7 @@ function App() {
       setAttackLabTarget(device);
       setAttackLabScenarioId(scenarioId);
       setShowAttackLab(true);
+      setAttackLabAutoRunToken((t) => t + 1);
 
       if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
         void attackLabSync.emitAttackLabContext({ targetDevice: device, scenarioId, autoRun: true });
@@ -197,6 +199,7 @@ function App() {
       checkRouterSecurity={checkRouterSecurity}
       attackLabTarget={attackLabTarget}
       attackLabScenarioId={attackLabScenarioId}
+      attackLabAutoRunToken={attackLabAutoRunToken}
       onOpenLabAudit={openLabAuditForDevice}
       detachedPanels={docking.detachedPanels}
       detachedModes={docking.detachedModes}

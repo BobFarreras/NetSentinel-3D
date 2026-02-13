@@ -72,6 +72,7 @@ interface MainDockedLayoutProps {
   checkRouterSecurity: (ip: string) => void;
   attackLabTarget: DeviceDTO | null;
   attackLabScenarioId: string | null;
+  attackLabAutoRunToken: number;
   onOpenLabAudit: (device: DeviceDTO) => void;
   detachedPanels: Record<DetachablePanelId, boolean>;
   detachedModes: Record<DetachablePanelId, "portal" | "tauri" | null>;
@@ -201,6 +202,7 @@ export const MainDockedLayout = ({
   checkRouterSecurity,
   attackLabTarget,
   attackLabScenarioId,
+  attackLabAutoRunToken,
   onOpenLabAudit,
   detachedPanels,
   detachedModes,
@@ -279,7 +281,7 @@ export const MainDockedLayout = ({
                               targetDevice={attackLabTarget}
                               identity={identity}
                               defaultScenarioId={attackLabScenarioId}
-                              autoRun={Boolean(attackLabTarget && attackLabScenarioId)}
+                              autoRunToken={attackLabAutoRunToken}
                               embedded={true}
                             />
                           </Suspense>
@@ -305,7 +307,7 @@ export const MainDockedLayout = ({
                             targetDevice={attackLabTarget}
                             identity={identity}
                             defaultScenarioId={attackLabScenarioId}
-                            autoRun={Boolean(attackLabTarget && attackLabScenarioId)}
+                            autoRunToken={attackLabAutoRunToken}
                             embedded={true}
                           />
                         </Suspense>
@@ -462,7 +464,7 @@ export const MainDockedLayout = ({
                 targetDevice={attackLabTarget}
                 identity={identity}
                 defaultScenarioId={attackLabScenarioId}
-                autoRun={Boolean(attackLabTarget && attackLabScenarioId)}
+                autoRunToken={attackLabAutoRunToken}
                 embedded={true}
               />
             </Suspense>

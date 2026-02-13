@@ -9,6 +9,16 @@ Nota:
 - Este archivo mantiene el changelog **reciente** y accionable.
 - El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
 
+## [v0.8.46] - Frontend: Attack Lab (auto-ejecucion solo por token) (2026-02-13)
+### UI (comportamiento)
+- Corregido bug: al cerrar/mostrar el Attack Lab (antes "HIDE LAB") no debe auto-ejecutar el escenario ni disparar `CyberConfirmModal`.
+- El auto-run pasa a ser explicito via `autoRunToken` (solo cambia cuando se abre el lab con `autoRun`), en lugar de inferirse por `target + scenario`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+
 ## [v0.8.45] - Backend/Frontend: eliminacion de shims legacy (2026-02-13)
 ### ♻️ Limpieza (sin compat)
 - Eliminados comandos legacy `start_external_audit` / `cancel_external_audit` y eventos `external-audit-*`:

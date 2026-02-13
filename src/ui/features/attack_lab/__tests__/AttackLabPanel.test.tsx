@@ -38,14 +38,14 @@ vi.mock("../catalog/attackLabScenarios", () => ({
 }));
 
 describe("AttackLabPanel", () => {
-  it("debe auto-ejecutar el escenario LAB cuando autoRun=true y hay target + defaultScenarioId", async () => {
+  it("debe auto-ejecutar el escenario LAB cuando autoRunToken cambia y hay target + defaultScenarioId", async () => {
     render(
       <AttackLabPanel
         onClose={() => {}}
         targetDevice={{ ip: "192.168.1.10", mac: "aa:bb", vendor: "ACME" } as any}
         identity={null as any}
         defaultScenarioId="sim-1"
-        autoRun={true}
+        autoRunToken={1}
       />
     );
 
