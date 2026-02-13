@@ -15,6 +15,7 @@ Documentos de referencia:
 - `docs/SECURITY.md` (políticas y hardening).
 - `docs/CHANGELOG.md` (registro de cambios relevantes).
 - `docs/FEATURE_README_TEMPLATE.md` (plantilla de README por feature, incluyendo interconexiones).
+- `skills/README.md` (skills del repo: guias on-demand para tareas recurrentes).
 
 ## Stack
 - Frontend: React + TypeScript + Vite + Three.js / React Three Fiber

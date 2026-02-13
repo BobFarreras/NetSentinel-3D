@@ -218,6 +218,7 @@ Nota Windows:
 - `README.md`
 - `docs/CHANGELOG.md`
 - `docs/ARCHITECTURE.md`
+- `skills/README.md`
 - `DOC-ATTACK.md`
 - `docs/ATTACK_LAB.md`
 - `docs/SECURITY.md`
@@ -247,3 +248,14 @@ Directo, tecnico, pragmatico y orientado a robustez. Prioriza soluciones manteni
 
 Regla:
 - Las prioridades deben cerrarse con evidencia tecnica (tests/build/check) y registro en `docs/CHANGELOG.md`.
+
+## Skills del repo (on-demand)
+
+Los skills viven en `skills/` y se activan segun tarea para cargar contexto de forma progresiva (sin meter todo el repo en contexto).
+
+Skills iniciales:
+
+- `skills/release-checks/SKILL.md`
+- `skills/tauri-command-change/SKILL.md`
+- `skills/feature-readme/SKILL.md`
+- `skills/attack-lab-scenario/SKILL.md`
