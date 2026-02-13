@@ -76,74 +76,96 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   const centerNode = state.centerNode ?? null;
 
   return (
-    <div style={{ width: '100%', height: '100%', background: SCENE_TOKENS.bgContainer, position: 'relative' }}>
-      {/* Toggle UI: oculta/muestra labels sin afectar a los nodos 3D */}
-      <button
-        onClick={state.toggleLabels}
-        title={state.showLabels ? 'Ocultar tarjetas' : 'Mostrar tarjetas'}
-        aria-label="TOGGLE_NODE_LABELS"
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        minWidth: 0,
+        background: SCENE_TOKENS.bgContainer,
+        position: "relative",
+        // Asegura que los overlays (botones) no puedan "escaparse" visualmente del panel en layouts con split.
+        overflow: "hidden",
+      }}
+    >
+      {/* Controles superpuestos: se adaptan al ancho (wrap) para no salirse del contenedor. */}
+      <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 12,
           right: 12,
           zIndex: 80,
-          width: 34,
-          height: 34,
-          borderRadius: 2,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))',
-          border: `1px solid ${state.showLabels ? 'rgba(0,229,255,0.55)' : 'rgba(0,255,136,0.35)'}`,
-          boxShadow: state.showLabels ? '0 0 16px rgba(0,229,255,0.25)' : '0 0 16px rgba(0,255,136,0.18)',
-          color: state.showLabels ? SCENE_TOKENS.accentCyan : SCENE_TOKENS.accentGreen,
-          cursor: 'pointer',
-          display: 'grid',
-          placeItems: 'center',
-          fontFamily: SCENE_TOKENS.fontMono,
-          userSelect: 'none',
+          display: "flex",
+          gap: 6,
+          flexWrap: "wrap",
+          justifyContent: "flex-end",
+          maxWidth: "calc(100% - 24px)",
+          pointerEvents: "auto",
         }}
+        aria-label="SCENE_OVERLAY_CONTROLS"
       >
-        {state.showLabels ? (
-          // "ojo tachado" minimal
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-            <path d="M4 4l16 16" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+        {onUndockScene && (
+          <button
+            onClick={onUndockScene}
+            title="Desacoplar escena 3D"
+            aria-label="UNLOCK_SCENE3D"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 2,
+              background: "linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))",
+              border: "1px solid rgba(0,255,136,0.35)",
+              boxShadow: "0 0 16px rgba(0,255,136,0.18)",
+              color: SCENE_TOKENS.accentGreen,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              fontFamily: SCENE_TOKENS.fontMono,
+              userSelect: "none",
+              fontSize: 16,
+              lineHeight: "16px",
+              padding: 0,
+              flex: "0 0 auto",
+            }}
+          >
+            ↗
+          </button>
         )}
-      </button>
-      {onUndockScene && (
+
+        {/* Toggle UI: oculta/muestra labels sin afectar a los nodos 3D */}
         <button
-          onClick={onUndockScene}
-          title="Desacoplar escena 3D"
-          aria-label="UNLOCK_SCENE3D"
+          onClick={state.toggleLabels}
+          title={state.showLabels ? "Ocultar tarjetas" : "Mostrar tarjetas"}
+          aria-label="TOGGLE_NODE_LABELS"
           style={{
-            position: 'absolute',
-            top: 12,
-            right: 52,
-            zIndex: 80,
             width: 34,
             height: 34,
             borderRadius: 2,
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))',
-            border: '1px solid rgba(0,255,136,0.35)',
-            boxShadow: '0 0 16px rgba(0,255,136,0.18)',
-            color: SCENE_TOKENS.accentGreen,
-            cursor: 'pointer',
-            display: 'grid',
-            placeItems: 'center',
+            background: "linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))",
+            border: `1px solid ${state.showLabels ? "rgba(0,229,255,0.55)" : "rgba(0,255,136,0.35)"}`,
+            boxShadow: state.showLabels ? "0 0 16px rgba(0,229,255,0.25)" : "0 0 16px rgba(0,255,136,0.18)",
+            color: state.showLabels ? SCENE_TOKENS.accentCyan : SCENE_TOKENS.accentGreen,
+            cursor: "pointer",
+            display: "grid",
+            placeItems: "center",
             fontFamily: SCENE_TOKENS.fontMono,
-            userSelect: 'none',
-            fontSize: 16,
-            lineHeight: '16px',
-            padding: 0,
+            userSelect: "none",
+            flex: "0 0 auto",
           }}
         >
-          ↗
+          {state.showLabels ? (
+            // "ojo tachado" minimal
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+              <path d="M4 4l16 16" />
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          )}
         </button>
-      )}
+      </div>
         <Canvas 
         camera={{ position: [0, 20, 25], fov: 50 }} 
         resize={{ scroll: false, debounce: 0 }} 
