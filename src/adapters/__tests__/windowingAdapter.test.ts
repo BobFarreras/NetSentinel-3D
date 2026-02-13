@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
   const listenMock = vi.fn();
   const getByLabelMock = vi.fn();
   const currentCloseMock = vi.fn();
+  const currentOnCloseRequestedMock = vi.fn(async () => () => {});
 
   let failWindowCreate = false;
 
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => {
 
   const getCurrentWebviewWindowMock = vi.fn(() => ({
     close: currentCloseMock,
+    onCloseRequested: currentOnCloseRequestedMock,
   }));
 
   return {
@@ -34,6 +36,7 @@ const mocks = vi.hoisted(() => {
     listenMock,
     getByLabelMock,
     currentCloseMock,
+    currentOnCloseRequestedMock,
     MockWebviewWindow,
     getCurrentWebviewWindowMock,
     setFailWindowCreate: (value: boolean) => {
@@ -165,5 +168,13 @@ describe("windowingAdapter", () => {
 
     expect(windowCloseSpy).toHaveBeenCalledTimes(1);
     windowCloseSpy.mockRestore();
+  });
+
+  it("expone listener close-requested de Tauri cuando existe", async () => {
+    const handler = vi.fn();
+    const unlisten = await windowingAdapter.listenCurrentWindowCloseRequested(handler);
+
+    expect(mocks.currentOnCloseRequestedMock).toHaveBeenCalledTimes(1);
+    expect(typeof unlisten).toBe("function");
   });
 });

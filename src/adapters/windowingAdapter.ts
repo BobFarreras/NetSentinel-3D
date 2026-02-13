@@ -158,6 +158,30 @@ export const windowingAdapter = {
     }
   },
 
+  // Hook para capturar el cierre nativo (boton X) en ventanas Tauri.
+  // En web/portal no existe, devolvemos un unlisten no-op.
+  listenCurrentWindowCloseRequested: async (handler: () => void): Promise<UnlistenFn> => {
+    try {
+      const current = getCurrentWebviewWindow() as unknown as {
+        onCloseRequested?: (cb: () => void) => Promise<() => void> | (() => void);
+      };
+
+      if (typeof current.onCloseRequested !== "function") {
+        return () => {};
+      }
+
+      const maybe = await current.onCloseRequested(() => {
+        handler();
+      });
+
+      // Algunas versiones devuelven Promise<UnlistenFn>, otras UnlistenFn directo.
+      if (typeof maybe === "function") return maybe;
+      return () => {};
+    } catch {
+      return () => {};
+    }
+  },
+
   emitDockPanel: async (panel: DetachablePanelId): Promise<void> => {
     try {
       await emit(DOCK_PANEL_EVENT, { panel } satisfies DockPanelPayload);

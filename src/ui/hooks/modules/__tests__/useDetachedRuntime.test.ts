@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   emitDockPanel: vi.fn(),
+  listenCurrentWindowCloseRequested: vi.fn(async () => () => {}),
 }));
 
 vi.mock("../../../../adapters/windowingAdapter", () => ({
@@ -42,5 +43,20 @@ describe("useDetachedRuntime", () => {
     });
 
     expect(mocks.emitDockPanel).toHaveBeenCalledWith("radar");
+  });
+
+  it("debe emitir dock en beforeunload", () => {
+    renderHook(() => useDetachedRuntime({ panel: "console" }));
+
+    act(() => {
+      window.dispatchEvent(new Event("beforeunload"));
+    });
+
+    expect(mocks.emitDockPanel).toHaveBeenCalledWith("console");
+  });
+
+  it("registra listener de close-requested en Tauri via adapter", () => {
+    renderHook(() => useDetachedRuntime({ panel: "attack_lab" }));
+    expect(mocks.listenCurrentWindowCloseRequested).toHaveBeenCalledTimes(1);
   });
 });

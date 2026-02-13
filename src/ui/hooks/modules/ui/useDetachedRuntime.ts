@@ -30,12 +30,24 @@ export const useDetachedRuntime = (detachedContext: DetachedPanelContext | null)
   useEffect(() => {
     if (!detachedContext) return;
     const panel = detachedContext.panel;
-    const onPageHide = () => {
+    const emitDock = () => {
       void windowingAdapter.emitDockPanel(panel);
     };
-    window.addEventListener("pagehide", onPageHide);
+
+    // Browser events (portal o navegadores): cubrimos ambos.
+    window.addEventListener("pagehide", emitDock);
+    window.addEventListener("beforeunload", emitDock);
+
+    // Tauri native close (X): pagehide no siempre dispara en webviews.
+    let unlistenClose: (() => void) | null = null;
+    void windowingAdapter.listenCurrentWindowCloseRequested(emitDock).then((unlisten) => {
+      unlistenClose = unlisten;
+    });
+
     return () => {
-      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pagehide", emitDock);
+      window.removeEventListener("beforeunload", emitDock);
+      if (unlistenClose) unlistenClose();
     };
   }, [detachedContext]);
 
