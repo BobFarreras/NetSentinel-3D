@@ -1,4 +1,5 @@
-// src/ui/hooks/modules/scene3d/useNetworkNodeState.ts
+// src/ui/features/scene3d/hooks/useNetworkNodeState.ts
+// Estado de NetworkNode: hover/seleccion, cursor/escala y telemetria opcional de debug3d.
 import { useEffect, useMemo, useState } from "react";
 import { uiLogger } from "../../../utils/logger";
 

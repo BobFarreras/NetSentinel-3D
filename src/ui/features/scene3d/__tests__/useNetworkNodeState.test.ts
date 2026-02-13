@@ -1,10 +1,13 @@
+// src/ui/features/scene3d/__tests__/useNetworkNodeState.test.ts
+// Tests del hook useNetworkNodeState: escala/colores en seleccion y handlers de hover/click.
+
 import { describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 
 describe("useNetworkNodeState", () => {
   it("debe exponer estado visual seleccionado", async () => {
     const onClick = vi.fn();
-    const { useNetworkNodeState } = await import("../scene3d/useNetworkNodeState");
+    const { useNetworkNodeState } = await import("../hooks/useNetworkNodeState");
     const { result } = renderHook(() =>
       useNetworkNodeState({
         isSelected: true,
@@ -22,7 +25,7 @@ describe("useNetworkNodeState", () => {
   it("debe cambiar cursor en hover y ejecutar click", async () => {
     const onClick = vi.fn();
     const stopPropagation = vi.fn();
-    const { useNetworkNodeState } = await import("../scene3d/useNetworkNodeState");
+    const { useNetworkNodeState } = await import("../hooks/useNetworkNodeState");
     const { result } = renderHook(() =>
       useNetworkNodeState({
         isSelected: false,

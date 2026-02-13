@@ -1,7 +1,8 @@
-// src/ui/hooks/modules/scene3d/useNodeLabelState.ts
+// src/ui/features/scene3d/hooks/useNodeLabelState.ts
+// Estado de label 3D: resuelve paleta por tipo y calcula badge (HIGH/MED/LOW) segun confianza.
 import { useMemo } from "react";
 import type { DeviceType } from "../../../../shared/dtos/NetworkDTOs";
-import { NODE_TYPE_COLORS } from "../../../components/3d/sceneTokens";
+import { NODE_TYPE_COLORS } from "../components/sceneTokens";
 
 type UseNodeLabelStateArgs = {
   type: DeviceType;

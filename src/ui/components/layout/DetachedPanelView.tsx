@@ -6,7 +6,7 @@ import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs"
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 
 const NetworkScene = lazy(async () => {
-  const mod = await import("../3d/NetworkScene");
+  const mod = await import("../../features/scene3d/components/NetworkScene");
   return { default: mod.NetworkScene };
 });
 

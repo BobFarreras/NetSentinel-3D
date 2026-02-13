@@ -1,7 +1,10 @@
+// src/ui/features/scene3d/components/NetworkNode.tsx
+// Nodo 3D: geometria/animacion/handlers de hover+click delegados al hook de estado.
+
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh } from 'three';
-import { useNetworkNodeState } from "../../hooks/modules/scene3d/useNetworkNodeState";
+import { useNetworkNodeState } from "../hooks/useNetworkNodeState";
 
 interface NetworkNodeProps {
   position: [number, number, number];

@@ -19,7 +19,7 @@ vi.mock("../ui/features/attack_lab/panel/AttackLabPanel", () => ({
   AttackLabPanel: () => <div data-testid="attack-lab-panel">ATTACK-LAB</div>,
 }));
 
-vi.mock("../ui/components/3d/NetworkScene", () => ({
+vi.mock("../ui/features/scene3d/components/NetworkScene", () => ({
   NetworkScene: ({
     devices,
     selectedIp,

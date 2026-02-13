@@ -1,12 +1,15 @@
+// src/ui/features/scene3d/components/NetworkScene.tsx
+// Escena 3D principal: renderiza dispositivos como nodos, labels HTML y controles de camara con estado aislado en hooks.
+
 import React, { useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { NetworkNode } from './NetworkNode';
-import { DeviceDTO, HostIdentity } from '../../../shared/dtos/NetworkDTOs';
+import type { DeviceDTO, HostIdentity } from '../../../../shared/dtos/NetworkDTOs';
 import * as THREE from 'three';
 import { NodeLabel } from './NodeLabel';
 import { SCENE_TOKENS } from "./sceneTokens";
-import { useNetworkSceneState } from "../../hooks/modules/scene3d/useNetworkSceneState";
+import { useNetworkSceneState } from "../hooks/useNetworkSceneState";
 
 interface NetworkSceneProps {
   devices?: DeviceDTO[];

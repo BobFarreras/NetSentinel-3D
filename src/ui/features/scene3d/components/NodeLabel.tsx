@@ -1,8 +1,11 @@
+// src/ui/features/scene3d/components/NodeLabel.tsx
+// Label HTML sobre nodo 3D: icono, nombre/metadata y badge de confianza, con paleta derivada del tipo.
+
 import React from "react";
 import { Html } from "@react-three/drei";
-import type { DeviceType } from "../../../shared/dtos/NetworkDTOs";
+import type { DeviceType } from "../../../../shared/dtos/NetworkDTOs";
 import { SCENE_TOKENS } from "./sceneTokens";
-import { useNodeLabelState } from "../../hooks/modules/scene3d/useNodeLabelState";
+import { useNodeLabelState } from "../hooks/useNodeLabelState";
 
 const Icon: React.FC<{ type: DeviceType; color: string }> = ({ type, color }) => {
   // Iconos SVG minimalistas, estilo terminal/cyberpunk (stroke neon).

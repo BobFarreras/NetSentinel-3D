@@ -10,7 +10,7 @@ import { DetachedWindowPortal } from "./DetachedWindowPortal";
 import type { DetachablePanelId } from "../../../adapters/windowingAdapter";
 
 const NetworkScene = lazy(async () => {
-  const mod = await import("../3d/NetworkScene");
+  const mod = await import("../../features/scene3d/components/NetworkScene");
   return { default: mod.NetworkScene };
 });
 

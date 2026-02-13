@@ -1,4 +1,5 @@
-// src/ui/hooks/modules/scene3d/useNetworkSceneState.ts
+// src/ui/features/scene3d/hooks/useNetworkSceneState.ts
+// Estado de NetworkScene: separa nodo central/orbitas, enriquece devices y gestiona preferencia de labels.
 import { useEffect, useMemo, useState } from "react";
 import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
 import { applyDeviceIntel, classifyDeviceIntel } from "../../../../core/logic/deviceIntel";

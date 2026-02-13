@@ -1,6 +1,7 @@
-// src/ui/components/3d/sceneTokens.ts
-import type { DeviceType } from "../../../shared/dtos/NetworkDTOs";
-import { HUD_COLORS, HUD_TYPO } from "../../styles/hudTokens";
+// src/ui/features/scene3d/components/sceneTokens.ts
+// Tokens visuales para capa 3D: colores y tipografia conectados con hudTokens para consistencia.
+import type { DeviceType } from "../../../../shared/dtos/NetworkDTOs";
+import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 
 export const SCENE_TOKENS = {
   bgContainer: "#000000",

@@ -271,12 +271,13 @@ Ejemplos aplicados:
   - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
   - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
 - Escena 3D:
-  - `src/ui/components/3d/NetworkScene.tsx`
-  - `src/ui/components/3d/NetworkNode.tsx`
-  - `src/ui/components/3d/NodeLabel.tsx`
-  - `src/ui/hooks/modules/scene3d/useNetworkSceneState.ts`
-  - `src/ui/hooks/modules/scene3d/useNetworkNodeState.ts`
-  - `src/ui/hooks/modules/scene3d/useNodeLabelState.ts`
+  - `src/ui/features/scene3d/components/NetworkScene.tsx`
+  - `src/ui/features/scene3d/components/NetworkNode.tsx`
+  - `src/ui/features/scene3d/components/NodeLabel.tsx`
+  - `src/ui/features/scene3d/components/sceneTokens.ts`
+  - `src/ui/features/scene3d/hooks/useNetworkSceneState.ts`
+  - `src/ui/features/scene3d/hooks/useNetworkNodeState.ts`
+  - `src/ui/features/scene3d/hooks/useNodeLabelState.ts`
 
 Beneficios:
 

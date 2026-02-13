@@ -46,6 +46,20 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.30] - Reestructura frontend: Scene3D por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Scene3D movido a feature-folder:
+  - `src/ui/features/scene3d/components/*`
+  - `src/ui/features/scene3d/hooks/*`
+  - tests: `src/ui/features/scene3d/__tests__/*`
+- Layouts actualizados para lazy-load de `NetworkScene`:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
 ### ♻️ Frontend (estructura y naming)
 - Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).
@@ -472,13 +486,13 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - `NetworkScene`, `NetworkNode` y `NodeLabel` quedan mas orientados a presentacion.
 
 ### 🎨 Tokens / estilo
-- Nuevo modulo `src/ui/components/3d/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
+- Nuevo modulo `src/ui/features/scene3d/components/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
 
 ### ✅ Testing
 - Nuevos tests:
-  - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
+  - `src/ui/features/scene3d/__tests__/useNetworkSceneState.test.ts`
+  - `src/ui/features/scene3d/__tests__/useNetworkNodeState.test.ts`
+  - `src/ui/features/scene3d/__tests__/useNodeLabelState.test.ts`
 
 ### 📚 Documentacion
 - `README.md`: añadido resumen del patron frontend modular.
