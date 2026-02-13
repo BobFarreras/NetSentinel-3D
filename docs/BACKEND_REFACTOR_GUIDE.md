@@ -60,6 +60,10 @@ Regla practica:
 - Durante la migracion, mantener archivos wrapper `*_service.rs` que solo deleguen al nuevo modulo.
 - Cuando todo el codigo consumidor ya use el nuevo path, eliminar wrappers.
 
+Nota (estado actual del repo):
+- Los wrappers de compatibilidad se centralizan en `src-tauri/src/application/legacy/*`.
+- `src-tauri/src/application/mod.rs` expone esos shims via `#[path = "legacy/..."]` para evitar ensuciar la raiz de `application/`.
+
 Checklist por cada servicio migrado:
 - [ ] `src-tauri/src/lib.rs` compila sin cambios funcionales.
 - [ ] `src-tauri/src/api/commands/*.rs` sigue invocando el mismo caso de uso (aunque cambie el modulo interno).
@@ -77,7 +81,7 @@ Acciones recomendadas (sin romper comandos existentes):
 2. Internamente, asegurar que ambos comandos delegan a Attack Lab.
 3. Documentar claramente en codigo:
    - DTO aliases legacy en `src-tauri/src/api/dtos.rs`
-   - Servicios wrapper legacy en `src-tauri/src/application/external_audit_service.rs` (si se mantienen)
+   - Servicios wrapper legacy en `src-tauri/src/application/legacy/external_audit_service.rs` (si se mantienen)
 
 Cuando UI ya no use legacy:
 1. Buscar referencias TS a `start_external_audit`.
@@ -114,4 +118,3 @@ Orden recomendado (por riesgo):
 - [ ] `npm run build` verde
 - [ ] No hay comandos Tauri rotos / sin documentar
 - [ ] `docs/ARCHITECTURE.md` + `docs/CHANGELOG.md` actualizados
-

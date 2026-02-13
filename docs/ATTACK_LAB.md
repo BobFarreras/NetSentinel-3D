@@ -60,7 +60,7 @@ Flujo `LAB(simulated)`:
     - `validation.rs`: validaciones defensivas del request.
     - `types.rs`: modelos (`AttackLabRequest`, eventos, etc.).
     - `tests.rs`: tests reales (sin mocks) para stdout/stderr + timeout + cancel.
-  - `src-tauri/src/application/attack_lab_service.rs` (si existe shim/alias)
+  - `src-tauri/src/application/legacy/attack_lab_service.rs` (shim/alias)
     - **shim de compatibilidad** (re-export) para no romper imports legacy.
 - Comandos Tauri:
   - `src-tauri/src/api/commands.rs`

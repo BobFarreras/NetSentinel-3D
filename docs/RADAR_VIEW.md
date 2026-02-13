@@ -20,8 +20,8 @@ Fuera de alcance:
 
 ## 3. Arquitectura propuesta
 ### 3.1 Backend Rust
-- Servicio: `src-tauri/src/application/wifi_service.rs`
-- Normalizacion pura: `src-tauri/src/application/wifi_normalizer.rs`
+- Servicio: `src-tauri/src/application/wifi/service.rs`
+- Normalizacion pura: `src-tauri/src/application/wifi/normalizer.rs`
 - Nuevo comando Tauri: `scan_airwaves`
 - DTO Rust: `WifiNetworkDTO` en `src-tauri/src/api/dtos.rs`
 - Normalizacion de datos:

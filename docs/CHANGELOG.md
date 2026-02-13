@@ -112,6 +112,21 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.42] - Docs: paths backend actualizados (2026-02-13)
+### 📝 Documentacion
+- Actualizados paths y estructura backend por dominios/legacy:
+  - `docs/ARCHITECTURE.md`
+  - `docs/BACKEND_REFACTOR_GUIDE.md`
+  - `docs/RADAR_VIEW.md`
+  - `docs/ATTACK_LAB.md`
+  - `docs/TESTING.md`
+  - `docs/REFACTOR_AUDIT.md`
+- Nota operativa de shims:
+  - `src-tauri/src/application/legacy/README.md`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:

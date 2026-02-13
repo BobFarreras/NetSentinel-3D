@@ -66,21 +66,28 @@ Ubicacion: `src-tauri/src/domain`
 
 Ubicacion: `src-tauri/src/application`
 
-- `scanner_service.rs`: descubrimiento de red y auditoria de puertos.
-- `audit_service.rs`: auditoria de router y extraccion de datos.
-- `history_service.rs`: guardado y lectura de sesiones.
-- `traffic_service.rs`: control del monitor de trafico.
-- `jammer_service.rs`: contramedidas activas.
-- `wifi_service.rs`: orquestacion de Radar View (WiFi) + normalizacion.
-  - normalizacion pura en `wifi_normalizer.rs`.
+Application ya no es plana: se organiza por dominios/skills (feature-folders).
+
+- `scan/*`: descubrimiento de red + auditoria de puertos (`scan/service.rs`).
+- `audit/*`: auditoria de gateway y extraccion de inventario (`audit/service.rs`).
+- `history/*`: guardado/lectura de sesiones (`history/service.rs`).
+- `snapshot/*`: persistencia/carga del ultimo snapshot (`snapshot/service.rs`).
+- `credentials/*`: credenciales del gateway (`credentials/service.rs`).
+- `traffic/*`: control del monitor de trafico (`traffic/service.rs`).
+- `jammer/*`: contramedidas activas (`jammer/service.rs`).
+- `wifi/*`: Radar View (WiFi) + normalizacion:
+  - servicio: `wifi/service.rs`
+  - normalizador: `wifi/normalizer.rs`
 - `attack_lab/*`: wrapper de ejecucion de herramientas externas (Attack Lab)
   (stdout/stderr en tiempo real).
-- `opsec_service.rs`: (NUEVO) orquestador de seguridad operacional (identidad,
-  mac spoofing, validacion LAA).
-- `mac_changer_service.rs`: (NUEVO) ejecucion de scripts PowerShell de alto
-  privilegio para rotacion de identidad.
-- `settings_service.rs`: (NUEVO) persistencia de configuracion local (MAC
-  original, preferencias).
+- `opsec/*`: seguridad operacional:
+  - `opsec/service.rs`: orquestador (check_mac_security, randomize_mac)
+  - `opsec/mac_changer.rs`: randomizacion MAC (Windows)
+- `settings/*`: persistencia de configuracion local (MAC original, etc.).
+
+Compatibilidad:
+
+- `legacy/*`: shims `*_service.rs` para mantener imports historicos mientras se migra el wiring interno.
 
 ### 3.3 Infrastructure
 

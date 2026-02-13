@@ -29,7 +29,7 @@ Top archivos por tamaño (lineas):
 - `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` (~463)  **GOD infra**
 - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx` (~364)  **UI grande**
 - `src-tauri/src/infrastructure/chrome_auditor.rs` (~301)  **infra multi-responsabilidad**
-- `src-tauri/src/application/external_audit_service.rs` (~295)  **servicio grande**
+- `src-tauri/src/application/attack_lab/*` (~)  **servicio grande** (runner/eventos/validacion)
 - `src/App.tsx` (~294)  **shell UI**
 
 Duplicaciones detectadas (ejemplos):

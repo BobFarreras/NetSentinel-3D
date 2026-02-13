@@ -27,7 +27,7 @@ Frontend (unit):
 - `src/adapters/__tests__/wifiAdapter.test.ts`
 - `src/ui/hooks/__tests__/useNetworkManager.test.ts`
 - `src/ui/hooks/modules/__tests__/useScanner.test.ts`
-- `src/ui/hooks/modules/__tests__/useRouterHaker.test.ts`
+- `src/ui/hooks/modules/__tests__/useRouterHacker.test.ts`
 - `src/ui/features/radar/__tests__/useWifiRadar.test.ts`
 - `src/ui/features/traffic/__tests__/useTrafficMonitor.test.ts`
 - `src/ui/features/radar/__tests__/useRadarLogs.test.ts`
