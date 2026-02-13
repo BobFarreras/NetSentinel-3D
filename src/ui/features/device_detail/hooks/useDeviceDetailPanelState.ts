@@ -1,4 +1,5 @@
-// src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts
+// src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts
+// Hook de estado para DeviceDetailPanel: derivadas (nombre/MAC/WiFi) y handlers (router audit / abrir Attack Lab) + identidad del host.
 import { useMemo, useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core"; // Asegúrate de importar invoke
 import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";

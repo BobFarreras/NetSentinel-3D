@@ -11,7 +11,7 @@ const NetworkScene = lazy(async () => {
 });
 
 const DeviceDetailPanel = lazy(async () => {
-  const mod = await import("../hud/DeviceDetailPanel");
+  const mod = await import("../../features/device_detail/components/DeviceDetailPanel");
   return { default: mod.DeviceDetailPanel };
 });
 

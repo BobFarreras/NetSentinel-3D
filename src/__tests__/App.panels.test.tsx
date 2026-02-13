@@ -35,7 +35,7 @@ vi.mock("../ui/components/3d/NetworkScene", () => ({
   NetworkScene: () => <div data-testid="network-scene">SCENE</div>,
 }));
 
-vi.mock("../ui/components/hud/DeviceDetailPanel", () => ({
+vi.mock("../ui/features/device_detail/components/DeviceDetailPanel", () => ({
   DeviceDetailPanel: ({ device }: { device: DeviceDTO }) => (
     <div data-testid="device-detail-panel">DETAIL:{device.ip}</div>
   ),

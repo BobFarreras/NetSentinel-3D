@@ -1,10 +1,13 @@
+// src/ui/features/device_detail/components/DeviceDetailPanel.tsx
+// Panel de detalle de dispositivo: UI de intel/puertos/logs y acciones (audit, jammer, router audit, Attack Lab, Ghost Mode).
+
 import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { DeviceDTO, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useDeviceDetailPanelState } from "../../hooks/modules/ui/useDeviceDetailPanelState";
-import { HUD_COLORS, HUD_TYPO } from "../../styles/hudTokens";
-import { ConsoleDisplay, ConsolePrompt } from "./details/ConsoleDisplay"; // Importamos Interface
-import { PortResults } from "./details/PortResults";
+import type { DeviceDTO, OpenPortDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
+import { useDeviceDetailPanelState } from "../hooks/useDeviceDetailPanelState";
+import { ConsoleDisplay, ConsolePrompt } from "../../../components/hud/details/ConsoleDisplay";
+import { PortResults } from "../../../components/hud/details/PortResults";
 
 interface Props {
   device: DeviceDTO;

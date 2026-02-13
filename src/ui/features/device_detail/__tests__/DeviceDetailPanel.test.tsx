@@ -1,12 +1,15 @@
+// src/ui/features/device_detail/__tests__/DeviceDetailPanel.test.tsx
+// Tests de UI para DeviceDetailPanel: render base y acciones principales sin depender de runtime Tauri.
+
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { DeviceDetailPanel } from '../DeviceDetailPanel';
+import { DeviceDetailPanel } from '../components/DeviceDetailPanel';
 
-vi.mock('../details/ConsoleDisplay', () => ({
+vi.mock('../../../components/hud/details/ConsoleDisplay', () => ({
   ConsoleDisplay: ({ logs }: { logs: string[] }) => <div data-testid="console-display">{logs.length}</div>,
 }));
 
-vi.mock('../details/PortResults', () => ({
+vi.mock('../../../components/hud/details/PortResults', () => ({
   PortResults: ({ results }: { results: unknown[] }) => <div data-testid="port-results">{results.length}</div>,
 }));
 

@@ -32,14 +32,14 @@ Frontend (unit):
 - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
 - `src/ui/features/console_logs/__tests__/useConsoleLogsState.test.ts`
 - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
-- `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
+- `src/ui/features/device_detail/__tests__/useDeviceDetailPanelState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
 - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
 - `src/ui/hooks/modules/network/useBootstrapNetwork.ts` (cubierto de forma indirecta por `useNetworkManager` y tests de scanner/adapters)
 - `src/ui/features/console_logs/__tests__/ConsoleLogs.test.tsx`
 - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
-- `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
+- `src/ui/features/device_detail/__tests__/DeviceDetailPanel.test.tsx`
 - `src/ui/features/attack_lab/__tests__/AttackLabPanel.test.tsx`
 - `src/ui/components/hud/__tests__/RadarPanel.test.tsx`
 - `src/__tests__/App.integration.test.tsx`

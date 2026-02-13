@@ -267,8 +267,8 @@ Ejemplos aplicados:
   - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
   - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
 - Device Detail:
-  - `src/ui/components/hud/DeviceDetailPanel.tsx`
-  - `src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts`
+  - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
 - Escena 3D:
   - `src/ui/components/3d/NetworkScene.tsx`
   - `src/ui/components/3d/NetworkNode.tsx`

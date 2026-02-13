@@ -20,6 +20,20 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.28] - Reestructura frontend: Device Detail por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Device Detail movido a feature-folder:
+  - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
+  - tests: `src/ui/features/device_detail/__tests__/*`
+- Layouts actualizados para lazy-load del panel:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
 ### ♻️ Frontend (estructura y naming)
 - Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).
@@ -490,7 +504,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
   - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
   - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
   - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
-  - `DeviceDetail` (tipografia/colores clave en `src/ui/components/hud/DeviceDetailPanel.tsx`)
+  - `DeviceDetail` (tipografia/colores clave en `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`)
 - Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
 
 ### ✅ Validaciones

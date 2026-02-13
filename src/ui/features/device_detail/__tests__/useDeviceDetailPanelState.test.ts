@@ -1,3 +1,6 @@
+// src/ui/features/device_detail/__tests__/useDeviceDetailPanelState.test.ts
+// Tests del hook useDeviceDetailPanelState: derivadas basicas y delegacion de acciones.
+
 import { describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 
@@ -13,7 +16,7 @@ describe("useDeviceDetailPanelState", () => {
       signal_strength: -55,
     };
 
-    const { useDeviceDetailPanelState } = await import("../ui/useDeviceDetailPanelState");
+    const { useDeviceDetailPanelState } = await import("../hooks/useDeviceDetailPanelState");
     const { result } = renderHook(() =>
       useDeviceDetailPanelState({
         device: device as any,
@@ -38,7 +41,7 @@ describe("useDeviceDetailPanelState", () => {
       vendor: "Router",
     };
 
-    const { useDeviceDetailPanelState } = await import("../ui/useDeviceDetailPanelState");
+    const { useDeviceDetailPanelState } = await import("../hooks/useDeviceDetailPanelState");
     const { result } = renderHook(() =>
       useDeviceDetailPanelState({
         device: device as any,

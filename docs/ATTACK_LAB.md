@@ -276,7 +276,7 @@ Flujo implementado en el estado actual del repo:
 
 Puntos exactos de codigo:
 - `src/App.tsx`
-- `src/ui/components/hud/DeviceDetailPanel.tsx`
+- `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
 - `src/ui/features/attack_lab/components/AttackLabPanel.tsx`
 - `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
 - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
