@@ -1,3 +1,7 @@
+// src-tauri/src/application/mod.rs
+// Modulo de aplicacion: expone casos de uso/servicios y coordina la estructura por dominios (manteniendo wrappers legacy durante la migracion).
+
+pub mod scan;
 pub mod scanner_service;
 pub mod audit_service;
 pub mod history_service;
@@ -14,4 +18,3 @@ pub mod wordlist_service;
 pub mod opsec_service;
 pub mod mac_changer_service;
 pub mod settings_service;
-

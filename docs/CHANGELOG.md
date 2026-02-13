@@ -5,6 +5,16 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.33] - Backend: inicio Fase 1 (application/scan) (2026-02-13)
+### ♻️ Backend (estructura)
+- Iniciada migracion progresiva de `src-tauri/src/application` a modulos por dominio:
+  - Servicio de escaneo movido a `src-tauri/src/application/scan/service.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/scanner_service.rs`
+  - Nuevo modulo: `src-tauri/src/application/scan/mod.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:

@@ -1,4 +1,5 @@
-// src-tauri/src/application/scanner_service.rs
+// src-tauri/src/application/scan/service.rs
+// Servicio de escaneo: ejecuta scan_network (inventario) y audit_target (puertos) usando el puerto `NetworkScannerPort`.
 
 use crate::domain::{
     entities::{Device, OpenPort},
