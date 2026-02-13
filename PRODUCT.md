@@ -1,3 +1,6 @@
+<!-- PRODUCT.md -->
+<!-- Descripcion: especificacion funcional del producto (skills, comandos, flujos y reglas de uso). -->
+
 # PRODUCT.md - Especificacion Funcional de NetSentinel 3D
 
 ## 1. Vision del producto
@@ -44,11 +47,13 @@ Objetivo de producto:
   - `start_jamming`
   - `stop_jamming`
 
-### 3.6 External Audit (wrapper CLI)
+### 3.6 Attack Lab (wrapper CLI + LAB didactico)
 - Comandos:
-  - `start_external_audit`
-  - `cancel_external_audit`
-- Orquesta herramientas externas instaladas por el administrador con logs en tiempo real.
+  - `start_attack_lab`
+  - `cancel_attack_lab`
+- Objetivo:
+  - modo `CUSTOM`: orquestar herramientas CLI externas instaladas por el administrador (sin usar shell) con logs en tiempo real,
+  - modo `LAB`: escenarios didacticos (`external` o `simulated`) para explicar tecnicas y defensas de forma trazable.
 
 ## 4. Reglas de producto (seguridad y uso)
 - Uso exclusivo en redes autorizadas y entorno de laboratorio.

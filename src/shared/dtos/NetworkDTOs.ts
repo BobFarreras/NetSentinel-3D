@@ -123,27 +123,27 @@ export interface WifiNetworkDTO {
   isConnected: boolean;
 }
 
-// 7. External Audit (Wrapper CLI)
-export interface ExternalAuditEnvVarDTO {
+// 7. Attack Lab (runner de herramientas externas / wrapper CLI)
+export interface AttackLabEnvVarDTO {
   key: string;
   value: string;
 }
 
-export interface ExternalAuditRequestDTO {
+export interface AttackLabRequestDTO {
   binaryPath: string;
   args: string[];
   cwd?: string;
   timeoutMs?: number;
-  env?: ExternalAuditEnvVarDTO[];
+  env?: AttackLabEnvVarDTO[];
 }
 
-export interface ExternalAuditLogEvent {
+export interface AttackLabLogEvent {
   auditId: string;
   stream: 'stdout' | 'stderr';
   line: string;
 }
 
-export interface ExternalAuditExitEvent {
+export interface AttackLabExitEvent {
   auditId: string;
   success: boolean;
   exitCode?: number;

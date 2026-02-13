@@ -1,4 +1,5 @@
 <!-- docs/SECURITY.md -->
+<!-- Descripcion: politica de seguridad del proyecto (alcance, reglas, comandos sensibles, hardening y decision records). -->
 
 # Politica de Seguridad de NetSentinel 3D
 
@@ -38,8 +39,10 @@ Comandos actualmente registrados:
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
-- `start_external_audit`
-- `cancel_external_audit`
+- `start_attack_lab`
+- `cancel_attack_lab`
+- `start_attack_lab`
+- `cancel_attack_lab`
 
 Riesgo:
 - Si la UI se compromete, un atacante puede intentar abusar de estos comandos.
@@ -82,16 +85,16 @@ Impacto:
 Siguiente mejora recomendada:
 - Eliminar gradualmente `'unsafe-inline'` en `style-src` migrando estilos inline a hojas CSS controladas.
 
-## 3.3 External Audit (wrapper CLI)
-El modulo `External Audit` esta disenado como **orquestador** (wrapper) para herramientas externas ya instaladas:
+## 3.3 Attack Lab (wrapper CLI)
+El modulo `Attack Lab` esta disenado como **orquestador** (wrapper) para herramientas externas ya instaladas:
 - no reimplementa herramientas,
 - no usa shell por defecto,
 - hace streaming de stdout/stderr a UI,
 - soporta cancelacion y timeout.
 
 Fuente de verdad:
-- `src-tauri/src/application/external_audit/*`
-- `docs/EXTERNAL_AUDIT.md`
+- `src-tauri/src/application/attack_lab/*`
+- `docs/ATTACK_LAB.md`
 
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)

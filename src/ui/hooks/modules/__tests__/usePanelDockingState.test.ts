@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/__tests__/usePanelDockingState.test.ts
+// Tests de docking: valida undock (modo tauri) y re-dock al recibir evento de cierre desde ventana hija.
+
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,23 +29,23 @@ describe("usePanelDockingState", () => {
     const { result } = renderHook(() =>
       usePanelDockingState({
         selectedDeviceIp: "192.168.1.10",
-        externalAuditTargetIp: "192.168.1.20",
-        externalAuditScenarioId: "device_http_headers",
+        attackLabTargetIp: "192.168.1.20",
+        attackLabScenarioId: "device_http_headers",
         showRadar: true,
-        showExternalAudit: true,
+        showAttackLab: true,
       })
     );
 
     await act(async () => {
-      await result.current.undockPanel("external");
+      await result.current.undockPanel("attack_lab");
     });
 
-    expect(result.current.detachedPanels.external).toBe(true);
-    expect(result.current.detachedModes.external).toBe("tauri");
+    expect(result.current.detachedPanels.attack_lab).toBe(true);
+    expect(result.current.detachedModes.attack_lab).toBe("tauri");
   });
 
   it("debe reacoplar si recibe evento dock", async () => {
-    let dockCb: ((panel: "console" | "device" | "radar" | "external" | "scene3d") => void) | null = null;
+    let dockCb: ((panel: any) => void) | null = null;
     mocks.listenDockPanel.mockImplementation(async (cb) => {
       dockCb = cb;
       return () => undefined;
@@ -51,10 +54,10 @@ describe("usePanelDockingState", () => {
     const { result } = renderHook(() =>
       usePanelDockingState({
         selectedDeviceIp: "192.168.1.10",
-        externalAuditTargetIp: "192.168.1.20",
-        externalAuditScenarioId: "device_http_headers",
+        attackLabTargetIp: "192.168.1.20",
+        attackLabScenarioId: "device_http_headers",
         showRadar: true,
-        showExternalAudit: true,
+        showAttackLab: true,
       })
     );
 

@@ -1,6 +1,8 @@
 // src-tauri/src/infrastructure/network/traffic_sniffer.rs
+// Descripcion: sniffer ethernet (pnet) que captura paquetes IPv4 y produce `TrafficPacket` para consumir via `TrafficSnifferPort`.
 
 use crate::domain::entities::TrafficPacket;
+use crate::domain::ports::TrafficSnifferPort;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket};
 use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::Packet;
@@ -72,6 +74,24 @@ impl TrafficSniffer {
 
             println!("🛑 [SNIFFER] Detenido.");
         });
+    }
+}
+
+impl TrafficSnifferPort for TrafficSniffer {
+    fn preflight(&self, interface_hint: &str, target_ip: &str) -> Result<(), String> {
+        TrafficSniffer::preflight(interface_hint, target_ip)
+    }
+
+    fn start_capture(
+        &self,
+        interface_hint: String,
+        target_ip: String,
+        running: Arc<AtomicBool>,
+        callback: Arc<dyn Fn(TrafficPacket) + Send + Sync + 'static>,
+    ) {
+        TrafficSniffer::start_capture(interface_hint, target_ip, running, move |packet| {
+            (callback)(packet);
+        })
     }
 }
 

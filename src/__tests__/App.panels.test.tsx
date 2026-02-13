@@ -1,3 +1,6 @@
+// src/__tests__/App.panels.test.tsx
+// Test de UI: docking/undocking de paneles principales (console, radar, attack_lab) y render esperado.
+
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -5,10 +8,10 @@ import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 import App from "../App";
 
 vi.mock("../ui/components/layout/TopBar", () => ({
-  TopBar: ({ onRadarToggle, onExternalAuditToggle }: { onRadarToggle: () => void; onExternalAuditToggle: () => void }) => (
+  TopBar: ({ onRadarToggle, onAttackLabToggle }: { onRadarToggle: () => void; onAttackLabToggle: () => void }) => (
     <div data-testid="topbar">
       <button onClick={onRadarToggle}>TOGGLE_RADAR</button>
-      <button onClick={onExternalAuditToggle}>TOGGLE_EXTERNAL</button>
+      <button onClick={onAttackLabToggle}>TOGGLE_ATTACK_LAB</button>
     </div>
   ),
 }));
@@ -19,29 +22,29 @@ vi.mock("../ui/components/layout/DetachedWindowPortal", () => ({
   ),
 }));
 
-vi.mock("../ui/components/hud/HistoryPanel", () => ({
+vi.mock("../ui/features/history/components/HistoryPanel", () => ({
   HistoryPanel: () => <div data-testid="history-panel">HISTORY</div>,
 }));
 
-vi.mock("../ui/components/hud/RadarPanel", () => ({
+vi.mock("../ui/features/radar/components/RadarPanel", () => ({
   RadarPanel: () => <div data-testid="radar-panel">RADAR</div>,
 }));
 
-vi.mock("../ui/components/hud/ExternalAuditPanel", () => ({
-  ExternalAuditPanel: () => <div data-testid="external-audit-panel">EXT-AUDIT</div>,
+vi.mock("../ui/features/attack_lab/panel/AttackLabPanel", () => ({
+  AttackLabPanel: () => <div data-testid="attack-lab-panel">ATTACK-LAB</div>,
 }));
 
-vi.mock("../ui/components/3d/NetworkScene", () => ({
+vi.mock("../ui/features/scene3d/components/NetworkScene", () => ({
   NetworkScene: () => <div data-testid="network-scene">SCENE</div>,
 }));
 
-vi.mock("../ui/components/hud/DeviceDetailPanel", () => ({
+vi.mock("../ui/features/device_detail/components/DeviceDetailPanel", () => ({
   DeviceDetailPanel: ({ device }: { device: DeviceDTO }) => (
     <div data-testid="device-detail-panel">DETAIL:{device.ip}</div>
   ),
 }));
 
-vi.mock("../ui/components/panels/ConsoleLogs", () => ({
+vi.mock("../ui/features/console_logs/components/ConsoleLogs", () => ({
   ConsoleLogs: () => <div data-testid="console-logs">CONSOLE</div>,
 }));
 
@@ -88,19 +91,19 @@ describe("App panels docking", () => {
     });
   });
 
-  it("debe mostrar radar + external con split independiente y permitir undock external", async () => {
+  it("debe mostrar radar + attack lab con split independiente y permitir undock attack lab", async () => {
     render(<App />);
     fireEvent.click(screen.getByText("TOGGLE_RADAR"));
-    fireEvent.click(screen.getByText("TOGGLE_EXTERNAL"));
+    fireEvent.click(screen.getByText("TOGGLE_ATTACK_LAB"));
 
     expect(screen.getByLabelText("RESIZE_DOCK_SPLIT")).toBeInTheDocument();
     expect(screen.getByLabelText("UNLOCK_RADAR")).toBeInTheDocument();
-    expect(screen.getByLabelText("UNLOCK_EXTERNAL")).toBeInTheDocument();
+    expect(screen.getByLabelText("UNLOCK_ATTACK_LAB")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("UNLOCK_EXTERNAL"));
+    fireEvent.click(screen.getByLabelText("UNLOCK_ATTACK_LAB"));
     await waitFor(() => {
-      expect(screen.queryByLabelText("UNLOCK_EXTERNAL")).not.toBeInTheDocument();
-      expect(screen.getByLabelText("DOCK_EXTERNAL")).toBeInTheDocument();
+      expect(screen.queryByLabelText("UNLOCK_ATTACK_LAB")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("DOCK_ATTACK_LAB")).toBeInTheDocument();
     });
   });
 });

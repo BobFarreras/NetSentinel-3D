@@ -1,3 +1,6 @@
+<!-- docs/OPSEC_MODULE.md -->
+<!-- Descripcion: documentacion del modulo OpSec (identidad host, validacion MAC y operativa de ghost mode) y sus comandos asociados. -->
+
 # Módulo OpSec & Ghost Mode
 
 ## 1. Introducción

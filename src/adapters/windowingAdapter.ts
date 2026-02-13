@@ -1,9 +1,12 @@
+// src/adapters/windowingAdapter.ts
+// Adapter de windowing: gestiona paneles desacoplados (Tauri/portal) y eventos internos de docking + sincronizacion de contexto entre ventanas.
+
 import { emit, listen } from "@tauri-apps/api/event";
 import { WebviewWindow, getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import type { UnlistenFn } from "../shared/tauri/bridge";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 
-export type DetachablePanelId = "console" | "device" | "radar" | "external" | "scene3d";
+export type DetachablePanelId = "console" | "device" | "radar" | "attack_lab" | "scene3d";
 export type DetachedPanelContext = {
   panel: DetachablePanelId;
   targetIp?: string;
@@ -20,21 +23,21 @@ type DockPanelPayload = {
   panel: DetachablePanelId;
 };
 
-type ExternalAuditContextPayload = {
+type AttackLabContextPayload = {
   targetDevice: DeviceDTO | null;
   scenarioId?: string;
   autoRun?: boolean;
 };
 
 const DOCK_PANEL_EVENT = "netsentinel://dock-panel";
-const EXTERNAL_CONTEXT_EVENT = "netsentinel://external-context";
+const ATTACK_LAB_CONTEXT_EVENT = "netsentinel://attack-lab-context";
 const WINDOW_LABEL_PREFIX = "netsentinel_panel_";
 
 const panelTitles: Record<DetachablePanelId, string> = {
   console: "NetSentinel - Console Logs",
   device: "NetSentinel - Device Detail",
   radar: "NetSentinel - Radar",
-  external: "NetSentinel - External Audit",
+  attack_lab: "NetSentinel - Attack Lab",
   scene3d: "NetSentinel - Network Scene",
 };
 
@@ -42,7 +45,7 @@ const panelSizes: Record<DetachablePanelId, { width: number; height: number }> =
   console: { width: 980, height: 420 },
   device: { width: 540, height: 760 },
   radar: { width: 900, height: 700 },
-  external: { width: 900, height: 700 },
+  attack_lab: { width: 900, height: 700 },
   scene3d: { width: 1200, height: 780 },
 };
 
@@ -66,6 +69,14 @@ const buildDetachedUrl = ({ panel, targetIp, scenarioId }: OpenPanelWindowArgs) 
   return `/?${params.toString()}`;
 };
 
+const normalizePanelId = (panel: string | null): DetachablePanelId | null => {
+  if (!panel) return null;
+  if (panel === "console" || panel === "device" || panel === "radar" || panel === "attack_lab" || panel === "scene3d") {
+    return panel;
+  }
+  return null;
+};
+
 export const windowingAdapter = {
   isTauriRuntime,
 
@@ -75,10 +86,8 @@ export const windowingAdapter = {
       return null;
     }
 
-    const panel = params.get("panel");
-    if (panel !== "console" && panel !== "device" && panel !== "radar" && panel !== "external" && panel !== "scene3d") {
-      return null;
-    }
+    const panel = normalizePanelId(params.get("panel"));
+    if (!panel) return null;
 
     return {
       panel,
@@ -149,6 +158,30 @@ export const windowingAdapter = {
     }
   },
 
+  // Hook para capturar el cierre nativo (boton X) en ventanas Tauri.
+  // En web/portal no existe, devolvemos un unlisten no-op.
+  listenCurrentWindowCloseRequested: async (handler: () => void): Promise<UnlistenFn> => {
+    try {
+      const current = getCurrentWebviewWindow() as unknown as {
+        onCloseRequested?: (cb: () => void) => Promise<() => void> | (() => void);
+      };
+
+      if (typeof current.onCloseRequested !== "function") {
+        return () => {};
+      }
+
+      const maybe = await current.onCloseRequested(() => {
+        handler();
+      });
+
+      // Algunas versiones devuelven Promise<UnlistenFn>, otras UnlistenFn directo.
+      if (typeof maybe === "function") return maybe;
+      return () => {};
+    } catch {
+      return () => {};
+    }
+  },
+
   emitDockPanel: async (panel: DetachablePanelId): Promise<void> => {
     try {
       await emit(DOCK_PANEL_EVENT, { panel } satisfies DockPanelPayload);
@@ -157,34 +190,34 @@ export const windowingAdapter = {
     }
   },
 
-  emitExternalAuditContext: async (payload: ExternalAuditContextPayload): Promise<void> => {
+  emitAttackLabContext: async (payload: AttackLabContextPayload): Promise<void> => {
     try {
-      await emit(EXTERNAL_CONTEXT_EVENT, payload);
+      await emit(ATTACK_LAB_CONTEXT_EVENT, payload);
     } catch {
-      window.dispatchEvent(new CustomEvent<ExternalAuditContextPayload>(EXTERNAL_CONTEXT_EVENT, { detail: payload }));
+      window.dispatchEvent(new CustomEvent<AttackLabContextPayload>(ATTACK_LAB_CONTEXT_EVENT, { detail: payload }));
     }
   },
 
-  listenExternalAuditContext: async (handler: (payload: ExternalAuditContextPayload) => void): Promise<UnlistenFn> => {
+  listenAttackLabContext: async (handler: (payload: AttackLabContextPayload) => void): Promise<UnlistenFn> => {
     try {
-      const unlisten = await listen<ExternalAuditContextPayload>(EXTERNAL_CONTEXT_EVENT, (event) => {
+      const unlisten1 = await listen<AttackLabContextPayload>(ATTACK_LAB_CONTEXT_EVENT, (event) => {
         if (event.payload) {
           handler(event.payload);
         }
       });
       return () => {
-        void unlisten();
+        void unlisten1();
       };
     } catch {
       const callback = (evt: Event) => {
-        const custom = evt as CustomEvent<ExternalAuditContextPayload>;
+        const custom = evt as CustomEvent<AttackLabContextPayload>;
         if (custom.detail) {
           handler(custom.detail);
         }
       };
-      window.addEventListener(EXTERNAL_CONTEXT_EVENT, callback as EventListener);
+      window.addEventListener(ATTACK_LAB_CONTEXT_EVENT, callback as EventListener);
       return () => {
-        window.removeEventListener(EXTERNAL_CONTEXT_EVENT, callback as EventListener);
+        window.removeEventListener(ATTACK_LAB_CONTEXT_EVENT, callback as EventListener);
       };
     }
   },
@@ -193,7 +226,8 @@ export const windowingAdapter = {
     try {
       const unlisten = await listen<DockPanelPayload>(DOCK_PANEL_EVENT, (event) => {
         if (event.payload?.panel) {
-          handler(event.payload.panel);
+          const normalized = normalizePanelId(event.payload.panel);
+          if (normalized) handler(normalized);
         }
       });
       return () => {
@@ -204,7 +238,8 @@ export const windowingAdapter = {
         const custom = evt as CustomEvent<DockPanelPayload>;
         const panel = custom.detail?.panel;
         if (!panel) return;
-        handler(panel);
+        const normalized = normalizePanelId(panel);
+        if (normalized) handler(normalized);
       };
       window.addEventListener(DOCK_PANEL_EVENT, callback as EventListener);
       return () => {

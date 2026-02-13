@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/ui/useAppLayoutState.ts
+// Hook de layout: controla medidas (sidebar/radar/console) y gestiona drag-resize con listeners globales.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 

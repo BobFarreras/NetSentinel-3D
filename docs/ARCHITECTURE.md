@@ -1,4 +1,5 @@
 <!-- docs/ARCHITECTURE.md -->
+<!-- Descripcion: mapa de capas, flujo de datos y convenciones estructurales del repo (frontend + backend). -->
 
 # Arquitectura Tecnica de NetSentinel 3D
 
@@ -37,16 +38,26 @@ Principio base:
 
 ### 2.1 Estructura frontend por feature (actual)
 
-- `src/ui/components/hud/*`: paneles HUD (Radar, DeviceDetail, History,
-  ExternalAudit).
-- `src/ui/components/panels/*`: consola/logs/trafico.
-- `src/ui/components/3d/*`: escena de red (nodos, labels, camara, controles).
-- `src/ui/hooks/modules/*`: hooks de estado por modulo/panel/escena.
+- `src/ui/features/*`: feature-folders (UI + hooks + tests) para funcionalidades
+  completas.
+  - Ejemplos: `attack_lab/`, `radar/`, `console_logs/`.
+- `src/ui/components/*`: componentes compartidos y/o legacy en transicion.
+  - `hud/`, `panels/`, `3d/`.
+- `src/ui/hooks/modules/*`: hooks compartidos/legacy por dominio (network,
+  traffic, scene3d, ui, etc.).
 
 Regla practica:
 
 - Si un componente supera responsabilidad de presentacion, extraer hook
   `useXxxState` y sub-vistas.
+
+Convencion de documentacion:
+
+- Cada feature-folder principal debe tener `README.md` propio con un resumen y
+  una seccion de interconexiones (comandos, eventos, DTOs y entrypoints). Ver
+  `docs/FEATURE_README_TEMPLATE.md`.
+- Para tareas recurrentes, el repo versiona *skills* en `skills/` con guias
+  accionables (SKILL.md) que se cargan on-demand (discovery/activacion).
 
 ## 3. Capas del Backend (Rust)
 
@@ -63,31 +74,38 @@ Ubicacion: `src-tauri/src/domain`
 
 Ubicacion: `src-tauri/src/application`
 
-- `scanner_service.rs`: descubrimiento de red y auditoria de puertos.
-- `audit_service.rs`: auditoria de router y extraccion de datos.
-- `history_service.rs`: guardado y lectura de sesiones.
-- `traffic_service.rs`: control del monitor de trafico.
-- `jammer_service.rs`: contramedidas activas.
-- `wifi_service.rs`: orquestacion de Radar View (WiFi) + normalizacion.
-  - normalizacion pura en `wifi_normalizer.rs`.
-- `external_audit/*`: wrapper de ejecucion de herramientas externas
+Application ya no es plana: se organiza por dominios/skills (feature-folders).
+
+- `scan/*`: descubrimiento de red + auditoria de puertos (`scan/service.rs`).
+- `audit/*`: auditoria de gateway y extraccion de inventario (`audit/service.rs`).
+- `history/*`: guardado/lectura de sesiones (`history/service.rs`).
+- `snapshot/*`: persistencia/carga del ultimo snapshot (`snapshot/service.rs`).
+- `credentials/*`: credenciales del gateway (`credentials/service.rs`).
+- `traffic/*`: control del monitor de trafico (`traffic/service.rs`).
+- `jammer/*`: contramedidas activas (`jammer/service.rs`).
+- `wifi/*`: Radar View (WiFi) + normalizacion:
+  - servicio: `wifi/service.rs`
+  - normalizador: `wifi/normalizer.rs`
+- `attack_lab/*`: wrapper de ejecucion de herramientas externas (Attack Lab)
   (stdout/stderr en tiempo real).
-- `opsec_service.rs`: (NUEVO) orquestador de seguridad operacional (identidad,
-  mac spoofing, validacion LAA).
-- `mac_changer_service.rs`: (NUEVO) ejecucion de scripts PowerShell de alto
-  privilegio para rotacion de identidad.
-- `settings_service.rs`: (NUEVO) persistencia de configuracion local (MAC
-  original, preferencias).
+- `opsec/*`: seguridad operacional:
+  - `opsec/service.rs`: orquestador (check_mac_security, randomize_mac)
+  - `opsec/mac_changer.rs`: randomizacion MAC (Windows)
+- `settings/*`: persistencia de configuracion local (MAC original, etc.).
+
+Compatibilidad:
+
+- `legacy/*`: shims `*_service.rs` para mantener imports historicos mientras se migra el wiring interno.
 
 ### 3.3 Infrastructure
 
 Ubicacion: `src-tauri/src/infrastructure`
 
-- `system_scanner.rs`: adaptador del puerto `NetworkScannerPort` (orquesta
+- `system_scanner/`: adaptador del puerto `NetworkScannerPort` (orquesta
   submodulos en `system_scanner/*`).
 - `router_audit/*`: automatizacion de auditoria de gateway (Chrome) + parsing
   con fixtures.
-- `fs_repository.rs`: persistencia en disco.
+- `persistence/*`: persistencia en disco (history/snapshot/settings/wordlist + credential store).
 - `network/*`: sniffing, ARP, puertos, vendor/hostname resolver, etc.
   - `network/vendor_resolver*`: resolucion de fabricante por OUI (seed
     embebido + override en AppData).
@@ -210,8 +228,9 @@ Comportamiento actual:
 Eventos internos de coordinacion:
 
 - `netsentinel://dock-panel`: reacople generico de panel.
-- `netsentinel://external-context`: sincroniza target/escenario/autorun del
-  panel `External` desacoplado.
+- `netsentinel://attack-lab-context`: sincroniza target/escenario/autorun del
+  panel de auditoria desacoplado (feature: Attack Lab).
+  - compat legacy: `netsentinel://external-context`.
 
 Hooks UI dedicados de esta capa:
 
@@ -248,27 +267,37 @@ patron estable:
 Ejemplos aplicados:
 
 - Radar:
-  - `src/ui/components/hud/RadarPanel.tsx`
-  - `src/ui/hooks/modules/radar/useRadarPanelState.ts`
-  - `src/ui/components/hud/radar/*`
+  - `src/ui/features/radar/components/RadarPanel.tsx`
+  - `src/ui/features/radar/hooks/useRadarPanelState.ts`
+  - `src/ui/features/radar/components/radar/*`
 - Console Logs:
-  - `src/ui/components/panels/ConsoleLogs.tsx`
-  - `src/ui/hooks/modules/ui/useConsoleLogsState.ts`
-  - `src/ui/components/panels/console_logs/*`
+  - `src/ui/features/console_logs/components/ConsoleLogs.tsx`
+  - `src/ui/features/console_logs/hooks/useConsoleLogsState.ts`
+  - `src/ui/features/console_logs/components/*`
 - Traffic:
-  - `src/ui/components/panels/TrafficPanel.tsx`
-  - `src/ui/hooks/modules/traffic/useTrafficPanelState.ts`
-  - `src/ui/components/panels/traffic/*`
+  - `src/ui/features/traffic/components/TrafficPanel.tsx`
+  - `src/ui/features/traffic/hooks/useTrafficPanelState.ts`
+  - `src/ui/features/traffic/hooks/useTrafficMonitor.ts`
+  - `src/ui/features/traffic/components/*`
+- Attack Lab (LAB/CUSTOM):
+  - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
+  - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
+  - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
+- History:
+  - `src/ui/features/history/components/HistoryPanel.tsx`
+- Wordlists (shared):
+  - `src/ui/features/wordlist/hooks/useWordlistManager.ts`
 - Device Detail:
-  - `src/ui/components/hud/DeviceDetailPanel.tsx`
-  - `src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts`
+  - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
 - Escena 3D:
-  - `src/ui/components/3d/NetworkScene.tsx`
-  - `src/ui/components/3d/NetworkNode.tsx`
-  - `src/ui/components/3d/NodeLabel.tsx`
-  - `src/ui/hooks/modules/scene3d/useNetworkSceneState.ts`
-  - `src/ui/hooks/modules/scene3d/useNetworkNodeState.ts`
-  - `src/ui/hooks/modules/scene3d/useNodeLabelState.ts`
+  - `src/ui/features/scene3d/components/NetworkScene.tsx`
+  - `src/ui/features/scene3d/components/NetworkNode.tsx`
+  - `src/ui/features/scene3d/components/NodeLabel.tsx`
+  - `src/ui/features/scene3d/components/sceneTokens.ts`
+  - `src/ui/features/scene3d/hooks/useNetworkSceneState.ts`
+  - `src/ui/features/scene3d/hooks/useNetworkNodeState.ts`
+  - `src/ui/features/scene3d/hooks/useNodeLabelState.ts`
 
 Beneficios:
 
@@ -327,8 +356,8 @@ Comandos de WiFi (Radar View):
 
 Comandos de auditoria externa (wrapper CLI):
 
-- `start_external_audit`
-- `cancel_external_audit`
+- `start_attack_lab`
+- `cancel_attack_lab`
 
 Regla de mantenimiento:
 

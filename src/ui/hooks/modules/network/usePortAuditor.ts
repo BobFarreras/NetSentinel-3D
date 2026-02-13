@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/network/usePortAuditor.ts
+// Hook de auditoria de puertos: ejecuta audit_target, guarda resultados y publica trazas en el log del target.
+
 import { useState } from 'react';
 import { OpenPortDTO } from '../../../../shared/dtos/NetworkDTOs';
 import { auditAdapter } from '../../../../adapters/auditAdapter';

@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/network/useSocketLogs.ts
+// Hook de logs: mantiene logs por dispositivo y globales, y escucha eventos de auditoria para trazabilidad en tiempo real.
+
 import { useState, useEffect, useRef } from 'react';
 import { systemAdapter } from '../../../../adapters/systemAdapter';
 import { listenSystemLog } from '../../../utils/systemLogBus';

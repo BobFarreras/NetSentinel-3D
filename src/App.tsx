@@ -1,13 +1,17 @@
+// src/App.tsx
+// Orquestador de alto nivel: compone layouts, coordina estado global y sincroniza docking/ventanas + contexto entre paneles.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { windowingAdapter } from ".//adapters/windowingAdapter"; // Asegura ruta
+import { windowingAdapter } from "./adapters/windowingAdapter";
 import type { DeviceDTO } from "./shared/dtos/NetworkDTOs";
 import { useNetworkManager } from "./ui/hooks/useNetworkManager";
 import { useAppLayoutState } from "./ui/hooks/modules/ui/useAppLayoutState";
 import { usePanelDockingState } from "./ui/hooks/modules/ui/usePanelDockingState";
 import { useDetachedRuntime } from "./ui/hooks/modules/ui/useDetachedRuntime";
-import { useExternalDetachedSync } from "./ui/hooks/modules/ui/useExternalDetachedSync";
 import { DetachedPanelView } from "./ui/components/layout/DetachedPanelView";
 import { MainDockedLayout } from "./ui/components/layout/MainDockedLayout";
+import { useAttackLabDetachedSync } from "./ui/features/attack_lab/hooks/useAttackLabDetachedSync";
+import { uiLogger } from "./ui/utils/logger";
 
 function App() {
   const detachedContext = windowingAdapter.parseDetachedContextFromLocation();
@@ -38,17 +42,17 @@ function App() {
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
-  const [showExternalAudit, setShowExternalAudit] = useState(false);
-  const [externalAuditTarget, setExternalAuditTarget] = useState<DeviceDTO | null>(null);
-  const [externalAuditScenarioId, setExternalAuditScenarioId] = useState<string | null>(null);
+  const [showAttackLab, setShowAttackLab] = useState(false);
+  const [attackLabTarget, setAttackLabTarget] = useState<DeviceDTO | null>(null);
+  const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
 
   // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
   useEffect(() => {
-    console.log("👂 [APP] Listening for Dock Panel events...");
+    uiLogger.info("[app] Listening for Dock Panel events...");
     const unlistenPromise = windowingAdapter.listenDockPanel((panelName) => {
-        console.log("🔀 [APP] Request to open panel:", panelName);
-        if (panelName === "external") {
-            setShowExternalAudit(true);
+        uiLogger.info("[app] Request to open panel", panelName);
+        if (panelName === "attack_lab") {
+            setShowAttackLab(true);
             // Opcional: Cerrar otros si es política de UI
             // setShowRadar(false); 
         } else if (panelName === "radar") {
@@ -57,19 +61,19 @@ function App() {
     });
 
     // TAMBIÉN ESCUCHAR CONTEXTO PARA ACTUALIZAR OBJETIVO
-    const unlistenContext = windowingAdapter.listenExternalAuditContext((payload) => {
-        console.log("🎯 [APP] External Context Update:", payload);
+    const unlistenContext = windowingAdapter.listenAttackLabContext((payload) => {
+        uiLogger.info("[app] Attack Lab Context Update", payload);
         if (payload.targetDevice) {
-            setExternalAuditTarget(payload.targetDevice);
+            setAttackLabTarget(payload.targetDevice);
         }
         if (payload.scenarioId) {
-            setExternalAuditScenarioId(payload.scenarioId);
+            setAttackLabScenarioId(payload.scenarioId);
         }
         if (payload.autoRun) {
             // Podrías pasar un token de autorun si lo necesitaras
         }
         // Aseguramos que se abra
-        setShowExternalAudit(true);
+        setShowAttackLab(true);
     });
 
     return () => {
@@ -81,12 +85,12 @@ function App() {
   const layout = useAppLayoutState();
   const docking = usePanelDockingState({
     selectedDeviceIp: selectedDevice?.ip,
-    externalAuditTargetIp: externalAuditTarget?.ip,
-    externalAuditScenarioId,
+    attackLabTargetIp: attackLabTarget?.ip,
+    attackLabScenarioId,
     showRadar,
-    showExternalAudit,
+    showAttackLab,
   });
-  const externalSync = useExternalDetachedSync();
+  const attackLabSync = useAttackLabDetachedSync();
   const { detachedPanelReady } = useDetachedRuntime(detachedContext);
 
   const detachedTargetDevice = useMemo(
@@ -94,33 +98,31 @@ function App() {
     [detachedContext?.targetIp, devices, selectedDevice]
   );
 
-  const detachedExternalTargetDevice = externalSync.detachedExternalTarget || detachedTargetDevice;
-  const detachedExternalScenario =
-    externalSync.detachedExternalScenarioId || detachedContext?.scenarioId || externalAuditScenarioId;
+  const detachedAttackLabTargetDevice = attackLabSync.detachedAttackLabTarget || detachedTargetDevice;
+  const detachedAttackLabScenario =
+    attackLabSync.detachedAttackLabScenarioId || detachedContext?.scenarioId || attackLabScenarioId;
 
   const openLabAuditForDevice = useCallback(
     (device: DeviceDTO) => {
       const scenarioId = device.isGateway ? "router_recon_ping_tracert" : "device_http_headers";
-      setExternalAuditTarget(device);
-      setExternalAuditScenarioId(scenarioId);
-      setShowExternalAudit(true);
+      setAttackLabTarget(device);
+      setAttackLabScenarioId(scenarioId);
+      setShowAttackLab(true);
 
-      if (docking.detachedPanels.external && docking.detachedModes.external === "tauri") {
-        void externalSync.emitExternalContext({ targetDevice: device, scenarioId, autoRun: true });
+      if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
+        void attackLabSync.emitAttackLabContext({ targetDevice: device, scenarioId, autoRun: true });
       }
     },
-    [docking.detachedModes.external, docking.detachedPanels.external, externalSync]
+    [attackLabSync, docking.detachedModes.attack_lab, docking.detachedPanels.attack_lab]
   );
 
-  const toggleExternalAudit = useCallback(() => {
-    const next = !showExternalAudit;
-    setShowExternalAudit(next);
+  const toggleAttackLab = useCallback(() => {
+    const next = !showAttackLab;
+    setShowAttackLab(next);
     if (next) {
       // Si se abre manualmente, quizás queramos limpiar o mantener el último
-      // setExternalAuditTarget(null);
-      // setExternalAuditScenarioId(null);
     }
-  }, [showExternalAudit]);
+  }, [showAttackLab]);
 
   if (detachedContext) {
     return (
@@ -141,10 +143,10 @@ function App() {
         toggleJammer={toggleJammer}
         checkRouterSecurity={checkRouterSecurity}
         onOpenLabAudit={openLabAuditForDevice}
-        detachedExternalTargetDevice={detachedExternalTargetDevice}
+        detachedAttackLabTargetDevice={detachedAttackLabTargetDevice}
         identity={identity}
-        detachedExternalScenario={detachedExternalScenario}
-        detachedExternalAutoRunToken={externalSync.detachedExternalAutoRunToken}
+        detachedAttackLabScenario={detachedAttackLabScenario}
+        detachedAttackLabAutoRunToken={attackLabSync.detachedAttackLabAutoRunToken}
         intruders={intruders}
         selectDevice={selectDevice}
       />
@@ -159,14 +161,14 @@ function App() {
       setShowHistory={setShowHistory}
       showRadar={showRadar}
       setShowRadar={setShowRadar}
-      showExternalAudit={showExternalAudit}
-      onToggleExternalAudit={toggleExternalAudit}
-      closeExternalAudit={() => setShowExternalAudit(false)}
+      showAttackLab={showAttackLab}
+      onToggleAttackLab={toggleAttackLab}
+      closeAttackLab={() => setShowAttackLab(false)}
       identity={identity}
       startScan={startScan}
       loadSession={loadSession}
       showDockRadar={docking.showDockRadar}
-      showDockExternal={docking.showDockExternal}
+      showDockAttackLab={docking.showDockAttackLab}
       showDockScene={docking.showDockScene}
       showDockConsole={docking.showDockConsole}
       showDockDevice={docking.showDockDevice}
@@ -193,8 +195,8 @@ function App() {
       jamPendingDevices={jamPendingDevices}
       toggleJammer={toggleJammer}
       checkRouterSecurity={checkRouterSecurity}
-      externalAuditTarget={externalAuditTarget}
-      externalAuditScenarioId={externalAuditScenarioId}
+      attackLabTarget={attackLabTarget}
+      attackLabScenarioId={attackLabScenarioId}
       onOpenLabAudit={openLabAuditForDevice}
       detachedPanels={docking.detachedPanels}
       detachedModes={docking.detachedModes}

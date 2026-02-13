@@ -1,29 +1,32 @@
+// src/ui/components/layout/DetachedPanelView.tsx
+// Vista contenedora para ventanas desacopladas: monta el panel adecuado segun el contexto parseado desde la URL.
+
 import { lazy, Suspense } from "react";
-import { ConsoleLogs } from "../panels/ConsoleLogs";
+import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs";
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 
 const NetworkScene = lazy(async () => {
-  const mod = await import("../3d/NetworkScene");
+  const mod = await import("../../features/scene3d/components/NetworkScene");
   return { default: mod.NetworkScene };
 });
 
 const DeviceDetailPanel = lazy(async () => {
-  const mod = await import("../hud/DeviceDetailPanel");
+  const mod = await import("../../features/device_detail/components/DeviceDetailPanel");
   return { default: mod.DeviceDetailPanel };
 });
 
 const RadarPanel = lazy(async () => {
-  const mod = await import("../hud/RadarPanel");
+  const mod = await import("../../features/radar/components/RadarPanel");
   return { default: mod.RadarPanel };
 });
 
-const ExternalAuditPanel = lazy(async () => {
-  const mod = await import("../panels/external_audit/ExternalAuditPanel");
-  return { default: mod.ExternalAuditPanel };
+const AttackLabPanel = lazy(async () => {
+  const mod = await import("../../features/attack_lab/panel/AttackLabPanel");
+  return { default: mod.AttackLabPanel };
 });
 
 interface DetachedPanelViewProps {
-  panel: "console" | "device" | "radar" | "external" | "scene3d";
+  panel: "console" | "device" | "radar" | "attack_lab" | "scene3d";
   detachedPanelReady: boolean;
   systemLogs: string[];
   devices: DeviceDTO[];
@@ -39,10 +42,10 @@ interface DetachedPanelViewProps {
   toggleJammer: (ip: string) => void;
   checkRouterSecurity: (ip: string) => void;
   onOpenLabAudit: (d: DeviceDTO) => void;
-  detachedExternalTargetDevice: DeviceDTO | null;
+  detachedAttackLabTargetDevice: DeviceDTO | null;
   identity: HostIdentity | null;
-  detachedExternalScenario: string | null;
-  detachedExternalAutoRunToken: number;
+  detachedAttackLabScenario: string | null;
+  detachedAttackLabAutoRunToken: number;
   intruders: string[];
   selectDevice: (d: DeviceDTO | null) => void;
 }
@@ -64,10 +67,10 @@ export const DetachedPanelView = ({
   toggleJammer,
   checkRouterSecurity,
   onOpenLabAudit,
-  detachedExternalTargetDevice,
+  detachedAttackLabTargetDevice,
   identity,
-  detachedExternalScenario,
-  detachedExternalAutoRunToken,
+  detachedAttackLabScenario,
+  detachedAttackLabAutoRunToken,
   intruders,
   selectDevice,
 }: DetachedPanelViewProps) => {
@@ -159,15 +162,15 @@ export const DetachedPanelView = ({
                 <RadarPanel onClose={() => {}} />
               </Suspense>
             )}
-            {panel === "external" && (
+            {panel === "attack_lab" && (
               <Suspense fallback={null}>
-                <ExternalAuditPanel
-                  key={`detached-ext-${detachedExternalAutoRunToken}-${detachedExternalTargetDevice?.ip || "none"}-${detachedExternalScenario || "none"}`}
+                <AttackLabPanel
+                  key={`detached-attack-lab-${detachedAttackLabAutoRunToken}-${detachedAttackLabTargetDevice?.ip || "none"}-${detachedAttackLabScenario || "none"}`}
                   onClose={() => {}}
-                  targetDevice={detachedExternalTargetDevice}
+                  targetDevice={detachedAttackLabTargetDevice}
                   identity={identity}
-                  defaultScenarioId={detachedExternalScenario}
-                  autoRun={Boolean(detachedExternalTargetDevice && detachedExternalScenario)}
+                  defaultScenarioId={detachedAttackLabScenario}
+                  autoRun={Boolean(detachedAttackLabTargetDevice && detachedAttackLabScenario)}
                   embedded={true}
                 />
               </Suspense>

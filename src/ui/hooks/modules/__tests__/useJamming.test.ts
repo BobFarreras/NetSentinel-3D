@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/__tests__/useJamming.test.ts
+// Tests del jammer: asegura bloqueo sobre gateway y evita reentradas mientras el comando esta pending.
+
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 

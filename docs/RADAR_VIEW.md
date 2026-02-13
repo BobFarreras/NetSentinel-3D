@@ -1,4 +1,5 @@
 <!-- docs/RADAR_VIEW.md -->
+<!-- Descripcion: guia de implementacion de Radar View (WiFi Spectrum), flujo UI/back, contratos y consideraciones de parsing/permisos. -->
 
 # Radar View (WiFi Spectrum) - Guia de Implementacion
 
@@ -20,8 +21,8 @@ Fuera de alcance:
 
 ## 3. Arquitectura propuesta
 ### 3.1 Backend Rust
-- Servicio: `src-tauri/src/application/wifi_service.rs`
-- Normalizacion pura: `src-tauri/src/application/wifi_normalizer.rs`
+- Servicio: `src-tauri/src/application/wifi/service.rs`
+- Normalizacion pura: `src-tauri/src/application/wifi/normalizer.rs`
 - Nuevo comando Tauri: `scan_airwaves`
 - DTO Rust: `WifiNetworkDTO` en `src-tauri/src/api/dtos.rs`
 - Normalizacion de datos:
@@ -37,8 +38,8 @@ Resolucion vendor:
 
 ### 3.2 Frontend React
 - Adapter: `src/adapters/wifiAdapter.ts`
-- Hook: `src/ui/hooks/modules/radar/useWifiRadar.ts`
-- Vista: `src/ui/components/3d/RadarView.tsx`
+- Hook: `src/ui/features/radar/hooks/useWifiRadar.ts`
+- Vista: `src/ui/features/radar/components/RadarPanel.tsx`
 - Integracion en layout principal con panel de detalle lateral.
 
 ## 4. Simulaciones educativas 2026 (sin ejecucion ofensiva real)

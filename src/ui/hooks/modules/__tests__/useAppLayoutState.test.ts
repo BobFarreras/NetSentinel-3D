@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/__tests__/useAppLayoutState.test.ts
+// Tests del layout state: valida resize de sidebar via drag (mousemove/mouseup).
+
 import { renderHook, act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useAppLayoutState } from "../ui/useAppLayoutState";

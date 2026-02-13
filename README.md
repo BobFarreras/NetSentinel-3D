@@ -1,4 +1,5 @@
 <!-- README.md -->
+<!-- Descripcion: overview del repo (stack, validaciones y enlaces) con foco en onboarding rapido. -->
 
 # NetSentinel 3D (Rust + Tauri)
 
@@ -14,6 +15,8 @@ Documentos de referencia:
 - `docs/ARCHITECTURE.md` (arquitectura real y mapa de comandos).
 - `docs/SECURITY.md` (políticas y hardening).
 - `docs/CHANGELOG.md` (registro de cambios relevantes).
+- `docs/FEATURE_README_TEMPLATE.md` (plantilla de README por feature, incluyendo interconexiones).
+- `skills/README.md` (skills del repo: guias on-demand para tareas recurrentes).
 
 ## Stack
 - Frontend: React + TypeScript + Vite + Three.js / React Three Fiber
@@ -67,6 +70,9 @@ cargo check
 cargo test
 ```
 
+Nota Windows:
+- `cargo test` puede fallar por linking de `Packet.lib`. Si ocurre, registrar incidencia y continuar con `cargo check` como validacion minima.
+
 ### Testing por capas (frontend)
 - Unit (hooks):
   - `src/ui/hooks/modules/__tests__/*`
@@ -97,12 +103,12 @@ Notas Windows:
 - Para escanear WiFi pueden requerirse permisos de ubicacion.
 - Algunos drivers cachean resultados; el backend fuerza un “trigger” best-effort para refrescar el scan.
 
-## External Audit / LAB Audit
-Wrapper para ejecutar herramientas CLI instaladas por el administrador y/o escenarios didacticos.
+## Attack Lab / LAB Audit
+Wrapper para ejecutar herramientas CLI instaladas por el administrador y/o escenarios didacticos (simulados) de forma trazable.
 
-Documento tecnico: `docs/EXTERNAL_AUDIT.md`.
+Documento tecnico: `docs/ATTACK_LAB.md`.
 
 ## Paneles desacoplados (desktop)
-- Los paneles `Console`, `Device`, `Radar`, `External` y `NetworkScene` soportan modo desacoplado.
+- Los paneles `Console`, `Device`, `Radar`, `AttackLab` y `NetworkScene` soportan modo desacoplado.
 - En Tauri desktop se abren en ventana nativa independiente.
 - El cierre oficial del panel desacoplado es el `X` nativo de la ventana (reacopla automaticamente en la principal).

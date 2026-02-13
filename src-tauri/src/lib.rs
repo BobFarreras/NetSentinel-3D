@@ -9,32 +9,36 @@ mod infrastructure;
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
-use crate::application::credential_service::CredentialService;
-use crate::application::external_audit_service::ExternalAuditService;
-use crate::application::jammer_service::JammerService;
-use crate::application::latest_snapshot_service::LatestSnapshotService;
-use crate::application::mac_changer_service::MacChangerService;
-use crate::application::opsec_service::OpSecService;
-use crate::application::settings_service::SettingsService;
-use crate::application::traffic_service::TrafficService;
-use crate::application::wifi_service::WifiService;
-use crate::application::wordlist_service::WordlistService;
-use crate::application::{
-    audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
-};
+use crate::application::attack_lab::AttackLabService;
+use crate::application::audit::AuditService;
+use crate::application::credentials::CredentialService;
+use crate::application::history::HistoryService;
+use crate::application::jammer::JammerService;
+use crate::application::opsec::{MacChangerService, OpSecService};
+use crate::application::scan::ScannerService;
+use crate::application::settings::SettingsService;
+use crate::application::snapshot::LatestSnapshotService;
+use crate::application::traffic::TrafficService;
+use crate::application::wifi::WifiService;
+use crate::application::wordlist::WordlistService;
 
 // 2. Imports propios (Infraestructura)
-use crate::infrastructure::credential_store::KeyringCredentialStore;
-use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
+use crate::infrastructure::persistence::credential_store::KeyringCredentialStore;
+use crate::infrastructure::persistence::latest_snapshot_repository::FileLatestSnapshotRepository;
 use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
+use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
+use crate::infrastructure::network::jammer_engine::PnetJammerEngine;
+use crate::infrastructure::attack_lab::runner::TokioProcessAttackLabRunner;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
-use crate::infrastructure::{
-    fs_repository::FileHistoryRepository, router_audit::chrome_auditor::ChromeAuditor,
-    system_scanner::SystemScanner,
-};
+use crate::infrastructure::wifi::wifi_connector::WifiConnector;
+use crate::infrastructure::persistence::history_repository::FileHistoryRepository;
+use crate::infrastructure::router_audit::chrome_auditor::ChromeAuditor;
+use crate::infrastructure::system_scanner::SystemScanner;
 
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
+use crate::infrastructure::persistence::settings_store::FileSettingsStore;
+use crate::infrastructure::repositories::host_identity_provider::LocalIntelligenceHostIdentityProvider;
                                                                                      // 3. Imports propios (Aplicacion)
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
@@ -48,7 +52,9 @@ pub fn run() {
             // 1. CAPA DE INFRAESTRUCTURA (los "musculos")
             // =====================================================
             let scanner_infra = Arc::new(SystemScanner);
+            let traffic_sniffer_infra = Arc::new(TrafficSniffer);
             let wifi_scanner_infra = Arc::new(SystemWifiScanner::new());
+            let wifi_connector_infra = Arc::new(WifiConnector);
             // Seed opcional del OUI para mejorar resolucion de vendors en el primer arranque.
             VendorResolver::ensure_oui_seeded();
 
@@ -62,7 +68,9 @@ pub fn run() {
             let history_infra = Arc::new(FileHistoryRepository);
             let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
             let credential_store_infra = Arc::new(KeyringCredentialStore::new("netsentinel"));
-            let jammer_service = Arc::new(JammerService::new());
+            let host_identity_infra = Arc::new(LocalIntelligenceHostIdentityProvider);
+            let jammer_engine = Arc::new(PnetJammerEngine::new(host_identity_infra));
+            let jammer_service = Arc::new(JammerService::new(jammer_engine));
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
             // =====================================================
@@ -72,17 +80,19 @@ pub fn run() {
             let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
             let credential_service = CredentialService::new(credential_store_infra);
             let vendor_lookup_infra = Arc::new(SystemVendorLookup);
-            let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra);
-            let external_audit_service = ExternalAuditService::new();
+            let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra, wifi_connector_infra);
+            let attack_lab_runner_infra = Arc::new(TokioProcessAttackLabRunner);
+            let attack_lab_service = AttackLabService::new(attack_lab_runner_infra);
 
             // Traffic
-            let traffic_service = TrafficService::new();
+            let traffic_service = TrafficService::new(scanner_infra.clone(), traffic_sniffer_infra);
 
             // Infra y Wordlist
-            let wordlist_repo = FileWordlistRepository::new(app.handle());
+            let wordlist_repo = Arc::new(FileWordlistRepository::new(app.handle()));
             let wordlist_service = WordlistService::new(wordlist_repo);
             //
-            let settings_service = Arc::new(Mutex::new(SettingsService::new(app.handle())));
+            let settings_store_infra = Arc::new(FileSettingsStore::new(app.handle()));
+            let settings_service = Arc::new(SettingsService::new(settings_store_infra));
             let mac_changer_service = Arc::new(MacChangerService::new());
             // OpSec (ahora recibe 3 argumentos)
             let opsec_service = OpSecService::new(
@@ -99,7 +109,7 @@ pub fn run() {
             app.manage(latest_snapshot_service);
             app.manage(credential_service);
             app.manage(wifi_service);
-            app.manage(external_audit_service);
+            app.manage(attack_lab_service);
 
             // Estados runtime: sniffer/jammer.
             app.manage(crate::api::state::TrafficState(Mutex::new(traffic_service)));
@@ -129,8 +139,8 @@ pub fn run() {
             api::commands::scan_airwaves,
             api::commands::wifi_connect,
             // External audit
-            api::commands::start_external_audit,
-            api::commands::cancel_external_audit,
+            api::commands::start_attack_lab,
+            api::commands::cancel_attack_lab,
             // System / runtime
             api::commands::get_identity,
             api::commands::start_traffic_sniffing,

@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/__tests__/deviceMerge.test.ts
+// Tests de merge defensivo: valida que el inventario no se degrade con scans parciales y que se preserve intel valida.
+
 import { describe, expect, it } from "vitest";
 import { mergeRouterInventory, mergeScanInventory } from "../shared/deviceMerge";
 import { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
@@ -32,4 +35,3 @@ describe("deviceMerge", () => {
     expect(merged[0].vendor).toBe("Old Vendor");
   });
 });
-

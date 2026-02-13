@@ -2,7 +2,7 @@
 
 use tauri::State;
 use crate::api::dtos::WifiNetworkDTO;
-use crate::application::wifi_service::WifiService;
+use crate::application::wifi::WifiService;
 
 // Función existente
 pub async fn scan_airwaves(service: State<'_, WifiService>) -> Result<Vec<WifiNetworkDTO>, String> {

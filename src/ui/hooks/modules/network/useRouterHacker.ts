@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/network/useRouterHacker.ts
+// Hook de auditoria del gateway: ejecuta audit_router, guarda credenciales si aplica y fusiona inventario via fetch_router_devices.
+
 import { useState } from 'react';
 import { DeviceDTO, RouterAuditResult } from '../../../../shared/dtos/NetworkDTOs';
 import { auditAdapter } from '../../../../adapters/auditAdapter';

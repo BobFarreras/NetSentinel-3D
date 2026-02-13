@@ -3,6 +3,8 @@ use std::io::{self, Write, BufRead, BufReader};
 use std::path::PathBuf;
 use tauri::Manager;
 
+use crate::domain::ports::WordlistRepositoryPort;
+
 pub struct FileWordlistRepository {
     file_path: PathBuf,
 }
@@ -60,5 +62,19 @@ impl FileWordlistRepository {
             "fibra1234".to_string(), "internet".to_string(), "qwertyuiop".to_string(),
             "admin".to_string(),
         ]
+    }
+}
+
+impl WordlistRepositoryPort for FileWordlistRepository {
+    fn load(&self) -> Result<Vec<String>, String> {
+        Ok(Self::load(self))
+    }
+
+    fn save(&self, words: &[String]) -> Result<(), String> {
+        Self::save(self, words).map_err(|e| e.to_string())
+    }
+
+    fn append(&self, word: &str) -> Result<(), String> {
+        Self::add_word(self, word).map_err(|e| e.to_string())
     }
 }

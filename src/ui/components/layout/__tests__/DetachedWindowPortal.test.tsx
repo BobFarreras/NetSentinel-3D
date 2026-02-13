@@ -1,3 +1,6 @@
+// src/ui/components/layout/__tests__/DetachedWindowPortal.test.tsx
+// Tests del portal desacoplado: valida fallback overlay cuando window.open esta bloqueado y drag del contenedor.
+
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { DetachedWindowPortal } from "../DetachedWindowPortal";

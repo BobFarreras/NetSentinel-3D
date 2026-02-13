@@ -1,6 +1,292 @@
+<!-- docs/CHANGELOG.md -->
+<!-- Descripcion: registro cronologico de cambios (arquitectura, features, refactors) y validaciones ejecutadas. -->
+
 # Diario de desarrollo (CHANGELOG)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
+
+Nota:
+- Este archivo mantiene el changelog **reciente** y accionable.
+- El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
+
+## [v0.8.45] - Backend/Frontend: eliminacion de shims legacy (2026-02-13)
+### ♻️ Limpieza (sin compat)
+- Eliminados comandos legacy `start_external_audit` / `cancel_external_audit` y eventos `external-audit-*`:
+  - backend Tauri solo expone `start_attack_lab` / `cancel_attack_lab` + eventos `attack-lab-*`.
+- Eliminados shims legacy de backend:
+  - `src-tauri/src/application/legacy/*`
+- Eliminados shims legacy de frontend:
+  - `src/adapters/externalAuditAdapter.ts`
+  - aliases `ExternalAudit*` en `src/shared/dtos/NetworkDTOs.ts`
+  - shims de windowing para `panel="external"` y evento `netsentinel://external-context`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+- `cd src-tauri && cargo test --lib -q` (ok)
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.44] - Backend: Fase 3 (Attack Lab + settings via puertos) (2026-02-13)
+### ♻️ Backend (hexagonal real)
+- Attack Lab:
+  - Tipos movidos a dominio: `src-tauri/src/domain/entities.rs` (`AttackLabRequest`, `AttackLabLogEvent`, `AttackLabExitEvent`).
+  - Nuevo puerto runner + sink: `src-tauri/src/domain/ports.rs` (`AttackLabRunnerPort`, `AttackLabEventSinkPort`).
+  - Runner real movido a infraestructura: `src-tauri/src/infrastructure/attack_lab/runner.rs` (`TokioProcessAttackLabRunner`).
+  - Sink Tauri movido a API: `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs` (emite eventos `attack-lab-*`).
+  - `src-tauri/src/application/attack_lab/service.rs` ya no depende de `tauri::AppHandle`.
+- Settings:
+  - Nuevo `AppSettings` en dominio: `src-tauri/src/domain/entities.rs`.
+  - Nuevo puerto `SettingsStorePort`: `src-tauri/src/domain/ports.rs`.
+  - Implementacion file-backed: `src-tauri/src/infrastructure/persistence/settings_store.rs` (`FileSettingsStore`).
+  - `src-tauri/src/application/settings/service.rs` ahora usa DI via `SettingsStorePort` (sin Tauri/FS directo).
+  - `src-tauri/src/application/opsec/service.rs` ya no usa `Mutex<SettingsService>` (mutex interno en SettingsService).
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.43] - Backend: Fase 3 (puertos + DI: scan/opsec/traffic/wordlist) (2026-02-13)
+### ♻️ Backend (hexagonal real)
+- `domain/ports.rs`: ampliado `NetworkScannerPort` con `probe_tcp_banner()` y nuevo puerto `TrafficSnifferPort`.
+- `domain/knowledge/service_dictionary.rs`: movido el diccionario de servicios por puerto fuera de infraestructura.
+- `application/scan/service.rs`: ya no depende de `infrastructure/*` (canario via puerto + diccionario en dominio).
+- `application/opsec/service.rs`: desacoplado de `api/dtos` e infraestructura (retorna entidad de dominio `MacSecurityStatus`).
+- `application/traffic/service.rs`: DI por puertos (`NetworkScannerPort` + `TrafficSnifferPort`) y callback de paquetes (sin Tauri dentro del caso de uso).
+- `application/wifi/service.rs`: DI del conector via `WifiConnectorPort` (evita dependencia directa de infraestructura en el caso de uso).
+- `api/commands/system.rs`: `get_identity` ahora delega en `OpSecService` y el `traffic-event` se emite desde comandos (presentacion), no desde application.
+- `application/wordlist/service.rs`: DI via `WordlistRepositoryPort` (repositorio file implementado en `infrastructure/persistence`).
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.33] - Backend: inicio Fase 1 (application/scan) (2026-02-13)
+### ♻️ Backend (estructura)
+- Iniciada migracion progresiva de `src-tauri/src/application` a modulos por dominio:
+  - Servicio de escaneo movido a `src-tauri/src/application/scan/service.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/scanner_service.rs`
+  - Nuevo modulo: `src-tauri/src/application/scan/mod.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.34] - Backend: Fase 1 (application/history) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de historial migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/history/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/history/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/history_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.35] - Backend: Fase 1 (application/snapshot) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de snapshot migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/snapshot/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/snapshot/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/latest_snapshot_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.36] - Backend: Fase 1 (application/credentials) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de credenciales migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/credentials/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/credentials/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/credential_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.37] - Backend: Fase 1 (wordlist/opsec/settings) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicios migrados a modulos por dominio (con wrappers legacy):
+  - Wordlist: `src-tauri/src/application/wordlist/service.rs` + `src-tauri/src/application/wordlist/mod.rs`
+  - OpSec: `src-tauri/src/application/opsec/service.rs` + `src-tauri/src/application/opsec/mod.rs`
+  - Settings: `src-tauri/src/application/settings/service.rs` + `src-tauri/src/application/settings/mod.rs`
+- Wrappers legacy mantenidos:
+  - `src-tauri/src/application/wordlist_service.rs`
+  - `src-tauri/src/application/opsec_service.rs`
+  - `src-tauri/src/application/settings_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.38] - Backend: Fase 1 (audit/traffic/jammer/mac_changer) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicios migrados a modulos por dominio (con wrappers legacy):
+  - Audit: `src-tauri/src/application/audit/service.rs` + `src-tauri/src/application/audit/mod.rs`
+  - Traffic: `src-tauri/src/application/traffic/service.rs` + `src-tauri/src/application/traffic/mod.rs`
+  - Jammer: `src-tauri/src/application/jammer/service.rs` + `src-tauri/src/application/jammer/mod.rs`
+  - Mac changer movido bajo OpSec: `src-tauri/src/application/opsec/mac_changer.rs`
+- Wrappers legacy mantenidos:
+  - `src-tauri/src/application/audit_service.rs`
+  - `src-tauri/src/application/traffic_service.rs`
+  - `src-tauri/src/application/jammer_service.rs`
+  - `src-tauri/src/application/mac_changer_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.39] - Backend: Fase 1 (legacy/ + WiFi module) (2026-02-13)
+### ♻️ Backend (estructura)
+- Centralizada compatibilidad legacy en `src-tauri/src/application/legacy/*` y `application/mod.rs` usa `#[path = \"legacy/...\" ]`:
+  - shims: `*_service.rs` y `wifi_normalizer.rs`
+- WiFi migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/wifi/service.rs`
+  - Normalizador real: `src-tauri/src/application/wifi/normalizer.rs`
+  - Modulo: `src-tauri/src/application/wifi/mod.rs`
+  - Wrappers legacy: `src-tauri/src/application/legacy/wifi_service.rs`, `src-tauri/src/application/legacy/wifi_normalizer.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.40] - Backend: API commands legacy (external_audit) (2026-02-13)
+### ♻️ Backend (estructura)
+- Comandos legacy de API movidos a carpeta `legacy/`:
+  - `src-tauri/src/api/commands/legacy/external_audit.rs`
+- `src-tauri/src/api/commands.rs` actualizado para referenciar el nuevo path.
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.41] - Backend: reducir dependencia de shims legacy (2026-02-13)
+### ♻️ Backend (mantenibilidad)
+- Wiring interno actualizado para depender de modulos reales (`application::<dominio>`) en vez de `application::<shim>_service`:
+  - `src-tauri/src/lib.rs`
+  - `src-tauri/src/api/state.rs`
+  - `src-tauri/src/api/commands.rs`
+  - `src-tauri/src/api/commands/*`
+- OpSec ahora referencia Settings/MacChanger por modulos reales:
+  - `src-tauri/src/application/opsec/service.rs`
+- Shims legacy anotados para evitar warnings cuando no se usan en el crate:
+  - `src-tauri/src/application/legacy/*.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.42] - Docs: paths backend actualizados (2026-02-13)
+### 📝 Documentacion
+- Actualizados paths y estructura backend por dominios/legacy:
+  - `docs/ARCHITECTURE.md`
+  - `docs/BACKEND_REFACTOR_GUIDE.md`
+  - `docs/RADAR_VIEW.md`
+  - `docs/ATTACK_LAB.md`
+  - `docs/TESTING.md`
+  - `docs/REFACTOR_AUDIT.md`
+- Nota operativa de shims:
+  - `src-tauri/src/application/legacy/README.md`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- History movido a feature-folder:
+  - `src/ui/features/history/components/HistoryPanel.tsx`
+- Layouts/tests actualizados para el nuevo path:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/__tests__/App.panels.test.tsx`
+  - `src/__tests__/App.integration.test.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.32] - Limpieza frontend: cabeceras obligatorias + logs de debug (2026-02-13)
+### ♻️ Frontend (mantenibilidad)
+- Eliminado `console.log/debug` en runtime de UI (ahora `uiLogger.info` solo en DEV) y normalizados errores:
+  - `src/App.tsx`
+  - `src/ui/hooks/modules/ui/usePanelDockingState.ts`
+  - `src/ui/features/attack_lab/hooks/useAttackLabDetachedSync.ts`
+  - `src/ui/features/radar/components/radar/RadarIntelPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
+  - `src/ui/features/wordlist/hooks/useWordlistManager.ts`
+- Cabecera aplicada a todos los `.ts/.tsx` bajo `src/ui` (ruta + descripcion en las dos primeras lineas).
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.27] - Reestructura frontend: Radar + Console Logs por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Radar movido a feature-folder:
+  - `src/ui/features/radar/components/*`
+  - `src/ui/features/radar/hooks/*`
+  - tests: `src/ui/features/radar/__tests__/*`
+- Console Logs movido a feature-folder:
+  - `src/ui/features/console_logs/components/*`
+  - `src/ui/features/console_logs/hooks/*`
+  - tests: `src/ui/features/console_logs/__tests__/*`
+- Integracion actualizada en layouts:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.28] - Reestructura frontend: Device Detail por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Device Detail movido a feature-folder:
+  - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
+  - tests: `src/ui/features/device_detail/__tests__/*`
+- Layouts actualizados para lazy-load del panel:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.29] - Reestructura frontend: Traffic por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Traffic movido a feature-folder:
+  - `src/ui/features/traffic/components/*`
+  - `src/ui/features/traffic/hooks/*`
+  - tests: `src/ui/features/traffic/__tests__/*`
+- Console Logs ahora consume `TrafficPanel` desde la feature `traffic`.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.30] - Reestructura frontend: Scene3D por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Scene3D movido a feature-folder:
+  - `src/ui/features/scene3d/components/*`
+  - `src/ui/features/scene3d/hooks/*`
+  - tests: `src/ui/features/scene3d/__tests__/*`
+- Layouts actualizados para lazy-load de `NetworkScene`:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
+### ♻️ Frontend (estructura y naming)
+- Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).
+- Docking/windowing renombrado a `attack_lab` con compatibilidad legacy:
+  - contexto principal: `netsentinel://attack-lab-context`
+  - compat: `netsentinel://external-context`
+  - nota: la compatibilidad legacy se elimino en `v0.8.45`.
+
+### 🦀 Backend (Tauri / application)
+- Modulo application renombrado a `src-tauri/src/application/attack_lab/*`.
+- Nuevos comandos Tauri:
+  - `start_attack_lab`, `cancel_attack_lab`
+  - alias legacy mantenido: `start_external_audit`, `cancel_external_audit`
+- Nuevos eventos:
+  - `attack-lab-log`, `attack-lab-exit`
+  - alias legacy mantenido: `external-audit-log`, `external-audit-exit`
+
+### 📚 Documentacion
+- Renombrados docs: `docs/ATTACK_LAB.md`, `docs/ATTACK_LAB_REFACTOR.md`.
+- `AGENTS.md` actualizado con la nueva regla de cabecera por archivo (ruta + descripcion).
+
 ## [v0.8.25] - Hardening de conexion WiFi real (2026-02-12)
 ### 🦀 Backend (validacion de enlace)
 - Refactor en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para eliminar falsos positivos de conexion:
@@ -15,7 +301,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - UX/logging en `ExternalAudit`:
   - nuevas trazas `🧪 TRACE` redirigidas a `SYSTEM LOGS` por bus local (`src/ui/utils/systemLogBus.ts`) para limpiar el `Console Output` del panel.
   - `src/ui/hooks/modules/network/useSocketLogs.ts` ahora escucha ese bus y persiste eventos de sistema con timestamp.
-  - `src/ui/components/panels/external_audit/AuditConsole.tsx` renderiza salida de forma progresiva (stagger) para evitar bloque visual al autorizar.
+- `src/ui/features/attack_lab/panel/AuditConsole.tsx` renderiza salida de forma progresiva (stagger) para evitar bloque visual al autorizar.
   - `src/ui/components/shared/CyberConfirmModal.tsx` añade estado `isLoading` para mostrar el modal OPSEC de inmediato mientras se resuelve `check_mac_security`.
 - Impacto: `wifi_connect` solo devuelve `true` cuando hay enlace WiFi realmente establecido sobre el SSID objetivo, evitando continuar el flujo por falsos negativos de parseo o demora DHCP.
 
@@ -25,435 +311,3 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - `is_connected(...)` ahora reconoce estado conectado en ingles y espanol (`connected` / `conectado`) y normaliza comparacion por minusculas.
 - Impacto: cuando se acierta la clave WPA2, `wifi_connect` devuelve `true` correctamente y el escenario `wifi_brute_force_dict` corta el bucle con `return` en el primer acierto.
 
-## [0.8.23] - OpSec & Ghost Mode Implementation
-### Added
-- **Ghost Mode:** Capacidad de rotar la dirección MAC aleatoriamente usando la configuración nativa de Windows (WlanSvc).
-- **Interactive Console:** El panel de detalles ahora soporta prompts interactivos (Yes/No) controlados por teclado.
-- **OpSec Modal:** Visualización de riesgo de identidad (Rojo/Verde) antes de ejecutar ataques activos.
-- **Admin Elevation:** Implementado `app.manifest` para solicitar permisos de administrador automáticamente.
-
-### Technical
-- Nuevo servicio `MacChangerService` con lógica robusta de PowerShell.
-- Integración de crate `default-net` v0.22.0 para introspección de interfaces.
-- Solución a bloqueos de drivers MediaTek mediante manipulación de Registro en lugar de llamadas directas al driver.
-
-## [v0.8.22] - Hardening de Kill Net + E2E de jammer (2026-02-11)
-### 🛡️ Frontend (jammer)
-- Refactor de `useJamming` para evitar bloqueos por reentrada:
-  - nuevo estado `jamPendingDevices` por IP objetivo,
-  - bloqueo de doble click mientras `start_jamming/stop_jamming` esta en vuelo,
-  - timeout defensivo de comandos Tauri (`5s`) para evitar espera infinita en UI,
-  - bloqueo explicito cuando el target es gateway (`JAMMER BLOQUEADO`).
-- `useNetworkManager` expone `jamPendingDevices` para la UI.
-- `DeviceDetailPanel` ahora desactiva `KILL NET` durante estado pendiente y muestra estado de transicion (`JAMMING...` / `DISCONNECTING`).
-- Propagacion de `jamPendingDevices` en layout principal y modo detached:
-  - `src/App.tsx`
-  - `src/ui/components/layout/MainDockedLayout.tsx`
-  - `src/ui/components/layout/DetachedPanelView.tsx`
-- Instrumentacion de debug en `useJamming`:
-  - trazas `uiLogger.info/warn/error` en cada transicion (`toggle`, `pending`, `invoke start/stop`, `ok/error`),
-  - validacion explicita de MAC antes de invocar backend,
-  - payload de `start_jamming` enviado con `gatewayIp` y fallback `gateway_ip`.
-
-### 🦀 Backend (telemetria en terminal)
-- Trazas de runtime para jammer:
-  - `src-tauri/src/api/commands.rs`: log de request + errores de validacion en `start_jamming/stop_jamming`.
-  - `src-tauri/src/api/commands/system.rs`: log de dispatch/accepted al delegar en `JammerService`.
-- Eliminado lock global de `JammerState`:
-  - `JammerState` pasa de `Mutex<JammerService>` a `Arc<JammerService>`,
-  - `start_jamming/stop_jamming` dejan de esperar un mutex externo y delegan directo en el servicio.
-- `JammerService` endurecido contra contencion:
-  - `start_attack_loop` usa `try_lock` (sin bloqueo),
-  - `start_jamming/stop_jamming` vuelven a `lock` bloqueante corto para no perder ordenes reales del operador (fix regresion funcional).
-  - cache interna de interfaz en runtime (refresh cada `15s`) para evitar recalculo continuo de identidad/interfaz.
-  - cadencia de loop ajustada (`350ms`) para reducir presion sobre runtime sin perder efectividad.
-  - eliminado log de contencion por iteracion para evitar ruido y sobrecarga en consola.
-  - refactor a modo actor (`mpsc`):
-    - `start_jamming/stop_jamming` solo encolan comando (retorno inmediato, sin `Mutex` compartido),
-    - el hilo de ataque es el unico owner de `active_targets`,
-    - eliminada via principal de bloqueo por contencion de mapa en comandos Tauri.
-
-### 🧪 Testing
-- Test unitario de `useJamming` ya valida:
-  - bloqueo de gateway,
-  - no reentrada durante operacion pendiente.
-- Nuevo E2E de jammer:
-  - `e2e/app.spec.ts`
-  - caso: start/stop de `Kill Net` en panel `device` detached con target no-gateway (`192.168.1.99`) y verificacion de no congelacion de vista.
-- Ajustados mocks de tests de `App` para incluir `jamPendingDevices`:
-  - `src/__tests__/App.panels.test.tsx`
-  - `src/__tests__/App.integration.test.tsx`
-
-### ✅ Verificacion
-- `npm test -- --run` en verde (`81` tests).
-- `npm run build` en verde.
-- `cargo check` en verde.
-- `npx playwright test e2e/app.spec.ts -g "Kill Net"` en verde.
-- `npm run test:e2e`: persisten 3 fallos previos/flaky en asserts de `NODES: 3` (no relacionados con el flujo de jammer).
-
-## [v0.8.21] - Refactor de App.tsx: orquestador fino + hooks/modulos por responsabilidad (2026-02-11)
-### ♻️ Frontend (SOLID / separacion de responsabilidades)
-- `src/App.tsx` se simplifica como orquestador de alto nivel (estado global + composicion), eliminando la logica monolitica de layout/docking/detached.
-- Nueva separacion por responsabilidades:
-  - `src/ui/components/layout/MainDockedLayout.tsx` (composicion de UI acoplada),
-  - `src/ui/components/layout/DetachedPanelView.tsx` (modo ventana detached),
-  - `src/ui/hooks/modules/ui/useAppLayoutState.ts` (resizers/layout),
-  - `src/ui/hooks/modules/ui/usePanelDockingState.ts` (docking/undocking/reconciliacion),
-  - `src/ui/hooks/modules/ui/useDetachedRuntime.ts` (loader + ciclo de vida detached),
-  - `src/ui/hooks/modules/ui/useExternalDetachedSync.ts` (sync contexto External entre ventanas).
-- `NetworkScene` mantiene control de desacople como prop explicita (`onUndockScene`) sin acoplar logica de ventana en el componente 3D.
-
-### 🧪 Tests
-- Nuevos tests unitarios para hooks extraidos:
-  - `src/ui/hooks/modules/__tests__/useAppLayoutState.test.ts`
-  - `src/ui/hooks/modules/__tests__/usePanelDockingState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useDetachedRuntime.test.ts`
-  - `src/ui/hooks/modules/__tests__/useExternalDetachedSync.test.ts`
-
-## [v0.8.20] - Sincronizacion documental de multiwindow/desacople (2026-02-11)
-### 📚 Documentacion
-- `docs/ARCHITECTURE.md` actualizado con seccion de multiwindow:
-  - flujo de desacople/reacople,
-  - eventos internos (`dock-panel`, `external-context`),
-  - reglas de layout cuando `scene3d`, `console` o `device` estan desacoplados.
-- `docs/EXTERNAL_AUDIT.md` actualizado con seccion de `External` desacoplado:
-  - cierre por `X` nativo,
-  - sincronizacion de target/escenario en caliente.
-- `README.md` actualizado con resumen operativo de paneles desacoplados en desktop.
-
-## [v0.8.19] - Ajuste UX Scene undock + ocupacion total Radar/External con Scene desacoplada (2026-02-11)
-### 🎛️ Frontend (layout/controles)
-- El control de desacople de `NetworkScene` se mueve dentro del propio componente 3D y queda alineado en la misma fila del icono de ojo (`TOGGLE_NODE_LABELS`), evitando solape vertical.
-- Eliminado el placeholder textual de scene desacoplada en la zona central.
-- Cuando `scene3d` esta desacoplada:
-  - `Radar/External` ocupan el ancho completo disponible de la zona superior,
-  - se oculta el splitter `Radar <-> Scene` porque no hay scene acoplada.
-
-## [v0.8.18] - Loader de arranque en ventanas detached + retiro de controles custom de cierre/dock (2026-02-11)
-### ⚡ UX / rendimiento percibido
-- Añadido arranque diferido en modo `detached` con pantalla de carga breve antes de montar paneles pesados.
-- Objetivo: reducir congelacion inicial al abrir y empezar a mover la ventana secundaria.
-
-### 🧭 Comportamiento de cierre
-- Eliminados botones custom de `dock/close` en la cabecera de ventana desacoplada.
-- Se deja como flujo oficial el cierre por boton nativo `X` del sistema, que reacopla el panel en la ventana principal via `pagehide`.
-- Desactivado `onClose` interno en paneles desacoplados (`Radar` / `External`) para evitar rutas de cierre duplicadas.
-
-## [v0.8.17] - Cierre robusto de ventanas desacopladas + reconciliacion de estado + menos freeze inicial (2026-02-11)
-### 🎛️ Frontend (UX de desacople)
-- En modo ventana desacoplada, boton de dock y boton `x` tienen el mismo comportamiento:
-  - reacoplan el panel en la ventana principal y cierran la secundaria.
-- Añadido `pagehide` en ventanas desacopladas para emitir reacople incluso si el usuario cierra desde controles nativos del sistema.
-- El listener de reacople en la principal ahora tambien fuerza cierre de la ventana desacoplada para evitar secundarias huerfanas.
-
-### 🧠 Reconciliacion de estado multiwindow
-- Añadido sondeo ligero de estado para paneles en modo Tauri:
-  - si una ventana secundaria ya no existe, el estado `detached` se limpia automaticamente en la principal.
-- Nuevo helper en adapter:
-  - `isDetachedPanelWindowOpen(panel)` en `src/adapters/windowingAdapter.ts`.
-
-### ⚡ Rendimiento (arranque de ventanas detached)
-- `useScanner` admite `enableHydration` para evitar hidratacion de snapshot/historial cuando no aporta valor.
-- `useNetworkManager` expone `enableScannerHydration`.
-- En ventanas desacopladas, se desactiva hidratacion de scanner para paneles no dependientes de inventario (`radar`, `external`, `console`), reduciendo trabajo al abrir y mejorando fluidez al arrastrar.
-
-### 🧪 Tests
-- Extendido `src/adapters/__tests__/windowingAdapter.test.ts` con cobertura de `isDetachedPanelWindowOpen`.
-
-## [v0.8.16] - Sincronizacion External desacoplado + layout elastico + bootstrap ligero en ventanas detached (2026-02-11)
-### 🎛️ Frontend (multiwindow UX)
-- `ExternalAudit` desacoplado ya recibe contexto en caliente desde la ventana principal:
-  - nuevo canal de evento `netsentinel://external-context`,
-  - envio de `targetDevice`, `scenarioId` y `autoRun` al pulsar `LAB AUDIT` con External en ventana nativa.
-- `ExternalAuditPanel` re-dispara `autoRun` cuando cambia objetivo/escenario para evitar quedar bloqueado en el primer montaje.
-
-### 🧱 Layout responsivo real al desacoplar
-- Si `CONSOLE` esta desacoplado, se ocultan su bloque y resizer para liberar altura al resto de paneles.
-- Si `DEVICE` esta desacoplado, se ocultan sidebar y resizer para liberar anchura al canvas principal.
-
-### ⚡ Rendimiento de arranque en ventanas desacopladas
-- `useNetworkManager` ahora permite desactivar bootstrap automatico.
-- Ventanas en modo `detached` desactivan auto-scan/autosync de gateway para reducir carga inicial y evitar congelaciones al abrir.
-
-### 🧪 Tests
-- Extendidos tests de `windowingAdapter`:
-  - emision/escucha fallback del contexto `external-context`.
-
-## [v0.8.15] - Fix runtime de ventanas nativas + cobertura de adapter windowing (2026-02-11)
-### 🧩 Frontend (windowing robusto)
-- `src/adapters/windowingAdapter.ts` deja de depender solo de `__TAURI_INTERNALS__` para decidir runtime.
-- El flujo de desacople ahora intenta primero la API nativa de Tauri y hace fallback solo si falla realmente:
-  - apertura/cierre de ventanas desacopladas,
-  - emision/escucha de evento de reacople,
-  - cierre de ventana actual.
-- Se mantiene el fallback web/test por `CustomEvent`, pero sin bloquear el camino nativo en desktop.
-
-### 🧪 Tests
-- Nuevo test unitario de regresion:
-  - `src/adapters/__tests__/windowingAdapter.test.ts`
-- Cubre parseo de contexto detached, apertura nativa, fallback de eventos y fallback de cierre.
-
-## [v0.8.14] - Multiwindow nativo Tauri para paneles desacoplados (2026-02-11)
-### 🎛️ Frontend (arquitectura/windowing)
-- Nuevo adapter de ventanas desacopladas:
-  - `src/adapters/windowingAdapter.ts`
-  - responsabilidades:
-    - abrir/cerrar ventanas nativas (`WebviewWindow`) por panel,
-    - parsear contexto `detached` por querystring,
-    - sincronizar reacople con eventos (`netsentinel://dock-panel`),
-    - fallback web/test via `CustomEvent`.
-- `App.tsx` actualizado para:
-  - usar `windowingAdapter` en undock/dock,
-  - soportar modo `detached` por URL (`?detached=1&panel=...`),
-  - renderizar panel standalone en ventana secundaria con accion de retorno al main.
-- En entorno desktop Tauri, los paneles desacoplados salen fuera de la ventana principal como ventanas reales.
-- Se mantiene fallback `DetachedWindowPortal` para web/tests o cuando no hay runtime Tauri.
-
-### 🧪 Tests
-- Ajustados tests de docking por asincronia de apertura de ventana:
-  - `src/__tests__/App.panels.test.tsx`
-- Se mantiene cobertura de fallback y drag:
-  - `src/ui/components/layout/__tests__/DetachedWindowPortal.test.tsx`
-
-### ✅ Verificacion
-- `npm test -- --run` en verde (`26 files / 64 tests`).
-- `npm run build` en verde.
-- `cargo check` en verde.
-
-## [v0.8.13] - Ventanas desacopladas movibles + tamano inicial reducido (2026-02-11)
-### 🎛️ Frontend (usabilidad)
-- `DetachedWindowPortal` mejora la experiencia de desacople:
-  - reduce el tamano inicial de apertura (clamp por pantalla) para evitar ventanas demasiado grandes,
-  - elimina `popup=yes` y fuerza `resizable=yes` para mejor control del usuario.
-- En modo fallback (cuando `window.open` falla), el panel desacoplado ahora:
-  - se muestra en overlay interno,
-  - es **movible por drag** con cabecera,
-  - mantiene boton de cierre/dock en cabecera.
-- Ajustados tamanos de apertura por modulo:
-  - `Console`, `Device`, `Radar`, `External`.
-
-### 🧪 Tests
-- Extendidos tests de `DetachedWindowPortal` para validar drag real del fallback:
-  - `src/ui/components/layout/__tests__/DetachedWindowPortal.test.tsx`
-
-### ✅ Verificacion
-- `npm test -- --run` en verde (`26 files / 64 tests`).
-- `npm run build` en verde.
-- `cargo check` en verde.
-
-## [v0.8.12] - Fixes de desacople UI + split independiente Radar/External (2026-02-11)
-### 🎛️ Frontend (UX funcional)
-- Corregido desacople de paneles cuando el entorno bloquea `window.open`:
-  - `DetachedWindowPortal` ahora tiene fallback en overlay interno y no pierde la accion del usuario.
-- `Radar` y `External Audit` ahora tienen resize independiente cuando conviven en el carril lateral:
-  - nuevo splitter interno arrastrable (`RESIZE_DOCK_SPLIT`) para repartir ancho entre ambos.
-- Reubicados iconos de desacople para no tapar controles:
-  - `Console` y `Device` usan cabecera dedicada (`InlinePanelHeader`) en vez de boton flotante sobre contenido.
-  - ventanas desacopladas usan barra superior propia (`DetachedShell`) con boton de retorno.
-
-### 🧪 Tests
-- Nuevo test de fallback de portal:
-  - `src/ui/components/layout/__tests__/DetachedWindowPortal.test.tsx`
-- Nuevos tests de docking/undocking y split:
-  - `src/__tests__/App.panels.test.tsx`
-
-### ✅ Verificacion
-- `npm test -- --run` en verde (`26 files / 63 tests`).
-- `npm run build` en verde.
-- `cargo check` en verde.
-
-## [v0.8.11] - UI modular desacoplable + External Audit dockeado junto a Radar (2026-02-11)
-### 🎛️ Frontend (layout/UX)
-- `ExternalAuditPanel` deja de abrirse como overlay flotante y pasa a carril lateral compartido con `Radar`.
-- Nuevo comportamiento de autoajuste:
-  - si solo hay uno abierto (`Radar` o `External`), ocupa el carril lateral,
-  - si ambos estan abiertos, se muestran en paralelo con reparto automatico de espacio.
-- Soporte de panel desacoplable (ventana independiente) para:
-  - `ConsoleLogs`
-  - `DeviceDetailPanel`
-  - `RadarPanel`
-  - `ExternalAuditPanel`
-
-### 🧱 Infraestructura UI
-- Nuevo portal reutilizable:
-  - `src/ui/components/layout/DetachedWindowPortal.tsx`
-- `src/App.tsx` refactorizado para gestionar estado dock/undock por modulo y render en ventana externa.
-- `src/ui/components/hud/ExternalAuditPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
-
-### ✅ Verificacion
-- `npm test -- --run` en verde.
-- `npm run build` en verde.
-- `cargo check` en verde.
-
-## [v0.8.10] - Aclaracion operativa de External Audit + guia de migracion a Native Audit (2026-02-11)
-### 📚 Documentacion
-- `docs/EXTERNAL_AUDIT.md` ampliado con:
-  - interpretacion detallada de un caso real `exit=1` en escenario `HTTP HEAD`,
-  - significado de `AUTO`, `STDOUT/STDERR`, `ok=false` y `auditId`,
-  - definicion operativa de `router` como `gateway` detectado.
-- Añadida guia de refactor:
-  - `docs/EXTERNAL_AUDIT_REFACTOR.md`
-  - plan por fases para migrar de wrapper CLI (`ExternalAudit`) a motor nativo Rust (`NativeAudit`) sin simulaciones en LAB principal.
-
-## [v0.8.9] - Enlace operativo AGENTS <-> DOC-ATTACK <-> External Audit (2026-02-11)
-### 📚 Documentacion
-- `AGENTS.md` actualizado para declarar `DOC-ATTACK.md` como catalogo tactico obligatorio y `docs/EXTERNAL_AUDIT.md` como runtime oficial.
-- Añadidas reglas de integracion para plantillas:
-  - traduccion a escenarios en `src/core/logic/externalAuditScenarios.ts`,
-  - ejecucion via `start_external_audit` / `cancel_external_audit` o `simulate`.
-- Documentado en `AGENTS.md` el flujo obligatorio "seleccion en Radar -> LAB AUDIT -> ExternalAuditPanel -> eventos".
-- `docs/EXTERNAL_AUDIT.md` ampliado con:
-  - seccion de vinculacion con `DOC-ATTACK.md`,
-  - flujo real actual de auto-ejecucion por target (gateway/device),
-  - puntos exactos de codigo para extender plantillas por router.
-
-## [v0.8.8] - Cierre de refactor: docs alineadas y barrido de deuda residual (2026-02-11)
-### 📚 Documentacion
-- Actualizadas rutas de hooks en:
-  - `docs/ARCHITECTURE.md`
-  - `docs/EXTERNAL_AUDIT.md`
-  - `docs/TESTING.md`
-  - `docs/RADAR_VIEW.md`
-  - `docs/REFACTOR_AUDIT.md`
-- `AGENTS.md` actualizado con la estructura oficial de hooks por dominio en `src/ui/hooks/modules/*`.
-
-### ♻️ Deuda tecnica
-- Eliminado `console.log` de `src/core/logic/intruderDetection.ts`.
-- `useNetworkNodeState` migra trazas de debug a `uiLogger` para mantener politica unificada de logging UI.
-
-## [v0.8.7] - Migracion fisica de hooks por dominio (2026-02-11)
-### ♻️ Frontend (estructura)
-- Reorganizados hooks de `src/ui/hooks/modules` en subcarpetas:
-  - `network/`
-  - `radar/`
-  - `traffic/`
-  - `ui/`
-  - `scene3d/`
-  - `shared/`
-- Actualizados imports en componentes, hooks y tests para nuevas rutas.
-
-### ✅ Verificacion
-- `npm test -- --run` en verde.
-- `npm run build` en verde.
-
-## [v0.8.6] - Refactor scanner/router con utilidades compartidas (2026-02-11)
-### ♻️ Frontend (hooks)
-- Extraidas reglas de fusion y validacion de intel de dispositivos a:
-  - `src/ui/hooks/modules/shared/deviceMerge.ts`
-- `useScanner` ahora usa `mergeScanInventory` para mantener inventario estable sin duplicar logica.
-- `useRouterHacker` ahora usa `mergeRouterInventory` para fusion de nodos importados desde gateway.
-
-### 🧪 Testing
-- Nuevo test unitario:
-  - `src/ui/hooks/modules/__tests__/deviceMerge.test.ts`
-- Mantiene cobertura de regresion de `useScanner` y `useRouterHaker`.
-
-## [v0.8.5] - Hardening documental + limpieza UI + troceo bootstrap manager (2026-02-11)
-### 📚 Documentacion
-- `PRODUCT.md` reescrito para reflejar el estado real de Tauri/Rust:
-  - comandos actuales,
-  - Radar View,
-  - snapshot/keyring,
-  - External Audit.
-- `docs/SECURITY.md` actualizado con reglas de observabilidad segura en frontend.
-- `CONTRIBUTING.md` actualizado con reglas de rendimiento frontend (lazy/chunks) y politica de logs de debug.
-
-### ♻️ Frontend (deuda tecnica)
-- Nuevo logger unificado: `src/ui/utils/logger.ts`.
-- Eliminados `any` en `HistoryPanel` y tipado con `ScanSession`/`DeviceDTO`.
-- Reemplazo de `console.error/warn` dispersos por `uiLogger` en hooks de scanner, trafico y jamming.
-
-### 🧩 Frontend (arquitectura)
-- Nuevo hook `src/ui/hooks/modules/useBootstrapNetwork.ts` para aislar:
-  - carga de identidad,
-  - auto-scan de arranque,
-  - auto-sync de dispositivos desde gateway.
-- `useNetworkManager` queda mas delgado y orientado a composicion.
-
-## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
-### ✅ Integracion UI
-- Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:
-  - seleccion en `NetworkScene` -> sincronizacion en `DeviceDetailPanel` y `ConsoleLogs`.
-
-### ⚡ Performance (bundle inicial)
-- `App.tsx` actualizado con `React.lazy` + `Suspense` para cargar bajo demanda:
-  - `NetworkScene`
-  - `RadarPanel`
-  - `ExternalAuditPanel`
-  - `DeviceDetailPanel`
-
-### 🧪 Debug 3D
-- `useNetworkNodeState` ya no escribe logs de hover/click por defecto.
-- Activacion de logs solo en desarrollo y con flag:
-  - `localStorage.setItem("netsentinel.debug3d", "true")`
-
-### 📚 Documentacion
-- `docs/ARCHITECTURE.md`: añadido diagrama rapido del flujo 3D -> manager -> HUD.
-- `README.md`: añadida seccion de testing por capas (unit/integracion frontend).
-
-## [v0.8.3] - Refactor capa 3D + cobertura de hooks (2026-02-11)
-### ♻️ Frontend 3D (Scene)
-- Extraida logica de escena a `src/ui/hooks/modules/useNetworkSceneState.ts`:
-  - persistencia de `showLabels`,
-  - enriquecimiento de dispositivos,
-  - deteccion de nodo central (gateway),
-  - calculo de color por nodo.
-- Extraida logica de nodo a `src/ui/hooks/modules/useNetworkNodeState.ts`:
-  - hover/cursor/click,
-  - estado visual (escala y emisivo).
-- Extraida logica de label a `src/ui/hooks/modules/useNodeLabelState.ts`:
-  - paleta por tipo de dispositivo,
-  - normalizacion de confianza (LOW/MED/HIGH).
-- `NetworkScene`, `NetworkNode` y `NodeLabel` quedan mas orientados a presentacion.
-
-### 🎨 Tokens / estilo
-- Nuevo modulo `src/ui/components/3d/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
-
-### ✅ Testing
-- Nuevos tests:
-  - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
-
-### 📚 Documentacion
-- `README.md`: añadido resumen del patron frontend modular.
-- `docs/ARCHITECTURE.md`: documentada estructura frontend por feature y capa 3D.
-- `AGENTS.md`: regla explicita para aplicar patron modular tambien en componentes 3D.
-
-## [v0.8.2] - Cierre documental del refactor frontend (2026-02-11)
-### 📚 Documentacion
-- `docs/ARCHITECTURE.md` actualizado con el patron frontend modular:
-  - panel contenedor + hook `useXxxPanelState` + sub-vistas puras + tokens visuales.
-- Añadidos ejemplos reales aplicados (Radar, ConsoleLogs, Traffic y DeviceDetail).
-- `AGENTS.md` actualizado con reglas operativas para evitar componentes monoliticos y exigir test unitario por hook de panel.
-
-## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
-### ✅ Testing (frontend)
-- Nuevos tests unitarios para hooks extraidos:
-  - `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
-- Cobertura añadida en:
-  - cambios de pestaña y limpieza contextual en `ConsoleLogs`,
-  - filtros/paginacion/resolucion de nombres en `Traffic`,
-  - derivadas y handlers de acciones en `DeviceDetail`.
-
-### ✅ Validaciones
-- `npm test -- --run` (20 files / 54 tests en verde)
-- `npm run build` (ok)
-
-## [v0.8.0] - Tokens visuales HUD compartidos (2026-02-11)
-### 🎨 Frontend (estilos)
-- Añadido `src/ui/styles/hudTokens.ts` como fuente compartida de:
-  - tipografia mono (`HUD_TYPO.mono`)
-  - paleta base HUD (`HUD_COLORS`)
-- Integracion inicial de tokens en modulos refactorizados:
-  - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
-  - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
-  - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
-  - `DeviceDetail` (tipografia/colores clave en `src/ui/components/hud/DeviceDetailPanel.tsx`)
-- Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
-
-### ✅ Validaciones
-- `npm test -- --run` (ok)
-- `npm run build` (ok)

@@ -1,4 +1,7 @@
-# Diario de desarrollo (CHANGELOG)
+<!-- docs/CHANGELOG_LEGACY.md -->
+<!-- Descripcion: historico de changelog (entradas antiguas) movido desde docs/CHANGELOG.md para mantener el diario principal corto y accionable. -->
+
+# Diario de desarrollo (CHANGELOG LEGACY)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 ## [0.8.23] - OpSec & Ghost Mode Implementation
@@ -92,7 +95,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
   - flujo de desacople/reacople,
   - eventos internos (`dock-panel`, `external-context`),
   - reglas de layout cuando `scene3d`, `console` o `device` estan desacoplados.
-- `docs/EXTERNAL_AUDIT.md` actualizado con seccion de `External` desacoplado:
+- `docs/ATTACK_LAB.md` actualizado con seccion de `Attack Lab` desacoplado:
   - cierre por `X` nativo,
   - sincronizacion de target/escenario en caliente.
 - `README.md` actualizado con resumen operativo de paneles desacoplados en desktop.
@@ -254,7 +257,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - Nuevo portal reutilizable:
   - `src/ui/components/layout/DetachedWindowPortal.tsx`
 - `src/App.tsx` refactorizado para gestionar estado dock/undock por modulo y render en ventana externa.
-- `src/ui/components/hud/ExternalAuditPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
+- `src/ui/components/panels/external_audit/ExternalAuditPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
 
 ### ✅ Verificacion
 - `npm test -- --run` en verde.
@@ -263,22 +266,22 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 
 ## [v0.8.10] - Aclaracion operativa de External Audit + guia de migracion a Native Audit (2026-02-11)
 ### 📚 Documentacion
-- `docs/EXTERNAL_AUDIT.md` ampliado con:
+- `docs/ATTACK_LAB.md` ampliado con:
   - interpretacion detallada de un caso real `exit=1` en escenario `HTTP HEAD`,
   - significado de `AUTO`, `STDOUT/STDERR`, `ok=false` y `auditId`,
   - definicion operativa de `router` como `gateway` detectado.
 - Añadida guia de refactor:
-  - `docs/EXTERNAL_AUDIT_REFACTOR.md`
+  - `docs/ATTACK_LAB_REFACTOR.md`
   - plan por fases para migrar de wrapper CLI (`ExternalAudit`) a motor nativo Rust (`NativeAudit`) sin simulaciones en LAB principal.
 
 ## [v0.8.9] - Enlace operativo AGENTS <-> DOC-ATTACK <-> External Audit (2026-02-11)
 ### 📚 Documentacion
-- `AGENTS.md` actualizado para declarar `DOC-ATTACK.md` como catalogo tactico obligatorio y `docs/EXTERNAL_AUDIT.md` como runtime oficial.
+- `AGENTS.md` actualizado para declarar `DOC-ATTACK.md` como catalogo tactico obligatorio y `docs/ATTACK_LAB.md` como runtime oficial.
 - Añadidas reglas de integracion para plantillas:
   - traduccion a escenarios en `src/core/logic/externalAuditScenarios.ts`,
   - ejecucion via `start_external_audit` / `cancel_external_audit` o `simulate`.
 - Documentado en `AGENTS.md` el flujo obligatorio "seleccion en Radar -> LAB AUDIT -> ExternalAuditPanel -> eventos".
-- `docs/EXTERNAL_AUDIT.md` ampliado con:
+- `docs/ATTACK_LAB.md` ampliado con:
   - seccion de vinculacion con `DOC-ATTACK.md`,
   - flujo real actual de auto-ejecucion por target (gateway/device),
   - puntos exactos de codigo para extender plantillas por router.
@@ -287,7 +290,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### 📚 Documentacion
 - Actualizadas rutas de hooks en:
   - `docs/ARCHITECTURE.md`
-  - `docs/EXTERNAL_AUDIT.md`
+  - `docs/ATTACK_LAB.md`
   - `docs/TESTING.md`
   - `docs/RADAR_VIEW.md`
   - `docs/REFACTOR_AUDIT.md`
@@ -511,14 +514,14 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 
 ## [v0.7.4] - Documentacion External Audit / LAB Audit (2026-02-10)
 ### 📚 Documentacion
-- Añadido `docs/EXTERNAL_AUDIT.md`:
+- Añadido `docs/ATTACK_LAB.md`:
   - arquitectura end-to-end (UI -> Tauri -> proceso -> eventos),
   - mapa de archivos,
   - DTOs y eventos,
   - limitaciones,
   - guia paso a paso para añadir escenarios LAB (simulados o externos).
 ### 🧭 Onboarding
-- `README.md`: enlace directo a `docs/EXTERNAL_AUDIT.md`.
+- `README.md`: enlace directo a `docs/ATTACK_LAB.md`.
 
 ## [v0.7.5] - Refactor backend (SOLID) + hardening runtime + fixtures (2026-02-10)
 ### 🦀 API (Tauri)
