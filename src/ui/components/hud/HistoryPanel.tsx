@@ -1,3 +1,6 @@
+// src/ui/components/hud/HistoryPanel.tsx
+// Panel legacy de historial: lista sesiones guardadas y permite cargar snapshots de dispositivos desde el backend.
+
 import React, { useEffect, useState } from 'react';
 import { networkAdapter } from '../../../adapters/networkAdapter';
 import { DeviceDTO, ScanSession } from '../../../shared/dtos/NetworkDTOs';

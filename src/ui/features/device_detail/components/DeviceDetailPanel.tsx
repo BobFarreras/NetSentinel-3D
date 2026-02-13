@@ -6,8 +6,8 @@ import { invoke } from "@tauri-apps/api/core";
 import type { DeviceDTO, OpenPortDTO } from "../../../../shared/dtos/NetworkDTOs";
 import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 import { useDeviceDetailPanelState } from "../hooks/useDeviceDetailPanelState";
-import { ConsoleDisplay, ConsolePrompt } from "../../../components/hud/details/ConsoleDisplay";
-import { PortResults } from "../../../components/hud/details/PortResults";
+import { ConsoleDisplay, ConsolePrompt } from "./details/ConsoleDisplay";
+import { PortResults } from "./details/PortResults";
 
 interface Props {
   device: DeviceDTO;

@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { useWordlistManager } from "../../../hooks/modules/wordlist/useWordlistManager";
+import { useWordlistManager } from "../../wordlist/hooks/useWordlistManager";
 import { CyberConfirmDialog } from "./wordlist/CyberConfirmDialog";
 
 interface WordlistManagerModalProps {

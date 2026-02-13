@@ -1,5 +1,8 @@
+// src/ui/features/device_detail/components/details/ConsoleDisplay.tsx
+// Consola retro del panel de detalle: render de logs con efecto typewriter y soporte de prompt interactivo.
+
 import React, { useEffect, useState, useRef } from 'react';
-import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
+import { HUD_COLORS, HUD_TYPO } from "../../../../styles/hudTokens";
 
 // --- TYPEWRITER (Efecto de escritura) ---
 const TypewriterLine = ({ text, onComplete, isActive }: { text: string; onComplete?: () => void; isActive: boolean }) => {

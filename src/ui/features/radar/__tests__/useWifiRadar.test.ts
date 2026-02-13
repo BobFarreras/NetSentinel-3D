@@ -1,3 +1,6 @@
+// src/ui/features/radar/__tests__/useWifiRadar.test.ts
+// Tests del hook useWifiRadar: escaneo y manejo de errores con adapter mockeado.
+
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 
@@ -22,7 +25,7 @@ vi.mock("../../../../adapters/wifiAdapter", () => ({
 
 describe("useWifiRadar", () => {
   it("debe escanear y exponer networks y lastScanAt", async () => {
-    const { useWifiRadar } = await import("../../../features/radar/hooks/useWifiRadar");
+    const { useWifiRadar } = await import("../hooks/useWifiRadar");
     const { result } = renderHook(() => useWifiRadar());
 
     expect(result.current.scanning).toBe(false);
@@ -44,7 +47,7 @@ describe("useWifiRadar", () => {
     const { wifiAdapter } = await import("../../../../adapters/wifiAdapter");
     (wifiAdapter.scanAirwaves as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
 
-    const { useWifiRadar } = await import("../../../features/radar/hooks/useWifiRadar");
+    const { useWifiRadar } = await import("../hooks/useWifiRadar");
     const { result } = renderHook(() => useWifiRadar());
 
     await act(async () => {

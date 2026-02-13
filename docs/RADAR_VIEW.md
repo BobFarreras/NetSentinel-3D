@@ -38,7 +38,7 @@ Resolucion vendor:
 ### 3.2 Frontend React
 - Adapter: `src/adapters/wifiAdapter.ts`
 - Hook: `src/ui/features/radar/hooks/useWifiRadar.ts`
-- Vista: `src/ui/components/3d/RadarView.tsx`
+- Vista: `src/ui/features/radar/components/RadarPanel.tsx`
 - Integracion en layout principal con panel de detalle lateral.
 
 ## 4. Simulaciones educativas 2026 (sin ejecucion ofensiva real)

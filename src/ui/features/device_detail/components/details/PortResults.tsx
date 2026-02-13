@@ -1,6 +1,9 @@
+// src/ui/features/device_detail/components/details/PortResults.tsx
+// Vista de resultados de puertos del panel de detalle: tabla/resumen de auditoria y estado de ejecucion.
+
 import React from 'react';
-import { OpenPortDTO } from '../../../../shared/dtos/NetworkDTOs';
-import { HUD_COLORS } from "../../../styles/hudTokens";
+import { OpenPortDTO } from '../../../../../shared/dtos/NetworkDTOs';
+import { HUD_COLORS } from "../../../../styles/hudTokens";
 
 interface ResultProps {
     results: OpenPortDTO[];

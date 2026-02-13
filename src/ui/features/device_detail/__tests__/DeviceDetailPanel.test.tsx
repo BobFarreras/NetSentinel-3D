@@ -5,11 +5,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DeviceDetailPanel } from '../components/DeviceDetailPanel';
 
-vi.mock('../../../components/hud/details/ConsoleDisplay', () => ({
+vi.mock('../components/details/ConsoleDisplay', () => ({
   ConsoleDisplay: ({ logs }: { logs: string[] }) => <div data-testid="console-display">{logs.length}</div>,
 }));
 
-vi.mock('../../../components/hud/details/PortResults', () => ({
+vi.mock('../components/details/PortResults', () => ({
   PortResults: ({ results }: { results: unknown[] }) => <div data-testid="port-results">{results.length}</div>,
 }));
 

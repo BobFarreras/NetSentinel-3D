@@ -1,12 +1,15 @@
+// src/ui/features/wordlist/hooks/useWordlistManager.ts
+// Hook compartido de wordlists: carga/edicion/persistencia de diccionario local via comandos Tauri.
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 export const useWordlistManager = (isOpen: boolean) => {
-  // Dades
+  // Datos
   const [words, setWords] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   
-  // Estats UI
+  // Estados UI
   const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
   const [editingWord, setEditingWord] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -14,7 +17,7 @@ export const useWordlistManager = (isOpen: boolean) => {
   // Refs
   const listEndRef = useRef<HTMLDivElement>(null);
 
-  // --- CÀRREGA ---
+  // --- CARGA ---
   const loadWords = useCallback(async () => {
     try {
       setLoading(true);

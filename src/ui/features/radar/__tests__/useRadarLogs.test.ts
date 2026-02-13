@@ -1,3 +1,6 @@
+// src/ui/features/radar/__tests__/useRadarLogs.test.ts
+// Tests del store useRadarLogs: añade entradas (scan/network/error) y permite limpiar.
+
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
@@ -7,7 +10,7 @@ import {
   addRadarScanLog,
   clearRadarLogs,
   useRadarLogs,
-} from "../../../features/radar/hooks/useRadarLogs";
+} from "../hooks/useRadarLogs";
 
 describe("useRadarLogs", () => {
   it("debe añadir y limpiar logs", () => {

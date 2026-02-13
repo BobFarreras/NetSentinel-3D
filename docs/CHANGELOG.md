@@ -94,7 +94,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - UX/logging en `ExternalAudit`:
   - nuevas trazas `🧪 TRACE` redirigidas a `SYSTEM LOGS` por bus local (`src/ui/utils/systemLogBus.ts`) para limpiar el `Console Output` del panel.
   - `src/ui/hooks/modules/network/useSocketLogs.ts` ahora escucha ese bus y persiste eventos de sistema con timestamp.
-  - `src/ui/components/panels/external_audit/AuditConsole.tsx` renderiza salida de forma progresiva (stagger) para evitar bloque visual al autorizar.
+- `src/ui/features/attack_lab/panel/AuditConsole.tsx` renderiza salida de forma progresiva (stagger) para evitar bloque visual al autorizar.
   - `src/ui/components/shared/CyberConfirmModal.tsx` añade estado `isLoading` para mostrar el modal OPSEC de inmediato mientras se resuelve `check_mac_security`.
 - Impacto: `wifi_connect` solo devuelve `true` cuando hay enlace WiFi realmente establecido sobre el SSID objetivo, evitando continuar el flujo por falsos negativos de parseo o demora DHCP.
 
@@ -357,7 +357,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - Nuevo portal reutilizable:
   - `src/ui/components/layout/DetachedWindowPortal.tsx`
 - `src/App.tsx` refactorizado para gestionar estado dock/undock por modulo y render en ventana externa.
-- `src/ui/components/panels/external_audit/ExternalAuditPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
+- `src/ui/features/attack_lab/panel/AttackLabPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
 
 ### ✅ Verificacion
 - `npm test -- --run` en verde.

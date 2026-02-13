@@ -267,6 +267,8 @@ Ejemplos aplicados:
   - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
   - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
   - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
+- Wordlists (shared):
+  - `src/ui/features/wordlist/hooks/useWordlistManager.ts`
 - Device Detail:
   - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
   - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
