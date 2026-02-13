@@ -118,6 +118,24 @@ function App() {
     [attackLabSync, docking.detachedModes.attack_lab, docking.detachedPanels.attack_lab]
   );
 
+  const undockPanel = useCallback(
+    async (panel: Parameters<typeof docking.undockPanel>[0]) => {
+      // Si vamos a abrir Attack Lab en una ventana nueva, persistimos bootstrap para que la ventana
+      // pueda pintar target/escenario aunque aun no haya recibido eventos o no tenga lista de devices.
+      if (panel === "attack_lab") {
+        windowingAdapter.setAttackLabDetachedBootstrap({ targetDevice: attackLabTarget, scenarioId: attackLabScenarioId });
+
+        // Redundancia: emitimos el contexto despues de iniciar la apertura (puede llegar si la ventana ya esta escuchando).
+        window.setTimeout(() => {
+          void windowingAdapter.emitAttackLabContext({ targetDevice: attackLabTarget, scenarioId: attackLabScenarioId ?? undefined, autoRun: false });
+        }, 350);
+      }
+
+      await docking.undockPanel(panel);
+    },
+    [attackLabScenarioId, attackLabTarget, docking.undockPanel]
+  );
+
   const toggleAttackLab = useCallback(() => {
     const next = !showAttackLab;
     setShowAttackLab(next);
@@ -182,7 +200,7 @@ function App() {
       startResizingRadar={layout.startResizingRadar}
       startResizingConsole={layout.startResizingConsole}
       startResizingSidebar={layout.startResizingSidebar}
-      undockPanel={(panel) => void docking.undockPanel(panel)}
+      undockPanel={(panel) => void undockPanel(panel)}
       dockPanel={(panel) => void docking.dockPanel(panel)}
       selectedDevice={selectedDevice}
       selectDevice={selectDevice}

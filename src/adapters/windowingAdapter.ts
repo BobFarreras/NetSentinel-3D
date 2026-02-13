@@ -33,6 +33,7 @@ type AttackLabContextPayload = {
 const DOCK_PANEL_EVENT = "netsentinel://dock-panel";
 const ATTACK_LAB_CONTEXT_EVENT = "netsentinel://attack-lab-context";
 const WINDOW_LABEL_PREFIX = "netsentinel_panel_";
+const ATTACK_LAB_BOOTSTRAP_KEY = "netsentinel:attack-lab-detached-bootstrap:v1";
 
 // Feature flag local: permite deshabilitar ventanas nativas Tauri si un entorno concreto falla.
 // Por defecto lo dejamos en false: la UX objetivo es ventana independiente movible.
@@ -267,6 +268,42 @@ export const windowingAdapter = {
       return () => {
         window.removeEventListener(DOCK_PANEL_EVENT, callback as EventListener);
       };
+    }
+  },
+
+  // Persistencia ligera de contexto para evitar carreras al abrir una ventana desacoplada.
+  // Caso real: Attack Lab undock -> la ventana nueva puede no estar lista para escuchar eventos aun.
+  // Al guardar un bootstrap, la ventana hija puede consumirlo al arrancar y pintar el target/escenario.
+  setAttackLabDetachedBootstrap: (payload: { targetDevice: DeviceDTO | null; scenarioId?: string | null }) => {
+    try {
+      const record = {
+        ts: Date.now(),
+        targetDevice: payload.targetDevice,
+        scenarioId: payload.scenarioId ?? undefined,
+      };
+      localStorage.setItem(ATTACK_LAB_BOOTSTRAP_KEY, JSON.stringify(record));
+    } catch {
+      // No hacemos nada si localStorage no esta disponible.
+    }
+  },
+
+  consumeAttackLabDetachedBootstrap: (): { targetDevice: DeviceDTO | null; scenarioId?: string } | null => {
+    try {
+      const raw = localStorage.getItem(ATTACK_LAB_BOOTSTRAP_KEY);
+      if (!raw) return null;
+
+      // Consumimos siempre: si es stale, lo descartamos igualmente para evitar sorpresas.
+      localStorage.removeItem(ATTACK_LAB_BOOTSTRAP_KEY);
+
+      const parsed = JSON.parse(raw) as { ts?: number; targetDevice: DeviceDTO | null; scenarioId?: string };
+      const ts = typeof parsed.ts === "number" ? parsed.ts : 0;
+
+      // TTL corto: este bootstrap solo tiene sentido justo despues de abrir la ventana.
+      if (!ts || Date.now() - ts > 15_000) return null;
+
+      return { targetDevice: parsed.targetDevice ?? null, scenarioId: parsed.scenarioId };
+    } catch {
+      return null;
     }
   },
 };

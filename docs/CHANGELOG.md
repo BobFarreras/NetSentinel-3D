@@ -9,6 +9,16 @@ Nota:
 - Este archivo mantiene el changelog **reciente** y accionable.
 - El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
 
+## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
+### UI (fix)
+- Al desacoplar `attack_lab`, la ventana hija ya no pierde `targetDevice/defaultScenarioId` en el primer render.
+- Se anade bootstrap efimero (TTL) via `localStorage` + emision redundante de contexto para evitar carreras al abrir la webview.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+
 ## [v0.8.46] - Frontend: Attack Lab (auto-ejecucion solo por token) (2026-02-13)
 ### UI (comportamiento)
 - Corregido bug: al cerrar/mostrar el Attack Lab (antes "HIDE LAB") no debe auto-ejecutar el escenario ni disparar `CyberConfirmModal`.
