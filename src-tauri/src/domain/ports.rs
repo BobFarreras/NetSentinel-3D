@@ -127,3 +127,10 @@ pub trait SettingsStorePort: Send + Sync {
     fn load(&self) -> Result<AppSettings, String>;
     fn save(&self, settings: &AppSettings) -> Result<(), String>;
 }
+
+// PORT 12: IDENTIDAD DEL HOST (IP/MAC/interfaz/gateway)
+//
+// Nota: aislamos la deteccion de identidad local detras de un puerto para evitar dependencias directas entre adaptadores de infraestructura.
+pub trait HostIdentityPort: Send + Sync {
+    fn get_host_identity(&self) -> Result<HostIdentity, String>;
+}

@@ -2,8 +2,8 @@
 // Descripcion: implementacion "real" del jammer usando pnet + PacketInjector. Expuesto a application via `JammerPort`.
 
 use crate::domain::ports::JammerPort;
+use crate::domain::ports::HostIdentityPort;
 use crate::infrastructure::network::packet_injector::PacketInjector;
-use crate::infrastructure::repositories::local_intelligence;
 use pnet::datalink;
 use pnet::util::MacAddr;
 use std::collections::HashMap;
@@ -33,14 +33,16 @@ enum JammerCommand {
 pub struct PnetJammerEngine {
     command_tx: Sender<JammerCommand>,
     running: Arc<AtomicBool>,
+    identity: Arc<dyn HostIdentityPort>,
 }
 
 impl PnetJammerEngine {
-    pub fn new() -> Self {
+    pub fn new(identity: Arc<dyn HostIdentityPort>) -> Self {
         let (command_tx, command_rx) = mpsc::channel::<JammerCommand>();
         let engine = Self {
             command_tx,
             running: Arc::new(AtomicBool::new(true)),
+            identity,
         };
         engine.start_attack_loop(command_rx);
         engine
@@ -48,6 +50,7 @@ impl PnetJammerEngine {
 
     fn start_attack_loop(&self, command_rx: Receiver<JammerCommand>) {
         let running_clone = Arc::clone(&self.running);
+        let identity = Arc::clone(&self.identity);
 
         thread::spawn(move || {
             let mut active_targets: HashMap<String, Target> = HashMap::new();
@@ -80,7 +83,7 @@ impl PnetJammerEngine {
 
                 // Refrescamos identidad/interfaz a intervalos para evitar bloquear runtime.
                 if cached_iface.is_none() || Instant::now() >= next_iface_refresh {
-                    match local_intelligence::get_host_identity() {
+                    match identity.get_host_identity() {
                         Ok(identity) => {
                             let interfaces = datalink::interfaces();
                             let interface = interfaces.into_iter().find(|iface| {
@@ -167,4 +170,3 @@ impl Drop for PnetJammerEngine {
         self.running.store(false, Ordering::Relaxed);
     }
 }
-

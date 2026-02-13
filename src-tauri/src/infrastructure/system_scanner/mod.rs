@@ -19,7 +19,8 @@ impl NetworkScannerPort for SystemScanner {
     async fn scan_network(&self, subnet_base: &str) -> Vec<Device> {
         println!("🛠️ [INFRA] Escaneando subnet base: {}.x", subnet_base);
         let active_ips = discover::discover_active_ips(subnet_base);
-        let mut devices = enrich::enrich_ips(&active_ips);
+        let my_identity = self.get_host_identity().ok();
+        let mut devices = enrich::enrich_ips(&active_ips, my_identity.as_ref());
         devices.sort_by(|a, b| sort::human_sort(&a.ip, &b.ip));
         devices
     }

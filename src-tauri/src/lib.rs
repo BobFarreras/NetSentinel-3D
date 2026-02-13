@@ -38,6 +38,7 @@ use crate::infrastructure::system_scanner::SystemScanner;
 
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
 use crate::infrastructure::persistence::settings_store::FileSettingsStore;
+use crate::infrastructure::repositories::host_identity_provider::LocalIntelligenceHostIdentityProvider;
                                                                                      // 3. Imports propios (Aplicacion)
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
@@ -67,7 +68,8 @@ pub fn run() {
             let history_infra = Arc::new(FileHistoryRepository);
             let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
             let credential_store_infra = Arc::new(KeyringCredentialStore::new("netsentinel"));
-            let jammer_engine = Arc::new(PnetJammerEngine::new());
+            let host_identity_infra = Arc::new(LocalIntelligenceHostIdentityProvider);
+            let jammer_engine = Arc::new(PnetJammerEngine::new(host_identity_infra));
             let jammer_service = Arc::new(JammerService::new(jammer_engine));
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
