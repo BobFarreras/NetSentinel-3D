@@ -1,4 +1,5 @@
 // src-tauri/src/infrastructure/system_scanner.rs
+// Descripcion: adaptador de infraestructura para escaneo de red/puertos e identidad local (default-net) via `NetworkScannerPort`.
 
 use crate::domain::entities::{Device, OpenPort, HostIdentity};
 use crate::domain::ports::NetworkScannerPort;
@@ -29,6 +30,10 @@ impl NetworkScannerPort for SystemScanner {
 
     async fn scan_ports(&self, ip: &str) -> Vec<OpenPort> {
         ports::scan_common_ports(ip)
+    }
+
+    fn probe_tcp_banner(&self, ip: &str, port: u16) -> Option<String> {
+        crate::infrastructure::network::port_scanner::PortScanner::scan_service(ip, port)
     }
 
     // 👇 IMPLEMENTACIÓN COMPATIBLE CON DEFAULT-NET v0.22.0

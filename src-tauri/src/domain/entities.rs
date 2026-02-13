@@ -94,6 +94,15 @@ pub struct HostIdentity {
     pub dns_servers: Vec<String>,
 }
 
+// Estado de seguridad OpSec (MAC spoofing) calculado en application.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MacSecurityStatus {
+    pub current_mac: String,
+    pub is_spoofed: bool,
+    pub risk_level: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TrafficPacket {

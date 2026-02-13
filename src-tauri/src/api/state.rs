@@ -1,4 +1,5 @@
 // src-tauri/src/api/state.rs
+// Descripcion: tipos de estado gestionados por Tauri (`app.manage(...)`) para comandos runtime (sniffer/jammer).
 
 use std::sync::{Arc, Mutex};
 

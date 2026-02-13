@@ -1,60 +1,66 @@
 // src-tauri/src/application/opsec/service.rs
-// Servicio OpSec: valida estado de spoofing MAC y ejecuta randomize_mac coordinando settings + mac changer.
+// Descripcion: caso de uso OpSec. Calcula estado de spoofing MAC y ejecuta `randomize_mac` coordinando settings + mac changer.
 
 use std::sync::{Arc, Mutex};
-use crate::infrastructure::system_scanner::SystemScanner;
-use crate::api::dtos::MacSecurityStatusDTO;
-use crate::domain::ports::NetworkScannerPort;
+
 use crate::application::settings::SettingsService;
+use crate::domain::entities::{HostIdentity, MacSecurityStatus};
+use crate::domain::ports::NetworkScannerPort;
 use super::mac_changer::MacChangerService;
 
-
 pub struct OpSecService {
-    scanner: Arc<SystemScanner>,
+    scanner: Arc<dyn NetworkScannerPort>,
     settings: Arc<Mutex<SettingsService>>,
-    changer: Arc<MacChangerService>, 
+    changer: Arc<MacChangerService>,
 }
 
 impl OpSecService {
     pub fn new(
-        scanner: Arc<SystemScanner>, 
+        scanner: Arc<dyn NetworkScannerPort>,
         settings: Arc<Mutex<SettingsService>>,
-        changer: Arc<MacChangerService>
+        changer: Arc<MacChangerService>,
     ) -> Self {
-        Self { scanner, settings, changer }
+        Self {
+            scanner,
+            settings,
+            changer,
+        }
     }
 
-    pub fn check_interface_security(&self) -> Result<MacSecurityStatusDTO, String> {
-        // 1. Obtener actual
-        let identity = self.scanner.get_host_identity().map_err(|e| e.to_string())?;
+    pub fn get_identity(&self) -> Result<HostIdentity, String> {
+        self.scanner.get_host_identity()
+    }
+
+    pub fn check_interface_security(&self) -> Result<MacSecurityStatus, String> {
+        // 1) Obtener MAC actual
+        let identity = self.scanner.get_host_identity()?;
         let current_mac = identity.mac.to_uppercase().replace("-", ":");
 
-        // 2. Obtener la Original (Persistente)
+        // 2) Obtener MAC "real" persistida (si no existe, inicializa con la actual)
         let settings_guard = self.settings.lock().map_err(|_| "Lock error")?;
-        let real_mac = settings_guard.get_or_init_real_mac(current_mac.clone()).to_uppercase().replace("-", ":");
+        let real_mac = settings_guard
+            .get_or_init_real_mac(current_mac.clone())
+            .to_uppercase()
+            .replace("-", ":");
 
-        // 3. Comparar
-        // Si son diferentes, consideramos que está Spoofed (SAFE)
-        // NOTA: Si es la primera vez que ejecutas y ya la tenías cambiada, guardará la cambiada como real.
-        // El usuario deberá borrar settings.json si quiere resetear.
+        // 3) Heuristica: si son diferentes -> spoofed (lo consideramos "LOW" en riesgo).
+        // Nota: si el primer arranque ocurre con MAC ya cambiada, se guardara como "real".
         let is_different = current_mac != real_mac;
 
-        // Lógica extra: Si empieza por 02/06/0A/0E también es seguro
+        // Heuristica extra: Local Administered Address (02/06/0A/0E...) suele indicar spoofing.
         let is_laa = crate::domain::security::mac_validator::MacValidator::is_spoofed(&current_mac);
-        
-        let is_safe = is_different || is_laa;
+        let is_spoofed = is_different || is_laa;
 
-        Ok(MacSecurityStatusDTO {
-            current_mac: current_mac,
-            is_spoofed: is_safe,
-            risk_level: if is_safe { "LOW".to_string() } else { "HIGH".to_string() },
+        Ok(MacSecurityStatus {
+            current_mac,
+            is_spoofed,
+            risk_level: if is_spoofed { "LOW".to_string() } else { "HIGH".to_string() },
         })
     }
 
     pub async fn randomize_identity(&self) -> Result<String, String> {
-        let identity = self.scanner.get_host_identity().map_err(|e| e.to_string())?;
-        // Necesitamos el nombre de la interfaz (ej: "Wi-Fi") para PowerShell
-        // default-net nos lo da en identity.interface_name
+        let identity = self.scanner.get_host_identity()?;
+        // Necesitamos el nombre de la interfaz (ej: "Wi-Fi") para PowerShell.
         self.changer.randomize_mac(identity.interface_name).await
     }
 }

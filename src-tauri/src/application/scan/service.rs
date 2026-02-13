@@ -3,10 +3,9 @@
 
 use crate::domain::{
     entities::{Device, OpenPort},
+    knowledge::service_dictionary::ServiceDictionary,
     ports::NetworkScannerPort,
 };
-use crate::infrastructure::network::service_dictionary::ServiceDictionary;
-use crate::infrastructure::network::port_scanner::PortScanner;
 use std::sync::Arc;
 
 pub struct ScannerService {
@@ -37,7 +36,7 @@ impl ScannerService {
         println!("🧠 [APP] Auditando puertos de {}", ip);
 
         // 1. EL CANARI (Detección Global)
-        let is_environment_poisoned = PortScanner::scan_service(&ip, 55555).is_some();
+        let is_environment_poisoned = self.scanner_port.probe_tcp_banner(&ip, 55555).is_some();
         if is_environment_poisoned {
             println!("⚠️ [IDS] INTERFERENCIA DETECTADA en {}", ip);
         }

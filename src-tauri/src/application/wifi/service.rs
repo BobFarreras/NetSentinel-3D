@@ -4,21 +4,25 @@
 use std::sync::Arc;
 
 use crate::domain::entities::{WifiEntity, WifiScanRecord};
-use crate::domain::ports::{VendorLookupPort, WifiScannerPort};
+use crate::domain::ports::{VendorLookupPort, WifiScannerPort, WifiConnectorPort};
 use super::normalizer;
-// Importamos la infraestructura
-use crate::infrastructure::wifi::wifi_connector::WifiConnector;
 
 pub struct WifiService {
     scanner: Arc<dyn WifiScannerPort>,
     vendor_lookup: Arc<dyn VendorLookupPort>,
+    connector: Arc<dyn WifiConnectorPort>,
 }
 
 impl WifiService {
-    pub fn new(scanner: Arc<dyn WifiScannerPort>, vendor_lookup: Arc<dyn VendorLookupPort>) -> Self {
+    pub fn new(
+        scanner: Arc<dyn WifiScannerPort>,
+        vendor_lookup: Arc<dyn VendorLookupPort>,
+        connector: Arc<dyn WifiConnectorPort>,
+    ) -> Self {
         Self {
             scanner,
             vendor_lookup,
+            connector,
         }
     }
 
@@ -40,13 +44,16 @@ impl WifiService {
     pub async fn connect_to_network(&self, ssid: String, password: String) -> Result<bool, String> {
         if password.len() < 8 { return Ok(false); }
 
-        // CLONAMOS las variables para pasarlas al hilo (SOLUCIONA EL ERROR DE MOVED VALUE)
+        // Clonamos las variables para pasarlas al hilo.
         let ssid_clone = ssid.clone();
         let pass_clone = password.clone();
+        let connector = self.connector.clone();
 
         let result = tauri::async_runtime::spawn_blocking(move || {
-            WifiConnector::connect(&ssid_clone, &pass_clone)
-        }).await.map_err(|e| e.to_string())?;
+            connector.connect(&ssid_clone, &pass_clone)
+        })
+        .await
+        .map_err(|e| e.to_string())??;
 
         Ok(result)
     }

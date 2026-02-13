@@ -5,6 +5,20 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.43] - Backend: Fase 3 (puertos + DI: scan/opsec/traffic/wordlist) (2026-02-13)
+### ♻️ Backend (hexagonal real)
+- `domain/ports.rs`: ampliado `NetworkScannerPort` con `probe_tcp_banner()` y nuevo puerto `TrafficSnifferPort`.
+- `domain/knowledge/service_dictionary.rs`: movido el diccionario de servicios por puerto fuera de infraestructura.
+- `application/scan/service.rs`: ya no depende de `infrastructure/*` (canario via puerto + diccionario en dominio).
+- `application/opsec/service.rs`: desacoplado de `api/dtos` e infraestructura (retorna entidad de dominio `MacSecurityStatus`).
+- `application/traffic/service.rs`: DI por puertos (`NetworkScannerPort` + `TrafficSnifferPort`) y callback de paquetes (sin Tauri dentro del caso de uso).
+- `application/wifi/service.rs`: DI del conector via `WifiConnectorPort` (evita dependencia directa de infraestructura en el caso de uso).
+- `api/commands/system.rs`: `get_identity` ahora delega en `OpSecService` y el `traffic-event` se emite desde comandos (presentacion), no desde application.
+- `application/wordlist/service.rs`: DI via `WordlistRepositoryPort` (repositorio file implementado en `infrastructure/persistence`).
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.33] - Backend: inicio Fase 1 (application/scan) (2026-02-13)
 ### ♻️ Backend (estructura)
 - Iniciada migracion progresiva de `src-tauri/src/application` a modulos por dominio:

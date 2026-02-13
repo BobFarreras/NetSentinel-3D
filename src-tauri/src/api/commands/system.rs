@@ -1,18 +1,22 @@
 // src-tauri/src/api/commands/system.rs
+// Descripcion: comandos runtime (identidad, sniffer, jammer). Mantiene esta capa como "facade" sobre application.
 
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, State, Emitter};
 
 use crate::api::state::{JammerState, TrafficState};
 use crate::domain::entities::HostIdentity;
-use crate::infrastructure::repositories::local_intelligence;
+use crate::application::opsec::OpSecService;
 
-pub fn get_identity() -> Result<HostIdentity, String> {
-    local_intelligence::get_host_identity().map_err(|e| e.to_string())
+pub fn get_identity(service: State<'_, OpSecService>) -> Result<HostIdentity, String> {
+    service.get_identity()
 }
 
 pub fn start_traffic_sniffing(state: State<'_, TrafficState>, app: AppHandle) -> Result<(), String> {
     let service = state.0.lock().map_err(|_| "Failed to lock traffic state".to_string())?;
-    service.start_monitoring(app)
+    let app_handle = app.clone();
+    service.start_monitoring(move |packet| {
+        let _ = app_handle.emit("traffic-event", packet);
+    })
 }
 
 pub fn stop_traffic_sniffing(state: State<'_, TrafficState>) -> Result<(), String> {

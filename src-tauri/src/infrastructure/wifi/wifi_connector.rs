@@ -1,10 +1,12 @@
 // src-tauri/src/infrastructure/wifi/wifi_connector.rs
+// Descripcion: conector WiFi (Windows/netsh). Implementa `WifiConnectorPort` para conectar a un SSID con password.
 
 use std::process::Command;
 use std::fs;
 use std::thread;
 use std::time::Duration;
 
+use crate::domain::ports::WifiConnectorPort;
 use crate::infrastructure::wifi::windows_netsh::parse_netsh_interfaces;
 
 pub struct WifiConnector;
@@ -152,5 +154,11 @@ impl WifiConnector {
             eprintln!("[wifi_connector] state snapshot command failed");
         }
         false
+    }
+}
+
+impl WifiConnectorPort for WifiConnector {
+    fn connect(&self, ssid: &str, password: &str) -> Result<bool, String> {
+        Ok(WifiConnector::connect(ssid, password))
     }
 }

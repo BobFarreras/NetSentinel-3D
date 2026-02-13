@@ -27,7 +27,9 @@ use crate::infrastructure::credential_store::KeyringCredentialStore;
 use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
 use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
+use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
+use crate::infrastructure::wifi::wifi_connector::WifiConnector;
 use crate::infrastructure::{
     fs_repository::FileHistoryRepository, router_audit::chrome_auditor::ChromeAuditor,
     system_scanner::SystemScanner,
@@ -47,7 +49,9 @@ pub fn run() {
             // 1. CAPA DE INFRAESTRUCTURA (los "musculos")
             // =====================================================
             let scanner_infra = Arc::new(SystemScanner);
+            let traffic_sniffer_infra = Arc::new(TrafficSniffer);
             let wifi_scanner_infra = Arc::new(SystemWifiScanner::new());
+            let wifi_connector_infra = Arc::new(WifiConnector);
             // Seed opcional del OUI para mejorar resolucion de vendors en el primer arranque.
             VendorResolver::ensure_oui_seeded();
 
@@ -71,14 +75,14 @@ pub fn run() {
             let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
             let credential_service = CredentialService::new(credential_store_infra);
             let vendor_lookup_infra = Arc::new(SystemVendorLookup);
-            let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra);
+            let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra, wifi_connector_infra);
             let attack_lab_service = AttackLabService::new();
 
             // Traffic
-            let traffic_service = TrafficService::new();
+            let traffic_service = TrafficService::new(scanner_infra.clone(), traffic_sniffer_infra);
 
             // Infra y Wordlist
-            let wordlist_repo = FileWordlistRepository::new(app.handle());
+            let wordlist_repo = Arc::new(FileWordlistRepository::new(app.handle()));
             let wordlist_service = WordlistService::new(wordlist_repo);
             //
             let settings_service = Arc::new(Mutex::new(SettingsService::new(app.handle())));

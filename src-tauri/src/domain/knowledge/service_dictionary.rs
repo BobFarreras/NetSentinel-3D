@@ -1,9 +1,10 @@
-// src-tauri/src/infrastructure/network/service_dictionary.rs
+// src-tauri/src/domain/knowledge/service_dictionary.rs
+// Descripcion: diccionario estatico de servicios por puerto (nombre, descripcion y riesgo) para enriquecer resultados de escaneo.
 
 pub struct ServiceInfo {
     pub name: &'static str,
     pub description: &'static str,
-    pub risk: &'static str, // LOW, MEDIUM, HIGH, CRITICAL
+    pub risk: &'static str, // SAFE, LOW, MEDIUM, HIGH, CRITICAL, UNKNOWN
 }
 
 pub struct ServiceDictionary;
@@ -46,7 +47,7 @@ impl ServiceDictionary {
                 description: "Correo entrante antiguo (Texto plano).",
                 risk: "MEDIUM",
             },
-            143 => ServiceInfo { // <--- AÑADIDO NUEVO
+            143 => ServiceInfo {
                 name: "IMAP",
                 description: "Correo entrante moderno (Texto plano si no es IMAPS).",
                 risk: "MEDIUM",
@@ -61,12 +62,12 @@ impl ServiceDictionary {
                 description: "Web segura cifrada.",
                 risk: "SAFE",
             },
-            1433 => ServiceInfo { // <--- AÑADIDO SQL
+            1433 => ServiceInfo {
                 name: "MSSQL",
                 description: "Microsoft SQL Server.",
                 risk: "HIGH",
             },
-            3306 => ServiceInfo { // <--- AÑADIDO SQL
+            3306 => ServiceInfo {
                 name: "MYSQL",
                 description: "Base de datos MySQL/MariaDB.",
                 risk: "MEDIUM",
@@ -76,7 +77,7 @@ impl ServiceDictionary {
                 description: "Escritorio remoto de Windows.",
                 risk: "HIGH",
             },
-            5432 => ServiceInfo { // <--- AÑADIDO SQL
+            5432 => ServiceInfo {
                 name: "POSTGRES",
                 description: "Base de datos PostgreSQL.",
                 risk: "MEDIUM",
@@ -94,3 +95,4 @@ impl ServiceDictionary {
         }
     }
 }
+

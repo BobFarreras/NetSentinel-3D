@@ -189,8 +189,10 @@ pub async fn cancel_external_audit(
 // --- SYSTEM / RUNTIME ---
 
 #[tauri::command]
-pub fn get_identity() -> Result<crate::domain::entities::HostIdentity, String> {
-    system::get_identity()
+pub fn get_identity(
+    service: tauri::State<'_, crate::application::opsec::OpSecService>,
+) -> Result<crate::domain::entities::HostIdentity, String> {
+    system::get_identity(service)
 }
 
 #[tauri::command]
