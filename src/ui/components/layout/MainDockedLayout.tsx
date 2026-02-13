@@ -1,3 +1,6 @@
+// src/ui/components/layout/MainDockedLayout.tsx
+// Layout principal acoplado: organiza HUD/Scene/Console y paneles laterales con soporte de docking/undocking.
+
 import { lazy, Suspense } from "react";
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 import { TopBar } from "./TopBar";
@@ -21,9 +24,9 @@ const RadarPanel = lazy(async () => {
   return { default: mod.RadarPanel };
 });
 
-const ExternalAuditPanel = lazy(async () => {
-  const mod = await import("../panels/external_audit/ExternalAuditPanel");
-  return { default: mod.ExternalAuditPanel };
+const AttackLabPanel = lazy(async () => {
+  const mod = await import("../../features/attack_lab/panel/AttackLabPanel");
+  return { default: mod.AttackLabPanel };
 });
 
 interface MainDockedLayoutProps {
@@ -33,14 +36,14 @@ interface MainDockedLayoutProps {
   setShowHistory: (next: boolean) => void;
   showRadar: boolean;
   setShowRadar: (next: boolean) => void;
-  showExternalAudit: boolean;
-  onToggleExternalAudit: () => void;
-  closeExternalAudit: () => void;
+  showAttackLab: boolean;
+  onToggleAttackLab: () => void;
+  closeAttackLab: () => void;
   identity: HostIdentity | null;
   startScan: (range?: string) => void;
   loadSession: (devices: DeviceDTO[]) => void;
   showDockRadar: boolean;
-  showDockExternal: boolean;
+  showDockAttackLab: boolean;
   showDockScene: boolean;
   showDockConsole: boolean;
   showDockDevice: boolean;
@@ -67,8 +70,8 @@ interface MainDockedLayoutProps {
   jamPendingDevices: string[];
   toggleJammer: (ip: string) => void;
   checkRouterSecurity: (ip: string) => void;
-  externalAuditTarget: DeviceDTO | null;
-  externalAuditScenarioId: string | null;
+  attackLabTarget: DeviceDTO | null;
+  attackLabScenarioId: string | null;
   onOpenLabAudit: (device: DeviceDTO) => void;
   detachedPanels: Record<DetachablePanelId, boolean>;
   detachedModes: Record<DetachablePanelId, "portal" | "tauri" | null>;
@@ -105,7 +108,7 @@ const DockHeader: React.FC<{ title: string; onUndock: () => void }> = ({ title, 
     }}
   >
     <span>{title}</span>
-    <button onClick={onUndock} style={detachBtnStyle} title="Desacoplar panel" aria-label={`UNLOCK_${title}`}>
+    <button onClick={onUndock} style={detachBtnStyle} title="Desacoplar panel" aria-label={`UNLOCK_${title.replace(/\s+/g, "_")}`}>
       ↗
     </button>
   </div>
@@ -125,7 +128,7 @@ const InlinePanelHeader: React.FC<{ title: string; onUndock: () => void }> = ({ 
     }}
   >
     <span style={{ color: "#88ffcc", fontSize: 11, fontWeight: 700, letterSpacing: 0.6 }}>{title}</span>
-    <button onClick={onUndock} style={detachBtnStyle} aria-label={`UNLOCK_${title}`} title="Desacoplar panel">↗</button>
+    <button onClick={onUndock} style={detachBtnStyle} aria-label={`UNLOCK_${title.replace(/\s+/g, "_")}`} title="Desacoplar panel">↗</button>
   </div>
 );
 
@@ -162,14 +165,14 @@ export const MainDockedLayout = ({
   setShowHistory,
   showRadar,
   setShowRadar,
-  showExternalAudit,
-  onToggleExternalAudit,
-  closeExternalAudit,
+  showAttackLab,
+  onToggleAttackLab,
+  closeAttackLab,
   identity,
   startScan,
   loadSession,
   showDockRadar,
-  showDockExternal,
+  showDockAttackLab,
   showDockScene,
   showDockConsole,
   showDockDevice,
@@ -196,14 +199,14 @@ export const MainDockedLayout = ({
   jamPendingDevices,
   toggleJammer,
   checkRouterSecurity,
-  externalAuditTarget,
-  externalAuditScenarioId,
+  attackLabTarget,
+  attackLabScenarioId,
   onOpenLabAudit,
   detachedPanels,
   detachedModes,
   isResizing,
 }: MainDockedLayoutProps) => {
-  const showDockArea = showDockRadar || showDockExternal;
+  const showDockArea = showDockRadar || showDockAttackLab;
 
   return (
     <div
@@ -228,8 +231,8 @@ export const MainDockedLayout = ({
           showHistory={showHistory}
           onRadarToggle={() => setShowRadar(!showRadar)}
           showRadar={showRadar}
-          onExternalAuditToggle={onToggleExternalAudit}
-          showExternalAudit={showExternalAudit}
+          onAttackLabToggle={onToggleAttackLab}
+          showAttackLab={showAttackLab}
           identity={identity}
         />
 
@@ -250,7 +253,7 @@ export const MainDockedLayout = ({
             {showDockArea && (
               <>
                 <div style={{ width: showDockScene ? `${radarWidth}px` : "100%", minWidth: 360, maxWidth: showDockScene ? 1000 : undefined, minHeight: 0, background: "#000", overflow: "hidden", zIndex: 12, display: "flex" }}>
-                  {showDockRadar && showDockExternal ? (
+                  {showDockRadar && showDockAttackLab ? (
                     <>
                       <div style={{ width: `${dockSplitRatio * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
                         <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
@@ -268,15 +271,15 @@ export const MainDockedLayout = ({
                         aria-label="RESIZE_DOCK_SPLIT"
                       />
                       <div style={{ width: `${(1 - dockSplitRatio) * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="EXTERNAL" onUndock={() => void undockPanel("external")} />
+                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
-                            <ExternalAuditPanel
-                              onClose={closeExternalAudit}
-                              targetDevice={externalAuditTarget}
+                            <AttackLabPanel
+                              onClose={closeAttackLab}
+                              targetDevice={attackLabTarget}
                               identity={identity}
-                              defaultScenarioId={externalAuditScenarioId}
-                              autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
+                              defaultScenarioId={attackLabScenarioId}
+                              autoRun={Boolean(attackLabTarget && attackLabScenarioId)}
                               embedded={true}
                             />
                           </Suspense>
@@ -294,15 +297,15 @@ export const MainDockedLayout = ({
                     </div>
                   ) : (
                     <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                      <DockHeader title="EXTERNAL" onUndock={() => void undockPanel("external")} />
+                      <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
                       <div style={{ flex: 1, minHeight: 0 }}>
                         <Suspense fallback={null}>
-                          <ExternalAuditPanel
-                            onClose={closeExternalAudit}
-                            targetDevice={externalAuditTarget}
+                          <AttackLabPanel
+                            onClose={closeAttackLab}
+                            targetDevice={attackLabTarget}
                             identity={identity}
-                            defaultScenarioId={externalAuditScenarioId}
-                            autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
+                            defaultScenarioId={attackLabScenarioId}
+                            autoRun={Boolean(attackLabTarget && attackLabScenarioId)}
                             embedded={true}
                           />
                         </Suspense>
@@ -450,16 +453,16 @@ export const MainDockedLayout = ({
         </DetachedWindowPortal>
       )}
 
-      {detachedPanels.external && detachedModes.external === "portal" && showExternalAudit && (
-        <DetachedWindowPortal title="NetSentinel - External Audit" onClose={() => void dockPanel("external")} width={860} height={680}>
-          <DetachedShell title="EXTERNAL AUDIT" dockAria="DOCK_EXTERNAL" onDock={() => void dockPanel("external")}>
+      {detachedPanels.attack_lab && detachedModes.attack_lab === "portal" && showAttackLab && (
+        <DetachedWindowPortal title="NetSentinel - Attack Lab" onClose={() => void dockPanel("attack_lab")} width={860} height={680}>
+          <DetachedShell title="ATTACK LAB" dockAria="DOCK_ATTACK_LAB" onDock={() => void dockPanel("attack_lab")}>
             <Suspense fallback={null}>
-              <ExternalAuditPanel
-                onClose={closeExternalAudit}
-                targetDevice={externalAuditTarget}
+              <AttackLabPanel
+                onClose={closeAttackLab}
+                targetDevice={attackLabTarget}
                 identity={identity}
-                defaultScenarioId={externalAuditScenarioId}
-                autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
+                defaultScenarioId={attackLabScenarioId}
+                autoRun={Boolean(attackLabTarget && attackLabScenarioId)}
                 embedded={true}
               />
             </Suspense>

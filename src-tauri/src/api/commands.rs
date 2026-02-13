@@ -6,6 +6,8 @@
 // Submodulos (separacion por responsabilidades / SOLID)
 #[path = "commands/credentials.rs"]
 mod credentials;
+#[path = "commands/attack_lab.rs"]
+mod attack_lab;
 #[path = "commands/external_audit.rs"]
 mod external_audit;
 #[path = "commands/history.rs"]
@@ -145,7 +147,26 @@ pub async fn wifi_connect(
     wifi::wifi_connect(service, ssid, password).await
 }
 
-// --- EXTERNAL AUDIT (WRAPPER CLI) ---
+// --- ATTACK LAB (WRAPPER CLI) ---
+
+#[tauri::command]
+pub async fn start_attack_lab(
+    service: tauri::State<'_, crate::application::attack_lab_service::AttackLabService>,
+    app: tauri::AppHandle,
+    request: crate::api::dtos::AttackLabRequestDTO,
+) -> Result<String, String> {
+    attack_lab::start_attack_lab(service, app, request).await
+}
+
+#[tauri::command]
+pub async fn cancel_attack_lab(
+    service: tauri::State<'_, crate::application::attack_lab_service::AttackLabService>,
+    audit_id: String,
+) -> Result<(), String> {
+    attack_lab::cancel_attack_lab(service, audit_id).await
+}
+
+// --- EXTERNAL AUDIT (LEGACY / alias) ---
 
 #[tauri::command]
 pub async fn start_external_audit(

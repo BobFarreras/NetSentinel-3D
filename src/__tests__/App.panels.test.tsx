@@ -5,10 +5,10 @@ import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 import App from "../App";
 
 vi.mock("../ui/components/layout/TopBar", () => ({
-  TopBar: ({ onRadarToggle, onExternalAuditToggle }: { onRadarToggle: () => void; onExternalAuditToggle: () => void }) => (
+  TopBar: ({ onRadarToggle, onAttackLabToggle }: { onRadarToggle: () => void; onAttackLabToggle: () => void }) => (
     <div data-testid="topbar">
       <button onClick={onRadarToggle}>TOGGLE_RADAR</button>
-      <button onClick={onExternalAuditToggle}>TOGGLE_EXTERNAL</button>
+      <button onClick={onAttackLabToggle}>TOGGLE_ATTACK_LAB</button>
     </div>
   ),
 }));
@@ -27,8 +27,8 @@ vi.mock("../ui/components/hud/RadarPanel", () => ({
   RadarPanel: () => <div data-testid="radar-panel">RADAR</div>,
 }));
 
-vi.mock("../ui/components/hud/ExternalAuditPanel", () => ({
-  ExternalAuditPanel: () => <div data-testid="external-audit-panel">EXT-AUDIT</div>,
+vi.mock("../ui/features/attack_lab/panel/AttackLabPanel", () => ({
+  AttackLabPanel: () => <div data-testid="attack-lab-panel">ATTACK-LAB</div>,
 }));
 
 vi.mock("../ui/components/3d/NetworkScene", () => ({
@@ -88,19 +88,19 @@ describe("App panels docking", () => {
     });
   });
 
-  it("debe mostrar radar + external con split independiente y permitir undock external", async () => {
+  it("debe mostrar radar + attack lab con split independiente y permitir undock attack lab", async () => {
     render(<App />);
     fireEvent.click(screen.getByText("TOGGLE_RADAR"));
-    fireEvent.click(screen.getByText("TOGGLE_EXTERNAL"));
+    fireEvent.click(screen.getByText("TOGGLE_ATTACK_LAB"));
 
     expect(screen.getByLabelText("RESIZE_DOCK_SPLIT")).toBeInTheDocument();
     expect(screen.getByLabelText("UNLOCK_RADAR")).toBeInTheDocument();
-    expect(screen.getByLabelText("UNLOCK_EXTERNAL")).toBeInTheDocument();
+    expect(screen.getByLabelText("UNLOCK_ATTACK_LAB")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("UNLOCK_EXTERNAL"));
+    fireEvent.click(screen.getByLabelText("UNLOCK_ATTACK_LAB"));
     await waitFor(() => {
-      expect(screen.queryByLabelText("UNLOCK_EXTERNAL")).not.toBeInTheDocument();
-      expect(screen.getByLabelText("DOCK_EXTERNAL")).toBeInTheDocument();
+      expect(screen.queryByLabelText("UNLOCK_ATTACK_LAB")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("DOCK_ATTACK_LAB")).toBeInTheDocument();
     });
   });
 });

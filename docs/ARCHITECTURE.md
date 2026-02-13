@@ -38,8 +38,8 @@ Principio base:
 ### 2.1 Estructura frontend por feature (actual)
 
 - `src/ui/components/hud/*`: paneles HUD (Radar, DeviceDetail, History,
-  ExternalAudit).
-- `src/ui/components/panels/*`: consola/logs/trafico.
+  ...).
+- `src/ui/components/panels/*`: consola/logs/trafico/auditoria.
 - `src/ui/components/3d/*`: escena de red (nodos, labels, camara, controles).
 - `src/ui/hooks/modules/*`: hooks de estado por modulo/panel/escena.
 
@@ -70,7 +70,7 @@ Ubicacion: `src-tauri/src/application`
 - `jammer_service.rs`: contramedidas activas.
 - `wifi_service.rs`: orquestacion de Radar View (WiFi) + normalizacion.
   - normalizacion pura en `wifi_normalizer.rs`.
-- `external_audit/*`: wrapper de ejecucion de herramientas externas
+- `attack_lab/*`: wrapper de ejecucion de herramientas externas (Attack Lab)
   (stdout/stderr en tiempo real).
 - `opsec_service.rs`: (NUEVO) orquestador de seguridad operacional (identidad,
   mac spoofing, validacion LAA).
@@ -210,8 +210,9 @@ Comportamiento actual:
 Eventos internos de coordinacion:
 
 - `netsentinel://dock-panel`: reacople generico de panel.
-- `netsentinel://external-context`: sincroniza target/escenario/autorun del
-  panel `External` desacoplado.
+- `netsentinel://attack-lab-context`: sincroniza target/escenario/autorun del
+  panel de auditoria desacoplado (feature: Attack Lab).
+  - compat legacy: `netsentinel://external-context`.
 
 Hooks UI dedicados de esta capa:
 
@@ -259,6 +260,10 @@ Ejemplos aplicados:
   - `src/ui/components/panels/TrafficPanel.tsx`
   - `src/ui/hooks/modules/traffic/useTrafficPanelState.ts`
   - `src/ui/components/panels/traffic/*`
+- Attack Lab (LAB/CUSTOM):
+  - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
+  - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
+  - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
 - Device Detail:
   - `src/ui/components/hud/DeviceDetailPanel.tsx`
   - `src/ui/hooks/modules/ui/useDeviceDetailPanelState.ts`
@@ -327,6 +332,8 @@ Comandos de WiFi (Radar View):
 
 Comandos de auditoria externa (wrapper CLI):
 
+- `start_attack_lab`
+- `cancel_attack_lab`
 - `start_external_audit`
 - `cancel_external_audit`
 

@@ -19,7 +19,7 @@ describe("useDetachedRuntime", () => {
 
   it("debe activar panel ready tras retardo en modo detached", () => {
     const { result } = renderHook(() =>
-      useDetachedRuntime({ panel: "external", targetIp: "192.168.1.20", scenarioId: "device_http_headers" })
+      useDetachedRuntime({ panel: "attack_lab", targetIp: "192.168.1.20", scenarioId: "device_http_headers" })
     );
 
     expect(result.current.detachedPanelReady).toBe(false);

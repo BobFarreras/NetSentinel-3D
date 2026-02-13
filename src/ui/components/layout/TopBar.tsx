@@ -1,3 +1,6 @@
+// src/ui/components/layout/TopBar.tsx
+// Barra superior: acciones globales (scan/history/radar/attack lab) e informacion de identidad local.
+
 import React from 'react';
 import { HostIdentity } from '../../../shared/dtos/NetworkDTOs';
 interface TopBarProps {
@@ -6,15 +9,15 @@ interface TopBarProps {
   onScan: () => void;
   onHistoryToggle: () => void;
   onRadarToggle: () => void;
-  onExternalAuditToggle: () => void;
+  onAttackLabToggle: () => void;
   showHistory: boolean;
   showRadar: boolean;
-  showExternalAudit: boolean;
+  showAttackLab: boolean;
   identity: HostIdentity | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ 
-  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onExternalAuditToggle, showHistory, showRadar, showExternalAudit, identity
+  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onAttackLabToggle, showHistory, showRadar, showAttackLab, identity
 }) => {
   return (
     <div style={{
@@ -119,11 +122,11 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
 
         <button
-          onClick={onExternalAuditToggle}
+          onClick={onAttackLabToggle}
           style={{
-            background: showExternalAudit ? '#00202a' : 'transparent',
-            color: showExternalAudit ? '#00e5ff' : '#77e8ff',
-            border: `1px solid ${showExternalAudit ? '#00e5ff' : '#003a45'}`,
+            background: showAttackLab ? '#00202a' : 'transparent',
+            color: showAttackLab ? '#00e5ff' : '#77e8ff',
+            border: `1px solid ${showAttackLab ? '#00e5ff' : '#003a45'}`,
             borderRadius: '2px',
             padding: '6px 16px',
             fontSize: '0.9rem',
@@ -132,7 +135,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             fontFamily: 'inherit'
           }}
         >
-          {showExternalAudit ? 'HIDE AUDIT' : 'EXT AUDIT'}
+          {showAttackLab ? 'HIDE LAB' : 'ATTACK LAB'}
         </button>
       </div>
 

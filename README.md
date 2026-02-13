@@ -100,7 +100,7 @@ Notas Windows:
 ## External Audit / LAB Audit
 Wrapper para ejecutar herramientas CLI instaladas por el administrador y/o escenarios didacticos.
 
-Documento tecnico: `docs/EXTERNAL_AUDIT.md`.
+Documento tecnico: `docs/ATTACK_LAB.md`.
 
 ## Paneles desacoplados (desktop)
 - Los paneles `Console`, `Device`, `Radar`, `External` y `NetworkScene` soportan modo desacoplado.

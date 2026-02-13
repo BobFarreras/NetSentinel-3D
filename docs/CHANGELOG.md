@@ -1,6 +1,27 @@
 # Diario de desarrollo (CHANGELOG)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
+
+## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
+### ♻️ Frontend (estructura y naming)
+- Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).
+- Docking/windowing renombrado a `attack_lab` con compatibilidad legacy:
+  - contexto principal: `netsentinel://attack-lab-context`
+  - compat: `netsentinel://external-context`
+
+### 🦀 Backend (Tauri / application)
+- Modulo application renombrado a `src-tauri/src/application/attack_lab/*`.
+- Nuevos comandos Tauri:
+  - `start_attack_lab`, `cancel_attack_lab`
+  - alias legacy mantenido: `start_external_audit`, `cancel_external_audit`
+- Nuevos eventos:
+  - `attack-lab-log`, `attack-lab-exit`
+  - alias legacy mantenido: `external-audit-log`, `external-audit-exit`
+
+### 📚 Documentacion
+- Renombrados docs: `docs/ATTACK_LAB.md`, `docs/ATTACK_LAB_REFACTOR.md`.
+- `AGENTS.md` actualizado con la nueva regla de cabecera por archivo (ruta + descripcion).
+
 ## [v0.8.25] - Hardening de conexion WiFi real (2026-02-12)
 ### 🦀 Backend (validacion de enlace)
 - Refactor en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para eliminar falsos positivos de conexion:
@@ -116,7 +137,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
   - flujo de desacople/reacople,
   - eventos internos (`dock-panel`, `external-context`),
   - reglas de layout cuando `scene3d`, `console` o `device` estan desacoplados.
-- `docs/EXTERNAL_AUDIT.md` actualizado con seccion de `External` desacoplado:
+- `docs/ATTACK_LAB.md` actualizado con seccion de `Attack Lab` desacoplado:
   - cierre por `X` nativo,
   - sincronizacion de target/escenario en caliente.
 - `README.md` actualizado con resumen operativo de paneles desacoplados en desktop.
@@ -278,31 +299,31 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - Nuevo portal reutilizable:
   - `src/ui/components/layout/DetachedWindowPortal.tsx`
 - `src/App.tsx` refactorizado para gestionar estado dock/undock por modulo y render en ventana externa.
-- `src/ui/components/hud/ExternalAuditPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
+- `src/ui/components/panels/external_audit/ExternalAuditPanel.tsx` extiende props con `embedded` para render flexible embebido o desacoplado.
 
 ### ✅ Verificacion
 - `npm test -- --run` en verde.
 - `npm run build` en verde.
 - `cargo check` en verde.
 
-## [v0.8.10] - Aclaracion operativa de External Audit + guia de migracion a Native Audit (2026-02-11)
+## [v0.8.10] - Aclaracion operativa de Attack Lab (antes: External Audit) + guia de migracion a Native Audit (2026-02-11)
 ### 📚 Documentacion
-- `docs/EXTERNAL_AUDIT.md` ampliado con:
+- `docs/ATTACK_LAB.md` ampliado con:
   - interpretacion detallada de un caso real `exit=1` en escenario `HTTP HEAD`,
   - significado de `AUTO`, `STDOUT/STDERR`, `ok=false` y `auditId`,
   - definicion operativa de `router` como `gateway` detectado.
 - Añadida guia de refactor:
-  - `docs/EXTERNAL_AUDIT_REFACTOR.md`
+  - `docs/ATTACK_LAB_REFACTOR.md`
   - plan por fases para migrar de wrapper CLI (`ExternalAudit`) a motor nativo Rust (`NativeAudit`) sin simulaciones en LAB principal.
 
-## [v0.8.9] - Enlace operativo AGENTS <-> DOC-ATTACK <-> External Audit (2026-02-11)
+## [v0.8.9] - Enlace operativo AGENTS <-> DOC-ATTACK <-> Attack Lab (antes: External Audit) (2026-02-11)
 ### 📚 Documentacion
-- `AGENTS.md` actualizado para declarar `DOC-ATTACK.md` como catalogo tactico obligatorio y `docs/EXTERNAL_AUDIT.md` como runtime oficial.
+- `AGENTS.md` actualizado para declarar `DOC-ATTACK.md` como catalogo tactico obligatorio y `docs/ATTACK_LAB.md` como runtime oficial.
 - Añadidas reglas de integracion para plantillas:
   - traduccion a escenarios en `src/core/logic/externalAuditScenarios.ts`,
   - ejecucion via `start_external_audit` / `cancel_external_audit` o `simulate`.
 - Documentado en `AGENTS.md` el flujo obligatorio "seleccion en Radar -> LAB AUDIT -> ExternalAuditPanel -> eventos".
-- `docs/EXTERNAL_AUDIT.md` ampliado con:
+- `docs/ATTACK_LAB.md` ampliado con:
   - seccion de vinculacion con `DOC-ATTACK.md`,
   - flujo real actual de auto-ejecucion por target (gateway/device),
   - puntos exactos de codigo para extender plantillas por router.
@@ -311,7 +332,7 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### 📚 Documentacion
 - Actualizadas rutas de hooks en:
   - `docs/ARCHITECTURE.md`
-  - `docs/EXTERNAL_AUDIT.md`
+  - `docs/ATTACK_LAB.md`
   - `docs/TESTING.md`
   - `docs/RADAR_VIEW.md`
   - `docs/REFACTOR_AUDIT.md`

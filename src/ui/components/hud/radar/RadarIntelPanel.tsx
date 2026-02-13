@@ -1,4 +1,5 @@
 // src/ui/components/hud/radar/RadarIntelPanel.tsx
+// Panel lateral del Radar: filtros de visualizacion, detalles del nodo WiFi seleccionado y accion para abrir el Attack Lab con contexto.
 
 import React from "react";
 import type { DeviceDTO, WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
@@ -62,10 +63,10 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
     console.log("📦 [RADAR DEBUG] Virtual Target Created:", virtualTarget);
 
     // 2. NAVEGACIÓN INTERNA
-    console.log("🚀 [RADAR DEBUG] Emitting 'external' dock panel switch...");
+    console.log("🚀 [RADAR DEBUG] Emitting 'attack_lab' dock panel switch...");
     
     try {
-        windowingAdapter.emitDockPanel("external");
+        windowingAdapter.emitDockPanel("attack_lab");
         console.log("✅ [RADAR DEBUG] Emit DockPanel Success (Sent)");
     } catch (e) {
         console.error("❌ [RADAR DEBUG] Failed to emit DockPanel:", e);
@@ -76,7 +77,7 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
     setTimeout(() => {
         console.log("📨 [RADAR DEBUG] Sending Audit Context...");
         try {
-            windowingAdapter.emitExternalAuditContext({
+            windowingAdapter.emitAttackLabContext({
                 targetDevice: virtualTarget,
                 scenarioId: "wifi_brute_force_dict",
                 autoRun: false 
@@ -119,7 +120,12 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
           <div>
             <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>RISK</div>
-            <select value={riskFilter} onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)} style={selectStyle}>
+            <select
+              aria-label="FILTER_RISK_SELECT"
+              value={riskFilter}
+              onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)}
+              style={selectStyle}
+            >
               <option value="ALL">ALL</option>
               <option value="HARDENED">HARDENED</option>
               <option value="STANDARD">STANDARD</option>
@@ -140,7 +146,12 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginBottom: 8 }}>
             <div>
                 <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>CHANNEL</div>
-                <select value={channelFilter === null ? "ALL" : String(channelFilter)} onChange={(e) => onChangeChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))} style={selectStyle}>
+                <select
+                  aria-label="FILTER_CH_SELECT"
+                  value={channelFilter === null ? "ALL" : String(channelFilter)}
+                  onChange={(e) => onChangeChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
+                  style={selectStyle}
+                >
                     <option value="ALL">ALL</option>
                     {availableChannels.map((ch) => <option key={ch} value={String(ch)}>CH {ch}</option>)}
                 </select>

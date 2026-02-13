@@ -13,12 +13,12 @@ Expandir el arsenal de NetSentinel manteniendo la excelencia en **Arquitectura H
 
 ## Fuente operativa de ataques (obligatoria)
 - `DOC-ATTACK.md` define el catalogo tactico y las familias de plantillas ofensivas/simuladas.
-- `docs/EXTERNAL_AUDIT.md` define la ejecucion real en runtime (LAB/CUSTOM, DTOs, eventos, limites).
+- `docs/ATTACK_LAB.md` define la ejecucion real en runtime (LAB/CUSTOM, DTOs, eventos, limites).
 
 Regla de integracion:
-- `DOC-ATTACK.md` nunca se implementa de forma directa en UI o backend sin pasar por `ExternalAuditSkill`.
+- `DOC-ATTACK.md` nunca se implementa de forma directa en UI o backend sin pasar por `AttackLabSkill`.
 - Toda plantilla nueva del catalogo debe aterrizar en `src/core/logic/externalAuditScenarios.ts`.
-- Toda ejecucion debe salir por comandos Tauri `start_external_audit` / `cancel_external_audit` o por `simulate()` en LAB.
+- Toda ejecucion debe salir por comandos Tauri `start_attack_lab` / `cancel_attack_lab` (o alias legacy `start_external_audit` / `cancel_external_audit`) o por `simulate()` en LAB.
 - Si una plantilla implica comando real, debe declarar `isSupported`, `buildRequest` y `timeoutMs`.
 - Si una plantilla es didactica, debe implementarse en modo `simulated` con pasos (`SimStep`) trazables.
 
@@ -82,6 +82,8 @@ Regla de integracion:
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
+- `start_attack_lab`
+- `cancel_attack_lab`
 - `start_external_audit`
 - `cancel_external_audit`
 - `check_mac_security`
@@ -112,10 +114,10 @@ Regla:
 5. JammerSkill:
    - Tecnico: `start_jamming`, `stop_jamming`
    - Resultado: contramedida activa controlada
-6. ExternalAuditSkill:
-   - Tecnico: `start_external_audit`, `cancel_external_audit`
+6. AttackLabSkill:
+   - Tecnico: `start_attack_lab`, `cancel_attack_lab` (alias legacy: `start_external_audit`, `cancel_external_audit`)
    - Resultado: wrapper async de herramientas CLI externas con logs en tiempo real
-   - Catalogo/plantillas: `src/core/logic/externalAuditScenarios.ts`
+   - Catalogo/plantillas: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
    - Referencia tactica: `DOC-ATTACK.md`
 7. OpSecSkill:
     - Tecnico: `check_mac_security`, `randomize_mac`
@@ -125,17 +127,17 @@ Regla:
 ### Flujo obligatorio: plantilla por target desde Radar
 1. Operador selecciona nodo en `NetworkScene`.
 2. `DeviceDetailPanel` habilita `LAB AUDIT` sobre el `selectedDevice`.
-3. `App.tsx` abre `ExternalAuditPanel` con:
+3. `App.tsx` abre `AttackLabPanel` con:
    - `targetDevice`
    - `defaultScenarioId` segun tipo de objetivo (router/device)
    - `autoRun` opcional.
-4. `ExternalAuditPanel` carga escenarios desde `getExternalAuditScenarios()`.
+4. `AttackLabPanel` carga escenarios desde `getAttackLabScenarios()`.
 5. Ejecucion:
-   - `mode: "external"` => `start_external_audit` (backend, streaming stdout/stderr).
-   - `mode: "simulated"` => `useExternalAudit.startSimulated` (LAB didactico).
+   - `mode: "external"` => `start_attack_lab` (backend, streaming stdout/stderr).
+   - `mode: "simulated"` => `useAttackLab.startSimulated` (LAB didactico).
 6. Trazabilidad en vivo por eventos:
-   - `external-audit-log`
-   - `external-audit-exit`
+   - `attack-lab-log` / `attack-lab-exit` (principal)
+   - `external-audit-log` / `external-audit-exit` (alias legacy)
 
 ### Convenciones de codigo
 1. Rust:
@@ -148,6 +150,12 @@ Regla:
    - evitar `any` salvo casos justificados de test
 3. Documentacion/comentarios:
    - castellano tecnico, directo y accionable
+4. Cabecera obligatoria por archivo (NUEVO):
+   - Primera linea: comentario con la ruta del archivo.
+   - Segunda linea: comentario corto describiendo proposito y que contiene.
+   - Ejemplo:
+     - `// src/ui/features/radar/components/RadarPanel.tsx`
+     - `// Panel Radar: composicion de UI y conexion con hook de estado.`
 
 ### Patron frontend obligatorio (paneles)
 - Evitar "god components" en `src/ui/components`.
@@ -203,7 +211,7 @@ Nota Windows:
 - `docs/CHANGELOG.md`
 - `docs/ARCHITECTURE.md`
 - `DOC-ATTACK.md`
-- `docs/EXTERNAL_AUDIT.md`
+- `docs/ATTACK_LAB.md`
 - `docs/SECURITY.md`
 - `src-tauri/src/lib.rs`
 - `src-tauri/src/api/commands.rs`
@@ -226,7 +234,7 @@ Directo, tecnico, pragmatico y orientado a robustez. Prioriza soluciones manteni
 4. Asegurar cobertura de tests (unitarios/integracion/E2E) para el nuevo flujo.
 5. Consolidar plantillas por objetivo (router/device) enlazando:
    - catalogo tactico en `DOC-ATTACK.md`,
-   - runtime de ejecucion en `docs/EXTERNAL_AUDIT.md`,
+   - runtime de ejecucion en `docs/ATTACK_LAB.md`,
    - escenarios ejecutables en `src/core/logic/externalAuditScenarios.ts`.
 
 Regla:

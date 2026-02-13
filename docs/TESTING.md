@@ -40,7 +40,7 @@ Frontend (unit):
 - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
 - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
 - `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
-- `src/ui/components/hud/__tests__/ExternalAuditPanel.test.tsx`
+- `src/ui/features/attack_lab/__tests__/AttackLabPanel.test.tsx`
 - `src/ui/components/hud/__tests__/RadarPanel.test.tsx`
 - `src/__tests__/App.integration.test.tsx`
 

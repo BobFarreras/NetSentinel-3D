@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/ui/usePanelDockingState.ts
+// Hook de docking/undocking: gestiona estado de paneles desacoplados y coordina apertura/cierre de ventanas (Tauri/portal).
+
 import { useCallback, useEffect, useState } from "react";
 import { windowingAdapter, type DetachablePanelId } from "../../../../adapters/windowingAdapter";
 
@@ -6,21 +9,21 @@ type DetachedModes = Record<DetachablePanelId, "portal" | "tauri" | null>;
 
 interface UsePanelDockingStateParams {
   selectedDeviceIp?: string;
-  externalAuditTargetIp?: string;
-  externalAuditScenarioId?: string | null;
+  attackLabTargetIp?: string;
+  attackLabScenarioId?: string | null;
   showRadar: boolean;
-  showExternalAudit: boolean;
+  showAttackLab: boolean;
 }
 
-const initialPanels: DetachedPanels = { console: false, device: false, radar: false, external: false, scene3d: false };
-const initialModes: DetachedModes = { console: null, device: null, radar: null, external: null, scene3d: null };
+const initialPanels: DetachedPanels = { console: false, device: false, radar: false, attack_lab: false, scene3d: false };
+const initialModes: DetachedModes = { console: null, device: null, radar: null, attack_lab: null, scene3d: null };
 
 export const usePanelDockingState = ({
   selectedDeviceIp,
-  externalAuditTargetIp,
-  externalAuditScenarioId,
+  attackLabTargetIp,
+  attackLabScenarioId,
   showRadar,
-  showExternalAudit,
+  showAttackLab,
 }: UsePanelDockingStateParams) => {
   const [detachedPanels, setDetachedPanels] = useState<DetachedPanels>(initialPanels);
   const [detachedModes, setDetachedModes] = useState<DetachedModes>(initialModes);
@@ -37,8 +40,8 @@ export const usePanelDockingState = ({
   // UNDOCK (Obrir finestra independent)
   const undockPanel = useCallback(async (key: DetachablePanelId) => {
     // CAPTURA CRÍTICA: Assegurem que passem les dades actuals en el moment d'obrir
-    const targetIp = key === "external" ? externalAuditTargetIp : key === "device" ? selectedDeviceIp : undefined;
-    const scenarioId = key === "external" ? (externalAuditScenarioId || undefined) : undefined;
+    const targetIp = key === "attack_lab" ? attackLabTargetIp : key === "device" ? selectedDeviceIp : undefined;
+    const scenarioId = key === "attack_lab" ? (attackLabScenarioId || undefined) : undefined;
     
     console.log(`🪟 [DOCKING] Undocking panel '${key}' with Target: ${targetIp}`);
 
@@ -46,7 +49,7 @@ export const usePanelDockingState = ({
     
     setDetachedPanels((prev) => ({ ...prev, [key]: true }));
     setDetachedModes((prev) => ({ ...prev, [key]: openedTauri ? "tauri" : "portal" }));
-  }, [externalAuditScenarioId, externalAuditTargetIp, selectedDeviceIp]);
+  }, [attackLabScenarioId, attackLabTargetIp, selectedDeviceIp]);
 
   // LISTEN FOR CLOSE EVENTS (Finestra filla es tanca manualment)
   useEffect(() => {
@@ -72,7 +75,7 @@ export const usePanelDockingState = ({
     dockPanel,
     undockPanel,
     showDockRadar: showRadar && !detachedPanels.radar,
-    showDockExternal: showExternalAudit && !detachedPanels.external,
+    showDockAttackLab: showAttackLab && !detachedPanels.attack_lab,
     showDockScene: !detachedPanels.scene3d,
     showDockConsole: !detachedPanels.console,
     showDockDevice: !detachedPanels.device,

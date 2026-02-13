@@ -86,7 +86,7 @@ describe("windowingAdapter", () => {
     mocks.getByLabelMock.mockResolvedValue(null);
     mocks.setFailWindowCreate(true);
 
-    const opened = await windowingAdapter.openDetachedPanelWindow({ panel: "external" });
+    const opened = await windowingAdapter.openDetachedPanelWindow({ panel: "attack_lab" });
 
     expect(opened).toBe(false);
   });

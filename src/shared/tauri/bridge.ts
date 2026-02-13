@@ -1,6 +1,6 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
-import type { DeviceDTO, ExternalAuditExitEvent, ExternalAuditLogEvent, GatewayCredentialsDTO, LatestSnapshotDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
+import type { AttackLabExitEvent, AttackLabLogEvent, DeviceDTO, GatewayCredentialsDTO, LatestSnapshotDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
 
 type EventEnvelope<T> = { payload: T };
 type EventCallback<T> = (event: EventEnvelope<T>) => void;
@@ -222,6 +222,7 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
     case 'stop_jamming':
       emit('audit-log', `E2E MOCK: Jammer detenido en ${(args?.ip as string) || 'unknown'}`);
       return undefined as T;
+    case 'start_attack_lab':
     case 'start_external_audit': {
       extAuditSeq += 1;
       const auditId = `mock_ext_audit_${extAuditSeq}`;
@@ -232,42 +233,46 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
       let lineNo = 0;
       extAuditTimer = setInterval(() => {
         lineNo += 1;
-        const evt: ExternalAuditLogEvent = {
+        const evt: AttackLabLogEvent = {
           auditId,
           stream: lineNo % 4 === 0 ? 'stderr' : 'stdout',
           line: lineNo % 4 === 0 ? `WARN line=${lineNo}` : `OK line=${lineNo}`,
         };
-        emit('external-audit-log', evt);
+        emit('attack-lab-log', evt);
+        emit('external-audit-log', evt); // legacy
 
         if (lineNo >= 8) {
           if (extAuditTimer) clearInterval(extAuditTimer);
           extAuditTimer = null;
-          const exitEvt: ExternalAuditExitEvent = {
+          const exitEvt: AttackLabExitEvent = {
             auditId,
             success: true,
             exitCode: 0,
             durationMs: 1200,
           };
-          emit('external-audit-exit', exitEvt);
+          emit('attack-lab-exit', exitEvt);
+          emit('external-audit-exit', exitEvt); // legacy
         }
       }, 120);
 
       return auditId as T;
     }
+    case 'cancel_attack_lab':
     case 'cancel_external_audit': {
       const auditId = (args?.auditId as string) || activeExtAuditId || 'unknown';
       if (extAuditTimer) {
         clearInterval(extAuditTimer);
         extAuditTimer = null;
       }
-      const exitEvt: ExternalAuditExitEvent = {
+      const exitEvt: AttackLabExitEvent = {
         auditId,
         success: false,
         exitCode: 130,
         durationMs: 10,
         error: 'cancelado',
       };
-      emit('external-audit-exit', exitEvt);
+      emit('attack-lab-exit', exitEvt);
+      emit('external-audit-exit', exitEvt); // legacy
       return undefined as T;
     }
     default:

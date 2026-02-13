@@ -15,8 +15,8 @@ vi.mock("../ui/components/hud/RadarPanel", () => ({
   RadarPanel: () => <div data-testid="radar-panel">RADAR</div>,
 }));
 
-vi.mock("../ui/components/hud/ExternalAuditPanel", () => ({
-  ExternalAuditPanel: () => <div data-testid="external-audit-panel">EXT-AUDIT</div>,
+vi.mock("../ui/features/attack_lab/panel/AttackLabPanel", () => ({
+  AttackLabPanel: () => <div data-testid="attack-lab-panel">ATTACK-LAB</div>,
 }));
 
 vi.mock("../ui/components/3d/NetworkScene", () => ({

@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
 use crate::application::credential_service::CredentialService;
-use crate::application::external_audit_service::ExternalAuditService;
+use crate::application::attack_lab_service::AttackLabService;
 use crate::application::jammer_service::JammerService;
 use crate::application::latest_snapshot_service::LatestSnapshotService;
 use crate::application::mac_changer_service::MacChangerService;
@@ -73,7 +73,7 @@ pub fn run() {
             let credential_service = CredentialService::new(credential_store_infra);
             let vendor_lookup_infra = Arc::new(SystemVendorLookup);
             let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra);
-            let external_audit_service = ExternalAuditService::new();
+            let attack_lab_service = AttackLabService::new();
 
             // Traffic
             let traffic_service = TrafficService::new();
@@ -99,7 +99,7 @@ pub fn run() {
             app.manage(latest_snapshot_service);
             app.manage(credential_service);
             app.manage(wifi_service);
-            app.manage(external_audit_service);
+            app.manage(attack_lab_service);
 
             // Estados runtime: sniffer/jammer.
             app.manage(crate::api::state::TrafficState(Mutex::new(traffic_service)));
@@ -129,6 +129,8 @@ pub fn run() {
             api::commands::scan_airwaves,
             api::commands::wifi_connect,
             // External audit
+            api::commands::start_attack_lab,
+            api::commands::cancel_attack_lab,
             api::commands::start_external_audit,
             api::commands::cancel_external_audit,
             // System / runtime
