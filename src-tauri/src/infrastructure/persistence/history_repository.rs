@@ -1,3 +1,6 @@
+// src-tauri/src/infrastructure/persistence/history_repository.rs
+// Descripcion: implementacion file-backed de `HistoryRepositoryPort` (historial de sesiones) en JSON.
+
 use crate::domain::{ports::HistoryRepositoryPort, entities::ScanSession};
 use async_trait::async_trait;
 use std::fs;
@@ -56,4 +59,3 @@ impl HistoryRepositoryPort for FileHistoryRepository {
         }
     }
 }
-// src-tauri/src/infrastructure/fs_repository.rs

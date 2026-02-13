@@ -1,3 +1,6 @@
+// src-tauri/src/infrastructure/persistence/latest_snapshot_repository.rs
+// Descripcion: implementacion file-backed de `LatestSnapshotRepositoryPort` (arranque rapido) en JSON.
+
 use async_trait::async_trait;
 use directories::ProjectDirs;
 use std::fs;
@@ -40,4 +43,3 @@ impl LatestSnapshotRepositoryPort for FileLatestSnapshotRepository {
         Ok(Some(snapshot))
     }
 }
-

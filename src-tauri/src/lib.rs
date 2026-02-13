@@ -23,8 +23,8 @@ use crate::application::wifi::WifiService;
 use crate::application::wordlist::WordlistService;
 
 // 2. Imports propios (Infraestructura)
-use crate::infrastructure::credential_store::KeyringCredentialStore;
-use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotRepository;
+use crate::infrastructure::persistence::credential_store::KeyringCredentialStore;
+use crate::infrastructure::persistence::latest_snapshot_repository::FileLatestSnapshotRepository;
 use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
 use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
@@ -32,10 +32,9 @@ use crate::infrastructure::network::jammer_engine::PnetJammerEngine;
 use crate::infrastructure::attack_lab::runner::TokioProcessAttackLabRunner;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 use crate::infrastructure::wifi::wifi_connector::WifiConnector;
-use crate::infrastructure::{
-    fs_repository::FileHistoryRepository, router_audit::chrome_auditor::ChromeAuditor,
-    system_scanner::SystemScanner,
-};
+use crate::infrastructure::persistence::history_repository::FileHistoryRepository;
+use crate::infrastructure::router_audit::chrome_auditor::ChromeAuditor;
+use crate::infrastructure::system_scanner::SystemScanner;
 
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
 use crate::infrastructure::persistence::settings_store::FileSettingsStore;

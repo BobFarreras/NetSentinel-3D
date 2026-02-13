@@ -1,3 +1,6 @@
+// src-tauri/src/infrastructure/persistence/credential_store.rs
+// Descripcion: implementacion de `CredentialStorePort` basada en Keyring del SO (almacenamiento seguro local).
+
 use async_trait::async_trait;
 use keyring::Entry;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -64,4 +67,3 @@ impl CredentialStorePort for KeyringCredentialStore {
         }
     }
 }
-

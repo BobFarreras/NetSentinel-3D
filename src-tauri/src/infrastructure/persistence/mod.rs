@@ -3,3 +3,6 @@
 
 pub mod wordlist_repository;
 pub mod settings_store;
+pub mod credential_store;
+pub mod history_repository;
+pub mod latest_snapshot_repository;

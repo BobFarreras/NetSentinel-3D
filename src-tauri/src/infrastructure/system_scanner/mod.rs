@@ -1,4 +1,4 @@
-// src-tauri/src/infrastructure/system_scanner.rs
+// src-tauri/src/infrastructure/system_scanner/mod.rs
 // Descripcion: adaptador de infraestructura para escaneo de red/puertos e identidad local (default-net) via `NetworkScannerPort`.
 
 use crate::domain::entities::{Device, OpenPort, HostIdentity};
@@ -7,13 +7,9 @@ use async_trait::async_trait;
 use default_net;
 
 // Submodulos
-#[path = "system_scanner/discover.rs"]
 mod discover;
-#[path = "system_scanner/enrich.rs"]
 mod enrich;
-#[path = "system_scanner/ports.rs"]
 mod ports;
-#[path = "system_scanner/sort.rs"]
 mod sort;
 
 pub struct SystemScanner;

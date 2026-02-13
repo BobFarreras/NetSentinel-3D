@@ -93,11 +93,11 @@ Compatibilidad:
 
 Ubicacion: `src-tauri/src/infrastructure`
 
-- `system_scanner.rs`: adaptador del puerto `NetworkScannerPort` (orquesta
+- `system_scanner/`: adaptador del puerto `NetworkScannerPort` (orquesta
   submodulos en `system_scanner/*`).
 - `router_audit/*`: automatizacion de auditoria de gateway (Chrome) + parsing
   con fixtures.
-- `fs_repository.rs`: persistencia en disco.
+- `persistence/*`: persistencia en disco (history/snapshot/settings/wordlist + credential store).
 - `network/*`: sniffing, ARP, puertos, vendor/hostname resolver, etc.
   - `network/vendor_resolver*`: resolucion de fabricante por OUI (seed
     embebido + override en AppData).
