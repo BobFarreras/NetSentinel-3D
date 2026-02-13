@@ -1,4 +1,5 @@
 // src/ui/hooks/modules/network/useBootstrapNetwork.ts
+// Bootstrap de red: carga/refresh de identidad local, auto-scan opcional y sync de dispositivos del gateway.
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
 import { networkAdapter } from "../../../../adapters/networkAdapter";
@@ -38,22 +39,41 @@ export const useBootstrapNetwork = ({ startScan, setDevices, enableAutoBootstrap
   const [identity, setIdentity] = useState<HostIdentity | null>(null);
   const bootAutoScanDone = useRef(false);
   const bootRouterSyncDone = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    let mounted = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  useEffect(() => {
     const loadIdentity = async () => {
       try {
         const id = await networkAdapter.getHostIdentity();
-        if (mounted) setIdentity(id);
+        if (mountedRef.current) setIdentity(id);
       } catch (error) {
         uiLogger.error("Error cargando identidad local", error);
       }
     };
 
     void loadIdentity();
+  }, []);
+
+  useEffect(() => {
+    const IDENTITY_REFRESH_EVENT = "netsentinel://refresh-identity";
+    const handler = () => {
+      void networkAdapter
+        .getHostIdentity()
+        .then((id) => {
+          if (mountedRef.current) setIdentity(id);
+        })
+        .catch((error) => uiLogger.warn("Fallo al refrescar identidad local", error));
+    };
+
+    window.addEventListener(IDENTITY_REFRESH_EVENT, handler);
     return () => {
-      mounted = false;
+      window.removeEventListener(IDENTITY_REFRESH_EVENT, handler);
     };
   }, []);
 

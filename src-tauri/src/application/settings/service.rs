@@ -28,6 +28,27 @@ impl SettingsService {
         self.store.save(settings)
     }
 
+    /// Devuelve el snapshot actual de settings persistidos.
+    /// Nota: No valida campos semanticos (eso se hace en la capa API/command si aplica).
+    pub fn get_settings(&self) -> AppSettings {
+        let _guard = self.io_guard.lock().unwrap();
+        self.load()
+    }
+
+    /// Persiste settings completos (se escribe el JSON entero).
+    pub fn save_settings(&self, settings: AppSettings) -> Result<(), String> {
+        let _guard = self.io_guard.lock().unwrap();
+        self.save(&settings)
+    }
+
+    /// Actualiza solo el idioma de la UI (campo de UX). Mantiene el resto de settings intactos.
+    pub fn set_ui_language(&self, ui_language: Option<String>) -> Result<(), String> {
+        let _guard = self.io_guard.lock().unwrap();
+        let mut settings = self.load();
+        settings.ui_language = ui_language;
+        self.save(&settings)
+    }
+
     /// Devuelve la MAC real guardada. Si no existe, guarda la actual como real.
     pub fn get_or_init_real_mac(&self, current_mac: String) -> String {
         let _guard = self.io_guard.lock().unwrap();

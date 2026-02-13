@@ -19,12 +19,13 @@ vi.mock('../../../../adapters/networkAdapter', () => ({
   networkAdapter: {
     saveGatewayCredentials: vi.fn(async () => undefined),
     saveLatestSnapshot: vi.fn(async () => undefined),
+    getGatewayCredentials: vi.fn(async () => null),
   },
 }));
 
 // Datos mock.
 const mockExistingDevices: DeviceDTO[] = [
-  { ip: '192.168.1.50', mac: 'AA:BB:CC', vendor: 'Generic', hostname: 'Unknown' }
+  { ip: '192.168.1.50', mac: 'AA:BB:CC:DD:EE:FF', vendor: 'Generic', hostname: 'Unknown' }
 ];
 
 describe('💀 Integration: useRouterHacker Hook', () => {
@@ -108,6 +109,6 @@ describe('💀 Integration: useRouterHacker Hook', () => {
     expect(mergedDevices[0].ip).toBe('192.168.1.50');
     expect(mergedDevices[0].vendor).toBe('Super Gaming PC'); // Debe tomar el vendor nuevo.
     expect(mergedDevices[0].hostname).toBe('GAMING-RIG');    // Debe tomar el hostname nuevo.
-    expect(mergedDevices[0].mac).toBe('AA:BB:CC');           // Debe mantener la MAC original (ARP suele ser mas fiable).
+    expect(mergedDevices[0].mac).toBe('AA:BB:CC:DD:EE:FF');  // Debe mantener la MAC original (ARP suele ser mas fiable).
   });
 });

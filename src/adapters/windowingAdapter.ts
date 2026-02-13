@@ -2,11 +2,12 @@
 // Adapter de windowing: gestiona paneles desacoplados (Tauri/portal) y eventos internos de docking + sincronizacion de contexto entre ventanas.
 
 import { emit, listen } from "@tauri-apps/api/event";
-import { WebviewWindow, getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { UnlistenFn } from "../shared/tauri/bridge";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 
-export type DetachablePanelId = "console" | "device" | "radar" | "attack_lab" | "scene3d";
+export type DetachablePanelId = "console" | "device" | "radar" | "attack_lab" | "scene3d" | "settings";
 export type DetachedPanelContext = {
   panel: DetachablePanelId;
   targetIp?: string;
@@ -32,6 +33,11 @@ type AttackLabContextPayload = {
 const DOCK_PANEL_EVENT = "netsentinel://dock-panel";
 const ATTACK_LAB_CONTEXT_EVENT = "netsentinel://attack-lab-context";
 const WINDOW_LABEL_PREFIX = "netsentinel_panel_";
+const ATTACK_LAB_BOOTSTRAP_KEY = "netsentinel:attack-lab-detached-bootstrap:v1";
+
+// Feature flag local: permite deshabilitar ventanas nativas Tauri si un entorno concreto falla.
+// Por defecto lo dejamos en false: la UX objetivo es ventana independiente movible.
+const DISABLE_TAURI_DETACHED_WINDOWS = false;
 
 const panelTitles: Record<DetachablePanelId, string> = {
   console: "NetSentinel - Console Logs",
@@ -39,6 +45,7 @@ const panelTitles: Record<DetachablePanelId, string> = {
   radar: "NetSentinel - Radar",
   attack_lab: "NetSentinel - Attack Lab",
   scene3d: "NetSentinel - Network Scene",
+  settings: "NetSentinel - Settings / Field Manual",
 };
 
 const panelSizes: Record<DetachablePanelId, { width: number; height: number }> = {
@@ -47,6 +54,7 @@ const panelSizes: Record<DetachablePanelId, { width: number; height: number }> =
   radar: { width: 900, height: 700 },
   attack_lab: { width: 900, height: 700 },
   scene3d: { width: 1200, height: 780 },
+  settings: { width: 980, height: 740 },
 };
 
 const isTauriRuntime = () => {
@@ -71,7 +79,7 @@ const buildDetachedUrl = ({ panel, targetIp, scenarioId }: OpenPanelWindowArgs) 
 
 const normalizePanelId = (panel: string | null): DetachablePanelId | null => {
   if (!panel) return null;
-  if (panel === "console" || panel === "device" || panel === "radar" || panel === "attack_lab" || panel === "scene3d") {
+  if (panel === "console" || panel === "device" || panel === "radar" || panel === "attack_lab" || panel === "scene3d" || panel === "settings") {
     return panel;
   }
   return null;
@@ -97,6 +105,9 @@ export const windowingAdapter = {
   },
 
   openDetachedPanelWindow: async (args: OpenPanelWindowArgs): Promise<boolean> => {
+    if (DISABLE_TAURI_DETACHED_WINDOWS) {
+      return false;
+    }
     try {
       const label = getPanelLabel(args.panel);
       const existing = await WebviewWindow.getByLabel(label);
@@ -132,6 +143,9 @@ export const windowingAdapter = {
   },
 
   closeDetachedPanelWindow: async (panel: DetachablePanelId): Promise<void> => {
+    if (DISABLE_TAURI_DETACHED_WINDOWS) {
+      return;
+    }
     try {
       const target = await WebviewWindow.getByLabel(getPanelLabel(panel));
       if (target) await target.close();
@@ -141,6 +155,9 @@ export const windowingAdapter = {
   },
 
   isDetachedPanelWindowOpen: async (panel: DetachablePanelId): Promise<boolean> => {
+    if (DISABLE_TAURI_DETACHED_WINDOWS) {
+      return false;
+    }
     try {
       const target = await WebviewWindow.getByLabel(getPanelLabel(panel));
       return Boolean(target);
@@ -151,32 +168,40 @@ export const windowingAdapter = {
 
   closeCurrentWindow: async (): Promise<void> => {
     try {
-      const current = getCurrentWebviewWindow();
+      const current = getCurrentWindow();
       await current.close();
     } catch {
-      window.close();
+      // En Tauri, `window.close()` no garantiza cierre nativo y puede dejar la webview en blanco.
+      // En web/portal, si falla Tauri, usamos el cierre del navegador.
+      if (!isTauriRuntime()) {
+        window.close();
+      }
+    }
+  },
+
+  // Cierre forzado de la ventana actual (evita bucles de onCloseRequested).
+  destroyCurrentWindow: async (): Promise<void> => {
+    try {
+      const current = getCurrentWindow();
+      await current.destroy();
+    } catch {
+      if (!isTauriRuntime()) {
+        window.close();
+      }
     }
   },
 
   // Hook para capturar el cierre nativo (boton X) en ventanas Tauri.
   // En web/portal no existe, devolvemos un unlisten no-op.
-  listenCurrentWindowCloseRequested: async (handler: () => void): Promise<UnlistenFn> => {
+  listenCurrentWindowCloseRequested: async (handler: (event: { preventDefault: () => void }) => void | Promise<void>): Promise<UnlistenFn> => {
     try {
-      const current = getCurrentWebviewWindow() as unknown as {
-        onCloseRequested?: (cb: () => void) => Promise<() => void> | (() => void);
-      };
-
-      if (typeof current.onCloseRequested !== "function") {
-        return () => {};
-      }
-
-      const maybe = await current.onCloseRequested(() => {
-        handler();
+      const current = getCurrentWindow();
+      const unlisten = await current.onCloseRequested(async (event) => {
+        await handler(event);
       });
-
-      // Algunas versiones devuelven Promise<UnlistenFn>, otras UnlistenFn directo.
-      if (typeof maybe === "function") return maybe;
-      return () => {};
+      return () => {
+        void unlisten();
+      };
     } catch {
       return () => {};
     }
@@ -245,6 +270,42 @@ export const windowingAdapter = {
       return () => {
         window.removeEventListener(DOCK_PANEL_EVENT, callback as EventListener);
       };
+    }
+  },
+
+  // Persistencia ligera de contexto para evitar carreras al abrir una ventana desacoplada.
+  // Caso real: Attack Lab undock -> la ventana nueva puede no estar lista para escuchar eventos aun.
+  // Al guardar un bootstrap, la ventana hija puede consumirlo al arrancar y pintar el target/escenario.
+  setAttackLabDetachedBootstrap: (payload: { targetDevice: DeviceDTO | null; scenarioId?: string | null }) => {
+    try {
+      const record = {
+        ts: Date.now(),
+        targetDevice: payload.targetDevice,
+        scenarioId: payload.scenarioId ?? undefined,
+      };
+      localStorage.setItem(ATTACK_LAB_BOOTSTRAP_KEY, JSON.stringify(record));
+    } catch {
+      // No hacemos nada si localStorage no esta disponible.
+    }
+  },
+
+  consumeAttackLabDetachedBootstrap: (): { targetDevice: DeviceDTO | null; scenarioId?: string } | null => {
+    try {
+      const raw = localStorage.getItem(ATTACK_LAB_BOOTSTRAP_KEY);
+      if (!raw) return null;
+
+      // Consumimos siempre: si es stale, lo descartamos igualmente para evitar sorpresas.
+      localStorage.removeItem(ATTACK_LAB_BOOTSTRAP_KEY);
+
+      const parsed = JSON.parse(raw) as { ts?: number; targetDevice: DeviceDTO | null; scenarioId?: string };
+      const ts = typeof parsed.ts === "number" ? parsed.ts : 0;
+
+      // TTL corto: este bootstrap solo tiene sentido justo despues de abrir la ventana.
+      if (!ts || Date.now() - ts > 15_000) return null;
+
+      return { targetDevice: parsed.targetDevice ?? null, scenarioId: parsed.scenarioId };
+    } catch {
+      return null;
     }
   },
 };

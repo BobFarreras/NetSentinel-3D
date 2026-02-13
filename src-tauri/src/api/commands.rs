@@ -20,6 +20,8 @@ mod router_audit;
 mod scanner;
 #[path = "commands/snapshot.rs"]
 mod snapshot;
+#[path = "commands/settings.rs"]
+mod settings;
 #[path = "commands/system.rs"]
 mod system;
 #[path = "commands/wifi.rs"]
@@ -97,6 +99,31 @@ pub async fn load_latest_snapshot(
     service: tauri::State<'_, crate::application::snapshot::LatestSnapshotService>,
 ) -> Result<Option<crate::domain::entities::LatestSnapshot>, String> {
     snapshot::load_latest_snapshot(service).await
+}
+
+// --- SETTINGS (configuracion local persistida) ---
+
+#[tauri::command]
+pub fn get_app_settings(
+    service: tauri::State<'_, std::sync::Arc<crate::application::settings::SettingsService>>,
+) -> Result<crate::domain::entities::AppSettings, String> {
+    settings::get_app_settings(service)
+}
+
+#[tauri::command]
+pub fn save_app_settings(
+    service: tauri::State<'_, std::sync::Arc<crate::application::settings::SettingsService>>,
+    settings: crate::domain::entities::AppSettings,
+) -> Result<(), String> {
+    settings::save_app_settings(service, settings)
+}
+
+#[tauri::command]
+pub fn set_ui_language(
+    service: tauri::State<'_, std::sync::Arc<crate::application::settings::SettingsService>>,
+    ui_language: Option<String>,
+) -> Result<(), String> {
+    settings::set_ui_language(service, ui_language)
 }
 
 // --- CREDENCIALES (gateway) ---

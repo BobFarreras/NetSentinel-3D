@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   listenAttackLabContext: vi.fn(),
   emitAttackLabContext: vi.fn(),
+  setAttackLabDetachedBootstrap: vi.fn(),
+  consumeAttackLabDetachedBootstrap: vi.fn(() => null),
 }));
 
 vi.mock("../../../../adapters/windowingAdapter", () => ({

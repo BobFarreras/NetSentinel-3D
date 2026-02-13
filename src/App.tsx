@@ -43,8 +43,10 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
   const [showAttackLab, setShowAttackLab] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [attackLabTarget, setAttackLabTarget] = useState<DeviceDTO | null>(null);
   const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
+  const [attackLabAutoRunToken, setAttackLabAutoRunToken] = useState<number>(0);
 
   // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
   useEffect(() => {
@@ -70,7 +72,7 @@ function App() {
             setAttackLabScenarioId(payload.scenarioId);
         }
         if (payload.autoRun) {
-            // Podrías pasar un token de autorun si lo necesitaras
+            setAttackLabAutoRunToken((t) => t + 1);
         }
         // Aseguramos que se abra
         setShowAttackLab(true);
@@ -89,6 +91,7 @@ function App() {
     attackLabScenarioId,
     showRadar,
     showAttackLab,
+    showSettings,
   });
   const attackLabSync = useAttackLabDetachedSync();
   const { detachedPanelReady } = useDetachedRuntime(detachedContext);
@@ -108,12 +111,31 @@ function App() {
       setAttackLabTarget(device);
       setAttackLabScenarioId(scenarioId);
       setShowAttackLab(true);
+      setAttackLabAutoRunToken((t) => t + 1);
 
       if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
         void attackLabSync.emitAttackLabContext({ targetDevice: device, scenarioId, autoRun: true });
       }
     },
     [attackLabSync, docking.detachedModes.attack_lab, docking.detachedPanels.attack_lab]
+  );
+
+  const undockPanel = useCallback(
+    async (panel: Parameters<typeof docking.undockPanel>[0]) => {
+      // Si vamos a abrir Attack Lab en una ventana nueva, persistimos bootstrap para que la ventana
+      // pueda pintar target/escenario aunque aun no haya recibido eventos o no tenga lista de devices.
+      if (panel === "attack_lab") {
+        windowingAdapter.setAttackLabDetachedBootstrap({ targetDevice: attackLabTarget, scenarioId: attackLabScenarioId });
+
+        // Redundancia: emitimos el contexto despues de iniciar la apertura (puede llegar si la ventana ya esta escuchando).
+        window.setTimeout(() => {
+          void windowingAdapter.emitAttackLabContext({ targetDevice: attackLabTarget, scenarioId: attackLabScenarioId ?? undefined, autoRun: false });
+        }, 350);
+      }
+
+      await docking.undockPanel(panel);
+    },
+    [attackLabScenarioId, attackLabTarget, docking.undockPanel]
   );
 
   const toggleAttackLab = useCallback(() => {
@@ -164,11 +186,14 @@ function App() {
       showAttackLab={showAttackLab}
       onToggleAttackLab={toggleAttackLab}
       closeAttackLab={() => setShowAttackLab(false)}
+      showSettings={showSettings}
+      setShowSettings={setShowSettings}
       identity={identity}
       startScan={startScan}
       loadSession={loadSession}
       showDockRadar={docking.showDockRadar}
       showDockAttackLab={docking.showDockAttackLab}
+      showDockSettings={docking.showDockSettings}
       showDockScene={docking.showDockScene}
       showDockConsole={docking.showDockConsole}
       showDockDevice={docking.showDockDevice}
@@ -180,7 +205,7 @@ function App() {
       startResizingRadar={layout.startResizingRadar}
       startResizingConsole={layout.startResizingConsole}
       startResizingSidebar={layout.startResizingSidebar}
-      undockPanel={(panel) => void docking.undockPanel(panel)}
+      undockPanel={(panel) => void undockPanel(panel)}
       dockPanel={(panel) => void docking.dockPanel(panel)}
       selectedDevice={selectedDevice}
       selectDevice={selectDevice}
@@ -197,6 +222,7 @@ function App() {
       checkRouterSecurity={checkRouterSecurity}
       attackLabTarget={attackLabTarget}
       attackLabScenarioId={attackLabScenarioId}
+      attackLabAutoRunToken={attackLabAutoRunToken}
       onOpenLabAudit={openLabAuditForDevice}
       detachedPanels={docking.detachedPanels}
       detachedModes={docking.detachedModes}

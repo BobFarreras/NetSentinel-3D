@@ -12,6 +12,16 @@ export const useAttackLabDetachedSync = () => {
   const [detachedAttackLabAutoRunToken, setDetachedAttackLabAutoRunToken] = useState(0);
 
   useEffect(() => {
+    // Bootstrap inicial (evita perder contexto en el primer render de la ventana desacoplada).
+    // Nota: se consume (y borra) para evitar usar un target stale en futuras aperturas.
+    const bootstrap = windowingAdapter.consumeAttackLabDetachedBootstrap();
+    if (bootstrap?.targetDevice) {
+      setDetachedAttackLabTarget(bootstrap.targetDevice);
+    }
+    if (bootstrap?.scenarioId) {
+      setDetachedAttackLabScenarioId(bootstrap.scenarioId);
+    }
+
     let unlisten: (() => void) | null = null;
     const boot = async () => {
       // Este hook se ejecuta dentro de la ventana desacoplada.

@@ -1,7 +1,7 @@
 // src/ui/hooks/useNetworkManager.ts
 // Hook orquestador de UI: compone modulos (scanner/audit/router/jammer/logs/bootstrap) y expone una API estable para App/layouts.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
 
 // Importamos los modulos de negocio de UI.
@@ -42,8 +42,64 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
     enableAutoBootstrap: options?.enableAutoBootstrap ?? true,
   });
 
+  // Si cambia la identidad (por ejemplo, Ghost Mode), eliminamos clones stale del host del inventario.
+  // Esto evita duplicados del mismo dispositivo con MAC antigua en la escena.
+  useEffect(() => {
+    if (!identity?.mac || !identity?.ip) return;
+    const idMac = identity.mac.trim().toUpperCase();
+    const idIp = identity.ip.trim();
+
+    setDevices((prev) => {
+      const next = prev.filter((d) => {
+        const vendor = (d.vendor ?? "");
+        const looksLikeHost = vendor.includes("NETSENTINEL") || vendor.includes("(ME)");
+        if (!looksLikeHost) return true;
+
+        const dMac = (d.mac ?? "").trim().toUpperCase();
+        const dIp = (d.ip ?? "").trim();
+
+        // Mantener solo el host "real" (IP o MAC actuales). El resto son stale.
+        if (dIp === idIp) return dMac === idMac || !dMac;
+        return dMac === idMac;
+      });
+      return next;
+    });
+  }, [identity?.ip, identity?.mac, setDevices]);
+
   // 7. Estado local de UI (seleccion)
   const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
+
+  // Ghost Mode: el backend devuelve el MAC generado pero la identidad real puede tardar en refrescarse.
+  // Actualizamos el inventario del host de forma optimista para evitar duplicados visuales y mostrar el MAC nuevo.
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const custom = evt as CustomEvent<{ hostIp?: string; newMac?: string }>;
+      const hostIp = custom.detail?.hostIp;
+      const newMac = custom.detail?.newMac;
+      if (!hostIp || !newMac) return;
+
+      setDevices((prev) => {
+        const normalizedNew = newMac.trim().toUpperCase();
+        return prev
+          .map((d) => {
+            if (d.ip !== hostIp) return d;
+            return { ...d, mac: normalizedNew };
+          })
+          // Si existian clones (mismo nombre/vendor NETSENTINEL) con otra IP/MAC vieja, los eliminamos.
+          .filter((d) => {
+            const vendor = (d.vendor ?? "");
+            const looksLikeHost = vendor.includes("NETSENTINEL") || vendor.includes("(ME)");
+            if (!looksLikeHost) return true;
+            if (d.ip === hostIp) return true;
+            const dMac = (d.mac ?? "").trim().toUpperCase();
+            return dMac === normalizedNew;
+          });
+      });
+    };
+
+    window.addEventListener("netsentinel://ghost-mode-applied", handler as EventListener);
+    return () => window.removeEventListener("netsentinel://ghost-mode-applied", handler as EventListener);
+  }, [setDevices]);
 
   // Helpers UI
   const selectDevice = (d: DeviceDTO | null) => {

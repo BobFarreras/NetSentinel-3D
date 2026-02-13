@@ -62,7 +62,6 @@ export const useNetworkSceneState = ({ devices, identity = null, intruders = [] 
       device.vendor.includes("NETSENTINEL") ||
       device.vendor.includes("(ME)");
     const hasWifiData = device.wifi_band || device.signal_strength;
-
     if (isMe) return "#00ff00";
     if (isIntruder) return "#ff0000";
     if (hasWifiData) return "#ff00ff";

@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => {
   const listenMock = vi.fn();
   const getByLabelMock = vi.fn();
   const currentCloseMock = vi.fn();
-  const currentOnCloseRequestedMock = vi.fn(async () => () => {});
+  const currentDestroyMock = vi.fn();
+  const currentOnCloseRequestedMock = vi.fn(async (_handler: unknown) => () => {});
 
   let failWindowCreate = false;
 
@@ -26,8 +27,9 @@ const mocks = vi.hoisted(() => {
     }
   }
 
-  const getCurrentWebviewWindowMock = vi.fn(() => ({
+  const getCurrentWindowMock = vi.fn(() => ({
     close: currentCloseMock,
+    destroy: currentDestroyMock,
     onCloseRequested: currentOnCloseRequestedMock,
   }));
 
@@ -36,9 +38,10 @@ const mocks = vi.hoisted(() => {
     listenMock,
     getByLabelMock,
     currentCloseMock,
+    currentDestroyMock,
     currentOnCloseRequestedMock,
     MockWebviewWindow,
-    getCurrentWebviewWindowMock,
+    getCurrentWindowMock,
     setFailWindowCreate: (value: boolean) => {
       failWindowCreate = value;
     },
@@ -52,7 +55,10 @@ vi.mock("@tauri-apps/api/event", () => ({
 
 vi.mock("@tauri-apps/api/webviewWindow", () => ({
   WebviewWindow: mocks.MockWebviewWindow,
-  getCurrentWebviewWindow: mocks.getCurrentWebviewWindowMock,
+}));
+
+vi.mock("@tauri-apps/api/window", () => ({
+  getCurrentWindow: mocks.getCurrentWindowMock,
 }));
 
 import { windowingAdapter } from "../windowingAdapter";
@@ -176,5 +182,10 @@ describe("windowingAdapter", () => {
 
     expect(mocks.currentOnCloseRequestedMock).toHaveBeenCalledTimes(1);
     expect(typeof unlisten).toBe("function");
+  });
+
+  it("expone destroyCurrentWindow usando Window.destroy()", async () => {
+    await windowingAdapter.destroyCurrentWindow();
+    expect(mocks.currentDestroyMock).toHaveBeenCalledTimes(1);
   });
 });

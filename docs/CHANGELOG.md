@@ -9,6 +9,59 @@ Nota:
 - Este archivo mantiene el changelog **reciente** y accionable.
 - El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
 
+## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
+### UI (inventario)
+- Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.
+- Tras sync del gateway, el inventario pasa a ser autoritativo (se eliminan nodos stale no presentes en el router).
+- Scan: sigue siendo merge defensivo (no reduce inventario en scans parciales), pero mantiene fingerprint para no hidratar otra red.
+
+### OpSec (Ghost Mode)
+- Fix: `randomize_mac` ya no se basa en el toggle de `WlanSvc` (puede no cambiar la MAC).
+- Ahora aplica override via `NetworkAddress` + reinicio + verificacion; si no cambia, devuelve error.
+- UI: actualizacion optimista del MAC del host via evento `netsentinel://ghost-mode-applied`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.49] - UI: Settings + i18n (CA/ES/EN) (2026-02-13)
+### UI (settings)
+- Nuevo panel `Settings` con:
+  - selector de idioma (CA/ES/EN)
+  - "Field Manual" jugable con leyenda 3D (reusa `NetworkNode`) + documentacion por seccion (Radar/Attack/Console/Storage)
+  - soporte de docking/undocking (panel `settings`)
+
+### i18n (infra)
+- Provider global `I18nProvider` + hook `useI18n`.
+- Persistencia via backend settings (`get_app_settings`, `set_ui_language`) con fallback a `localStorage`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+
+## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
+### UI (fix)
+- Al desacoplar `attack_lab`, la ventana hija ya no pierde `targetDevice/defaultScenarioId` en el primer render.
+- Se anade bootstrap efimero (TTL) via `localStorage` + emision redundante de contexto para evitar carreras al abrir la webview.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+
+## [v0.8.46] - Frontend: Attack Lab (auto-ejecucion solo por token) (2026-02-13)
+### UI (comportamiento)
+- Corregido bug: al cerrar/mostrar el Attack Lab (antes "HIDE LAB") no debe auto-ejecutar el escenario ni disparar `CyberConfirmModal`.
+- El auto-run pasa a ser explicito via `autoRunToken` (solo cambia cuando se abre el lab con `autoRun`), en lugar de inferirse por `target + scenario`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+
 ## [v0.8.45] - Backend/Frontend: eliminacion de shims legacy (2026-02-13)
 ### ♻️ Limpieza (sin compat)
 - Eliminados comandos legacy `start_external_audit` / `cancel_external_audit` y eventos `external-audit-*`:

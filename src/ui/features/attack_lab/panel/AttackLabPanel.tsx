@@ -19,7 +19,9 @@ interface AttackLabPanelProps {
   targetDevice?: DeviceDTO | null;
   identity?: HostIdentity | null;
   defaultScenarioId?: string | null;
-  autoRun?: boolean;
+  // Token monotono: si cambia, se intenta ejecutar automaticamente el escenario actual.
+  // Esto evita auto-run al montar/desmontar por simple visibilidad (TopBar).
+  autoRunToken?: number;
   embedded?: boolean;
 }
 
@@ -28,7 +30,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   targetDevice: propTargetDevice,
   identity = null,
   defaultScenarioId = null,
-  autoRun: _initialAutoRunProp = false,
+  autoRunToken: propAutoRunToken = 0,
   embedded = false,
 }) => {
   const audit = useAttackLab();
@@ -47,7 +49,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
 
   const [autoRunToken, setAutoRunToken] = useState<number>(0);
   const lastExecutedToken = useRef<number>(0);
-  const lastPropAutoRunKey = useRef<string | null>(null);
+  const lastSeenPropAutoRunToken = useRef<number>(0);
   
   const abortController = useRef<AbortController | null>(null);
 
@@ -82,17 +84,12 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    if (_initialAutoRunProp !== true) return;
-    if (!localTarget) return;
-    if (!scenarioId) return;
-
-    // Autorun por combo (target + scenario). Si cambia cualquiera, se vuelve a disparar.
-    const key = `${localTarget.ip}::${scenarioId}`;
-    if (lastPropAutoRunKey.current === key) return;
-    lastPropAutoRunKey.current = key;
-
+    // Auto-run explicitado por el contenedor (App/MainDockedLayout/DetachedPanelView).
+    if (propAutoRunToken <= 0) return;
+    if (lastSeenPropAutoRunToken.current === propAutoRunToken) return;
+    lastSeenPropAutoRunToken.current = propAutoRunToken;
     setAutoRunToken((t) => t + 1);
-  }, [_initialAutoRunProp, localTarget, scenarioId]);
+  }, [propAutoRunToken]);
 
   const executeNativeAttack = async () => {
     if (!selectedScenario) return;
@@ -203,6 +200,26 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     if (autoRunToken === lastExecutedToken.current) return;
     if (!selectedScenario || audit.isRunning || isNativeRunning || !localTarget) {
         return;
+    }
+
+    // Seguridad UX: los escenarios `native` (acciones reales) NO deben auto-ejecutarse al abrir/mostrar el panel.
+    // Caso real: el operador "muestra" el Attack Lab (TopBar) y no espera un modal/ejecucion inmediata.
+    if (selectedScenario.mode === "native") {
+      lastExecutedToken.current = autoRunToken;
+      setNativeRows((prev) => [
+        ...prev,
+        {
+          ts: Date.now(),
+          stream: "stdout",
+          line: "🛑 AUTO-RUN BLOQUEADO (NATIVE). Pulsa EXECUTE para confirmar la ejecucion.",
+        },
+      ]);
+      emitSystemLog({
+        source: "ATTACK_LAB",
+        level: "WARN",
+        message: `Auto-run bloqueado para escenario native id='${selectedScenario.id}' (requiere confirmacion manual).`,
+      });
+      return;
     }
 
     lastExecutedToken.current = autoRunToken;
