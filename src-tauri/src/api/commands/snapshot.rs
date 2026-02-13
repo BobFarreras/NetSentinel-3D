@@ -2,7 +2,7 @@
 
 use tauri::State;
 
-use crate::application::latest_snapshot_service::LatestSnapshotService;
+use crate::application::snapshot::LatestSnapshotService;
 use crate::domain::entities::{Device, LatestSnapshot};
 
 // --- SNAPSHOT (arranque rapido) ---

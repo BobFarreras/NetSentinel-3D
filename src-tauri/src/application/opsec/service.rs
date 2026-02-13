@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex};
 use crate::infrastructure::system_scanner::SystemScanner;
 use crate::api::dtos::MacSecurityStatusDTO;
 use crate::domain::ports::NetworkScannerPort;
-use crate::application::settings_service::SettingsService;
-use crate::application::mac_changer_service::MacChangerService;
+use crate::application::settings::SettingsService;
+use super::mac_changer::MacChangerService;
 
 
 pub struct OpSecService {

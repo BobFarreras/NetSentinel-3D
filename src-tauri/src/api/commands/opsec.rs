@@ -1,5 +1,5 @@
 use tauri::State;
-use crate::application::opsec_service::OpSecService;
+use crate::application::opsec::OpSecService;
 use crate::api::dtos::MacSecurityStatusDTO;
 
 pub fn check_mac_security(service: State<'_, OpSecService>) -> Result<MacSecurityStatusDTO, String> {

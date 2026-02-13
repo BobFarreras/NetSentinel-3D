@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 
 use crate::api::validators::validate_usable_host_ipv4;
-use crate::application::credential_service::CredentialService;
+use crate::application::credentials::CredentialService;
 use crate::domain::entities::GatewayCredentials;
 
 use super::internal_validation::validate_router_credentials_input;

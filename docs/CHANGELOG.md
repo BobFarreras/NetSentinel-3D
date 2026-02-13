@@ -88,6 +88,30 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.40] - Backend: API commands legacy (external_audit) (2026-02-13)
+### ♻️ Backend (estructura)
+- Comandos legacy de API movidos a carpeta `legacy/`:
+  - `src-tauri/src/api/commands/legacy/external_audit.rs`
+- `src-tauri/src/api/commands.rs` actualizado para referenciar el nuevo path.
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.41] - Backend: reducir dependencia de shims legacy (2026-02-13)
+### ♻️ Backend (mantenibilidad)
+- Wiring interno actualizado para depender de modulos reales (`application::<dominio>`) en vez de `application::<shim>_service`:
+  - `src-tauri/src/lib.rs`
+  - `src-tauri/src/api/state.rs`
+  - `src-tauri/src/api/commands.rs`
+  - `src-tauri/src/api/commands/*`
+- OpSec ahora referencia Settings/MacChanger por modulos reales:
+  - `src-tauri/src/application/opsec/service.rs`
+- Shims legacy anotados para evitar warnings cuando no se usan en el crate:
+  - `src-tauri/src/application/legacy/*.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:

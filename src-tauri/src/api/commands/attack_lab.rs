@@ -4,7 +4,7 @@
 use tauri::State;
 
 use crate::api::dtos::AttackLabRequestDTO;
-use crate::application::attack_lab_service::{AttackLabRequest, AttackLabService};
+use crate::application::attack_lab::{AttackLabRequest, AttackLabService};
 
 pub async fn start_attack_lab(
     service: State<'_, AttackLabService>,
@@ -35,4 +35,3 @@ pub async fn start_attack_lab(
 pub async fn cancel_attack_lab(service: State<'_, AttackLabService>, audit_id: String) -> Result<(), String> {
     service.cancel_audit(&audit_id).await
 }
-

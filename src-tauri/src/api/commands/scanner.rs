@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::api::dtos::{DeviceDTO, SecurityReportDTO};
 use crate::api::validators::validate_usable_host_ipv4;
-use crate::application::scanner_service::ScannerService;
+use crate::application::scan::ScannerService;
 
 use super::internal_validation::validate_scan_range;
 

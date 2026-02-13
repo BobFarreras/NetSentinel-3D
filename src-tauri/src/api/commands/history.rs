@@ -2,7 +2,7 @@
 
 use tauri::State;
 
-use crate::application::history_service::HistoryService;
+use crate::application::history::HistoryService;
 use crate::domain::entities::{Device, ScanSession};
 
 // --- HISTORY ---

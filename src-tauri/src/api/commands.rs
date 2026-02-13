@@ -8,7 +8,8 @@
 mod credentials;
 #[path = "commands/attack_lab.rs"]
 mod attack_lab;
-#[path = "commands/external_audit.rs"]
+// Legacy: comandos historicos "external_audit" que delegan en Attack Lab.
+#[path = "commands/legacy/external_audit.rs"]
 mod external_audit;
 #[path = "commands/history.rs"]
 mod history;
@@ -33,7 +34,7 @@ mod wordlist;
 
 #[tauri::command]
 pub async fn scan_network(
-    service: tauri::State<'_, crate::application::scanner_service::ScannerService>,
+    service: tauri::State<'_, crate::application::scan::ScannerService>,
     range: Option<String>,
 ) -> Result<Vec<crate::api::dtos::DeviceDTO>, String> {
     scanner::scan_network(service, range).await
@@ -41,7 +42,7 @@ pub async fn scan_network(
 
 #[tauri::command]
 pub async fn audit_target(
-    service: tauri::State<'_, crate::application::scanner_service::ScannerService>,
+    service: tauri::State<'_, crate::application::scan::ScannerService>,
     ip: String,
 ) -> Result<crate::api::dtos::SecurityReportDTO, String> {
     scanner::audit_target(service, ip).await
@@ -51,7 +52,7 @@ pub async fn audit_target(
 
 #[tauri::command]
 pub async fn audit_router(
-    service: tauri::State<'_, crate::application::audit_service::AuditService>,
+    service: tauri::State<'_, crate::application::audit::AuditService>,
     gateway_ip: String,
 ) -> Result<crate::api::dtos::RouterAuditResultDTO, String> {
     router_audit::audit_router(service, gateway_ip).await
@@ -59,7 +60,7 @@ pub async fn audit_router(
 
 #[tauri::command]
 pub async fn fetch_router_devices(
-    service: tauri::State<'_, crate::application::audit_service::AuditService>,
+    service: tauri::State<'_, crate::application::audit::AuditService>,
     gateway_ip: String,
     user: String,
     pass: String,
@@ -71,7 +72,7 @@ pub async fn fetch_router_devices(
 
 #[tauri::command]
 pub async fn save_scan(
-    service: tauri::State<'_, crate::application::history_service::HistoryService>,
+    service: tauri::State<'_, crate::application::history::HistoryService>,
     devices: Vec<crate::domain::entities::Device>,
 ) -> Result<String, String> {
     history::save_scan(service, devices).await
@@ -79,7 +80,7 @@ pub async fn save_scan(
 
 #[tauri::command]
 pub async fn get_history(
-    service: tauri::State<'_, crate::application::history_service::HistoryService>,
+    service: tauri::State<'_, crate::application::history::HistoryService>,
 ) -> Result<Vec<crate::domain::entities::ScanSession>, String> {
     history::get_history(service).await
 }
@@ -88,7 +89,7 @@ pub async fn get_history(
 
 #[tauri::command]
 pub async fn save_latest_snapshot(
-    service: tauri::State<'_, crate::application::latest_snapshot_service::LatestSnapshotService>,
+    service: tauri::State<'_, crate::application::snapshot::LatestSnapshotService>,
     devices: Vec<crate::domain::entities::Device>,
 ) -> Result<(), String> {
     snapshot::save_latest_snapshot(service, devices).await
@@ -96,7 +97,7 @@ pub async fn save_latest_snapshot(
 
 #[tauri::command]
 pub async fn load_latest_snapshot(
-    service: tauri::State<'_, crate::application::latest_snapshot_service::LatestSnapshotService>,
+    service: tauri::State<'_, crate::application::snapshot::LatestSnapshotService>,
 ) -> Result<Option<crate::domain::entities::LatestSnapshot>, String> {
     snapshot::load_latest_snapshot(service).await
 }
@@ -105,7 +106,7 @@ pub async fn load_latest_snapshot(
 
 #[tauri::command]
 pub async fn save_gateway_credentials(
-    service: tauri::State<'_, crate::application::credential_service::CredentialService>,
+    service: tauri::State<'_, crate::application::credentials::CredentialService>,
     gateway_ip: String,
     user: String,
     pass: String,
@@ -115,7 +116,7 @@ pub async fn save_gateway_credentials(
 
 #[tauri::command]
 pub async fn get_gateway_credentials(
-    service: tauri::State<'_, crate::application::credential_service::CredentialService>,
+    service: tauri::State<'_, crate::application::credentials::CredentialService>,
     gateway_ip: String,
 ) -> Result<Option<crate::domain::entities::GatewayCredentials>, String> {
     credentials::get_gateway_credentials(service, gateway_ip).await
@@ -123,7 +124,7 @@ pub async fn get_gateway_credentials(
 
 #[tauri::command]
 pub async fn delete_gateway_credentials(
-    service: tauri::State<'_, crate::application::credential_service::CredentialService>,
+    service: tauri::State<'_, crate::application::credentials::CredentialService>,
     gateway_ip: String,
 ) -> Result<(), String> {
     credentials::delete_gateway_credentials(service, gateway_ip).await
@@ -133,14 +134,14 @@ pub async fn delete_gateway_credentials(
 
 #[tauri::command]
 pub async fn scan_airwaves(
-    service: tauri::State<'_, crate::application::wifi_service::WifiService>,
+    service: tauri::State<'_, crate::application::wifi::WifiService>,
 ) -> Result<Vec<crate::api::dtos::WifiNetworkDTO>, String> {
     wifi::scan_airwaves(service).await
 }
 
 #[tauri::command]
 pub async fn wifi_connect(
-    service: tauri::State<'_, crate::application::wifi_service::WifiService>,
+    service: tauri::State<'_, crate::application::wifi::WifiService>,
     ssid: String,
     password: String,
 ) -> Result<bool, String> {
@@ -151,7 +152,7 @@ pub async fn wifi_connect(
 
 #[tauri::command]
 pub async fn start_attack_lab(
-    service: tauri::State<'_, crate::application::attack_lab_service::AttackLabService>,
+    service: tauri::State<'_, crate::application::attack_lab::AttackLabService>,
     app: tauri::AppHandle,
     request: crate::api::dtos::AttackLabRequestDTO,
 ) -> Result<String, String> {
@@ -160,7 +161,7 @@ pub async fn start_attack_lab(
 
 #[tauri::command]
 pub async fn cancel_attack_lab(
-    service: tauri::State<'_, crate::application::attack_lab_service::AttackLabService>,
+    service: tauri::State<'_, crate::application::attack_lab::AttackLabService>,
     audit_id: String,
 ) -> Result<(), String> {
     attack_lab::cancel_attack_lab(service, audit_id).await
@@ -170,7 +171,7 @@ pub async fn cancel_attack_lab(
 
 #[tauri::command]
 pub async fn start_external_audit(
-    service: tauri::State<'_, crate::application::external_audit_service::ExternalAuditService>,
+    service: tauri::State<'_, crate::application::attack_lab::ExternalAuditService>,
     app: tauri::AppHandle,
     request: crate::api::dtos::ExternalAuditRequestDTO,
 ) -> Result<String, String> {
@@ -179,7 +180,7 @@ pub async fn start_external_audit(
 
 #[tauri::command]
 pub async fn cancel_external_audit(
-    service: tauri::State<'_, crate::application::external_audit_service::ExternalAuditService>,
+    service: tauri::State<'_, crate::application::attack_lab::ExternalAuditService>,
     audit_id: String,
 ) -> Result<(), String> {
     external_audit::cancel_external_audit(service, audit_id).await
@@ -242,14 +243,14 @@ pub fn stop_jamming(
 
 #[tauri::command]
 pub async fn get_dictionary(
-    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    service: tauri::State<'_, crate::application::wordlist::WordlistService>,
 ) -> Result<Vec<String>, String> {
     wordlist::get_dictionary(service) // Nota: Delegación directa
 }
 
 #[tauri::command]
 pub async fn add_to_dictionary(
-    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    service: tauri::State<'_, crate::application::wordlist::WordlistService>,
     word: String,
 ) -> Result<(), String> {
     wordlist::add_to_dictionary(service, word)
@@ -257,14 +258,14 @@ pub async fn add_to_dictionary(
 
 #[tauri::command]
 pub async fn check_mac_security(
-    service: tauri::State<'_, crate::application::opsec_service::OpSecService>,
+    service: tauri::State<'_, crate::application::opsec::OpSecService>,
 ) -> Result<crate::api::dtos::MacSecurityStatusDTO, String> {
     opsec::check_mac_security(service) // Lógica síncrona envuelta en async para Tauri
 }
 
 #[tauri::command]
 pub async fn remove_from_dictionary(
-    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    service: tauri::State<'_, crate::application::wordlist::WordlistService>,
     word: String,
 ) -> Result<Vec<String>, String> {
     service.remove_word(word)
@@ -272,7 +273,7 @@ pub async fn remove_from_dictionary(
 
 #[tauri::command]
 pub async fn update_in_dictionary(
-    service: tauri::State<'_, crate::application::wordlist_service::WordlistService>,
+    service: tauri::State<'_, crate::application::wordlist::WordlistService>,
     old_word: String,
     new_word: String,
 ) -> Result<Vec<String>, String> {
@@ -281,7 +282,7 @@ pub async fn update_in_dictionary(
 
 #[tauri::command]
 pub async fn randomize_mac(
-    service: tauri::State<'_, crate::application::opsec_service::OpSecService>,
+    service: tauri::State<'_, crate::application::opsec::OpSecService>,
 ) -> Result<String, String> {
     opsec::randomize_mac(service).await
 }

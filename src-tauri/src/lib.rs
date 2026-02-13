@@ -9,19 +9,18 @@ mod infrastructure;
 use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 
-use crate::application::credential_service::CredentialService;
-use crate::application::attack_lab_service::AttackLabService;
-use crate::application::jammer_service::JammerService;
-use crate::application::latest_snapshot_service::LatestSnapshotService;
-use crate::application::mac_changer_service::MacChangerService;
-use crate::application::opsec_service::OpSecService;
-use crate::application::settings_service::SettingsService;
-use crate::application::traffic_service::TrafficService;
-use crate::application::wifi_service::WifiService;
-use crate::application::wordlist_service::WordlistService;
-use crate::application::{
-    audit_service::AuditService, history_service::HistoryService, scanner_service::ScannerService,
-};
+use crate::application::attack_lab::AttackLabService;
+use crate::application::audit::AuditService;
+use crate::application::credentials::CredentialService;
+use crate::application::history::HistoryService;
+use crate::application::jammer::JammerService;
+use crate::application::opsec::{MacChangerService, OpSecService};
+use crate::application::scan::ScannerService;
+use crate::application::settings::SettingsService;
+use crate::application::snapshot::LatestSnapshotService;
+use crate::application::traffic::TrafficService;
+use crate::application::wifi::WifiService;
+use crate::application::wordlist::WordlistService;
 
 // 2. Imports propios (Infraestructura)
 use crate::infrastructure::credential_store::KeyringCredentialStore;

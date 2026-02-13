@@ -4,7 +4,7 @@
 use tauri::State;
 
 use crate::api::dtos::ExternalAuditRequestDTO;
-use crate::application::external_audit_service::{ExternalAuditRequest, ExternalAuditService};
+use crate::application::attack_lab::{ExternalAuditRequest, ExternalAuditService};
 use super::attack_lab;
 
 // --- EXTERNAL AUDIT (WRAPPER CLI) ---
