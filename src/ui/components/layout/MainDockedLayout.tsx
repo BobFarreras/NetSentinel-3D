@@ -29,6 +29,11 @@ const AttackLabPanel = lazy(async () => {
   return { default: mod.AttackLabPanel };
 });
 
+const SettingsPanel = lazy(async () => {
+  const mod = await import("../../features/settings/components/SettingsPanel");
+  return { default: mod.SettingsPanel };
+});
+
 interface MainDockedLayoutProps {
   scanning: boolean;
   devices: DeviceDTO[];
@@ -39,6 +44,8 @@ interface MainDockedLayoutProps {
   showAttackLab: boolean;
   onToggleAttackLab: () => void;
   closeAttackLab: () => void;
+  showSettings: boolean;
+  setShowSettings: (next: boolean) => void;
   identity: HostIdentity | null;
   startScan: (range?: string) => void;
   loadSession: (devices: DeviceDTO[]) => void;
@@ -77,6 +84,7 @@ interface MainDockedLayoutProps {
   detachedPanels: Record<DetachablePanelId, boolean>;
   detachedModes: Record<DetachablePanelId, "portal" | "tauri" | null>;
   isResizing: boolean;
+  showDockSettings: boolean;
 }
 
 const detachBtnStyle: React.CSSProperties = {
@@ -169,6 +177,8 @@ export const MainDockedLayout = ({
   showAttackLab,
   onToggleAttackLab,
   closeAttackLab,
+  showSettings,
+  setShowSettings,
   identity,
   startScan,
   loadSession,
@@ -207,8 +217,10 @@ export const MainDockedLayout = ({
   detachedPanels,
   detachedModes,
   isResizing,
+  showDockSettings,
 }: MainDockedLayoutProps) => {
-  const showDockArea = showDockRadar || showDockAttackLab;
+  const showDockArea = showDockRadar || showDockAttackLab || showDockSettings;
+  const showDockRadarAttack = showDockRadar || showDockAttackLab;
 
   return (
     <div
@@ -235,6 +247,8 @@ export const MainDockedLayout = ({
           showRadar={showRadar}
           onAttackLabToggle={onToggleAttackLab}
           showAttackLab={showAttackLab}
+          onSettingsToggle={() => setShowSettings(!showSettings)}
+          showSettings={showSettings}
           identity={identity}
         />
 
@@ -255,7 +269,89 @@ export const MainDockedLayout = ({
             {showDockArea && (
               <>
                 <div style={{ width: showDockScene ? `${radarWidth}px` : "100%", minWidth: 360, maxWidth: showDockScene ? 1000 : undefined, minHeight: 0, background: "#000", overflow: "hidden", zIndex: 12, display: "flex" }}>
-                  {showDockRadar && showDockAttackLab ? (
+                  {showDockSettings && showDockRadarAttack ? (
+                    // Layout combinado: Settings a la derecha, Radar/AttackLab se siguen comportando con split a la izquierda.
+                    <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
+                      <div style={{ width: "62%", minWidth: 260, minHeight: 0, display: "flex" }}>
+                        {showDockRadar && showDockAttackLab ? (
+                          <>
+                            <div style={{ width: `${dockSplitRatio * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
+                              <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                              <div style={{ flex: 1, minHeight: 0 }}>
+                                <Suspense fallback={null}>
+                                  <RadarPanel onClose={() => setShowRadar(false)} />
+                                </Suspense>
+                              </div>
+                            </div>
+                            <div
+                              onMouseDown={startResizingDockSplit}
+                              style={{ width: "4px", background: "#003300", cursor: "col-resize" }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "#00ff00")}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = "#003300")}
+                              aria-label="RESIZE_DOCK_SPLIT"
+                            />
+                            <div style={{ width: `${(1 - dockSplitRatio) * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
+                              <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                              <div style={{ flex: 1, minHeight: 0 }}>
+                                <Suspense fallback={null}>
+                                  <AttackLabPanel
+                                    onClose={closeAttackLab}
+                                    targetDevice={attackLabTarget}
+                                    identity={identity}
+                                    defaultScenarioId={attackLabScenarioId}
+                                    autoRunToken={attackLabAutoRunToken}
+                                    embedded={true}
+                                  />
+                                </Suspense>
+                              </div>
+                            </div>
+                          </>
+                        ) : showDockRadar ? (
+                          <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                            <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                            <div style={{ flex: 1, minHeight: 0 }}>
+                              <Suspense fallback={null}>
+                                <RadarPanel onClose={() => setShowRadar(false)} />
+                              </Suspense>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                            <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                            <div style={{ flex: 1, minHeight: 0 }}>
+                              <Suspense fallback={null}>
+                                <AttackLabPanel
+                                  onClose={closeAttackLab}
+                                  targetDevice={attackLabTarget}
+                                  identity={identity}
+                                  defaultScenarioId={attackLabScenarioId}
+                                  autoRunToken={attackLabAutoRunToken}
+                                  embedded={true}
+                                />
+                              </Suspense>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ width: "38%", minWidth: 320, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                          </Suspense>
+                        </div>
+                      </div>
+                    </div>
+                  ) : showDockSettings ? (
+                    <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+                      <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                      <div style={{ flex: 1, minHeight: 0 }}>
+                        <Suspense fallback={null}>
+                          <SettingsPanel onClose={() => setShowSettings(false)} />
+                        </Suspense>
+                      </div>
+                    </div>
+                  ) : showDockRadar && showDockAttackLab ? (
                     <>
                       <div style={{ width: `${dockSplitRatio * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
                         <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
@@ -477,6 +573,16 @@ export const MainDockedLayout = ({
           <DetachedShell title="NETWORK SCENE" dockAria="DOCK_SCENE3D" onDock={() => void dockPanel("scene3d")}>
             <Suspense fallback={null}>
               <NetworkScene devices={devices} onDeviceSelect={selectDevice} selectedIp={selectedDevice?.ip} intruders={intruders} identity={identity} />
+            </Suspense>
+          </DetachedShell>
+        </DetachedWindowPortal>
+      )}
+
+      {detachedPanels.settings && detachedModes.settings === "portal" && showSettings && (
+        <DetachedWindowPortal title="NetSentinel - Settings / Field Manual" onClose={() => void dockPanel("settings")} width={980} height={740}>
+          <DetachedShell title="SETTINGS" dockAria="DOCK_SETTINGS" onDock={() => void dockPanel("settings")}>
+            <Suspense fallback={null}>
+              <SettingsPanel onClose={() => setShowSettings(false)} />
             </Suspense>
           </DetachedShell>
         </DetachedWindowPortal>

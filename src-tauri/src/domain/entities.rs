@@ -150,6 +150,8 @@ pub struct AttackLabExitEvent {
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub real_mac_address: Option<String>,
+    // Idioma preferido de UI: "es" | "ca" | "en". Se trata como dato de UX (no de seguridad).
+    pub ui_language: Option<String>,
 }
 
 // 6. WIFI (Radar View)

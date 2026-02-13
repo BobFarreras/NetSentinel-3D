@@ -7,7 +7,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { UnlistenFn } from "../shared/tauri/bridge";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 
-export type DetachablePanelId = "console" | "device" | "radar" | "attack_lab" | "scene3d";
+export type DetachablePanelId = "console" | "device" | "radar" | "attack_lab" | "scene3d" | "settings";
 export type DetachedPanelContext = {
   panel: DetachablePanelId;
   targetIp?: string;
@@ -45,6 +45,7 @@ const panelTitles: Record<DetachablePanelId, string> = {
   radar: "NetSentinel - Radar",
   attack_lab: "NetSentinel - Attack Lab",
   scene3d: "NetSentinel - Network Scene",
+  settings: "NetSentinel - Settings / Field Manual",
 };
 
 const panelSizes: Record<DetachablePanelId, { width: number; height: number }> = {
@@ -53,6 +54,7 @@ const panelSizes: Record<DetachablePanelId, { width: number; height: number }> =
   radar: { width: 900, height: 700 },
   attack_lab: { width: 900, height: 700 },
   scene3d: { width: 1200, height: 780 },
+  settings: { width: 980, height: 740 },
 };
 
 const isTauriRuntime = () => {
@@ -77,7 +79,7 @@ const buildDetachedUrl = ({ panel, targetIp, scenarioId }: OpenPanelWindowArgs) 
 
 const normalizePanelId = (panel: string | null): DetachablePanelId | null => {
   if (!panel) return null;
-  if (panel === "console" || panel === "device" || panel === "radar" || panel === "attack_lab" || panel === "scene3d") {
+  if (panel === "console" || panel === "device" || panel === "radar" || panel === "attack_lab" || panel === "scene3d" || panel === "settings") {
     return panel;
   }
   return null;

@@ -14,10 +14,11 @@ interface UsePanelDockingStateParams {
   attackLabScenarioId?: string | null;
   showRadar: boolean;
   showAttackLab: boolean;
+  showSettings: boolean;
 }
 
-const initialPanels: DetachedPanels = { console: false, device: false, radar: false, attack_lab: false, scene3d: false };
-const initialModes: DetachedModes = { console: null, device: null, radar: null, attack_lab: null, scene3d: null };
+const initialPanels: DetachedPanels = { console: false, device: false, radar: false, attack_lab: false, scene3d: false, settings: false };
+const initialModes: DetachedModes = { console: null, device: null, radar: null, attack_lab: null, scene3d: null, settings: null };
 
 export const usePanelDockingState = ({
   selectedDeviceIp,
@@ -25,6 +26,7 @@ export const usePanelDockingState = ({
   attackLabScenarioId,
   showRadar,
   showAttackLab,
+  showSettings,
 }: UsePanelDockingStateParams) => {
   const [detachedPanels, setDetachedPanels] = useState<DetachedPanels>(initialPanels);
   const [detachedModes, setDetachedModes] = useState<DetachedModes>(initialModes);
@@ -115,6 +117,7 @@ export const usePanelDockingState = ({
     undockPanel,
     showDockRadar: showRadar && !detachedPanels.radar,
     showDockAttackLab: showAttackLab && !detachedPanels.attack_lab,
+    showDockSettings: showSettings && !detachedPanels.settings,
     showDockScene: !detachedPanels.scene3d,
     showDockConsole: !detachedPanels.console,
     showDockDevice: !detachedPanels.device,

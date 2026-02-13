@@ -25,8 +25,13 @@ const AttackLabPanel = lazy(async () => {
   return { default: mod.AttackLabPanel };
 });
 
+const SettingsPanel = lazy(async () => {
+  const mod = await import("../../features/settings/components/SettingsPanel");
+  return { default: mod.SettingsPanel };
+});
+
 interface DetachedPanelViewProps {
-  panel: "console" | "device" | "radar" | "attack_lab" | "scene3d";
+  panel: "console" | "device" | "radar" | "attack_lab" | "scene3d" | "settings";
   detachedPanelReady: boolean;
   systemLogs: string[];
   devices: DeviceDTO[];
@@ -207,6 +212,11 @@ export const DetachedPanelView = ({
                   Sin dispositivo objetivo para esta ventana.
                 </div>
               )
+            )}
+            {panel === "settings" && (
+              <Suspense fallback={null}>
+                <SettingsPanel onClose={() => {}} />
+              </Suspense>
             )}
           </>
         )}

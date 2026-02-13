@@ -33,6 +33,7 @@ describe("usePanelDockingState", () => {
         attackLabScenarioId: "device_http_headers",
         showRadar: true,
         showAttackLab: true,
+        showSettings: false,
       })
     );
 
@@ -58,6 +59,7 @@ describe("usePanelDockingState", () => {
         attackLabScenarioId: "device_http_headers",
         showRadar: true,
         showAttackLab: true,
+        showSettings: false,
       })
     );
 

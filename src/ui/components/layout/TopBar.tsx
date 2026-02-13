@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { HostIdentity } from '../../../shared/dtos/NetworkDTOs';
+import { useI18n } from '../../i18n';
 interface TopBarProps {
   scanning: boolean;
   activeNodes: number;
@@ -10,15 +11,18 @@ interface TopBarProps {
   onHistoryToggle: () => void;
   onRadarToggle: () => void;
   onAttackLabToggle: () => void;
+  onSettingsToggle: () => void;
   showHistory: boolean;
   showRadar: boolean;
   showAttackLab: boolean;
+  showSettings: boolean;
   identity: HostIdentity | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ 
-  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onAttackLabToggle, showHistory, showRadar, showAttackLab, identity
+  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onAttackLabToggle, onSettingsToggle, showHistory, showRadar, showAttackLab, showSettings, identity
 }) => {
+  const { t } = useI18n();
   return (
     <div style={{
       height: '50px', // ⬇️ Més petit (era 60px)
@@ -84,7 +88,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             minWidth: '120px'
           }}
         >
-          {scanning ? 'SCANNING...' : 'SCAN NET'}
+          {scanning ? t('topbar.scanning') : t('topbar.scan')}
         </button>
 
         <button
@@ -101,7 +105,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             fontFamily: 'inherit'
           }}
         >
-          {showHistory ? 'HIDE LOGS' : 'HISTORY'}
+          {showHistory ? t('topbar.hideLogs') : t('topbar.history')}
         </button>
 
         <button
@@ -118,7 +122,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             fontFamily: 'inherit'
           }}
         >
-          {showRadar ? 'HIDE RADAR' : 'RADAR'}
+          {showRadar ? t('topbar.hideRadar') : t('topbar.radar')}
         </button>
 
         <button
@@ -135,7 +139,24 @@ export const TopBar: React.FC<TopBarProps> = ({
             fontFamily: 'inherit'
           }}
         >
-          {showAttackLab ? 'CLOSE LAB' : 'ATTACK LAB'}
+          {showAttackLab ? t('topbar.closeLab') : t('topbar.attackLab')}
+        </button>
+
+        <button
+          onClick={onSettingsToggle}
+          style={{
+            background: showSettings ? '#1a1200' : 'transparent',
+            color: showSettings ? '#ffd36b' : '#ffd36b',
+            border: `1px solid ${showSettings ? '#ffd36b' : '#4a3a10'}`,
+            borderRadius: '2px',
+            padding: '6px 16px',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontFamily: 'inherit'
+          }}
+        >
+          {t('topbar.settings')}
         </button>
       </div>
 
@@ -148,7 +169,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         paddingLeft: '15px',
         whiteSpace: 'nowrap'
       }}>
-        NODES: <b style={{ color: '#fff' }}>{activeNodes}</b>
+        {t('topbar.nodes')}: <b style={{ color: '#fff' }}>{activeNodes}</b>
       </div>
     </div>
   );

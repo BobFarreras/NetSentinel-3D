@@ -43,6 +43,7 @@ function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
   const [showAttackLab, setShowAttackLab] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [attackLabTarget, setAttackLabTarget] = useState<DeviceDTO | null>(null);
   const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
   const [attackLabAutoRunToken, setAttackLabAutoRunToken] = useState<number>(0);
@@ -90,6 +91,7 @@ function App() {
     attackLabScenarioId,
     showRadar,
     showAttackLab,
+    showSettings,
   });
   const attackLabSync = useAttackLabDetachedSync();
   const { detachedPanelReady } = useDetachedRuntime(detachedContext);
@@ -184,11 +186,14 @@ function App() {
       showAttackLab={showAttackLab}
       onToggleAttackLab={toggleAttackLab}
       closeAttackLab={() => setShowAttackLab(false)}
+      showSettings={showSettings}
+      setShowSettings={setShowSettings}
       identity={identity}
       startScan={startScan}
       loadSession={loadSession}
       showDockRadar={docking.showDockRadar}
       showDockAttackLab={docking.showDockAttackLab}
+      showDockSettings={docking.showDockSettings}
       showDockScene={docking.showDockScene}
       showDockConsole={docking.showDockConsole}
       showDockDevice={docking.showDockDevice}

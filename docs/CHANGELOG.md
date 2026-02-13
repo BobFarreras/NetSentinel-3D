@@ -25,6 +25,22 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.49] - UI: Settings + i18n (CA/ES/EN) (2026-02-13)
+### UI (settings)
+- Nuevo panel `Settings` con:
+  - selector de idioma (CA/ES/EN)
+  - "Field Manual" jugable con leyenda 3D (reusa `NetworkNode`) + documentacion por seccion (Radar/Attack/Console/Storage)
+  - soporte de docking/undocking (panel `settings`)
+
+### i18n (infra)
+- Provider global `I18nProvider` + hook `useI18n`.
+- Persistencia via backend settings (`get_app_settings`, `set_ui_language`) con fallback a `localStorage`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)

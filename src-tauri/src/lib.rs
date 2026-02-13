@@ -119,6 +119,7 @@ pub fn run() {
             app.manage(wordlist_service);
 
             // Registramos el estado
+            app.manage(settings_service);
             app.manage(opsec_service);
             Ok(())
         })
@@ -132,6 +133,10 @@ pub fn run() {
             api::commands::get_history,
             api::commands::save_latest_snapshot,
             api::commands::load_latest_snapshot,
+            // Settings
+            api::commands::get_app_settings,
+            api::commands::save_app_settings,
+            api::commands::set_ui_language,
             api::commands::save_gateway_credentials,
             api::commands::get_gateway_credentials,
             api::commands::delete_gateway_credentials,
