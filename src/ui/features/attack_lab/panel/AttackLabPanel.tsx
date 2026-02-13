@@ -202,6 +202,26 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         return;
     }
 
+    // Seguridad UX: los escenarios `native` (acciones reales) NO deben auto-ejecutarse al abrir/mostrar el panel.
+    // Caso real: el operador "muestra" el Attack Lab (TopBar) y no espera un modal/ejecucion inmediata.
+    if (selectedScenario.mode === "native") {
+      lastExecutedToken.current = autoRunToken;
+      setNativeRows((prev) => [
+        ...prev,
+        {
+          ts: Date.now(),
+          stream: "stdout",
+          line: "🛑 AUTO-RUN BLOQUEADO (NATIVE). Pulsa EXECUTE para confirmar la ejecucion.",
+        },
+      ]);
+      emitSystemLog({
+        source: "ATTACK_LAB",
+        level: "WARN",
+        message: `Auto-run bloqueado para escenario native id='${selectedScenario.id}' (requiere confirmacion manual).`,
+      });
+      return;
+    }
+
     lastExecutedToken.current = autoRunToken;
     void handleRunLab();
   }, [autoRunToken, selectedScenario, audit.isRunning, isNativeRunning, localTarget]);
