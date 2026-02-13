@@ -44,17 +44,10 @@ impl WifiService {
     pub async fn connect_to_network(&self, ssid: String, password: String) -> Result<bool, String> {
         if password.len() < 8 { return Ok(false); }
 
-        // Clonamos las variables para pasarlas al hilo.
-        let ssid_clone = ssid.clone();
-        let pass_clone = password.clone();
+        // Evitamos bloquear el runtime async: la implementacion puede ser netsh/FS/etc.
         let connector = self.connector.clone();
-
-        let result = tauri::async_runtime::spawn_blocking(move || {
-            connector.connect(&ssid_clone, &pass_clone)
-        })
-        .await
-        .map_err(|e| e.to_string())??;
-
-        Ok(result)
+        tokio::task::spawn_blocking(move || connector.connect(&ssid, &password))
+            .await
+            .map_err(|e| e.to_string())?
     }
 }
