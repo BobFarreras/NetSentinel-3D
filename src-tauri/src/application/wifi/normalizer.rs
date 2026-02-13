@@ -1,4 +1,5 @@
-// src-tauri/src/application/wifi_normalizer.rs
+// src-tauri/src/application/wifi/normalizer.rs
+// Normalizacion WiFi: sanitiza SSID, clasifica riesgo por seguridad, y ajusta RSSI/distancia para visualizacion.
 
 use crate::domain::entities::{WifiEntity, WifiScanRecord};
 
@@ -131,4 +132,3 @@ mod tests {
         assert!(entity.is_targetable);
     }
 }
-

@@ -75,6 +75,19 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.39] - Backend: Fase 1 (legacy/ + WiFi module) (2026-02-13)
+### ♻️ Backend (estructura)
+- Centralizada compatibilidad legacy en `src-tauri/src/application/legacy/*` y `application/mod.rs` usa `#[path = \"legacy/...\" ]`:
+  - shims: `*_service.rs` y `wifi_normalizer.rs`
+- WiFi migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/wifi/service.rs`
+  - Normalizador real: `src-tauri/src/application/wifi/normalizer.rs`
+  - Modulo: `src-tauri/src/application/wifi/mod.rs`
+  - Wrappers legacy: `src-tauri/src/application/legacy/wifi_service.rs`, `src-tauri/src/application/legacy/wifi_normalizer.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:

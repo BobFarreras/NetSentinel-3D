@@ -1,10 +1,11 @@
-// src-tauri/src/application/wifi_service.rs
+// src-tauri/src/application/wifi/service.rs
+// Servicio WiFi: escanea redes cercanas y normaliza registros (vendor/risk), y permite conectar a una red (Windows).
 
 use std::sync::Arc;
 
 use crate::domain::entities::{WifiEntity, WifiScanRecord};
 use crate::domain::ports::{VendorLookupPort, WifiScannerPort};
-use crate::application::wifi_normalizer;
+use super::normalizer;
 // Importamos la infraestructura
 use crate::infrastructure::wifi::wifi_connector::WifiConnector;
 
@@ -32,7 +33,7 @@ impl WifiService {
     fn normalize_record(&self, record: WifiScanRecord) -> WifiEntity {
         let bssid = record.bssid.trim().to_string();
         let vendor = self.vendor_lookup.resolve_vendor(&bssid);
-        wifi_normalizer::normalize_record(record, vendor)
+        normalizer::normalize_record(record, vendor)
     }
 
     // --- NUEVO MÉTODO ---
