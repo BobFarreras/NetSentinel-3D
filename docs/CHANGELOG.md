@@ -59,6 +59,22 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.38] - Backend: Fase 1 (audit/traffic/jammer/mac_changer) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicios migrados a modulos por dominio (con wrappers legacy):
+  - Audit: `src-tauri/src/application/audit/service.rs` + `src-tauri/src/application/audit/mod.rs`
+  - Traffic: `src-tauri/src/application/traffic/service.rs` + `src-tauri/src/application/traffic/mod.rs`
+  - Jammer: `src-tauri/src/application/jammer/service.rs` + `src-tauri/src/application/jammer/mod.rs`
+  - Mac changer movido bajo OpSec: `src-tauri/src/application/opsec/mac_changer.rs`
+- Wrappers legacy mantenidos:
+  - `src-tauri/src/application/audit_service.rs`
+  - `src-tauri/src/application/traffic_service.rs`
+  - `src-tauri/src/application/jammer_service.rs`
+  - `src-tauri/src/application/mac_changer_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:
