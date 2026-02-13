@@ -30,13 +30,19 @@ cargo check
 Problema:
 - Al cerrar una ventana desacoplada (boton X), el panel no vuelve a la ventana principal.
 
-Solucion:
-- En runtime detached, capturar cierre nativo de Tauri (`close-requested`) y emitir `netsentinel://dock-panel`.
-- Mantener fallback web: `pagehide` + `beforeunload`.
+Solucion (final):
+- No interceptar el cierre nativo (evita estados en blanco/duplicados).
+- El core detecta el cierre real de la ventana desacoplada por label (watchdog) y redockea el estado.
+- Si la ventana hija emite `netsentinel://dock-panel`, el core tambien la cierra por label y resetea estado (best-effort).
+
+Notas tecnicas (por que fallaba):
+- Intentar coordinar redock desde la ventana hija con `pagehide/beforeunload` o `closeRequested` es fragil en Tauri/Windows:
+  - puede disparar eventos en orden inesperado,
+  - y puede dejar una webview viva sin app (pantalla en blanco) o provocar duplicados si el main redockea antes de que la ventana se cierre.
 
 Definition of Done:
 - Cerrar ventana desacoplada vuelve a mostrar el panel en modo dock en la ventana principal.
-- Tests de `useDetachedRuntime` cubren `beforeunload` y registro de listener.
+- Tests pasan y el comportamiento es estable en runtime (Windows/Tauri).
 
 ### Fase 2 (P0): Attack Lab no debe disparar CyberConfirmModal al “hide”
 
@@ -89,4 +95,3 @@ Objetivo:
 Objetivo:
 - Definir borde consistente del viewport (especialmente abajo).
 - Evaluar barra superior custom (tipo VSCode/Cursor) solo si el target Tauri lo permite sin romper UX.
-

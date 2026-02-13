@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   emitDockPanel: vi.fn(),
+  closeCurrentWindow: vi.fn(async () => undefined),
+  destroyCurrentWindow: vi.fn(async () => undefined),
   listenCurrentWindowCloseRequested: vi.fn(async () => () => {}),
 }));
 
@@ -35,28 +37,13 @@ describe("useDetachedRuntime", () => {
     expect(result.current.detachedPanelReady).toBe(true);
   });
 
-  it("debe emitir dock en pagehide", () => {
-    renderHook(() => useDetachedRuntime({ panel: "radar" }));
-
+  it("no gestiona redock (lo hace el main)", () => {
+    renderHook(() => useDetachedRuntime({ panel: "console" }));
     act(() => {
       window.dispatchEvent(new Event("pagehide"));
-    });
-
-    expect(mocks.emitDockPanel).toHaveBeenCalledWith("radar");
-  });
-
-  it("debe emitir dock en beforeunload", () => {
-    renderHook(() => useDetachedRuntime({ panel: "console" }));
-
-    act(() => {
       window.dispatchEvent(new Event("beforeunload"));
     });
-
-    expect(mocks.emitDockPanel).toHaveBeenCalledWith("console");
-  });
-
-  it("registra listener de close-requested en Tauri via adapter", () => {
-    renderHook(() => useDetachedRuntime({ panel: "attack_lab" }));
-    expect(mocks.listenCurrentWindowCloseRequested).toHaveBeenCalledTimes(1);
+    expect(mocks.emitDockPanel).not.toHaveBeenCalled();
+    expect(mocks.listenCurrentWindowCloseRequested).not.toHaveBeenCalled();
   });
 });
