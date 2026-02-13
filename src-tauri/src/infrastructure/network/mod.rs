@@ -6,3 +6,4 @@ pub mod vendor_resolver;
 pub mod packet_injector;
 pub mod traffic_sniffer;
 pub mod hostname_resolver;
+pub mod jammer_engine;

@@ -93,3 +93,9 @@ pub trait TrafficSnifferPort: Send + Sync {
 pub trait WifiConnectorPort: Send + Sync {
     fn connect(&self, ssid: &str, password: &str) -> Result<bool, String>;
 }
+
+// PORT 9: JAMMER (contramedida activa controlada)
+pub trait JammerPort: Send + Sync {
+    fn start_jamming(&self, target_ip: String, target_mac: String, gateway_ip: String);
+    fn stop_jamming(&self, target_ip: String);
+}

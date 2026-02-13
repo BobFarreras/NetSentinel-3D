@@ -28,6 +28,7 @@ use crate::infrastructure::latest_snapshot_repository::FileLatestSnapshotReposit
 use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
 use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
+use crate::infrastructure::network::jammer_engine::PnetJammerEngine;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 use crate::infrastructure::wifi::wifi_connector::WifiConnector;
 use crate::infrastructure::{
@@ -65,7 +66,8 @@ pub fn run() {
             let history_infra = Arc::new(FileHistoryRepository);
             let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
             let credential_store_infra = Arc::new(KeyringCredentialStore::new("netsentinel"));
-            let jammer_service = Arc::new(JammerService::new());
+            let jammer_engine = Arc::new(PnetJammerEngine::new());
+            let jammer_service = Arc::new(JammerService::new(jammer_engine));
             // =====================================================
             // 2. CAPA DE APLICACION (el "cerebro")
             // =====================================================
