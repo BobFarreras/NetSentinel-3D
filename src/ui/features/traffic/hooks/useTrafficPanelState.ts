@@ -1,4 +1,5 @@
-// src/ui/hooks/modules/traffic/useTrafficPanelState.ts
+// src/ui/features/traffic/hooks/useTrafficPanelState.ts
+// Estado del TrafficPanel: filtros (ALL/JAMMED/TARGET), paginacion incremental y resolucion de nombres.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject, UIEvent } from "react";
 import type { DeviceDTO, TrafficPacket } from "../../../../shared/dtos/NetworkDTOs";

@@ -11,7 +11,7 @@ const { toggleMonitoringMock, clearPacketsMock, radarClearMock, setSelectedBssid
   setSelectedBssidMock: vi.fn((_bssid: string) => {}),
 }));
 
-vi.mock("../../../hooks/modules/traffic/useTrafficMonitor", () => ({
+vi.mock("../../traffic/hooks/useTrafficMonitor", () => ({
   useTrafficMonitor: () => ({
     isActive: false,
     speed: 0,

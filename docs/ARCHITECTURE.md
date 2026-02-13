@@ -259,9 +259,10 @@ Ejemplos aplicados:
   - `src/ui/features/console_logs/hooks/useConsoleLogsState.ts`
   - `src/ui/features/console_logs/components/*`
 - Traffic:
-  - `src/ui/components/panels/TrafficPanel.tsx`
-  - `src/ui/hooks/modules/traffic/useTrafficPanelState.ts`
-  - `src/ui/components/panels/traffic/*`
+  - `src/ui/features/traffic/components/TrafficPanel.tsx`
+  - `src/ui/features/traffic/hooks/useTrafficPanelState.ts`
+  - `src/ui/features/traffic/hooks/useTrafficMonitor.ts`
+  - `src/ui/features/traffic/components/*`
 - Attack Lab (LAB/CUSTOM):
   - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
   - `src/ui/features/attack_lab/hooks/useAttackLab.ts`

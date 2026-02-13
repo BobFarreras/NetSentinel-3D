@@ -1,6 +1,9 @@
+// src/ui/features/traffic/__tests__/useTrafficMonitor.test.ts
+// Tests del hook useTrafficMonitor: start/stop, procesado de eventos y calculo de velocidad.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useTrafficMonitor } from '../traffic/useTrafficMonitor';
+import { useTrafficMonitor } from '../hooks/useTrafficMonitor';
 import type { TrafficPacket } from '../../../../shared/dtos/NetworkDTOs';
 
 const { invokeCommandMock, listenEventMock } = vi.hoisted(() => ({

@@ -34,6 +34,18 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.29] - Reestructura frontend: Traffic por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Traffic movido a feature-folder:
+  - `src/ui/features/traffic/components/*`
+  - `src/ui/features/traffic/hooks/*`
+  - tests: `src/ui/features/traffic/__tests__/*`
+- Console Logs ahora consume `TrafficPanel` desde la feature `traffic`.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
 ### ♻️ Frontend (estructura y naming)
 - Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).
@@ -483,9 +495,9 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
 ### ✅ Testing (frontend)
 - Nuevos tests unitarios para hooks extraidos:
-  - `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
+  - `src/ui/features/console_logs/__tests__/useConsoleLogsState.test.ts`
+  - `src/ui/features/traffic/__tests__/useTrafficPanelState.test.ts`
+  - `src/ui/features/device_detail/__tests__/useDeviceDetailPanelState.test.ts`
 - Cobertura añadida en:
   - cambios de pestaña y limpieza contextual en `ConsoleLogs`,
   - filtros/paginacion/resolucion de nombres en `Traffic`,
@@ -501,9 +513,9 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
   - tipografia mono (`HUD_TYPO.mono`)
   - paleta base HUD (`HUD_COLORS`)
 - Integracion inicial de tokens en modulos refactorizados:
-  - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
-  - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
-  - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
+  - `ConsoleLogs` (`src/ui/features/console_logs/components/ConsoleLogs.tsx`, `src/ui/features/console_logs/components/consoleLogsStyles.ts`)
+  - `Traffic` (`src/ui/features/traffic/components/TrafficStyles.ts`, `src/ui/features/traffic/components/TrafficFilterBar.tsx`, `src/ui/features/traffic/components/TrafficTable.tsx`)
+  - `Radar` (`src/ui/features/radar/components/RadarPanel.tsx`, `src/ui/features/radar/components/radar/radarUtils.ts`)
   - `DeviceDetail` (tipografia/colores clave en `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`)
 - Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
 

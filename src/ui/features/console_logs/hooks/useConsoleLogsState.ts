@@ -1,7 +1,7 @@
 // src/ui/features/console_logs/hooks/useConsoleLogsState.ts
 // Estado del Console Logs: gestiona pestaña activa, loading temporal y coordinacion Traffic/Radar stores.
 import { useState } from "react";
-import { useTrafficMonitor } from "../../../hooks/modules/traffic/useTrafficMonitor";
+import { useTrafficMonitor } from "../../traffic/hooks/useTrafficMonitor";
 import { useRadarLogs } from "../../radar/hooks/useRadarLogs";
 import { useWifiRadarSelection } from "../../radar/hooks/useWifiRadarSelection";
 

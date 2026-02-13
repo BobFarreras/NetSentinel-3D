@@ -1,7 +1,8 @@
-// src/ui/components/panels/traffic/TrafficFilterBar.tsx
+// src/ui/features/traffic/components/TrafficFilterBar.tsx
+// Barra de filtros del TrafficPanel: seleccion de modo (ALL/JAMMED/TARGET) y accion de limpiar.
 import React from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
-import type { FilterMode } from "../../../hooks/modules/traffic/useTrafficPanelState";
+import type { FilterMode } from "../hooks/useTrafficPanelState";
 import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 
 type TrafficFilterBarProps = {

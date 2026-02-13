@@ -1,4 +1,5 @@
-// src/ui/components/panels/traffic/TrafficStyles.ts
+// src/ui/features/traffic/components/TrafficStyles.ts
+// Estilos del TrafficPanel: root layout y constantes de grid.
 import type { CSSProperties } from "react";
 import { HUD_COLORS } from "../../../styles/hudTokens";
 

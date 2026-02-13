@@ -1,9 +1,12 @@
+// src/ui/features/traffic/components/TrafficPanel.tsx
+// Panel Traffic: composicion de UI (filtros + tabla) y conexion con el hook de estado de trafico.
+
 import React from "react";
-import type { DeviceDTO } from "../../../shared/dtos/NetworkDTOs";
-import { useTrafficPanelState, type UITrafficPacket } from "../../hooks/modules/traffic/useTrafficPanelState";
-import { TrafficFilterBar } from "./traffic/TrafficFilterBar";
-import { trafficRootStyle } from "./traffic/TrafficStyles";
-import { TrafficTable } from "./traffic/TrafficTable";
+import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { useTrafficPanelState, type UITrafficPacket } from "../hooks/useTrafficPanelState";
+import { TrafficFilterBar } from "./TrafficFilterBar";
+import { trafficRootStyle } from "./TrafficStyles";
+import { TrafficTable } from "./TrafficTable";
 
 interface TrafficPanelProps {
   isActive: boolean;

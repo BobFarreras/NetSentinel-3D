@@ -1,6 +1,7 @@
-// src/ui/components/panels/traffic/TrafficTable.tsx
+// src/ui/features/traffic/components/TrafficTable.tsx
+// Tabla del TrafficPanel: render de paquetes visibles + estados (paused/waiting) y scroll incremental.
 import React from "react";
-import type { FilterMode, UITrafficPacket } from "../../../hooks/modules/traffic/useTrafficPanelState";
+import type { FilterMode, UITrafficPacket } from "../hooks/useTrafficPanelState";
 import { HUD_TYPO } from "../../../styles/hudTokens";
 import { gridTemplate } from "./TrafficStyles";
 

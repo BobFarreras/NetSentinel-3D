@@ -1,3 +1,6 @@
+// src/ui/features/traffic/hooks/useTrafficMonitor.ts
+// Hook de monitorizacion de trafico: start/stop sniffing via Tauri, escucha eventos y mantiene buffers (all/jammed) + velocidad.
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TrafficPacket } from '../../../../shared/dtos/NetworkDTOs';
 import { invokeCommand, listenEvent } from '../../../../shared/tauri/bridge';

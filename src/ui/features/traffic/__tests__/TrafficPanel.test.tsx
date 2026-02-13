@@ -1,6 +1,9 @@
+// src/ui/features/traffic/__tests__/TrafficPanel.test.tsx
+// Tests de UI para TrafficPanel: render vacio, filtros y acciones basicas.
+
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { TrafficPanel } from '../TrafficPanel';
+import { TrafficPanel } from '../components/TrafficPanel';
 
 const baseDevices = [
   { ip: '192.168.1.10', mac: 'AA:BB', vendor: 'Laptop', hostname: 'MY-LAPTOP' },

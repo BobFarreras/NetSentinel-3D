@@ -1,3 +1,6 @@
+// src/ui/features/traffic/__tests__/useTrafficPanelState.test.ts
+// Tests del hook useTrafficPanelState: filtros JAMMED/TARGET y resolucion de nombres.
+
 import { describe, expect, it } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
@@ -32,7 +35,7 @@ const packets = [
 
 describe("useTrafficPanelState", () => {
   it("debe filtrar por JAMMED", async () => {
-    const { useTrafficPanelState } = await import("../traffic/useTrafficPanelState");
+    const { useTrafficPanelState } = await import("../hooks/useTrafficPanelState");
     const { result } = renderHook(() =>
       useTrafficPanelState({
         packets: packets as any,
@@ -50,7 +53,7 @@ describe("useTrafficPanelState", () => {
   });
 
   it("debe activar TARGET automaticamente si hay selectedDevice", async () => {
-    const { useTrafficPanelState } = await import("../traffic/useTrafficPanelState");
+    const { useTrafficPanelState } = await import("../hooks/useTrafficPanelState");
     const { result } = renderHook(() =>
       useTrafficPanelState({
         packets: packets as any,
@@ -66,7 +69,7 @@ describe("useTrafficPanelState", () => {
   });
 
   it("debe resolver nombres por IP y casos especiales", async () => {
-    const { useTrafficPanelState } = await import("../traffic/useTrafficPanelState");
+    const { useTrafficPanelState } = await import("../hooks/useTrafficPanelState");
     const { result } = renderHook(() =>
       useTrafficPanelState({
         packets: [] as any,

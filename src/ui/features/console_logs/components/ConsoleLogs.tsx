@@ -3,7 +3,7 @@
 
 import React from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
-import { TrafficPanel } from "../../../components/panels/TrafficPanel";
+import { TrafficPanel } from "../../traffic/components/TrafficPanel";
 import { HUD_TYPO } from "../../../styles/hudTokens";
 import { useConsoleLogsState } from "../hooks/useConsoleLogsState";
 import { ConsoleLogsHeader } from "./ConsoleLogsHeader";
