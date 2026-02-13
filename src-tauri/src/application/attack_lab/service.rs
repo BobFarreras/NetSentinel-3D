@@ -8,11 +8,9 @@ use std::sync::{
 };
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use tauri::AppHandle;
 use tokio::sync::{oneshot, Mutex};
 
-use super::runner::run_external_tool;
-use super::sink::{AttackLabEventSink, TauriAttackLabSink};
+use crate::domain::ports::{AttackLabEventSinkPort, AttackLabRunnerPort};
 use super::types::AttackLabRequest;
 use super::validation::validate_request;
 
@@ -22,16 +20,22 @@ pub struct RunningAudit {
 
 pub struct AttackLabService {
     running: Arc<Mutex<HashMap<String, RunningAudit>>>,
+    runner: Arc<dyn AttackLabRunnerPort>,
 }
 
 impl AttackLabService {
-    pub fn new() -> Self {
+    pub fn new(runner: Arc<dyn AttackLabRunnerPort>) -> Self {
         Self {
             running: Arc::new(Mutex::new(HashMap::new())),
+            runner,
         }
     }
 
-    pub async fn start_audit(&self, app: AppHandle, request: AttackLabRequest) -> Result<String, String> {
+    pub async fn start_audit(
+        &self,
+        request: AttackLabRequest,
+        sink: Arc<dyn AttackLabEventSinkPort>,
+    ) -> Result<String, String> {
         validate_request(&request)?;
 
         let audit_id = new_audit_id();
@@ -44,9 +48,13 @@ impl AttackLabService {
 
         let running_map = Arc::clone(&self.running);
         let audit_id_for_task = audit_id.clone();
-        let sink: Arc<dyn AttackLabEventSink> = Arc::new(TauriAttackLabSink::new(app.clone()));
+        let runner = Arc::clone(&self.runner);
         tokio::spawn(async move {
-            run_external_tool(audit_id_for_task, request, cancel_rx, running_map, sink).await;
+            runner.run(audit_id_for_task.clone(), request, cancel_rx, sink).await;
+
+            // Limpieza del registro de "running" (source of truth en application).
+            let mut guard = running_map.lock().await;
+            guard.remove(&audit_id_for_task);
         });
 
         Ok(audit_id)

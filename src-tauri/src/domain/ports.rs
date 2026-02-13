@@ -5,9 +5,12 @@ use async_trait::async_trait;
 use crate::domain::entities::{
     Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials, HostIdentity
 }; 
+use crate::domain::entities::{AttackLabRequest, AttackLabLogEvent, AttackLabExitEvent};
 use crate::domain::entities::TrafficPacket;
+use crate::domain::entities::AppSettings;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use tokio::sync::oneshot;
 
 // PORT 1: ESCANER DE RED (Ahora incluye identidad propia)
 #[async_trait]
@@ -98,4 +101,29 @@ pub trait WifiConnectorPort: Send + Sync {
 pub trait JammerPort: Send + Sync {
     fn start_jamming(&self, target_ip: String, target_mac: String, gateway_ip: String);
     fn stop_jamming(&self, target_ip: String);
+}
+
+// PORT 10: ATTACK LAB (runner de procesos externos)
+//
+// Nota: la implementacion real hace IO (spawn, pipes) y vive en infraestructura.
+pub trait AttackLabEventSinkPort: Send + Sync + 'static {
+    fn on_log(&self, evt: AttackLabLogEvent);
+    fn on_exit(&self, evt: AttackLabExitEvent);
+}
+
+#[async_trait]
+pub trait AttackLabRunnerPort: Send + Sync {
+    async fn run(
+        &self,
+        audit_id: String,
+        request: AttackLabRequest,
+        cancel_rx: oneshot::Receiver<()>,
+        sink: Arc<dyn AttackLabEventSinkPort>,
+    );
+}
+
+// PORT 11: SETTINGS STORE (persistencia local de configuracion)
+pub trait SettingsStorePort: Send + Sync {
+    fn load(&self) -> Result<AppSettings, String>;
+    fn save(&self, settings: &AppSettings) -> Result<(), String>;
 }

@@ -9,3 +9,4 @@ pub mod repositories;
 pub mod network;
 pub mod wifi;
 pub mod persistence;
+pub mod attack_lab;

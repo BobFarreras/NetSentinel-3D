@@ -29,6 +29,7 @@ use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
 use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
 use crate::infrastructure::network::jammer_engine::PnetJammerEngine;
+use crate::infrastructure::attack_lab::runner::TokioProcessAttackLabRunner;
 use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 use crate::infrastructure::wifi::wifi_connector::WifiConnector;
 use crate::infrastructure::{
@@ -37,6 +38,7 @@ use crate::infrastructure::{
 };
 
 use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
+use crate::infrastructure::persistence::settings_store::FileSettingsStore;
                                                                                      // 3. Imports propios (Aplicacion)
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
@@ -78,7 +80,8 @@ pub fn run() {
             let credential_service = CredentialService::new(credential_store_infra);
             let vendor_lookup_infra = Arc::new(SystemVendorLookup);
             let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra, wifi_connector_infra);
-            let attack_lab_service = AttackLabService::new();
+            let attack_lab_runner_infra = Arc::new(TokioProcessAttackLabRunner);
+            let attack_lab_service = AttackLabService::new(attack_lab_runner_infra);
 
             // Traffic
             let traffic_service = TrafficService::new(scanner_infra.clone(), traffic_sniffer_infra);
@@ -87,7 +90,8 @@ pub fn run() {
             let wordlist_repo = Arc::new(FileWordlistRepository::new(app.handle()));
             let wordlist_service = WordlistService::new(wordlist_repo);
             //
-            let settings_service = Arc::new(Mutex::new(SettingsService::new(app.handle())));
+            let settings_store_infra = Arc::new(FileSettingsStore::new(app.handle()));
+            let settings_service = Arc::new(SettingsService::new(settings_store_infra));
             let mac_changer_service = Arc::new(MacChangerService::new());
             // OpSec (ahora recibe 3 argumentos)
             let opsec_service = OpSecService::new(

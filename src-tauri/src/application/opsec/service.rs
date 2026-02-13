@@ -1,7 +1,7 @@
 // src-tauri/src/application/opsec/service.rs
 // Descripcion: caso de uso OpSec. Calcula estado de spoofing MAC y ejecuta `randomize_mac` coordinando settings + mac changer.
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::application::settings::SettingsService;
 use crate::domain::entities::{HostIdentity, MacSecurityStatus};
@@ -10,14 +10,14 @@ use super::mac_changer::MacChangerService;
 
 pub struct OpSecService {
     scanner: Arc<dyn NetworkScannerPort>,
-    settings: Arc<Mutex<SettingsService>>,
+    settings: Arc<SettingsService>,
     changer: Arc<MacChangerService>,
 }
 
 impl OpSecService {
     pub fn new(
         scanner: Arc<dyn NetworkScannerPort>,
-        settings: Arc<Mutex<SettingsService>>,
+        settings: Arc<SettingsService>,
         changer: Arc<MacChangerService>,
     ) -> Self {
         Self {
@@ -37,9 +37,7 @@ impl OpSecService {
         let current_mac = identity.mac.to_uppercase().replace("-", ":");
 
         // 2) Obtener MAC "real" persistida (si no existe, inicializa con la actual)
-        let settings_guard = self.settings.lock().map_err(|_| "Lock error")?;
-        let real_mac = settings_guard
-            .get_or_init_real_mac(current_mac.clone())
+        let real_mac = self.settings.get_or_init_real_mac(current_mac.clone())
             .to_uppercase()
             .replace("-", ":");
 

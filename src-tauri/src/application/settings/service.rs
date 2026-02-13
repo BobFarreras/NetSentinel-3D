@@ -1,45 +1,36 @@
 // src-tauri/src/application/settings/service.rs
-// Servicio de settings: persistencia local de configuracion (ej. MAC real) en el directorio de config de la app.
+// Descripcion: caso de uso de settings. Gestiona configuracion (ej. MAC real) via el puerto `SettingsStorePort`.
 
-use std::fs;
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use std::sync::{Arc, Mutex};
 
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct AppSettings {
-    pub real_mac_address: Option<String>,
-}
+use crate::domain::entities::AppSettings;
+use crate::domain::ports::SettingsStorePort;
 
 pub struct SettingsService {
-    config_path: PathBuf,
+    store: Arc<dyn SettingsStorePort>,
+    // Evita interleaving de operaciones load->save.
+    io_guard: Mutex<()>,
 }
 
 impl SettingsService {
-    pub fn new(app: &AppHandle) -> Self {
-        let path = app.path().app_config_dir().unwrap().join("settings.json");
-        if let Some(parent) = path.parent() {
-            let _ = fs::create_dir_all(parent);
+    pub fn new(store: Arc<dyn SettingsStorePort>) -> Self {
+        Self {
+            store,
+            io_guard: Mutex::new(()),
         }
-        Self { config_path: path }
     }
 
     fn load(&self) -> AppSettings {
-        if let Ok(content) = fs::read_to_string(&self.config_path) {
-            serde_json::from_str(&content).unwrap_or_default()
-        } else {
-            AppSettings::default()
-        }
+        self.store.load().unwrap_or_default()
     }
 
     fn save(&self, settings: &AppSettings) -> Result<(), String> {
-        let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
-        fs::write(&self.config_path, json).map_err(|e| e.to_string())
+        self.store.save(settings)
     }
 
     /// Devuelve la MAC real guardada. Si no existe, guarda la actual como real.
     pub fn get_or_init_real_mac(&self, current_mac: String) -> String {
+        let _guard = self.io_guard.lock().unwrap();
         let mut settings = self.load();
         
         if let Some(real) = &settings.real_mac_address {

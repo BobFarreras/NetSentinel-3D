@@ -5,6 +5,24 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.44] - Backend: Fase 3 (Attack Lab + settings via puertos) (2026-02-13)
+### ♻️ Backend (hexagonal real)
+- Attack Lab:
+  - Tipos movidos a dominio: `src-tauri/src/domain/entities.rs` (`AttackLabRequest`, `AttackLabLogEvent`, `AttackLabExitEvent`).
+  - Nuevo puerto runner + sink: `src-tauri/src/domain/ports.rs` (`AttackLabRunnerPort`, `AttackLabEventSinkPort`).
+  - Runner real movido a infraestructura: `src-tauri/src/infrastructure/attack_lab/runner.rs` (`TokioProcessAttackLabRunner`).
+  - Sink Tauri movido a API: `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs` (emite eventos `attack-lab-*` y aliases legacy `external-audit-*`).
+  - `src-tauri/src/application/attack_lab/service.rs` ya no depende de `tauri::AppHandle`.
+- Settings:
+  - Nuevo `AppSettings` en dominio: `src-tauri/src/domain/entities.rs`.
+  - Nuevo puerto `SettingsStorePort`: `src-tauri/src/domain/ports.rs`.
+  - Implementacion file-backed: `src-tauri/src/infrastructure/persistence/settings_store.rs` (`FileSettingsStore`).
+  - `src-tauri/src/application/settings/service.rs` ahora usa DI via `SettingsStorePort` (sin Tauri/FS directo).
+  - `src-tauri/src/application/opsec/service.rs` ya no usa `Mutex<SettingsService>` (mutex interno en SettingsService).
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.43] - Backend: Fase 3 (puertos + DI: scan/opsec/traffic/wordlist) (2026-02-13)
 ### ♻️ Backend (hexagonal real)
 - `domain/ports.rs`: ampliado `NetworkScannerPort` con `probe_tcp_banner()` y nuevo puerto `TrafficSnifferPort`.

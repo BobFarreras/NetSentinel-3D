@@ -4,6 +4,7 @@
 use tauri::State;
 
 use crate::api::dtos::AttackLabRequestDTO;
+use crate::api::sinks::attack_lab_tauri_sink::TauriAttackLabSink;
 use crate::application::attack_lab::{AttackLabRequest, AttackLabService};
 
 pub async fn start_attack_lab(
@@ -20,7 +21,6 @@ pub async fn start_attack_lab(
 
     service
         .start_audit(
-            app,
             AttackLabRequest {
                 binary_path: request.binary_path,
                 args: request.args,
@@ -28,6 +28,7 @@ pub async fn start_attack_lab(
                 timeout_ms: request.timeout_ms,
                 env: env_pairs,
             },
+            std::sync::Arc::new(TauriAttackLabSink::new(app)),
         )
         .await
 }

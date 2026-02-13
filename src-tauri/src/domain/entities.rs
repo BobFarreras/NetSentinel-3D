@@ -116,6 +116,42 @@ pub struct TrafficPacket {
     pub is_intercepted: bool,
 }
 
+// 7. ATTACK LAB (ejecucion de herramientas externas con streaming)
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttackLabRequest {
+    pub binary_path: String,
+    pub args: Vec<String>,
+    pub cwd: Option<String>,
+    pub timeout_ms: Option<u64>,
+    pub env: Vec<(String, String)>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttackLabLogEvent {
+    pub audit_id: String,
+    pub stream: String, // "stdout" | "stderr"
+    pub line: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttackLabExitEvent {
+    pub audit_id: String,
+    pub success: bool,
+    pub exit_code: Option<i32>,
+    pub duration_ms: u128,
+    pub error: Option<String>,
+}
+
+// 8. SETTINGS (config local persistida)
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AppSettings {
+    pub real_mac_address: Option<String>,
+}
+
 // 6. WIFI (Radar View)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
