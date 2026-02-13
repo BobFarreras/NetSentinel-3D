@@ -226,6 +226,7 @@ export const MainDockedLayout = ({
     <div
       style={{
         display: "flex",
+        flexDirection: "column",
         width: "100vw",
         height: "100vh",
         background: "#050505",
@@ -234,25 +235,32 @@ export const MainDockedLayout = ({
         fontFamily: "'Consolas', 'Courier New', monospace",
         fontSize: "16px",
         userSelect: isResizing ? "none" : "auto",
+        boxSizing: "border-box",
+        // Borde global para "cerrar" el HUD y eliminar el efecto de ventana sin limite (especialmente abajo).
+        border: "1px solid #0a3a2a",
+        borderBottom: "4px solid rgba(0,255,136,0.22)",
+        boxShadow:
+          "inset 0 -1px 0 rgba(0,255,136,0.18), inset 0 0 0 1px rgba(0,0,0,0.55), 0 14px 34px rgba(0,0,0,0.55)",
       }}
     >
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", height: "100%", minWidth: 0, overflow: "hidden" }}>
-        <TopBar
-          scanning={scanning}
-          activeNodes={devices.length}
-          onScan={() => startScan()}
-          onHistoryToggle={() => setShowHistory(!showHistory)}
-          showHistory={showHistory}
-          onRadarToggle={() => setShowRadar(!showRadar)}
-          showRadar={showRadar}
-          onAttackLabToggle={onToggleAttackLab}
-          showAttackLab={showAttackLab}
-          onSettingsToggle={() => setShowSettings(!showSettings)}
-          showSettings={showSettings}
-          identity={identity}
-        />
+      <TopBar
+        scanning={scanning}
+        activeNodes={devices.length}
+        onScan={() => startScan()}
+        onHistoryToggle={() => setShowHistory(!showHistory)}
+        showHistory={showHistory}
+        onRadarToggle={() => setShowRadar(!showRadar)}
+        showRadar={showRadar}
+        onAttackLabToggle={onToggleAttackLab}
+        showAttackLab={showAttackLab}
+        onSettingsToggle={() => setShowSettings(!showSettings)}
+        showSettings={showSettings}
+        identity={identity}
+      />
 
-        <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", height: "100%", minWidth: 0, overflow: "hidden" }}>
+          <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
           {showHistory && (
             <div style={{ position: "absolute", top: 20, left: 20, zIndex: 20 }}>
               <HistoryPanel
@@ -458,9 +466,9 @@ export const MainDockedLayout = ({
             </div>
           </>
         )}
-      </div>
+        </div>
 
-      {showDockDevice && (
+        {showDockDevice && (
         <>
           <div
             onMouseDown={startResizingSidebar}
@@ -469,7 +477,7 @@ export const MainDockedLayout = ({
             onMouseLeave={(e) => (e.currentTarget.style.background = "#004400")}
           />
 
-          <div style={{ width: `${sidebarWidth}px`, minWidth: "300px", flexShrink: 0, height: "100vh", background: "#020202", display: "flex", flexDirection: "column", boxShadow: "-10px 0 30px rgba(0, 50, 0, 0.2)", position: "relative", zIndex: 30 }}>
+          <div style={{ width: `${sidebarWidth}px`, minWidth: "300px", flexShrink: 0, height: "100%", background: "#020202", display: "flex", flexDirection: "column", boxShadow: "-10px 0 30px rgba(0, 50, 0, 0.2)", position: "relative", zIndex: 30 }}>
             <div
               style={{
                 position: "absolute",
@@ -509,6 +517,7 @@ export const MainDockedLayout = ({
           </div>
         </>
       )}
+      </div>
 
       {detachedPanels.console && detachedModes.console === "portal" && (
         <DetachedWindowPortal title="NetSentinel - Console Logs" onClose={() => void dockPanel("console")} width={980} height={420}>
