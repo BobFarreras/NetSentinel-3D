@@ -23,7 +23,7 @@ vi.mock("../ui/components/hud/HistoryPanel", () => ({
   HistoryPanel: () => <div data-testid="history-panel">HISTORY</div>,
 }));
 
-vi.mock("../ui/components/hud/RadarPanel", () => ({
+vi.mock("../ui/features/radar/components/RadarPanel", () => ({
   RadarPanel: () => <div data-testid="radar-panel">RADAR</div>,
 }));
 

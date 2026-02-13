@@ -1,4 +1,5 @@
-// src/ui/components/hud/radar/RadarLegalModal.tsx
+// src/ui/features/radar/components/radar/RadarLegalModal.tsx
+// Modal de consentimiento: gate para activar Radar View antes del primer escaneo (recon pasivo WiFi).
 import React from "react";
 
 type RadarLegalModalProps = {

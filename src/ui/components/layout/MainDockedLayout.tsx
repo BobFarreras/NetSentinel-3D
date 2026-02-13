@@ -20,7 +20,7 @@ const DeviceDetailPanel = lazy(async () => {
 });
 
 const RadarPanel = lazy(async () => {
-  const mod = await import("../hud/RadarPanel");
+  const mod = await import("../../features/radar/components/RadarPanel");
   return { default: mod.RadarPanel };
 });
 

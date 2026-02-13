@@ -13,7 +13,7 @@ vi.mock("../../../hooks/modules/traffic/useTrafficMonitor", () => ({
   }),
 }));
 
-import { addRadarScanLog, clearRadarLogs } from "../../../hooks/modules/radar/useRadarLogs";
+import { addRadarScanLog, clearRadarLogs } from "../../../features/radar/hooks/useRadarLogs";
 import { ConsoleLogs } from "../ConsoleLogs";
 
 describe("ConsoleLogs", () => {

@@ -1,11 +1,11 @@
-// src/ui/components/hud/radar/RadarIntelPanel.tsx
-// Panel lateral del Radar: filtros de visualizacion, detalles del nodo WiFi seleccionado y accion para abrir el Attack Lab con contexto.
+// src/ui/features/radar/components/radar/RadarIntelPanel.tsx
+// Panel lateral del Radar: filtros, detalles del nodo WiFi seleccionado y accion para abrir el Attack Lab con contexto.
 
 import React from "react";
-import type { DeviceDTO, WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
+import type { DeviceDTO, WifiNetworkDTO } from "../../../../../shared/dtos/NetworkDTOs";
 import type { BandFilter, RiskFilter } from "./radarTypes";
 import { selectStyle } from "./radarUtils";
-import { windowingAdapter } from "../../../../adapters/windowingAdapter";
+import { windowingAdapter } from "../../../../../adapters/windowingAdapter";
 
 type RadarIntelPanelProps = {
   selected: WifiNetworkDTO | null;

@@ -249,9 +249,9 @@ patron estable:
 Ejemplos aplicados:
 
 - Radar:
-  - `src/ui/components/hud/RadarPanel.tsx`
-  - `src/ui/hooks/modules/radar/useRadarPanelState.ts`
-  - `src/ui/components/hud/radar/*`
+  - `src/ui/features/radar/components/RadarPanel.tsx`
+  - `src/ui/features/radar/hooks/useRadarPanelState.ts`
+  - `src/ui/features/radar/components/radar/*`
 - Console Logs:
   - `src/ui/components/panels/ConsoleLogs.tsx`
   - `src/ui/hooks/modules/ui/useConsoleLogsState.ts`

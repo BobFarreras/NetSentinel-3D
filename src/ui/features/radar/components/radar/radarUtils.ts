@@ -1,7 +1,8 @@
-// src/ui/components/hud/radar/radarUtils.ts
+// src/ui/features/radar/components/radar/radarUtils.ts
+// Utilidades del Radar: estilos, helpers de UI y normalizacion ligera para render.
 import type { CSSProperties } from "react";
-import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
-import { HUD_TYPO } from "../../../styles/hudTokens";
+import type { WifiNetworkDTO } from "../../../../../shared/dtos/NetworkDTOs";
+import { HUD_TYPO } from "../../../../styles/hudTokens";
 
 export type RiskColor = {
   dot: string;

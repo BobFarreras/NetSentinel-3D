@@ -1,6 +1,7 @@
-// src/ui/components/hud/radar/RadarScope.tsx
+// src/ui/features/radar/components/radar/RadarScope.tsx
+// Visualizacion principal del radar WiFi: render de redes, animacion de barrido y seleccion.
 import React from "react";
-import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
+import type { WifiNetworkDTO } from "../../../../../shared/dtos/NetworkDTOs";
 import { riskStyle } from "./radarUtils";
 import type { RadarNode } from "./radarUtils";
 

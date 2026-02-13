@@ -1,8 +1,8 @@
+// src/ui/features/radar/hooks/useRadarLogs.ts
+// Logs del Radar (frontend): store para trazabilidad local y consumo desde ConsoleLogs.
+
 import { useSyncExternalStore } from "react";
 import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
-
-// Logs estructurados del Radar (frontend).
-// Objetivo: trazabilidad local + una vista tipo "tabla" (similar a LIVE TRAFFIC).
 
 type Listener = () => void;
 

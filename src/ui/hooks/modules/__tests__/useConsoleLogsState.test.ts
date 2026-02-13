@@ -19,14 +19,14 @@ vi.mock("../traffic/useTrafficMonitor", () => ({
   }),
 }));
 
-vi.mock("../radar/useRadarLogs", () => ({
+vi.mock("../../../features/radar/hooks/useRadarLogs", () => ({
   useRadarLogs: () => ({
     logs: [],
     clear: radarClearMock,
   }),
 }));
 
-vi.mock("../radar/useWifiRadarSelection", () => ({
+vi.mock("../../../features/radar/hooks/useWifiRadarSelection", () => ({
   useWifiRadarSelection: () => ({
     selectedBssid: null,
     setSelectedBssid: setSelectedBssidMock,

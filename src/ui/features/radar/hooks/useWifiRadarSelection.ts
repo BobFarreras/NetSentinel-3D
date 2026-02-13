@@ -1,7 +1,7 @@
-import { useSyncExternalStore } from "react";
+// src/ui/features/radar/hooks/useWifiRadarSelection.ts
+// Seleccion global para Radar View: sincroniza seleccion entre RADAR VIEW (nodos) y RADAR LOGS (tabla).
 
-// Seleccion global para Radar View:
-// permite sincronizar la seleccion entre RADAR VIEW (nodos) y RADAR LOGS (tabla).
+import { useSyncExternalStore } from "react";
 
 type Listener = () => void;
 
@@ -32,4 +32,3 @@ export const useWifiRadarSelection = () => {
     clear: () => setSelectedWifiBssid(null),
   };
 };
-

@@ -1,7 +1,10 @@
+// src/ui/features/radar/__tests__/RadarPanel.test.tsx
+// Tests del RadarPanel: filtros por riesgo y canal sobre dataset simulado del hook useWifiRadar.
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-vi.mock("../../../hooks/modules/radar/useWifiRadar", () => ({
+vi.mock("../hooks/useWifiRadar", () => ({
   useWifiRadar: () => ({
     scanning: false,
     error: null,
@@ -36,7 +39,7 @@ vi.mock("../../../hooks/modules/radar/useWifiRadar", () => ({
   }),
 }));
 
-import { RadarPanel } from "../RadarPanel";
+import { RadarPanel } from "../components/RadarPanel";
 
 describe("RadarPanel", () => {
   beforeEach(() => {

@@ -1,3 +1,5 @@
+// src/ui/features/radar/hooks/useWifiRadar.ts
+// Hook de adquisicion del Radar: ejecuta `scan_airwaves`, mantiene estado y emite logs para ConsoleLogs.
 import { useCallback, useState } from "react";
 import type { WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
 import { wifiAdapter } from "../../../../adapters/wifiAdapter";

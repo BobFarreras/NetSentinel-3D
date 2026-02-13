@@ -1,4 +1,5 @@
-// src/ui/components/hud/radar/RadarHeader.tsx
+// src/ui/features/radar/components/radar/RadarHeader.tsx
+// Cabecera del Radar: titulo, estado de escaneo, auto-refresh y controles principales (scan/cerrar).
 import React from "react";
 
 type RadarHeaderProps = {

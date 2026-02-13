@@ -37,7 +37,7 @@ Resolucion vendor:
 
 ### 3.2 Frontend React
 - Adapter: `src/adapters/wifiAdapter.ts`
-- Hook: `src/ui/hooks/modules/radar/useWifiRadar.ts`
+- Hook: `src/ui/features/radar/hooks/useWifiRadar.ts`
 - Vista: `src/ui/components/3d/RadarView.tsx`
 - Integracion en layout principal con panel de detalle lateral.
 

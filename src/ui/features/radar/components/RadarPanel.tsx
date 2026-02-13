@@ -1,6 +1,9 @@
+// src/ui/features/radar/components/RadarPanel.tsx
+// Panel Radar: composicion de UI (scope + intel + legal) y conexion con el hook de estado del radar.
+
 import React from "react";
-import { useRadarPanelState } from "../../hooks/modules/radar/useRadarPanelState";
-import { HUD_TYPO } from "../../styles/hudTokens";
+import { useRadarPanelState } from "../hooks/useRadarPanelState";
+import { HUD_TYPO } from "../../../styles/hudTokens";
 import { RadarHeader } from "./radar/RadarHeader";
 import { RadarIntelPanel } from "./radar/RadarIntelPanel";
 import { RadarLegalModal } from "./radar/RadarLegalModal";

@@ -1,6 +1,6 @@
 // src/ui/components/panels/console_logs/RadarLogsView.tsx
 import React from "react";
-import type { RadarLogEntry } from "../../../hooks/modules/radar/useRadarLogs";
+import type { RadarLogEntry } from "../../../features/radar/hooks/useRadarLogs";
 import { CONSOLE_COLORS } from "./consoleLogsStyles";
 
 type RadarLogsViewProps = {
