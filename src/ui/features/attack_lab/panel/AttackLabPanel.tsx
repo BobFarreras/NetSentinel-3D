@@ -185,7 +185,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         return;
     }
 
-    // Legacy
+    // LAB (simulated/external)
     if (selectedScenario.mode === "simulated") {
       const steps = selectedScenario.simulate?.({ device: localTarget!, identity }) || [];
       await audit.startSimulated(selectedScenario.title, steps);

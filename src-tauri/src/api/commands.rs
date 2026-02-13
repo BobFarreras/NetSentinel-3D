@@ -8,9 +8,6 @@
 mod credentials;
 #[path = "commands/attack_lab.rs"]
 mod attack_lab;
-// Legacy: comandos historicos "external_audit" que delegan en Attack Lab.
-#[path = "commands/legacy/external_audit.rs"]
-mod external_audit;
 #[path = "commands/history.rs"]
 mod history;
 #[path = "commands/internal_validation.rs"]
@@ -165,25 +162,6 @@ pub async fn cancel_attack_lab(
     audit_id: String,
 ) -> Result<(), String> {
     attack_lab::cancel_attack_lab(service, audit_id).await
-}
-
-// --- EXTERNAL AUDIT (LEGACY / alias) ---
-
-#[tauri::command]
-pub async fn start_external_audit(
-    service: tauri::State<'_, crate::application::attack_lab::ExternalAuditService>,
-    app: tauri::AppHandle,
-    request: crate::api::dtos::ExternalAuditRequestDTO,
-) -> Result<String, String> {
-    external_audit::start_external_audit(service, app, request).await
-}
-
-#[tauri::command]
-pub async fn cancel_external_audit(
-    service: tauri::State<'_, crate::application::attack_lab::ExternalAuditService>,
-    audit_id: String,
-) -> Result<(), String> {
-    external_audit::cancel_external_audit(service, audit_id).await
 }
 
 // --- SYSTEM / RUNTIME ---

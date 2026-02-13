@@ -25,6 +25,3 @@ export const attackLabAdapter = {
     });
   },
 };
-
-// Alias legacy (compat): el nombre historico "external audit" apunta al mismo adapter.
-export const externalAuditAdapter = attackLabAdapter;

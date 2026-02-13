@@ -141,8 +141,6 @@ pub fn run() {
             // External audit
             api::commands::start_attack_lab,
             api::commands::cancel_attack_lab,
-            api::commands::start_external_audit,
-            api::commands::cancel_external_audit,
             // System / runtime
             api::commands::get_identity,
             api::commands::start_traffic_sniffing,

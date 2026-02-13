@@ -133,7 +133,7 @@ Entregable:
 - LAB totalmente nativo y real (sin simulacion).
 
 ## Fase 4 - Retirada de legacy
-1. deprecar `start_external_audit/cancel_external_audit` en UI LAB.
+1. (Ya realizado) eliminar `start_external_audit/cancel_external_audit` y mantener solo `start_attack_lab/cancel_attack_lab`.
 2. mantenerlos solo para modo avanzado o eliminar en release posterior.
 3. limpiar docs, tests y adapters obsoletos.
 

@@ -5,13 +5,30 @@
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
+## [v0.8.45] - Backend/Frontend: eliminacion de shims legacy (2026-02-13)
+### ♻️ Limpieza (sin compat)
+- Eliminados comandos legacy `start_external_audit` / `cancel_external_audit` y eventos `external-audit-*`:
+  - backend Tauri solo expone `start_attack_lab` / `cancel_attack_lab` + eventos `attack-lab-*`.
+- Eliminados shims legacy de backend:
+  - `src-tauri/src/application/legacy/*`
+- Eliminados shims legacy de frontend:
+  - `src/adapters/externalAuditAdapter.ts`
+  - aliases `ExternalAudit*` en `src/shared/dtos/NetworkDTOs.ts`
+  - shims de windowing para `panel="external"` y evento `netsentinel://external-context`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+- `cd src-tauri && cargo test --lib -q` (ok)
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.44] - Backend: Fase 3 (Attack Lab + settings via puertos) (2026-02-13)
 ### ♻️ Backend (hexagonal real)
 - Attack Lab:
   - Tipos movidos a dominio: `src-tauri/src/domain/entities.rs` (`AttackLabRequest`, `AttackLabLogEvent`, `AttackLabExitEvent`).
   - Nuevo puerto runner + sink: `src-tauri/src/domain/ports.rs` (`AttackLabRunnerPort`, `AttackLabEventSinkPort`).
   - Runner real movido a infraestructura: `src-tauri/src/infrastructure/attack_lab/runner.rs` (`TokioProcessAttackLabRunner`).
-  - Sink Tauri movido a API: `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs` (emite eventos `attack-lab-*` y aliases legacy `external-audit-*`).
+  - Sink Tauri movido a API: `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs` (emite eventos `attack-lab-*`).
   - `src-tauri/src/application/attack_lab/service.rs` ya no depende de `tauri::AppHandle`.
 - Settings:
   - Nuevo `AppSettings` en dominio: `src-tauri/src/domain/entities.rs`.

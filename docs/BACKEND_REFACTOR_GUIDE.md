@@ -73,20 +73,16 @@ Checklist por cada servicio migrado:
 ## Fase 2: Consolidar Attack Lab y compatibilidad legacy (external_audit)
 Estado esperado:
 - `attack_lab` es el nombre oficial interno.
-- `external_audit` queda como compatibilidad para UI legacy (si aun existe) o se elimina cuando ya no se use.
+- `external_audit` se elimina cuando toda la UI y adapters ya estan migrados a `attack_lab`.
 
 Acciones recomendadas (sin romper comandos existentes):
-1. Mantener comandos Tauri legacy:
-   - `start_external_audit` / `cancel_external_audit`
-2. Internamente, asegurar que ambos comandos delegan a Attack Lab.
-3. Documentar claramente en codigo:
-   - DTO aliases legacy en `src-tauri/src/api/dtos.rs`
-   - Servicios wrapper legacy en `src-tauri/src/application/legacy/external_audit_service.rs` (si se mantienen)
+1. Mantener comandos Tauri estables:
+   - `start_attack_lab` / `cancel_attack_lab`
+2. Asegurar que el streaming de eventos (`attack-lab-log` / `attack-lab-exit`) es consistente.
 
-Cuando UI ya no use legacy:
-1. Buscar referencias TS a `start_external_audit`.
-2. Migrar adapters/UI a `start_attack_lab`.
-3. Eliminar comando legacy y actualizar docs + `AGENTS.md` en el mismo cambio.
+Cuando UI ya este migrada:
+1. Eliminar shims legacy (backend + frontend).
+2. Actualizar docs + `AGENTS.md` en el mismo cambio.
 
 ## Fase 3: Dominio e infraestructura (hexagonal real)
 Objetivo: que `application/` dependa de puertos del dominio, no de implementaciones concretas.

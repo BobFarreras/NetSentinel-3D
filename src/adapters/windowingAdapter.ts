@@ -20,7 +20,7 @@ type OpenPanelWindowArgs = {
 };
 
 type DockPanelPayload = {
-  panel: DetachablePanelId | "external"; // legacy
+  panel: DetachablePanelId;
 };
 
 type AttackLabContextPayload = {
@@ -31,7 +31,6 @@ type AttackLabContextPayload = {
 
 const DOCK_PANEL_EVENT = "netsentinel://dock-panel";
 const ATTACK_LAB_CONTEXT_EVENT = "netsentinel://attack-lab-context";
-const LEGACY_EXTERNAL_CONTEXT_EVENT = "netsentinel://external-context";
 const WINDOW_LABEL_PREFIX = "netsentinel_panel_";
 
 const panelTitles: Record<DetachablePanelId, string> = {
@@ -72,7 +71,6 @@ const buildDetachedUrl = ({ panel, targetIp, scenarioId }: OpenPanelWindowArgs) 
 
 const normalizePanelId = (panel: string | null): DetachablePanelId | null => {
   if (!panel) return null;
-  if (panel === "external") return "attack_lab"; // legacy
   if (panel === "console" || panel === "device" || panel === "radar" || panel === "attack_lab" || panel === "scene3d") {
     return panel;
   }
@@ -171,10 +169,8 @@ export const windowingAdapter = {
   emitAttackLabContext: async (payload: AttackLabContextPayload): Promise<void> => {
     try {
       await emit(ATTACK_LAB_CONTEXT_EVENT, payload);
-      await emit(LEGACY_EXTERNAL_CONTEXT_EVENT, payload); // compat
     } catch {
       window.dispatchEvent(new CustomEvent<AttackLabContextPayload>(ATTACK_LAB_CONTEXT_EVENT, { detail: payload }));
-      window.dispatchEvent(new CustomEvent<AttackLabContextPayload>(LEGACY_EXTERNAL_CONTEXT_EVENT, { detail: payload }));
     }
   },
 
@@ -185,14 +181,8 @@ export const windowingAdapter = {
           handler(event.payload);
         }
       });
-      const unlisten2 = await listen<AttackLabContextPayload>(LEGACY_EXTERNAL_CONTEXT_EVENT, (event) => {
-        if (event.payload) {
-          handler(event.payload);
-        }
-      });
       return () => {
         void unlisten1();
-        void unlisten2();
       };
     } catch {
       const callback = (evt: Event) => {
@@ -202,20 +192,10 @@ export const windowingAdapter = {
         }
       };
       window.addEventListener(ATTACK_LAB_CONTEXT_EVENT, callback as EventListener);
-      window.addEventListener(LEGACY_EXTERNAL_CONTEXT_EVENT, callback as EventListener);
       return () => {
         window.removeEventListener(ATTACK_LAB_CONTEXT_EVENT, callback as EventListener);
-        window.removeEventListener(LEGACY_EXTERNAL_CONTEXT_EVENT, callback as EventListener);
       };
     }
-  },
-
-  // Shims legacy: conservamos nombres historicos para no romper imports externos.
-  emitExternalAuditContext: async (payload: AttackLabContextPayload): Promise<void> => {
-    return await windowingAdapter.emitAttackLabContext(payload);
-  },
-  listenExternalAuditContext: async (handler: (payload: AttackLabContextPayload) => void): Promise<UnlistenFn> => {
-    return await windowingAdapter.listenAttackLabContext(handler);
   },
 
   listenDockPanel: async (handler: (panel: DetachablePanelId) => void): Promise<UnlistenFn> => {

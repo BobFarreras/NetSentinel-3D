@@ -40,8 +40,8 @@ Comandos actualmente registrados:
 - `stop_jamming`
 - `start_attack_lab`
 - `cancel_attack_lab`
-- `start_external_audit`
-- `cancel_external_audit`
+- `start_attack_lab`
+- `cancel_attack_lab`
 
 Riesgo:
 - Si la UI se compromete, un atacante puede intentar abusar de estos comandos.

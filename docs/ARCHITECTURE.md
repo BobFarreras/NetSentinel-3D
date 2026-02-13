@@ -350,8 +350,6 @@ Comandos de auditoria externa (wrapper CLI):
 
 - `start_attack_lab`
 - `cancel_attack_lab`
-- `start_external_audit`
-- `cancel_external_audit`
 
 Regla de mantenimiento:
 

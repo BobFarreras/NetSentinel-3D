@@ -150,9 +150,3 @@ export interface AttackLabExitEvent {
   durationMs: number;
   error?: string;
 }
-
-// Aliases legacy (compat): nombres historicos "ExternalAudit*" siguen disponibles.
-export type ExternalAuditEnvVarDTO = AttackLabEnvVarDTO;
-export type ExternalAuditRequestDTO = AttackLabRequestDTO;
-export type ExternalAuditLogEvent = AttackLabLogEvent;
-export type ExternalAuditExitEvent = AttackLabExitEvent;

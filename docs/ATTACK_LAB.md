@@ -34,7 +34,7 @@ Ventaja: onboarding rapido y consistencia operacional.
 ## 2) Arquitectura y flujo de datos (end-to-end)
 
 Flujo `CUSTOM` o `LAB(external)`:
-1. UI construye un `AttackLabRequestDTO` (ruta + args + timeout opcional). (alias legacy: `ExternalAuditRequestDTO`)
+1. UI construye un `AttackLabRequestDTO` (ruta + args + timeout opcional).
 2. Adapter llama a Tauri `invoke("start_attack_lab", { request })`.
 3. Backend crea un `audit_id` y lanza el proceso con `tokio::process::Command`.
 4. Backend emite eventos:
@@ -55,21 +55,18 @@ Flujo `LAB(simulated)`:
 - Servicio (fuente de verdad):
   - `src-tauri/src/application/attack_lab/`
     - `service.rs`: API del caso de uso (`start_audit`, `cancel_audit`), genera `audit_id`.
-    - `runner.rs`: ejecuta el proceso con `tokio::process::Command` y hace streaming stdout/stderr.
-    - `sink.rs`: salida de eventos (Tauri sink) + sink de memoria (solo tests).
     - `validation.rs`: validaciones defensivas del request.
     - `types.rs`: modelos (`AttackLabRequest`, eventos, etc.).
-    - `tests.rs`: tests reales (sin mocks) para stdout/stderr + timeout + cancel.
-  - `src-tauri/src/application/legacy/attack_lab_service.rs` (shim/alias)
-    - **shim de compatibilidad** (re-export) para no romper imports legacy.
+ - Runner (infraestructura):
+   - `src-tauri/src/infrastructure/attack_lab/runner.rs`: ejecuta el proceso con `tokio::process::Command` y hace streaming stdout/stderr.
+ - Sink de eventos (presentacion):
+   - `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs`: emite eventos Tauri hacia la UI.
 - Comandos Tauri:
   - `src-tauri/src/api/commands.rs`
     - `start_attack_lab` (principal)
     - `cancel_attack_lab` (principal)
-    - `start_external_audit` (alias legacy)
-    - `cancel_external_audit` (alias legacy)
   - Implementacion interna:
-    - `src-tauri/src/api/commands/attack_lab.rs` (y/o alias legacy)
+    - `src-tauri/src/api/commands/attack_lab.rs`
 - DTOs (contrato Rust):
   - `src-tauri/src/api/dtos.rs`
 
@@ -106,9 +103,6 @@ El backend emite:
 - `attack-lab-exit`
   - `{ auditId, success, exitCode?, durationMs, error? }`
 
-Compatibilidad:
-- Se pueden seguir emitiendo `external-audit-log` / `external-audit-exit` como alias legacy.
-
 El hook `useAttackLab` filtra por `auditId` para que no se mezclen auditorias.
 
 ---
@@ -116,7 +110,7 @@ El hook `useAttackLab` filtra por `auditId` para que no se mezclen auditorias.
 ## 5) Seguridad y decisiones DevSecOps (por que esta hecho asi)
 
 ### 5.1 No usar shell
-En `src-tauri/src/application/attack_lab/runner.rs` se usa:
+En `src-tauri/src/infrastructure/attack_lab/runner.rs` se usa:
 - `Command::new(binary_path)` + `cmd.args(args)`
 
 No usamos `cmd /c ...` ni `sh -c ...` por defecto para evitar injection por concatenacion.
@@ -148,7 +142,7 @@ Esto permite mostrar progreso incremental en UI sin esperar al final.
    - En Linux/macOS: usar `CUSTOM` o anadir escenarios especificos del SO.
 2. Herramientas externas:
    - NetSentinel no instala herramientas por si mismo.
-   - Si el binario no existe o no tiene permisos, el backend devolvera error en `external-audit-exit`.
+   - Si el binario no existe o no tiene permisos, el backend devolvera error en `attack-lab-exit`.
 3. Output muy grande:
    - El hook limita el buffer de filas (`max 2000`) para evitar consumo de RAM.
 
@@ -301,7 +295,7 @@ Interpretacion operativa:
 2. NetSentinel lanza PowerShell real en tu sistema (proceso hijo).
 3. PowerShell intenta hacer una peticion HTTP HEAD real a `http://192.168.1.139/`.
 4. El host no responde por HTTP en ese puerto/ruta (o esta filtrado), por eso `Invoke-WebRequest` lanza excepcion.
-5. El proceso termina con codigo de salida distinto de 0 (`exit=1`), y `external-audit-exit` marca `success=false`.
+5. El proceso termina con codigo de salida distinto de 0 (`exit=1`), y `attack-lab-exit` marca `success=false`.
 
 Traduccion de campos UI:
 - `AUTO`: se ejecuto automaticamente al abrir panel con `target + defaultScenarioId`.

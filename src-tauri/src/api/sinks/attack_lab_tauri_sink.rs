@@ -1,5 +1,5 @@
 // src-tauri/src/api/sinks/attack_lab_tauri_sink.rs
-// Descripcion: sink de Attack Lab que emite eventos Tauri hacia la UI (incluye aliases legacy external-audit-*).
+// Descripcion: sink de Attack Lab que emite eventos Tauri hacia la UI.
 
 use crate::domain::entities::{AttackLabExitEvent, AttackLabLogEvent};
 use crate::domain::ports::AttackLabEventSinkPort;
@@ -18,15 +18,12 @@ impl AttackLabEventSinkPort for TauriAttackLabSink {
     fn on_log(&self, evt: AttackLabLogEvent) {
         use tauri::Emitter;
 
-        let _ = self.app.emit("attack-lab-log", evt.clone());
-        let _ = self.app.emit("external-audit-log", evt); // legacy
+        let _ = self.app.emit("attack-lab-log", evt);
     }
 
     fn on_exit(&self, evt: AttackLabExitEvent) {
         use tauri::Emitter;
 
-        let _ = self.app.emit("attack-lab-exit", evt.clone());
-        let _ = self.app.emit("external-audit-exit", evt); // legacy
+        let _ = self.app.emit("attack-lab-exit", evt);
     }
 }
-

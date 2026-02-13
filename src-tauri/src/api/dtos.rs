@@ -114,12 +114,6 @@ pub struct AttackLabRequestDTO {
     pub env: Option<Vec<AttackLabEnvVarDTO>>,
 }
 
-// Aliases legacy (compat): nombres historicos "ExternalAudit*" siguen disponibles.
-#[allow(dead_code)]
-pub type ExternalAuditEnvVarDTO = AttackLabEnvVarDTO;
-#[allow(dead_code)]
-pub type ExternalAuditRequestDTO = AttackLabRequestDTO;
-
 #[derive(serde::Serialize)]
 pub struct MacSecurityStatusDTO {
     pub current_mac: String,

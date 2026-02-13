@@ -121,8 +121,6 @@ function App() {
     setShowAttackLab(next);
     if (next) {
       // Si se abre manualmente, quizás queramos limpiar o mantener el último
-      // setExternalAuditTarget(null);
-      // setExternalAuditScenarioId(null);
     }
   }, [showAttackLab]);
 

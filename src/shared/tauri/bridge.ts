@@ -21,9 +21,9 @@ const getScenarioFlags = (): E2EScenarioFlags => {
 const listeners = new Map<string, Set<EventCallback<unknown>>>();
 let trafficTimer: ReturnType<typeof setInterval> | null = null;
 let packetId = 0;
-let extAuditTimer: ReturnType<typeof setInterval> | null = null;
-let extAuditSeq = 0;
-let activeExtAuditId: string | null = null;
+let attackLabTimer: ReturnType<typeof setInterval> | null = null;
+let attackLabSeq = 0;
+let activeAttackLabId: string | null = null;
 let mockLatestSnapshot: LatestSnapshotDTO | null = null;
 const mockGatewayCreds = new Map<string, GatewayCredentialsDTO>();
 
@@ -222,16 +222,15 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
     case 'stop_jamming':
       emit('audit-log', `E2E MOCK: Jammer detenido en ${(args?.ip as string) || 'unknown'}`);
       return undefined as T;
-    case 'start_attack_lab':
-    case 'start_external_audit': {
-      extAuditSeq += 1;
-      const auditId = `mock_ext_audit_${extAuditSeq}`;
-      activeExtAuditId = auditId;
+    case 'start_attack_lab': {
+      attackLabSeq += 1;
+      const auditId = `mock_attack_lab_${attackLabSeq}`;
+      activeAttackLabId = auditId;
 
       // Emitimos logs simulados en tiempo real.
-      if (extAuditTimer) clearInterval(extAuditTimer);
+      if (attackLabTimer) clearInterval(attackLabTimer);
       let lineNo = 0;
-      extAuditTimer = setInterval(() => {
+      attackLabTimer = setInterval(() => {
         lineNo += 1;
         const evt: AttackLabLogEvent = {
           auditId,
@@ -239,11 +238,10 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
           line: lineNo % 4 === 0 ? `WARN line=${lineNo}` : `OK line=${lineNo}`,
         };
         emit('attack-lab-log', evt);
-        emit('external-audit-log', evt); // legacy
 
         if (lineNo >= 8) {
-          if (extAuditTimer) clearInterval(extAuditTimer);
-          extAuditTimer = null;
+          if (attackLabTimer) clearInterval(attackLabTimer);
+          attackLabTimer = null;
           const exitEvt: AttackLabExitEvent = {
             auditId,
             success: true,
@@ -251,18 +249,16 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
             durationMs: 1200,
           };
           emit('attack-lab-exit', exitEvt);
-          emit('external-audit-exit', exitEvt); // legacy
         }
       }, 120);
 
       return auditId as T;
     }
-    case 'cancel_attack_lab':
-    case 'cancel_external_audit': {
-      const auditId = (args?.auditId as string) || activeExtAuditId || 'unknown';
-      if (extAuditTimer) {
-        clearInterval(extAuditTimer);
-        extAuditTimer = null;
+    case 'cancel_attack_lab': {
+      const auditId = (args?.auditId as string) || activeAttackLabId || 'unknown';
+      if (attackLabTimer) {
+        clearInterval(attackLabTimer);
+        attackLabTimer = null;
       }
       const exitEvt: AttackLabExitEvent = {
         auditId,
@@ -272,7 +268,6 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
         error: 'cancelado',
       };
       emit('attack-lab-exit', exitEvt);
-      emit('external-audit-exit', exitEvt); // legacy
       return undefined as T;
     }
     default:

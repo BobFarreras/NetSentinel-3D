@@ -121,27 +121,27 @@ describe("windowingAdapter", () => {
     unlisten();
   });
 
-  it("emite contexto de external por fallback cuando Tauri emit falla", async () => {
+  it("emite contexto de attack_lab por fallback cuando Tauri emit falla", async () => {
     mocks.emitMock.mockRejectedValue(new Error("no tauri"));
     const handler = vi.fn();
-    window.addEventListener("netsentinel://external-context", handler as EventListener);
+    window.addEventListener("netsentinel://attack-lab-context", handler as EventListener);
 
-    await windowingAdapter.emitExternalAuditContext({
+    await windowingAdapter.emitAttackLabContext({
       targetDevice: { ip: "192.168.1.50", mac: "AA:BB", vendor: "TestDevice" },
       scenarioId: "device_http_headers",
       autoRun: true,
     });
 
     expect(handler).toHaveBeenCalledTimes(1);
-    window.removeEventListener("netsentinel://external-context", handler as EventListener);
+    window.removeEventListener("netsentinel://attack-lab-context", handler as EventListener);
   });
 
-  it("escucha contexto de external por fallback cuando Tauri listen falla", async () => {
+  it("escucha contexto de attack_lab por fallback cuando Tauri listen falla", async () => {
     mocks.listenMock.mockRejectedValue(new Error("no tauri"));
     const handler = vi.fn();
 
-    const unlisten = await windowingAdapter.listenExternalAuditContext(handler);
-    window.dispatchEvent(new CustomEvent("netsentinel://external-context", {
+    const unlisten = await windowingAdapter.listenAttackLabContext(handler);
+    window.dispatchEvent(new CustomEvent("netsentinel://attack-lab-context", {
       detail: {
         targetDevice: { ip: "192.168.1.77", mac: "CC:DD", vendor: "IoT" },
         scenarioId: "router_recon_ping_tracert",

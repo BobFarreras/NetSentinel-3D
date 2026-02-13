@@ -8,7 +8,3 @@ pub mod validation;
 pub use service::AttackLabService;
 #[allow(unused_imports)]
 pub use types::{AttackLabExitEvent, AttackLabLogEvent, AttackLabRequest};
-
-// Aliases legacy (compat): "external_audit" fue el nombre historico del modulo.
-pub type ExternalAuditService = AttackLabService;
-pub type ExternalAuditRequest = AttackLabRequest;
