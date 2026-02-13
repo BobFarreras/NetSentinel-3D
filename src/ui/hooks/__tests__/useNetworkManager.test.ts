@@ -1,3 +1,6 @@
+// src/ui/hooks/__tests__/useNetworkManager.test.ts
+// Tests del hook orquestador: asegura delegacion de acciones, carga de identidad y comportamiento al cambiar de dispositivo.
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useNetworkManager } from '../useNetworkManager';

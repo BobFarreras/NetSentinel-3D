@@ -6,6 +6,7 @@ import type { DeviceDTO, WifiNetworkDTO } from "../../../../../shared/dtos/Netwo
 import type { BandFilter, RiskFilter } from "./radarTypes";
 import { selectStyle } from "./radarUtils";
 import { windowingAdapter } from "../../../../../adapters/windowingAdapter";
+import { uiLogger } from "../../../../utils/logger";
 
 type RadarIntelPanelProps = {
   selected: WifiNetworkDTO | null;
@@ -38,14 +39,14 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
 }) => {
 
   const handleOpenAudit = () => {
-    console.log("🖱️ [RADAR DEBUG] Button CLICKED!");
+    uiLogger.info("[radar] open audit solicitado");
 
     if (!selected) {
-        console.error("❌ [RADAR DEBUG] No network selected! Aborting.");
+        uiLogger.warn("[radar] open audit abortado: no hay network seleccionada");
         return;
     }
 
-    console.log("🔹 [RADAR DEBUG] Selected Network:", selected.ssid);
+    uiLogger.info("[radar] network seleccionada", { ssid: selected.ssid, bssid: selected.bssid });
 
     // 1. CREAR OBJETIVO VIRTUAL
     const virtualTarget: DeviceDTO = {
@@ -60,31 +61,27 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
         deviceType: "ROUTER"
     };
 
-    console.log("📦 [RADAR DEBUG] Virtual Target Created:", virtualTarget);
+    uiLogger.info("[radar] virtual target creado", virtualTarget);
 
     // 2. NAVEGACIÓN INTERNA
-    console.log("🚀 [RADAR DEBUG] Emitting 'attack_lab' dock panel switch...");
+    uiLogger.info("[radar] emitiendo dockPanel attack_lab");
     
     try {
         windowingAdapter.emitDockPanel("attack_lab");
-        console.log("✅ [RADAR DEBUG] Emit DockPanel Success (Sent)");
     } catch (e) {
-        console.error("❌ [RADAR DEBUG] Failed to emit DockPanel:", e);
+        uiLogger.error("[radar] fallo al emitir dockPanel", e);
     }
     
     // 3. ENVIAR DATOS
-    console.log("⏳ [RADAR DEBUG] Waiting 300ms to send context...");
     setTimeout(() => {
-        console.log("📨 [RADAR DEBUG] Sending Audit Context...");
         try {
             windowingAdapter.emitAttackLabContext({
                 targetDevice: virtualTarget,
                 scenarioId: "wifi_brute_force_dict",
                 autoRun: false 
             });
-            console.log("✅ [RADAR DEBUG] Context Sent!");
         } catch (e) {
-            console.error("❌ [RADAR DEBUG] Failed to send Context:", e);
+            uiLogger.error("[radar] fallo al emitir contexto attack_lab", e);
         }
     }, 300);
   };

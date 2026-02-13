@@ -18,6 +18,21 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.32] - Limpieza frontend: cabeceras obligatorias + logs de debug (2026-02-13)
+### ♻️ Frontend (mantenibilidad)
+- Eliminado `console.log/debug` en runtime de UI (ahora `uiLogger.info` solo en DEV) y normalizados errores:
+  - `src/App.tsx`
+  - `src/ui/hooks/modules/ui/usePanelDockingState.ts`
+  - `src/ui/features/attack_lab/hooks/useAttackLabDetachedSync.ts`
+  - `src/ui/features/radar/components/radar/RadarIntelPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
+  - `src/ui/features/wordlist/hooks/useWordlistManager.ts`
+- Cabecera aplicada a todos los `.ts/.tsx` bajo `src/ui` (ruta + descripcion en las dos primeras lineas).
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.27] - Reestructura frontend: Radar + Console Logs por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - Radar movido a feature-folder:

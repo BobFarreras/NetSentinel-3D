@@ -1,3 +1,6 @@
+// src/ui/components/layout/DetachedWindowPortal.tsx
+// Portal de ventana desacoplada (modo web): intenta abrir popup y, si falla, renderiza un overlay draggable en la ventana principal.
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 

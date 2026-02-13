@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { windowingAdapter, type DetachablePanelId } from "../../../../adapters/windowingAdapter";
+import { uiLogger } from "../../../utils/logger";
 
 type DetachedPanels = Record<DetachablePanelId, boolean>;
 type DetachedModes = Record<DetachablePanelId, "portal" | "tauri" | null>;
@@ -39,11 +40,11 @@ export const usePanelDockingState = ({
 
   // UNDOCK (Obrir finestra independent)
   const undockPanel = useCallback(async (key: DetachablePanelId) => {
-    // CAPTURA CRÍTICA: Assegurem que passem les dades actuals en el moment d'obrir
+    // Captura critica: aseguramos que pasamos los datos actuales en el momento de abrir.
     const targetIp = key === "attack_lab" ? attackLabTargetIp : key === "device" ? selectedDeviceIp : undefined;
     const scenarioId = key === "attack_lab" ? (attackLabScenarioId || undefined) : undefined;
     
-    console.log(`🪟 [DOCKING] Undocking panel '${key}' with Target: ${targetIp}`);
+    uiLogger.info(`[docking] Undocking panel '${key}'`, { targetIp, scenarioId });
 
     const openedTauri = await windowingAdapter.openDetachedPanelWindow({ panel: key, targetIp, scenarioId });
     
@@ -56,8 +57,8 @@ export const usePanelDockingState = ({
     let unlisten: (() => void) | null = null;
     const boot = async () => {
       unlisten = await windowingAdapter.listenDockPanel((panel) => {
-        // La finestra filla diu "em tanco, torna'm al dock"
-        console.log(`🪟 [DOCKING] Child window '${panel}' closed. Redocking.`);
+        // La ventana hija indica "me cierro, vuelve a acoplarme".
+        uiLogger.info(`[docking] Child window '${panel}' closed. Redocking.`);
         setDetachedPanels((prev) => ({ ...prev, [panel]: false }));
         setDetachedModes((prev) => ({ ...prev, [panel]: null }));
       });
@@ -66,8 +67,8 @@ export const usePanelDockingState = ({
     return () => { if (unlisten) unlisten(); };
   }, []);
 
-  // NOTA: Hem eliminat el 'polling' i els 'useEffect' automàtics que causaven parpadejos.
-  // Ara confiem en l'usuari i els events.
+  // Nota: eliminamos el polling y efectos automaticos que causaban parpadeos.
+  // Confiamos en eventos (dock desde ventana) y accion del usuario.
 
   return {
     detachedPanels,

@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/__tests__/usePanelDockingState.test.ts
+// Tests de docking: valida undock (modo tauri) y re-dock al recibir evento de cierre desde ventana hija.
+
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

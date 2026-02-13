@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core"; // Asegúrate de importar invoke
 import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
+import { uiLogger } from "../../../utils/logger";
 
 type UseDeviceDetailPanelStateArgs = {
   device: DeviceDTO;
@@ -32,7 +33,7 @@ export const useDeviceDetailPanelState = ({
   useEffect(() => {
     invoke<HostIdentity>("get_identity")
       .then(setIdentity)
-      .catch(console.error);
+      .catch((error: unknown) => uiLogger.error("Error cargando identidad del host (get_identity)", error));
   }, []);
 
   const resolvedName = useMemo(() => {

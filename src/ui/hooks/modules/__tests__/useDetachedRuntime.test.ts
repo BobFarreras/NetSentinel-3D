@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/__tests__/useDetachedRuntime.test.ts
+// Tests del runtime detached: valida el retardo de "ready" y el re-dock automatico en pagehide.
+
 import { renderHook, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

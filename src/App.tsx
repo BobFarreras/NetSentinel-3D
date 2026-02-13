@@ -11,6 +11,7 @@ import { useDetachedRuntime } from "./ui/hooks/modules/ui/useDetachedRuntime";
 import { DetachedPanelView } from "./ui/components/layout/DetachedPanelView";
 import { MainDockedLayout } from "./ui/components/layout/MainDockedLayout";
 import { useAttackLabDetachedSync } from "./ui/features/attack_lab/hooks/useAttackLabDetachedSync";
+import { uiLogger } from "./ui/utils/logger";
 
 function App() {
   const detachedContext = windowingAdapter.parseDetachedContextFromLocation();
@@ -47,9 +48,9 @@ function App() {
 
   // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
   useEffect(() => {
-    console.log("👂 [APP] Listening for Dock Panel events...");
+    uiLogger.info("[app] Listening for Dock Panel events...");
     const unlistenPromise = windowingAdapter.listenDockPanel((panelName) => {
-        console.log("🔀 [APP] Request to open panel:", panelName);
+        uiLogger.info("[app] Request to open panel", panelName);
         if (panelName === "attack_lab") {
             setShowAttackLab(true);
             // Opcional: Cerrar otros si es política de UI
@@ -61,7 +62,7 @@ function App() {
 
     // TAMBIÉN ESCUCHAR CONTEXTO PARA ACTUALIZAR OBJETIVO
     const unlistenContext = windowingAdapter.listenAttackLabContext((payload) => {
-        console.log("🎯 [APP] Attack Lab Context Update:", payload);
+        uiLogger.info("[app] Attack Lab Context Update", payload);
         if (payload.targetDevice) {
             setAttackLabTarget(payload.targetDevice);
         }

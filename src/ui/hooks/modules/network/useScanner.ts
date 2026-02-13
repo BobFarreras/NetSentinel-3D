@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/network/useScanner.ts
+// Hook de escaneo: hidrata snapshot/historial, ejecuta scan_network, detecta intrusos y hace merge defensivo de inventario.
+
 import { useState, useEffect, useRef } from 'react';
 import { DeviceDTO, ScanSession } from '../../../../shared/dtos/NetworkDTOs';
 import { networkAdapter } from '../../../../adapters/networkAdapter';

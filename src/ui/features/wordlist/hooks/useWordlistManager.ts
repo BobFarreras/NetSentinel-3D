@@ -3,6 +3,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { uiLogger } from "../../../utils/logger";
 
 export const useWordlistManager = (isOpen: boolean) => {
   // Datos
@@ -24,7 +25,7 @@ export const useWordlistManager = (isOpen: boolean) => {
       const list = await invoke<string[]>("get_dictionary");
       setWords(list);
     } catch (e) {
-      console.error("Error loading dictionary:", e);
+      uiLogger.error("Error cargando diccionario", e);
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,7 @@ export const useWordlistManager = (isOpen: boolean) => {
         await Promise.all(itemsToDelete.map(word => invoke("remove_from_dictionary", { word })));
         await loadWords(); // Sincronització final
     } catch (e) {
-        console.error("Error deleting:", e);
+        uiLogger.error("Error borrando items del diccionario", e);
         await loadWords(); // Rollback
     }
   };

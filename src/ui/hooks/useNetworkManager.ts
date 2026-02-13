@@ -1,3 +1,6 @@
+// src/ui/hooks/useNetworkManager.ts
+// Hook orquestador de UI: compone modulos (scanner/audit/router/jammer/logs/bootstrap) y expone una API estable para App/layouts.
+
 import { useState } from 'react';
 import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
 

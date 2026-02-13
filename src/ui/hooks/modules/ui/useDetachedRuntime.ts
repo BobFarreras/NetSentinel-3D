@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/ui/useDetachedRuntime.ts
+// Hook de runtime para paneles desacoplados: coordina "ready" post-mount y re-dock al salir (pagehide).
+
 import { useEffect, useState } from "react";
 import { windowingAdapter, type DetachedPanelContext } from "../../../../adapters/windowingAdapter";
 

@@ -1,3 +1,6 @@
+// src/ui/hooks/modules/network/useJamming.ts
+// Hook de jammer: coordina start/stop_jamming con timeouts, estado pending y trazas via addLog + uiLogger.
+
 import { useCallback, useRef, useState } from 'react';
 import { DeviceDTO } from '../../../../shared/dtos/NetworkDTOs';
 import { invokeCommand } from '../../../../shared/tauri/bridge';
@@ -5,7 +8,6 @@ import { uiLogger } from '../../../utils/logger';
 
 const JAM_COMMAND_TIMEOUT_MS = 5000;
 const MAC_REGEX = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
-const jamDebug = (...args: unknown[]) => console.log("[jammer]", ...args);
 
 const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMsg: string): Promise<T> => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -41,7 +43,6 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
 
     const toggleJammer = useCallback(async (ip: string) => {
         uiLogger.info(`[jammer] toggle solicitado para ip=${ip}`);
-        jamDebug("toggle solicitado", { ip });
         if (jamPendingRef.current.has(ip)) {
             addLog(ip, `⌛ JAMMER PENDING: ${ip}`);
             uiLogger.warn(`[jammer] solicitud ignorada por pending ip=${ip}`);
@@ -72,7 +73,6 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
         if (!MAC_REGEX.test(target.mac ?? "")) {
             addLog(ip, `❌ ERROR STARTING JAMMER: MAC invalida (${target.mac || "empty"})`);
             uiLogger.error(`[jammer] MAC invalida para ip=${ip}`, { mac: target.mac, target });
-            jamDebug("MAC invalida", { ip, mac: target.mac, target });
             return;
         }
 
@@ -83,7 +83,6 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
             try {
                 const startedAt = Date.now();
                 uiLogger.info(`[jammer] invocando stop_jamming ip=${ip}`);
-                jamDebug("invoke stop_jamming", { ip });
                 await withTimeout(
                     invokeCommand('stop_jamming', { ip }),
                     JAM_COMMAND_TIMEOUT_MS,
@@ -96,11 +95,9 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
                 });
                 addLog(ip, `🏳️ JAMMER STOPPED: ${ip}`);
                 uiLogger.info(`[jammer] stop_jamming OK ip=${ip} elapsedMs=${Date.now() - startedAt}`);
-                jamDebug("stop_jamming OK", { ip, elapsedMs: Date.now() - startedAt });
             } catch (error) {
                 addLog(ip, `❌ ERROR STOPPING JAMMER: ${error}`);
                 uiLogger.error(`[jammer] stop_jamming ERROR ip=${ip}`, error);
-                jamDebug("stop_jamming ERROR", { ip, error });
             } finally {
                 clearPending(ip);
                 uiLogger.info(`[jammer] pending=false ip=${ip}`);
@@ -116,7 +113,6 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
                 };
                 const startedAt = Date.now();
                 uiLogger.info(`[jammer] invocando start_jamming`, payload);
-                jamDebug("invoke start_jamming", payload);
                 await withTimeout(
                     invokeCommand('start_jamming', payload),
                     JAM_COMMAND_TIMEOUT_MS,
@@ -129,11 +125,9 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
                 });
                 addLog(ip, `💀 JAMMER ACTIVE: ${ip} (Spoofing ${gateway.ip})`);
                 uiLogger.info(`[jammer] start_jamming OK ip=${ip} elapsedMs=${Date.now() - startedAt}`);
-                jamDebug("start_jamming OK", { ip, elapsedMs: Date.now() - startedAt });
             } catch (error) {
                 addLog(ip, `❌ ERROR STARTING JAMMER: ${error}`);
                 uiLogger.error(`[jammer] start_jamming ERROR ip=${ip}`, error);
-                jamDebug("start_jamming ERROR", { ip, error });
             } finally {
                 clearPending(ip);
                 uiLogger.info(`[jammer] pending=false ip=${ip}`);

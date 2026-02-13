@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
 import { windowingAdapter } from "../../../../adapters/windowingAdapter";
+import { uiLogger } from "../../../utils/logger";
 
 export const useAttackLabDetachedSync = () => {
   const [detachedAttackLabTarget, setDetachedAttackLabTarget] = useState<DeviceDTO | null>(null);
@@ -13,9 +14,9 @@ export const useAttackLabDetachedSync = () => {
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     const boot = async () => {
-      // Aquest hook s'executa DINS de la finestra desacoblada
+      // Este hook se ejecuta dentro de la ventana desacoplada.
       unlisten = await windowingAdapter.listenAttackLabContext((payload) => {
-        console.log("📡 [DETACHED SYNC] Received context update:", payload);
+        uiLogger.info("[attack_lab] detached context update", payload);
         
         if (payload.targetDevice) {
             setDetachedAttackLabTarget(payload.targetDevice);
