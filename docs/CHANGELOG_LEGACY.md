@@ -1,4 +1,7 @@
-# Diario de desarrollo (CHANGELOG)
+<!-- docs/CHANGELOG_LEGACY.md -->
+<!-- Descripcion: historico de changelog (entradas antiguas) movido desde docs/CHANGELOG.md para mantener el diario principal corto y accionable. -->
+
+# Diario de desarrollo (CHANGELOG LEGACY)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 ## [0.8.23] - OpSec & Ghost Mode Implementation

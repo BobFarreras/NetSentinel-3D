@@ -1,4 +1,5 @@
 <!-- docs/SECURITY.md -->
+<!-- Descripcion: politica de seguridad del proyecto (alcance, reglas, comandos sensibles, hardening y decision records). -->
 
 # Politica de Seguridad de NetSentinel 3D
 

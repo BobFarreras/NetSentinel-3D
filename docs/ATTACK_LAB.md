@@ -1,4 +1,5 @@
 <!-- docs/ATTACK_LAB.md -->
+<!-- Descripcion: guia completa del modulo Attack Lab (CUSTOM + LAB) y su flujo end-to-end (comandos, eventos, DTOs y mapa de archivos). -->
 
 # Attack Lab (antes: External Audit) y LAB Audit (Guia Completa)
 
@@ -52,35 +53,34 @@ Flujo `LAB(simulated)`:
 ## 3) Mapa de archivos (fuente de verdad)
 
 ### Backend (Rust, Tauri)
-- Servicio (fuente de verdad):
+- Caso de uso (application):
   - `src-tauri/src/application/attack_lab/`
-    - `service.rs`: API del caso de uso (`start_audit`, `cancel_audit`), genera `audit_id`.
+    - `service.rs`: orquesta `start_audit` / `cancel_audit` y genera `audit_id`.
     - `validation.rs`: validaciones defensivas del request.
-    - `types.rs`: modelos (`AttackLabRequest`, eventos, etc.).
- - Runner (infraestructura):
-   - `src-tauri/src/infrastructure/attack_lab/runner.rs`: ejecuta el proceso con `tokio::process::Command` y hace streaming stdout/stderr.
- - Sink de eventos (presentacion):
-   - `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs`: emite eventos Tauri hacia la UI.
+    - `types.rs`: reexports/aliases para imports estables (los tipos reales viven en dominio).
+- Dominio (tipos/contratos):
+  - `src-tauri/src/domain/entities.rs`: `AttackLabRequest`, `AttackLabLogEvent`, `AttackLabExitEvent`
+  - `src-tauri/src/domain/ports.rs`: `AttackLabRunnerPort`, `AttackLabEventSinkPort`
+- Infraestructura (runner real):
+  - `src-tauri/src/infrastructure/attack_lab/runner.rs`: ejecuta el proceso con `tokio::process::Command` y hace streaming stdout/stderr.
+- Presentacion (event sink):
+  - `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs`: emite eventos Tauri hacia la UI.
 - Comandos Tauri:
-  - `src-tauri/src/api/commands.rs`
-    - `start_attack_lab` (principal)
-    - `cancel_attack_lab` (principal)
-  - Implementacion interna:
-    - `src-tauri/src/api/commands/attack_lab.rs`
+  - `src-tauri/src/api/commands/attack_lab.rs` (implementacion)
+  - `src-tauri/src/api/commands.rs` (agregador)
 - DTOs (contrato Rust):
-  - `src-tauri/src/api/dtos.rs`
+  - `src-tauri/src/api/dtos.rs` (incluye `AttackLabRequestDTO`)
 
 ### Frontend (React/TS)
 - Contratos TS (DTO espejo):
   - `src/shared/dtos/NetworkDTOs.ts`
 - Adapter (IPC):
-  - `src/adapters/attackLabAdapter.ts` (o equivalente)
+  - `src/adapters/attackLabAdapter.ts`
 - Hook de runtime (eventos/logs):
-  - `src/ui/hooks/modules/ui/useAttackLab.ts` (o equivalente)
+  - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
 - UI:
-  - `src/ui/features/attack_lab/components/AttackLabPanel.tsx` (o equivalente)
-- Catalogo de escenarios `LAB`:
-  - `src/ui/features/attack_lab/catalog/attackLabScenarios.ts` (o equivalente)
+  - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
+  - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
 
 ---
 
@@ -271,12 +271,12 @@ Flujo implementado en el estado actual del repo:
 Puntos exactos de codigo:
 - `src/App.tsx`
 - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
-- `src/ui/features/attack_lab/components/AttackLabPanel.tsx`
+- `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
 - `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
 - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
 
 Si quieres "plantillas de ataques por router" mas amplias:
-- Anade escenarios categoria `ROUTER` en `externalAuditScenarios.ts`.
+- Anade escenarios categoria `ROUTER` en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`.
 - Define `isSupported` + `buildRequest` (o `simulate`) por cada plantilla.
 - Mantiene `DOC-ATTACK.md` como referencia funcional y actualiza `docs/CHANGELOG.md`.
 

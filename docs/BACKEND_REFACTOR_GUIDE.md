@@ -61,8 +61,7 @@ Regla practica:
 - Cuando todo el codigo consumidor ya use el nuevo path, eliminar wrappers.
 
 Nota (estado actual del repo):
-- Los wrappers de compatibilidad se centralizan en `src-tauri/src/application/legacy/*`.
-- `src-tauri/src/application/mod.rs` expone esos shims via `#[path = "legacy/..."]` para evitar ensuciar la raiz de `application/`.
+- No se mantienen wrappers legacy en `application/legacy/*` (el repo ya esta migrado por completo).
 
 Checklist por cada servicio migrado:
 - [ ] `src-tauri/src/lib.rs` compila sin cambios funcionales.
@@ -71,18 +70,17 @@ Checklist por cada servicio migrado:
 - [ ] `docs/CHANGELOG.md` actualizado (entrada corta).
 
 ## Fase 2: Consolidar Attack Lab y compatibilidad legacy (external_audit)
-Estado esperado:
+Estado actual (repo):
 - `attack_lab` es el nombre oficial interno.
-- `external_audit` se elimina cuando toda la UI y adapters ya estan migrados a `attack_lab`.
+- Los shims legacy `external_audit` ya fueron eliminados (backend + frontend).
 
 Acciones recomendadas (sin romper comandos existentes):
 1. Mantener comandos Tauri estables:
    - `start_attack_lab` / `cancel_attack_lab`
 2. Asegurar que el streaming de eventos (`attack-lab-log` / `attack-lab-exit`) es consistente.
 
-Cuando UI ya este migrada:
-1. Eliminar shims legacy (backend + frontend).
-2. Actualizar docs + `AGENTS.md` en el mismo cambio.
+Regla:
+- No reintroducir aliases `start_external_audit/cancel_external_audit` salvo plan explicito de compatibilidad (y documentado).
 
 ## Fase 3: Dominio e infraestructura (hexagonal real)
 Objetivo: que `application/` dependa de puertos del dominio, no de implementaciones concretas.

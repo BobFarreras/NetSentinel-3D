@@ -1,4 +1,4 @@
-<!-- Ruta: docs/FEATURE_README_TEMPLATE.md -->
+<!-- docs/FEATURE_README_TEMPLATE.md -->
 <!-- Descripcion: plantilla para README.md por feature/carpeta, con foco en interconexiones (comandos, eventos, DTOs y entrypoints). -->
 
 # Nombre De Feature
@@ -48,4 +48,3 @@ Dependencias internas (si aplica):
 ## Notas
 
 - Riesgos / deuda tecnica intencional: ...
-

@@ -1,4 +1,5 @@
 <!-- docs/RADAR_VIEW.md -->
+<!-- Descripcion: guia de implementacion de Radar View (WiFi Spectrum), flujo UI/back, contratos y consideraciones de parsing/permisos. -->
 
 # Radar View (WiFi Spectrum) - Guia de Implementacion
 

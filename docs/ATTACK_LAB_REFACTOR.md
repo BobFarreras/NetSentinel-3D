@@ -1,3 +1,6 @@
+<!-- docs/ATTACK_LAB_REFACTOR.md -->
+<!-- Descripcion: documento de roadmap/refactor futuro: migrar de Attack Lab (wrapper CLI) a un motor Native Audit en Rust nativo (sin dependencias de CLIs externas). -->
+
 # Guia de refactor: de Attack Lab (antes: ExternalAudit, CLI wrapper) a NativeAudit (Rust nativo)
 
 Objetivo de esta guia:

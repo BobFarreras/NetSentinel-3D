@@ -1,4 +1,5 @@
 <!-- docs/REFACTOR_AUDIT.md -->
+<!-- Descripcion: auditoria de mantenibilidad (SOLID) y backlog de refactors recomendados sin romper funcionalidad. -->
 
 # Auditoria de Mantenibilidad y Refactor (SOLID) - NetSentinel 3D
 
