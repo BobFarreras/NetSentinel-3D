@@ -51,6 +51,12 @@ Regla practica:
 - Si un componente supera responsabilidad de presentacion, extraer hook
   `useXxxState` y sub-vistas.
 
+Convencion de documentacion:
+
+- Cada feature-folder principal debe tener `README.md` propio con un resumen y
+  una seccion de interconexiones (comandos, eventos, DTOs y entrypoints). Ver
+  `docs/FEATURE_README_TEMPLATE.md`.
+
 ## 3. Capas del Backend (Rust)
 
 ### 3.1 Domain

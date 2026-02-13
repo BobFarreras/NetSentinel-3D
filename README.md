@@ -14,6 +14,7 @@ Documentos de referencia:
 - `docs/ARCHITECTURE.md` (arquitectura real y mapa de comandos).
 - `docs/SECURITY.md` (políticas y hardening).
 - `docs/CHANGELOG.md` (registro de cambios relevantes).
+- `docs/FEATURE_README_TEMPLATE.md` (plantilla de README por feature, incluyendo interconexiones).
 
 ## Stack
 - Frontend: React + TypeScript + Vite + Three.js / React Three Fiber

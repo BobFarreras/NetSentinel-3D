@@ -153,6 +153,11 @@ Regla:
    - Ejemplo:
      - `// src/ui/features/radar/components/RadarPanel.tsx`
      - `// Panel Radar: composicion de UI y conexion con hook de estado.`
+5. README.md por feature/carpeta (NUEVO):
+   - Toda feature/carpeta relevante debe incluir un `README.md` explicando:
+     - que hace esa feature/capa
+     - y con que se interconecta (comandos Tauri, eventos, DTOs, entrypoints y dependencias internas)
+   - Plantilla: `docs/FEATURE_README_TEMPLATE.md`
 
 ### Patron frontend obligatorio (paneles)
 - Evitar "god components" en `src/ui/components`.
