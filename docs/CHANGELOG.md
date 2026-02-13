@@ -35,6 +35,30 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 ### ✅ Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.36] - Backend: Fase 1 (application/credentials) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de credenciales migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/credentials/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/credentials/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/credential_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.37] - Backend: Fase 1 (wordlist/opsec/settings) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicios migrados a modulos por dominio (con wrappers legacy):
+  - Wordlist: `src-tauri/src/application/wordlist/service.rs` + `src-tauri/src/application/wordlist/mod.rs`
+  - OpSec: `src-tauri/src/application/opsec/service.rs` + `src-tauri/src/application/opsec/mod.rs`
+  - Settings: `src-tauri/src/application/settings/service.rs` + `src-tauri/src/application/settings/mod.rs`
+- Wrappers legacy mantenidos:
+  - `src-tauri/src/application/wordlist_service.rs`
+  - `src-tauri/src/application/opsec_service.rs`
+  - `src-tauri/src/application/settings_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
 ### ♻️ Frontend (estructura y separacion de responsabilidades)
 - History movido a feature-folder:
