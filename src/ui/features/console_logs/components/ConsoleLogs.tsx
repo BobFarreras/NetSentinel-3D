@@ -69,6 +69,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selecte
             speed={state.traffic.speed}
             packets={state.traffic.packets}
             jammedPackets={state.traffic.jammedPackets}
+            jammedIps={jammedIps}
             devices={devices}
             selectedDevice={selectedDevice}
             compactMode={true}

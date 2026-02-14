@@ -23,11 +23,13 @@ type UseTrafficPanelState = {
   filterMode: FilterMode;
   visibleLimit: number;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
+  targetIp: string | null;
   sourcePackets: UITrafficPacket[];
   filteredPackets: UITrafficPacket[];
   visiblePackets: UITrafficPacket[];
   targetLabel: string;
   handleFilterChange: (mode: FilterMode) => void;
+  handleTargetChange: (ip: string | null) => void;
   handleScroll: (e: UIEvent<HTMLDivElement>) => void;
   resolveName: (ip: string) => string;
 };
@@ -41,16 +43,28 @@ export const useTrafficPanelState = ({
   const [filterMode, setFilterMode] = useState<FilterMode>("ALL");
   const [visibleLimit, setVisibleLimit] = useState(50);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [targetIp, setTargetIp] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedDevice) setFilterMode("TARGET");
-    else setFilterMode("ALL");
+    if (selectedDevice?.ip) {
+      setTargetIp(selectedDevice.ip);
+      setFilterMode("TARGET");
+    } else {
+      setFilterMode("ALL");
+    }
     setVisibleLimit(50);
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
   }, [selectedDevice]);
 
   const handleFilterChange = (mode: FilterMode) => {
     setFilterMode(mode);
+    setVisibleLimit(50);
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+  };
+
+  const handleTargetChange = (ip: string | null) => {
+    setTargetIp(ip);
+    setFilterMode(ip ? "TARGET" : "ALL");
     setVisibleLimit(50);
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
   };
@@ -64,7 +78,15 @@ export const useTrafficPanelState = ({
 
   const resolveName = (ip: string) => {
     const device = devices.find((d) => d.ip === ip);
-    if (device) return device.hostname && device.hostname !== "Unknown" ? `💻 ${device.hostname}` : `📱 ${device.vendor}`;
+    if (device) {
+      const hostname = device.hostname?.trim();
+      if (hostname && hostname.toLowerCase() !== "unknown") return `💻 ${hostname}`;
+      const name = (device.name ?? "").trim();
+      if (name) return `📟 ${name}`;
+      const vendor = (device.vendor ?? "").trim();
+      if (vendor && vendor.toLowerCase() !== "unknown") return `📱 ${vendor}`;
+      return ip;
+    }
     if (ip === "255.255.255.255") return "📢 BROADCAST";
     if (ip.startsWith("224.0") || ip.startsWith("239.")) return "📡 MULTICAST";
     if (ip === "8.8.8.8") return "🔍 GOOGLE DNS";
@@ -78,34 +100,42 @@ export const useTrafficPanelState = ({
 
   const filteredPackets = useMemo(() => {
     let filtered = sourcePackets;
-    if (filterMode === "TARGET" && selectedDevice) {
-      filtered = sourcePackets.filter((p) => p.sourceIp === selectedDevice.ip || p.destinationIp === selectedDevice.ip);
+    if (filterMode === "TARGET") {
+      const ip = targetIp ?? selectedDevice?.ip ?? null;
+      if (ip) filtered = sourcePackets.filter((p) => p.sourceIp === ip || p.destinationIp === ip);
     }
     return filtered;
-  }, [sourcePackets, filterMode, selectedDevice]);
+  }, [sourcePackets, filterMode, selectedDevice, targetIp]);
 
   const visiblePackets = useMemo(() => {
     return filteredPackets.slice(0, visibleLimit);
   }, [filteredPackets, visibleLimit]);
 
   const targetLabel = useMemo(() => {
-    if (!selectedDevice) return "🎯 TARGET";
-    const vendor = selectedDevice.vendor?.trim();
-    if (vendor && vendor.toLowerCase() !== "unknown") return `🎯 ${vendor}`;
-    const hostname = selectedDevice.hostname?.trim();
+    const ip = targetIp ?? selectedDevice?.ip ?? null;
+    if (!ip) return "🎯 TARGET";
+    const d = devices.find((x) => x.ip === ip) ?? null;
+    if (!d) return `🎯 ${ip}`;
+    const hostname = d.hostname?.trim();
     if (hostname && hostname.toLowerCase() !== "unknown") return `🎯 ${hostname}`;
-    return `🎯 ${selectedDevice.ip}`;
-  }, [selectedDevice]);
+    const name = (d.name ?? "").trim();
+    if (name) return `🎯 ${name}`;
+    const vendor = (d.vendor ?? "").trim();
+    if (vendor && vendor.toLowerCase() !== "unknown") return `🎯 ${vendor}`;
+    return `🎯 ${ip}`;
+  }, [selectedDevice, targetIp, devices]);
 
   return {
     filterMode,
     visibleLimit,
     scrollContainerRef,
+    targetIp,
     sourcePackets,
     filteredPackets,
     visiblePackets,
     targetLabel,
     handleFilterChange,
+    handleTargetChange,
     handleScroll,
     resolveName,
   };

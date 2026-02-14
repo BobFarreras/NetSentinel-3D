@@ -188,6 +188,7 @@ export const DetachedPanelView = ({
                   onDeviceSelect={selectDevice}
                   selectedIp={selectedDevice?.ip}
                   intruders={intruders}
+                  jammedIps={jammedDevices}
                   identity={identity}
                 />
               </Suspense>

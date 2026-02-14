@@ -105,6 +105,17 @@ export function FieldManualView() {
         color: "#ff4444",
         subtitle: language === "en" ? "Default device." : language === "ca" ? "Dispositiu default." : "Dispositivo default.",
       },
+      {
+        id: "jammed" as const,
+        title: t("settings.legend.killNet"),
+        color: "#ff4444",
+        subtitle:
+          language === "en"
+            ? "Kill Net active (swarm + beams)."
+            : language === "ca"
+              ? "Kill Net actiu (swarm + rajos)."
+              : "Kill Net activo (swarm + rayos).",
+      },
     ],
     [language, t]
   );
@@ -174,6 +185,22 @@ export function FieldManualView() {
               "Uso: enriquecer lectura del entorno y priorizar auditorias/segmentacion.",
             ];
       default:
+        if (selected.id === "jammed") {
+          return language === "en"
+            ? [
+                "Kill Net active: ARP poisoning loop is running against this device.",
+                "FX: swarm drones orbit + red pulse ring + intermittent beams to communicate active jamming.",
+              ]
+            : language === "ca"
+              ? [
+                  "Kill Net actiu: hi ha un bucle d'ARP poisoning contra aquest dispositiu.",
+                  "FX: swarm de naus + anell pulsant + rajos intermitents per senyalitzar jamming actiu.",
+                ]
+              : [
+                  "Kill Net activo: hay un bucle de ARP poisoning contra este dispositivo.",
+                  "FX: swarm de naves + anillo pulsante + rayos intermitentes para señalar jamming activo.",
+                ];
+        }
         return language === "en"
           ? [
               "Default node (no WiFi metadata or non-host).",

@@ -486,6 +486,7 @@ export const MainDockedLayout = ({
                     onDeviceSelect={selectDevice}
                     selectedIp={selectedDevice?.ip}
                     intruders={intruders}
+                    jammedIps={jammedDevices}
                     identity={identity}
                     onUndockScene={() => void undockPanel("scene3d")}
                   />
@@ -629,7 +630,7 @@ export const MainDockedLayout = ({
         <DetachedWindowPortal title="NetSentinel - Network Scene" onClose={() => void dockPanel("scene3d")} width={1200} height={780}>
           <DetachedShell title="NETWORK SCENE" dockAria="DOCK_SCENE3D" onDock={() => void dockPanel("scene3d")}>
             <Suspense fallback={null}>
-              <NetworkScene devices={devices} onDeviceSelect={selectDevice} selectedIp={selectedDevice?.ip} intruders={intruders} identity={identity} />
+              <NetworkScene devices={devices} onDeviceSelect={selectDevice} selectedIp={selectedDevice?.ip} intruders={intruders} jammedIps={jammedDevices} identity={identity} />
             </Suspense>
           </DetachedShell>
         </DetachedWindowPortal>

@@ -7,7 +7,7 @@ import { OrbitControls, Stars } from "@react-three/drei";
 import { NetworkNode } from "../../../scene3d/components/NetworkNode";
 import { SCENE_TOKENS } from "../../../scene3d/components/sceneTokens";
 
-export type LegendNodeId = "router" | "host" | "intruder" | "wifi" | "default";
+export type LegendNodeId = "router" | "host" | "intruder" | "wifi" | "default" | "jammed";
 
 export type LegendNode = {
   id: LegendNodeId;
@@ -56,6 +56,7 @@ export function LegendArena3D({
               color={n.color}
               name={n.title}
               isSelected={selectedId === n.id}
+              isJammed={n.id === "jammed"}
               onClick={() => onSelect(n.id)}
             />
           </group>

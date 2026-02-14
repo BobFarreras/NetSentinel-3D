@@ -74,6 +74,25 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.52] - UI: Multi Kill Net + Traffic UX + FX 3D (2026-02-14)
+### UI (traffic)
+- `JAMMED` ahora reporta targets afectados (no solo paquetes).
+- Nuevo selector `TARGET` en Live Traffic para fijar un dispositivo sin depender solo del nodo seleccionado.
+- Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
+
+### UI (scene3d)
+- FX visual para nodos con Kill Net activo:
+  - anillo rojo pulsante
+  - swarm de "naves" orbitando con trayectorias pseudo-aleatorias
+  - rayos intermitentes (beams) al nodo objetivo
+
+### Settings (Field Manual)
+- Leyenda 3D incluye estado `KILL NET (JAMMER ACTIVO)` con la misma animacion para aprendizaje in-app.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)

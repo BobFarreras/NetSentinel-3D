@@ -38,6 +38,7 @@ La leyenda usa la misma paleta que la escena:
 - Intruder: `#ff0000` (ring rojo)
 - Wifi intel: `#ff00ff`
 - Default: `#ff4444`
+- Kill Net activo: base `#ff4444` + FX (swarm + ring + beams)
 - Selected: `#ffd700`
 - Hover: `#ffffff`
 
