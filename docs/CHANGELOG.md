@@ -59,6 +59,21 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.51] - UI: Kill Net (Jammer) robusto + JAMMED en Traffic (2026-02-14)
+### UI (jammer)
+- `useJamming`: acepta `identity.gatewayIp` como fallback si el inventario aun no marca `isGateway`.
+- Normalizacion defensiva de MAC (soporta `AA-BB-..` y `AA:BB:..`) antes de invocar `start_jamming`.
+
+### UI (traffic)
+- `TrafficMonitor`: clasifica paquetes como `JAMMED` si:
+  - vienen marcados como `isIntercepted`, o
+  - el `sourceIp/destinationIp` pertenece a una IP con jammer activo.
+- `ConsoleLogs`: inyecta `jammedIps` al monitor para que la pestaña/filtro `JAMMED` refleje el estado real.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)

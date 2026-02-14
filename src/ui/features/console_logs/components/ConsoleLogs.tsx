@@ -16,10 +16,11 @@ interface ConsoleLogsProps {
   devices: DeviceDTO[];
   selectedDevice?: DeviceDTO | null;
   onClearSystemLogs: () => void;
+  jammedIps?: string[];
 }
 
-export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selectedDevice, onClearSystemLogs }) => {
-  const state = useConsoleLogsState();
+export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({ logs, devices, selectedDevice, onClearSystemLogs, jammedIps }) => {
+  const state = useConsoleLogsState({ jammedIps });
 
   return (
     <div

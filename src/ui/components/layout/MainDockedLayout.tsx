@@ -508,7 +508,7 @@ export const MainDockedLayout = ({
               <div style={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
                 <InlinePanelHeader title="CONSOLE" onUndock={() => void undockPanel("console")} />
                 <div style={{ flex: 1, minHeight: 0 }}>
-                  <ConsoleLogs logs={systemLogs} devices={devices} selectedDevice={selectedDevice} onClearSystemLogs={clearSystemLogs} />
+                  <ConsoleLogs logs={systemLogs} devices={devices} selectedDevice={selectedDevice} jammedIps={jammedDevices} onClearSystemLogs={clearSystemLogs} />
                 </div>
               </div>
             </div>
@@ -570,7 +570,7 @@ export const MainDockedLayout = ({
       {detachedPanels.console && detachedModes.console === "portal" && (
         <DetachedWindowPortal title="NetSentinel - Console Logs" onClose={() => void dockPanel("console")} width={980} height={420}>
           <DetachedShell title="CONSOLE" dockAria="DOCK_CONSOLE" onDock={() => void dockPanel("console")}>
-            <ConsoleLogs logs={systemLogs} devices={devices} selectedDevice={selectedDevice} onClearSystemLogs={clearSystemLogs} />
+            <ConsoleLogs logs={systemLogs} devices={devices} selectedDevice={selectedDevice} jammedIps={jammedDevices} onClearSystemLogs={clearSystemLogs} />
           </DetachedShell>
         </DetachedWindowPortal>
       )}

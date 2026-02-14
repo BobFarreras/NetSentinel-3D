@@ -11,7 +11,7 @@ export interface UITrafficPacket extends TrafficPacket {
   _seq: number;
 }
 
-export const useTrafficMonitor = () => {
+export const useTrafficMonitor = (jammedIps?: string[]) => {
   const [isActive, setIsActive] = useState(false);
   // Estado que contiene las listas consumidas por la UI
   const [data, setData] = useState<{
@@ -28,6 +28,11 @@ export const useTrafficMonitor = () => {
   
   const byteCountRef = useRef(0);
   const seqRef = useRef(0);
+  const jammedIpSetRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    jammedIpSetRef.current = new Set((jammedIps ?? []).filter(Boolean));
+  }, [jammedIps]);
 
   const toggleMonitoring = async () => {
     try {
@@ -66,7 +71,11 @@ export const useTrafficMonitor = () => {
         bufferRef.current.unshift(newPacket);
         
         // B) Si el paquete fue interceptado, se conserva en lista jammed
-        if (newPacket.isIntercepted) {
+        const isJammedByIp =
+          jammedIpSetRef.current.has(newPacket.sourceIp) ||
+          jammedIpSetRef.current.has(newPacket.destinationIp);
+
+        if (newPacket.isIntercepted || isJammedByIp) {
             jammedBufferRef.current.unshift(newPacket);
             // Limite defensivo para evitar crecimiento no acotado
             if (jammedBufferRef.current.length > 1000) {

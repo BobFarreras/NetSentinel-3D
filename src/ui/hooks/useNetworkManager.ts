@@ -33,15 +33,16 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   // 4. Hacker (Router)
   const { routerRisk, setRouterRisk, checkRouterSecurity } = useRouterHacker(addLog, setDevices, setActiveTarget);
 
-  // 5. Jammer (Active Countermeasures)
-  const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog);
-
-  // 6. Bootstrap (identidad + autoscan + autosync de gateway)
+  // 5. Bootstrap (identidad + autoscan + autosync de gateway)
   const { identity, deriveCidr } = useBootstrapNetwork({
     startScan,
     setDevices,
     enableAutoBootstrap: options?.enableAutoBootstrap ?? true,
   });
+
+  // 6. Jammer (Active Countermeasures)
+  // Usamos el gatewayIp de identity como fallback porque el inventario puede tardar en marcar isGateway.
+  const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog, { gatewayIpOverride: identity?.gatewayIp ?? null });
 
   // Si cambia la identidad (por ejemplo, Ghost Mode), eliminamos clones stale del host del inventario.
   // Esto evita duplicados del mismo dispositivo con MAC antigua en la escena.
