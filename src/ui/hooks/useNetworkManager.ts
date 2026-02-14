@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
+import { deviceAliasRegistry } from "../../core/logic/deviceAliasRegistry";
 
 // Importamos los modulos de negocio de UI.
 import { useSocketLogs } from './modules/network/useSocketLogs';
@@ -32,15 +33,16 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   // 4. Hacker (Router)
   const { routerRisk, setRouterRisk, checkRouterSecurity } = useRouterHacker(addLog, setDevices, setActiveTarget);
 
-  // 5. Jammer (Active Countermeasures)
-  const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog);
-
-  // 6. Bootstrap (identidad + autoscan + autosync de gateway)
+  // 5. Bootstrap (identidad + autoscan + autosync de gateway)
   const { identity, deriveCidr } = useBootstrapNetwork({
     startScan,
     setDevices,
     enableAutoBootstrap: options?.enableAutoBootstrap ?? true,
   });
+
+  // 6. Jammer (Active Countermeasures)
+  // Usamos el gatewayIp de identity como fallback porque el inventario puede tardar en marcar isGateway.
+  const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog, { gatewayIpOverride: identity?.gatewayIp ?? null });
 
   // Si cambia la identidad (por ejemplo, Ghost Mode), eliminamos clones stale del host del inventario.
   // Esto evita duplicados del mismo dispositivo con MAC antigua en la escena.
@@ -65,6 +67,13 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
       return next;
     });
   }, [identity?.ip, identity?.mac, setDevices]);
+
+  // Memoria UX: aprendemos labels/hostnames de dispositivos y los reutilizamos si un scan futuro no los devuelve.
+  useEffect(() => {
+    deviceAliasRegistry.rememberFromDevices(devices);
+  }, [devices]);
+
+  const devicesWithAliases = deviceAliasRegistry.applyAliases(devices);
 
   // 7. Estado local de UI (seleccion)
   const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
@@ -111,7 +120,7 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
 
   return {
     // Datos
-    devices, selectedDevice, history, intruders,
+    devices: devicesWithAliases, selectedDevice, history, intruders,
     auditResults, routerRisk, jammedDevices, jamPendingDevices,
     consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
     systemLogs,

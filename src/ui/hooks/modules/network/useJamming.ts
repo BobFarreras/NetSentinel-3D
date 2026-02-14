@@ -9,6 +9,12 @@ import { uiLogger } from '../../../utils/logger';
 const JAM_COMMAND_TIMEOUT_MS = 5000;
 const MAC_REGEX = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
 
+const normalizeMac = (mac: string) =>
+    mac
+        .trim()
+        .toUpperCase()
+        .replace(/-/g, ":");
+
 const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMsg: string): Promise<T> => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -25,7 +31,11 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number, timeoutMsg
 };
 
 // Define contrato explicito del logger de nodo.
-export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: string) => void) => {
+export const useJamming = (
+    devices: DeviceDTO[],
+    addLog: (ip: string, msg: string) => void,
+    opts?: { gatewayIpOverride?: string | null }
+) => {
     const [jammedDevices, setJammedDevices] = useState<string[]>([]);
     const [jamPendingDevices, setJamPendingDevices] = useState<string[]>([]);
     const jamPendingRef = useRef<Set<string>>(new Set());
@@ -57,20 +67,27 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
         }
 
         // 2. Buscar gateway (router).
-        const gateway = devices.find((d) => d.isGateway);
-        if (!gateway) {
+        const gatewayIpOverride = opts?.gatewayIpOverride ?? null;
+        const gateway =
+            devices.find((d) => d.isGateway) ??
+            (gatewayIpOverride ? devices.find((d) => d.ip === gatewayIpOverride) : undefined) ??
+            null;
+
+        const gatewayIp = gateway?.ip ?? gatewayIpOverride;
+        if (!gatewayIp) {
             addLog(ip, "❌ ERROR: No Gateway found! Cannot start Jammer.");
-            uiLogger.error(`[jammer] no se encontro gateway en inventario para ip=${ip}`);
+            uiLogger.error(`[jammer] no se encontro gateway (ni override) para ip=${ip}`, { gatewayIpOverride });
             return;
         }
 
-        if (target.isGateway || target.ip === gateway.ip) {
+        if (target.isGateway || target.ip === gatewayIp) {
             addLog(ip, "🚫 JAMMER BLOQUEADO: objetivo es gateway.");
             uiLogger.warn(`[jammer] bloqueo por gateway ip=${ip}`);
             return;
         }
 
-        if (!MAC_REGEX.test(target.mac ?? "")) {
+        const normalizedTargetMac = normalizeMac(target.mac ?? "");
+        if (!MAC_REGEX.test(normalizedTargetMac)) {
             addLog(ip, `❌ ERROR STARTING JAMMER: MAC invalida (${target.mac || "empty"})`);
             uiLogger.error(`[jammer] MAC invalida para ip=${ip}`, { mac: target.mac, target });
             return;
@@ -106,10 +123,10 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
             try {
                 const payload = {
                     ip: target.ip,
-                    mac: target.mac,
-                    gatewayIp: gateway.ip,
+                    mac: normalizedTargetMac,
+                    gatewayIp,
                     // Fallback explicito para comandos Rust en snake_case.
-                    gateway_ip: gateway.ip,
+                    gateway_ip: gatewayIp,
                 };
                 const startedAt = Date.now();
                 uiLogger.info(`[jammer] invocando start_jamming`, payload);
@@ -123,7 +140,7 @@ export const useJamming = (devices: DeviceDTO[], addLog: (ip: string, msg: strin
                     jammedRef.current = next;
                     return next;
                 });
-                addLog(ip, `💀 JAMMER ACTIVE: ${ip} (Spoofing ${gateway.ip})`);
+                addLog(ip, `💀 JAMMER ACTIVE: ${ip} (Gateway ${gatewayIp})`);
                 uiLogger.info(`[jammer] start_jamming OK ip=${ip} elapsedMs=${Date.now() - startedAt}`);
             } catch (error) {
                 addLog(ip, `❌ ERROR STARTING JAMMER: ${error}`);

@@ -20,13 +20,14 @@ interface AuditHeaderProps {
   setMode: (m: "LAB" | "CUSTOM") => void;
   status: string;
   isAutoRun: boolean;
+  compact?: boolean;
   onClose: () => void;
 }
 
-export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status, isAutoRun, onClose }) => {
+export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status, isAutoRun, compact = false, onClose }) => {
   return (
     <div style={{
-      height: 44,
+      height: "auto",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
@@ -34,19 +35,36 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status,
       borderBottom: "1px solid rgba(0,255,136,0.25)",
       background: "linear-gradient(180deg, rgba(0,20,10,0.7), rgba(0,0,0,0.2))",
       flexShrink: 0,
+      flexWrap: "wrap",
+      rowGap: 6,
+      minHeight: 44,
     }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-        <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1.2 }}>ATTACK LAB</div>
-        <div style={{ color: "rgba(183,255,226,0.75)", fontSize: 12 }}>System Override Console</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+        <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1.2, whiteSpace: "nowrap" }}>ATTACK LAB</div>
+        {!compact && (
+          <div style={{ color: "rgba(183,255,226,0.75)", fontSize: 12, whiteSpace: "nowrap" }}>System Override Console</div>
+        )}
       </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
         <button onClick={() => setMode("LAB")} style={btnStyle(mode === "LAB")}>LAB</button>
         <button onClick={() => setMode("CUSTOM")} style={btnStyle(mode === "CUSTOM")}>CUSTOM</button>
-        <div style={{ color: "rgba(183,255,226,0.75)", fontSize: 12 }}>{status}</div>
+        <div
+          title={status}
+          style={{
+            color: "rgba(183,255,226,0.75)",
+            fontSize: 12,
+            maxWidth: compact ? 140 : 320,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {status}
+        </div>
         {isAutoRun && mode === "LAB" && (
           <div style={{ color: "rgba(0,229,255,0.9)", fontSize: 12, fontWeight: 900, letterSpacing: 0.8 }}>AUTO</div>
         )}
-        <button onClick={onClose} style={btnStyle(false)}>CLOSE</button>
+        <button onClick={onClose} style={btnStyle(false)}>{compact ? "X" : "CLOSE"}</button>
       </div>
     </div>
   );

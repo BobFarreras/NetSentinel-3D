@@ -159,6 +159,7 @@ export const DetachedPanelView = ({
                 logs={systemLogs}
                 devices={devices}
                 selectedDevice={selectedDevice}
+                jammedIps={jammedDevices}
                 onClearSystemLogs={clearSystemLogs}
               />
             )}
@@ -187,6 +188,7 @@ export const DetachedPanelView = ({
                   onDeviceSelect={selectDevice}
                   selectedIp={selectedDevice?.ip}
                   intruders={intruders}
+                  jammedIps={jammedDevices}
                   identity={identity}
                 />
               </Suspense>

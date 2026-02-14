@@ -41,6 +41,58 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.50] - UI: dock resizable + panels responsive/scroll (2026-02-14)
+### UI (layout)
+- Dock: soporte real de resize independiente cuando estan abiertos `radar`, `attack_lab` y `settings`:
+  - triple split `Radar | Attack Lab | Settings` con 2 separadores
+  - split `Settings | (Radar|Attack)` con separador propio
+- Se elimina el tope artificial de ancho del dock para poder estirar los paneles hasta el limite real del `NetworkScene`.
+
+### UI (responsive)
+- Radar: modo narrow (stacked) mas estable (breakpoint con histeresis) + `NODE INTEL` con filtros compactos en una sola tira (wrap) en layout lateral.
+- Scroll consistente en paneles pequenos para evitar botones/inputs cortados (Radar/AttackLab/Settings).
+
+### UI (datos)
+- Registro local de alias de dispositivos (hostname/nombre) para rehidratar nombres cuando el scan/audit no los devuelve en el momento.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.51] - UI: Kill Net (Jammer) robusto + JAMMED en Traffic (2026-02-14)
+### UI (jammer)
+- `useJamming`: acepta `identity.gatewayIp` como fallback si el inventario aun no marca `isGateway`.
+- Normalizacion defensiva de MAC (soporta `AA-BB-..` y `AA:BB:..`) antes de invocar `start_jamming`.
+
+### UI (traffic)
+- `TrafficMonitor`: clasifica paquetes como `JAMMED` si:
+  - vienen marcados como `isIntercepted`, o
+  - el `sourceIp/destinationIp` pertenece a una IP con jammer activo.
+- `ConsoleLogs`: inyecta `jammedIps` al monitor para que la pestaña/filtro `JAMMED` refleje el estado real.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.52] - UI: Multi Kill Net + Traffic UX + FX 3D (2026-02-14)
+### UI (traffic)
+- `JAMMED` ahora reporta targets afectados (no solo paquetes).
+- Nuevo selector `TARGET` en Live Traffic para fijar un dispositivo sin depender solo del nodo seleccionado.
+- Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
+
+### UI (scene3d)
+- FX visual para nodos con Kill Net activo:
+  - anillo rojo pulsante
+  - swarm de "naves" orbitando con trayectorias pseudo-aleatorias
+  - rayos intermitentes (beams) al nodo objetivo
+
+### Settings (Field Manual)
+- Leyenda 3D incluye estado `KILL NET (JAMMER ACTIVO)` con la misma animacion para aprendizaje in-app.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)
@@ -363,4 +415,3 @@ Nota:
 - Corregida la verificacion de conexion en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para no depender solo de salida en ingles de `netsh`.
 - `is_connected(...)` ahora reconoce estado conectado en ingles y espanol (`connected` / `conectado`) y normaliza comparacion por minusculas.
 - Impacto: cuando se acierta la clave WPA2, `wifi_connect` devuelve `true` correctamente y el escenario `wifi_brute_force_dict` corta el bucle con `return` en el primer acierto.
-

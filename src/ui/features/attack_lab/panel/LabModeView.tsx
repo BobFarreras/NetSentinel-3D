@@ -31,16 +31,17 @@ interface LabModeViewProps {
   onRun: () => void;
   onCancel: () => void;
   onClear: () => void;
+  layout?: "wide" | "narrow";
 }
 
-export const LabModeView: React.FC<LabModeViewProps> = ({ scenarios, selectedId, onSelect, targetDevice, selectedScenario, isRunning, onRun, onCancel, onClear }) => {
+export const LabModeView: React.FC<LabModeViewProps> = ({ scenarios, selectedId, onSelect, targetDevice, selectedScenario, isRunning, onRun, onCancel, onClear, layout = "wide" }) => {
   // ESTADO PARA EL MODAL DE DICCIONARIO
   const [showWordlist, setShowWordlist] = useState(false);
 
   return (
     <>
-        <div style={{ display: "flex", gap: 12, padding: 12, flexShrink: 0 }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", gap: 12, padding: 12, flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
                 <div style={{ color: "#5c7", fontSize: 10, textTransform: "uppercase" }}>Selected Scenario</div>
                 {/* BOTÓN PARA ABRIR EL GESTOR (Solo si es un ataque wifi) */}
@@ -65,12 +66,12 @@ export const LabModeView: React.FC<LabModeViewProps> = ({ scenarios, selectedId,
             </div>
             )}
         </div>
-        <div style={{ width: 240, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ width: layout === "narrow" ? "100%" : 240, minWidth: 220, display: "flex", flexDirection: "column", gap: 8 }}>
             <div>
             <div style={{ color: "#5c7", fontSize: 10, marginBottom: 4 }}>TARGET</div>
             <div style={{ ...inputStyle, opacity: 0.8 }}>{targetDevice ? `${targetDevice.ip} (${targetDevice.vendor || "N/A"})` : "NO TARGET"}</div>
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {isRunning ? (
                 <button 
                     disabled 
@@ -80,13 +81,14 @@ export const LabModeView: React.FC<LabModeViewProps> = ({ scenarios, selectedId,
                         color: "#00e5ff", 
                         opacity: 1, 
                         cursor: "wait", 
-                        flex: 1 
+                        flex: "1 1 160px",
+                        minWidth: 160,
                     }}
                 >
                     <span className="blink">⚠️ RUNNING...</span>
                 </button>
             ) : (
-                <button onClick={onRun} disabled={!selectedScenario || !targetDevice} style={{ ...btnStyle(!!selectedScenario && !!targetDevice), flex: 1 }}>
+                <button onClick={onRun} disabled={!selectedScenario || !targetDevice} style={{ ...btnStyle(!!selectedScenario && !!targetDevice), flex: "1 1 160px", minWidth: 160 }}>
                     EXECUTE
                 </button>
             )}
@@ -97,13 +99,15 @@ export const LabModeView: React.FC<LabModeViewProps> = ({ scenarios, selectedId,
                 style={{ 
                     ...btnStyle(isRunning), 
                     borderColor: isRunning ? "#f55" : "rgba(0,255,136,0.2)", 
-                    color: "#f55" 
+                    color: "#f55",
+                    flex: "1 1 90px",
+                    minWidth: 90,
                 }}
             >
                 STOP
             </button>
             
-            <button onClick={onClear} disabled={isRunning} style={btnStyle(!isRunning)}>CLEAR</button>
+            <button onClick={onClear} disabled={isRunning} style={{ ...btnStyle(!isRunning), flex: "1 1 90px", minWidth: 90 }}>CLEAR</button>
             </div>
             
             <style>{`

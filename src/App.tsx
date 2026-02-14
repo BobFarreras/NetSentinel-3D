@@ -199,9 +199,15 @@ function App() {
       showDockDevice={docking.showDockDevice}
       radarWidth={layout.radarWidth}
       dockSplitRatio={layout.dockSplitRatio}
+      dockTripleLeftRatio={layout.dockTripleLeftRatio}
+      dockTripleRightRatio={layout.dockTripleRightRatio}
+      dockSettingsSplitRatio={layout.dockSettingsSplitRatio}
       consoleHeight={layout.consoleHeight}
       sidebarWidth={layout.sidebarWidth}
       startResizingDockSplit={layout.startResizingDockSplit}
+      startResizingDockSettingsSplit={layout.startResizingDockSettingsSplit}
+      startResizingDockTripleLeft={layout.startResizingDockTripleLeft}
+      startResizingDockTripleRight={layout.startResizingDockTripleRight}
       startResizingRadar={layout.startResizingRadar}
       startResizingConsole={layout.startResizingConsole}
       startResizingSidebar={layout.startResizingSidebar}

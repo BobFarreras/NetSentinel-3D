@@ -104,17 +104,20 @@ const helpText: React.CSSProperties = {
 
 const formRow: React.CSSProperties = {
   display: "flex",
-  alignItems: "center",
+  alignItems: "flex-start",
   justifyContent: "space-between",
   gap: 12,
   padding: "10px 10px",
   border: "1px solid rgba(0,255,136,0.12)",
   background: "rgba(0,0,0,0.45)",
   borderRadius: 2,
+  // Responsive: en ventanas estrechas (detached o split), el selector debe bajar de linea en vez de forzar overflow.
+  flexWrap: "wrap",
 };
 
 const selectStyle: React.CSSProperties = {
-  width: 220,
+  width: "min(220px, 100%)",
+  maxWidth: "100%",
   height: 32,
   background: "rgba(0,0,0,0.75)",
   border: "1px solid rgba(0,229,255,0.35)",

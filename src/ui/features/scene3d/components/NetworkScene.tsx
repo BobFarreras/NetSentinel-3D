@@ -16,6 +16,7 @@ interface NetworkSceneProps {
   onDeviceSelect?: (device: DeviceDTO | null) => void;
   selectedIp?: string | null;
   intruders?: string[];
+  jammedIps?: string[];
   identity?: HostIdentity | null;
   onUndockScene?: (() => void) | null;
 }
@@ -69,6 +70,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   onDeviceSelect,
   selectedIp,
   intruders = [],
+  jammedIps = [],
   identity = null,
   onUndockScene = null,
 }) => {
@@ -187,6 +189,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
               name={`ROUTER (${centerNode.ip})`}
               onClick={() => onDeviceSelect && onDeviceSelect(centerNode)}
               isSelected={selectedIp === centerNode.ip}
+              isJammed={jammedIps.includes(centerNode.ip)}
             />
             {state.showLabels && (
               <NodeLabel
@@ -239,6 +242,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
                 name={device.ip}
                 onClick={() => onDeviceSelect && onDeviceSelect(device)}
                 isSelected={selectedIp === device.ip}
+                isJammed={jammedIps.includes(device.ip)}
               />
               {state.showLabels && (
                 <NodeLabel

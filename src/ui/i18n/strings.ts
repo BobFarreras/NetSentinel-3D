@@ -27,6 +27,7 @@ export type I18nKey =
   | "settings.legend.intruder"
   | "settings.legend.wifiIntel"
   | "settings.legend.default"
+  | "settings.legend.killNet"
   | "settings.legend.selected"
   | "settings.legend.hover"
   | "settings.legend.note"
@@ -77,6 +78,7 @@ export const STRINGS: Record<UILanguage, Dict> = {
     "settings.legend.intruder": "INTRUSO (ANILLO DE ALARMA)",
     "settings.legend.wifiIntel": "WIFI INTEL (DATOS RSSI/BANDA)",
     "settings.legend.default": "DISPOSITIVO (DEFAULT)",
+    "settings.legend.killNet": "KILL NET (JAMMER ACTIVO)",
     "settings.legend.selected": "SELECCIONADO (RESALTE)",
     "settings.legend.hover": "HOVER (CURSOR)",
     "settings.legend.note": "Tip: si haces un nuevo scan/audit y no hay dispositivos nuevos, se mantiene el inventario actual para evitar flicker.",
@@ -124,6 +126,7 @@ export const STRINGS: Record<UILanguage, Dict> = {
     "settings.legend.intruder": "INTRÚS (ANELL D'ALARMA)",
     "settings.legend.wifiIntel": "WIFI INTEL (DADES RSSI/BANDA)",
     "settings.legend.default": "DISPOSITIU (DEFAULT)",
+    "settings.legend.killNet": "KILL NET (JAMMER ACTIU)",
     "settings.legend.selected": "SELECCIONAT (RESSALT)",
     "settings.legend.hover": "HOVER (CURSOR)",
     "settings.legend.note": "Tip: si fas un nou scan/audit i no hi ha dispositius nous, es manté l'inventari actual per evitar flicker.",
@@ -171,6 +174,7 @@ export const STRINGS: Record<UILanguage, Dict> = {
     "settings.legend.intruder": "INTRUDER (ALARM RING)",
     "settings.legend.wifiIntel": "WIFI INTEL (RSSI/BAND DATA)",
     "settings.legend.default": "DEVICE (DEFAULT)",
+    "settings.legend.killNet": "KILL NET (JAMMER ACTIVE)",
     "settings.legend.selected": "SELECTED (HIGHLIGHT)",
     "settings.legend.hover": "HOVER (CURSOR)",
     "settings.legend.note": "Tip: if a new scan/audit finds nothing new, the current inventory is kept to avoid flicker.",

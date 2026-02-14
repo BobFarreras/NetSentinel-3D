@@ -7,6 +7,10 @@ import { useWifiRadarSelection } from "../../radar/hooks/useWifiRadarSelection";
 
 export type ConsoleTab = "SYSTEM" | "TRAFFIC" | "RADAR";
 
+type UseConsoleLogsStateOptions = {
+  jammedIps?: string[];
+};
+
 type UseConsoleLogsState = {
   activeTab: ConsoleTab;
   isLoading: boolean;
@@ -18,10 +22,10 @@ type UseConsoleLogsState = {
   handleClearByTab: (onClearSystemLogs: () => void) => void;
 };
 
-export const useConsoleLogsState = (): UseConsoleLogsState => {
+export const useConsoleLogsState = (opts?: UseConsoleLogsStateOptions): UseConsoleLogsState => {
   const [activeTab, setActiveTab] = useState<ConsoleTab>("SYSTEM");
   const [isLoading, setIsLoading] = useState(false);
-  const traffic = useTrafficMonitor();
+  const traffic = useTrafficMonitor(opts?.jammedIps ?? []);
   const radar = useRadarLogs();
   const wifiSel = useWifiRadarSelection();
 
