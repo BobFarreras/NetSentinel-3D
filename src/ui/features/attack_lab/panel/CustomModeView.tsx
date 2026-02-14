@@ -33,9 +33,10 @@ interface CustomModeViewProps {
   onStart: (req: AttackLabRequestDTO) => Promise<void>;
   onCancel: () => Promise<void>;
   onClear: () => void;
+  layout?: "wide" | "narrow";
 }
 
-export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onStart, onCancel, onClear }) => {
+export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onStart, onCancel, onClear, layout = "wide" }) => {
   const [binaryPath, setBinaryPath] = useState("");
   const [cwd, setCwd] = useState("");
   const [timeoutMs, setTimeoutMs] = useState<string>("300000");
@@ -60,8 +61,8 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
 
   return (
     <>
-      <div style={{ display: "flex", gap: 12, padding: 12, flexShrink: 0 }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", gap: 12, padding: 12, flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>BINARIO (ruta absoluta)</div>
           <input
             value={binaryPath}
@@ -70,7 +71,7 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
             style={inputStyle}
           />
         </div>
-        <div style={{ width: 180 }}>
+        <div style={{ width: layout === "narrow" ? "100%" : 180, minWidth: 180 }}>
           <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>TIMEOUT (ms)</div>
           <input
             value={timeoutMs}
@@ -81,8 +82,8 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 12, padding: "0 12px 12px 12px", flexShrink: 0 }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", gap: 12, padding: "0 12px 12px 12px", flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>ARGUMENTOS (1 por linea)</div>
           <textarea
             value={argsText}
@@ -91,7 +92,7 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
             style={{ ...inputStyle, height: 90, resize: "vertical" }}
           />
         </div>
-        <div style={{ width: 260 }}>
+        <div style={{ width: layout === "narrow" ? "100%" : 260, minWidth: 220 }}>
           <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>CWD (opcional)</div>
           <input
             value={cwd}
@@ -99,7 +100,7 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
             placeholder="Ej: C:\temp"
             style={inputStyle}
           />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <button
               onClick={handleStart}
               disabled={isRunning || !binaryPath}

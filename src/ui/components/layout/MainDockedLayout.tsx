@@ -56,9 +56,15 @@ interface MainDockedLayoutProps {
   showDockDevice: boolean;
   radarWidth: number;
   dockSplitRatio: number;
+  dockTripleLeftRatio: number;
+  dockTripleRightRatio: number;
+  dockSettingsSplitRatio: number;
   consoleHeight: number;
   sidebarWidth: number;
   startResizingDockSplit: (e: React.MouseEvent) => void;
+  startResizingDockSettingsSplit: (e: React.MouseEvent) => void;
+  startResizingDockTripleLeft: (e: React.MouseEvent) => void;
+  startResizingDockTripleRight: (e: React.MouseEvent) => void;
   startResizingRadar: (e: React.MouseEvent) => void;
   startResizingConsole: (e: React.MouseEvent) => void;
   startResizingSidebar: (e: React.MouseEvent) => void;
@@ -189,9 +195,15 @@ export const MainDockedLayout = ({
   showDockDevice,
   radarWidth,
   dockSplitRatio,
+  dockTripleLeftRatio,
+  dockTripleRightRatio,
+  dockSettingsSplitRatio,
   consoleHeight,
   sidebarWidth,
   startResizingDockSplit,
+  startResizingDockSettingsSplit,
+  startResizingDockTripleLeft,
+  startResizingDockTripleRight,
   startResizingRadar,
   startResizingConsole,
   startResizingSidebar,
@@ -220,7 +232,6 @@ export const MainDockedLayout = ({
   showDockSettings,
 }: MainDockedLayoutProps) => {
   const showDockArea = showDockRadar || showDockAttackLab || showDockSettings;
-  const showDockRadarAttack = showDockRadar || showDockAttackLab;
 
   return (
     <div
@@ -276,72 +287,109 @@ export const MainDockedLayout = ({
           <div style={{ position: "absolute", inset: 0, display: "flex", minHeight: 0 }}>
             {showDockArea && (
               <>
-                <div style={{ width: showDockScene ? `${radarWidth}px` : "100%", minWidth: 360, maxWidth: showDockScene ? 1000 : undefined, minHeight: 0, background: "#000", overflow: "hidden", zIndex: 12, display: "flex" }}>
-                  {showDockSettings && showDockRadarAttack ? (
-                    // Layout combinado: Settings a la derecha, Radar/AttackLab se siguen comportando con split a la izquierda.
+                <div style={{ width: showDockScene ? `${radarWidth}px` : "100%", minWidth: 360, minHeight: 0, background: "#000", overflow: "hidden", zIndex: 12, display: "flex" }}>
+                  {showDockSettings && showDockRadar && showDockAttackLab ? (
+                    // Triple split: Radar | Attack Lab | Settings. Cada uno se ajusta con separadores.
                     <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
-                      <div style={{ width: "62%", minWidth: 260, minHeight: 0, display: "flex" }}>
-                        {showDockRadar && showDockAttackLab ? (
-                          <>
-                            <div style={{ width: `${dockSplitRatio * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
-                              <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
-                              <div style={{ flex: 1, minHeight: 0 }}>
-                                <Suspense fallback={null}>
-                                  <RadarPanel onClose={() => setShowRadar(false)} />
-                                </Suspense>
-                              </div>
-                            </div>
-                            <div
-                              onMouseDown={startResizingDockSplit}
-                              style={{ width: "4px", background: "#003300", cursor: "col-resize" }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#00ff00")}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = "#003300")}
-                              aria-label="RESIZE_DOCK_SPLIT"
-                            />
-                            <div style={{ width: `${(1 - dockSplitRatio) * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
-                              <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
-                              <div style={{ flex: 1, minHeight: 0 }}>
-                                <Suspense fallback={null}>
-                                  <AttackLabPanel
-                                    onClose={closeAttackLab}
-                                    targetDevice={attackLabTarget}
-                                    identity={identity}
-                                    defaultScenarioId={attackLabScenarioId}
-                                    autoRunToken={attackLabAutoRunToken}
-                                    embedded={true}
-                                  />
-                                </Suspense>
-                              </div>
-                            </div>
-                          </>
-                        ) : showDockRadar ? (
-                          <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                            <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
-                            <div style={{ flex: 1, minHeight: 0 }}>
-                              <Suspense fallback={null}>
-                                <RadarPanel onClose={() => setShowRadar(false)} />
-                              </Suspense>
-                            </div>
-                          </div>
-                        ) : (
-                          <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                            <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
-                            <div style={{ flex: 1, minHeight: 0 }}>
-                              <Suspense fallback={null}>
-                                <AttackLabPanel
-                                  onClose={closeAttackLab}
-                                  targetDevice={attackLabTarget}
-                                  identity={identity}
-                                  defaultScenarioId={attackLabScenarioId}
-                                  autoRunToken={attackLabAutoRunToken}
-                                  embedded={true}
-                                />
-                              </Suspense>
-                            </div>
-                          </div>
-                        )}
+                      <div style={{ width: `${dockTripleLeftRatio * 100}%`, minWidth: 220, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <RadarPanel onClose={() => setShowRadar(false)} />
+                          </Suspense>
+                        </div>
                       </div>
-                      <div style={{ width: "38%", minWidth: 320, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                      <div
+                        onMouseDown={startResizingDockTripleLeft}
+                        style={{ width: "4px", background: "#003300", cursor: "col-resize", zIndex: 25, flexShrink: 0 }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#00ff00")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "#003300")}
+                        aria-label="RESIZE_DOCK_TRIPLE_LEFT"
+                      />
+                      <div style={{ width: `${(dockTripleRightRatio - dockTripleLeftRatio) * 100}%`, minWidth: 240, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <AttackLabPanel
+                              onClose={closeAttackLab}
+                              targetDevice={attackLabTarget}
+                              identity={identity}
+                              defaultScenarioId={attackLabScenarioId}
+                              autoRunToken={attackLabAutoRunToken}
+                              embedded={true}
+                            />
+                          </Suspense>
+                        </div>
+                      </div>
+                      <div
+                        onMouseDown={startResizingDockTripleRight}
+                        style={{ width: "4px", background: "#003300", cursor: "col-resize", zIndex: 25, flexShrink: 0 }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#00ff00")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "#003300")}
+                        aria-label="RESIZE_DOCK_TRIPLE_RIGHT"
+                      />
+                      <div style={{ width: `${(1 - dockTripleRightRatio) * 100}%`, minWidth: 300, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                          </Suspense>
+                        </div>
+                      </div>
+                    </div>
+                  ) : showDockSettings && showDockRadar && !showDockAttackLab ? (
+                    // Split 2 columnas: Radar | Settings (con resize independiente).
+                    <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
+                      <div style={{ width: `${dockSettingsSplitRatio * 100}%`, minWidth: 260, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <RadarPanel onClose={() => setShowRadar(false)} />
+                          </Suspense>
+                        </div>
+                      </div>
+                      <div
+                        onMouseDown={startResizingDockSettingsSplit}
+                        style={{ width: "4px", background: "#003300", cursor: "col-resize", zIndex: 25, flexShrink: 0 }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#00ff00")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "#003300")}
+                        aria-label="RESIZE_DOCK_SETTINGS_SPLIT"
+                      />
+                      <div style={{ width: `${(1 - dockSettingsSplitRatio) * 100}%`, minWidth: 320, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                          </Suspense>
+                        </div>
+                      </div>
+                    </div>
+                  ) : showDockSettings && showDockAttackLab && !showDockRadar ? (
+                    // Split 2 columnas: Attack Lab | Settings (con resize independiente).
+                    <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
+                      <div style={{ width: `${dockSettingsSplitRatio * 100}%`, minWidth: 260, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                        <div style={{ flex: 1, minHeight: 0 }}>
+                          <Suspense fallback={null}>
+                            <AttackLabPanel
+                              onClose={closeAttackLab}
+                              targetDevice={attackLabTarget}
+                              identity={identity}
+                              defaultScenarioId={attackLabScenarioId}
+                              autoRunToken={attackLabAutoRunToken}
+                              embedded={true}
+                            />
+                          </Suspense>
+                        </div>
+                      </div>
+                      <div
+                        onMouseDown={startResizingDockSettingsSplit}
+                        style={{ width: "4px", background: "#003300", cursor: "col-resize", zIndex: 25, flexShrink: 0 }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "#00ff00")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "#003300")}
+                        aria-label="RESIZE_DOCK_SETTINGS_SPLIT"
+                      />
+                      <div style={{ width: `${(1 - dockSettingsSplitRatio) * 100}%`, minWidth: 320, minHeight: 0, display: "flex", flexDirection: "column" }}>
                         <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>

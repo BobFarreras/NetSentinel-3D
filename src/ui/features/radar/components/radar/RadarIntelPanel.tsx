@@ -8,6 +8,32 @@ import { selectStyle } from "./radarUtils";
 import { windowingAdapter } from "../../../../../adapters/windowingAdapter";
 import { uiLogger } from "../../../../utils/logger";
 
+const FILTER_BOX_LABEL_STYLE: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 900,
+  letterSpacing: 1,
+  color: "rgba(183,255,226,0.65)",
+  width: 50,
+  flexShrink: 0,
+  textTransform: "uppercase",
+};
+
+const FILTER_ROW_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  minWidth: 0,
+  // En paneles muy estrechos, permitimos wrap para evitar texto/input cortado.
+  flexWrap: "wrap",
+};
+
+const FILTER_STRIP_STYLE: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  alignItems: "center",
+};
+
 type RadarIntelPanelProps = {
   selected: WifiNetworkDTO | null;
   showIntelHelp: boolean;
@@ -21,6 +47,7 @@ type RadarIntelPanelProps = {
   onChangeBandFilter: (value: BandFilter) => void;
   onChangeChannelFilter: (value: number | null) => void;
   onChangeSearch: (value: string) => void;
+  layout?: "side" | "bottom";
 };
 
 export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
@@ -36,6 +63,7 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
   onChangeBandFilter,
   onChangeChannelFilter,
   onChangeSearch,
+  layout = "side",
 }) => {
 
   const handleOpenAudit = () => {
@@ -89,8 +117,9 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
   return (
     <div
       style={{
-        width: 290,
-        borderLeft: "1px solid rgba(0,255,136,0.18)",
+        width: layout === "side" ? 290 : "100%",
+        borderLeft: layout === "side" ? "1px solid rgba(0,255,136,0.18)" : "none",
+        borderTop: layout === "bottom" ? "1px solid rgba(0,255,136,0.18)" : "none",
         padding: 12,
         background: "linear-gradient(180deg, rgba(0,10,5,0.75), rgba(0,0,0,0.55))",
         color: "#b7ffe2",
@@ -98,6 +127,7 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
         flexDirection: "column",
         minHeight: 0,
         overflow: "hidden",
+        flexShrink: 0,
       }}
     >
       <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -105,59 +135,134 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
         <button onClick={onToggleHelp} style={{ background: "transparent", border: "1px solid rgba(0,255,136,0.25)", color: "rgba(183,255,226,0.85)", cursor: "pointer", fontSize: 11, padding: "2px 8px" }}>?</button>
       </div>
 
-      {showIntelHelp && (
-        <div style={{ marginBottom: 10, padding: 10, border: "1px solid rgba(0,255,136,0.18)", background: "rgba(0,0,0,0.35)", color: "rgba(183,255,226,0.85)", fontSize: 11, lineHeight: 1.45 }}>
-          <div style={{ color: "#00ff88", fontWeight: 900, marginBottom: 6 }}>Guia rapida</div>
-          <div style={{ marginBottom: 6 }}><b>Riesgo</b>: filtra por seguridad inferida.</div>
-        </div>
-      )}
+      {/* Scroll del panel completo: en ventanas pequenas, evita cortar filtros/botones. */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: layout === "bottom" ? "visible" : "auto",
+          // Deja espacio para scrollbar cuando existe.
+          paddingRight: layout === "bottom" ? 0 : 10,
+        }}
+      >
+        {showIntelHelp && (
+          <div style={{ marginBottom: 10, padding: 10, border: "1px solid rgba(0,255,136,0.18)", background: "rgba(0,0,0,0.35)", color: "rgba(183,255,226,0.85)", fontSize: 11, lineHeight: 1.45 }}>
+            <div style={{ color: "#00ff88", fontWeight: 900, marginBottom: 6 }}>Guia rapida</div>
+            <div style={{ marginBottom: 6 }}><b>Riesgo</b>: filtra por seguridad inferida.</div>
+          </div>
+        )}
 
-      {/* FILTROS */}
-      <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-          <div>
-            <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>RISK</div>
-            <select
-              aria-label="FILTER_RISK_SELECT"
-              value={riskFilter}
-              onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)}
-              style={selectStyle}
-            >
-              <option value="ALL">ALL</option>
-              <option value="HARDENED">HARDENED</option>
-              <option value="STANDARD">STANDARD</option>
-              <option value="LEGACY">LEGACY</option>
-              <option value="OPEN">OPEN</option>
-            </select>
-          </div>
-          <div>
-            <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>BAND</div>
-            <select value={bandFilter} onChange={(e) => onChangeBandFilter(e.target.value as BandFilter)} style={selectStyle}>
-              <option value="ALL">ALL</option>
-              <option value="2.4">2.4GHz</option>
-              <option value="5">5GHz</option>
-              <option value="UNK">UNKGHz</option>
-            </select>
-          </div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginBottom: 8 }}>
-            <div>
-                <div style={{ fontSize: 11, color: "rgba(183,255,226,0.65)", marginBottom: 4 }}>CHANNEL</div>
+        {/* FILTROS */}
+        <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
+          {layout === "side" ? (
+            // Compacto en linea: evita selects a ancho completo y reduce altura del panel lateral.
+            <div style={FILTER_STRIP_STYLE}>
+              <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
+                <div style={FILTER_BOX_LABEL_STYLE}>RISK</div>
+                <select
+                  aria-label="FILTER_RISK_SELECT"
+                  value={riskFilter}
+                  onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)}
+                  style={{ ...selectStyle, width: 132 }}
+                >
+                  <option value="ALL">ALL</option>
+                  <option value="HARDENED">HARDENED</option>
+                  <option value="STANDARD">STANDARD</option>
+                  <option value="LEGACY">LEGACY</option>
+                  <option value="OPEN">OPEN</option>
+                </select>
+              </div>
+
+              <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
+                <div style={FILTER_BOX_LABEL_STYLE}>BAND</div>
+                <select value={bandFilter} onChange={(e) => onChangeBandFilter(e.target.value as BandFilter)} style={{ ...selectStyle, width: 132 }}>
+                  <option value="ALL">ALL</option>
+                  <option value="2.4">2.4GHz</option>
+                  <option value="5">5GHz</option>
+                  <option value="UNK">UNKGHz</option>
+                </select>
+              </div>
+
+              <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
+                <div style={FILTER_BOX_LABEL_STYLE}>CH</div>
                 <select
                   aria-label="FILTER_CH_SELECT"
                   value={channelFilter === null ? "ALL" : String(channelFilter)}
                   onChange={(e) => onChangeChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
-                  style={selectStyle}
+                  style={{ ...selectStyle, width: 120 }}
                 >
+                  <option value="ALL">ALL</option>
+                  {availableChannels.map((ch) => <option key={ch} value={String(ch)}>CH {ch}</option>)}
+                </select>
+              </div>
+
+              <div style={{ ...FILTER_ROW_STYLE, flex: "1 1 180px", minWidth: 180 }}>
+                <div style={FILTER_BOX_LABEL_STYLE}>Q</div>
+                <input
+                  value={search}
+                  onChange={(e) => onChangeSearch(e.target.value)}
+                  placeholder="ssid/vendor/bssid"
+                  style={{ ...selectStyle, width: "100%", minWidth: 0 }}
+                />
+              </div>
+            </div>
+          ) : (
+            // Layout bottom (stacked): los controles usan el ancho completo.
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8, marginBottom: 8 }}>
+                <div style={FILTER_ROW_STYLE}>
+                  <div style={FILTER_BOX_LABEL_STYLE}>RISK</div>
+                  <select
+                    aria-label="FILTER_RISK_SELECT"
+                    value={riskFilter}
+                    onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)}
+                    style={{ ...selectStyle, flex: 1, minWidth: 0 }}
+                  >
+                    <option value="ALL">ALL</option>
+                    <option value="HARDENED">HARDENED</option>
+                    <option value="STANDARD">STANDARD</option>
+                    <option value="LEGACY">LEGACY</option>
+                    <option value="OPEN">OPEN</option>
+                  </select>
+                </div>
+
+                <div style={FILTER_ROW_STYLE}>
+                  <div style={FILTER_BOX_LABEL_STYLE}>BAND</div>
+                  <select value={bandFilter} onChange={(e) => onChangeBandFilter(e.target.value as BandFilter)} style={{ ...selectStyle, flex: 1, minWidth: 0 }}>
+                    <option value="ALL">ALL</option>
+                    <option value="2.4">2.4GHz</option>
+                    <option value="5">5GHz</option>
+                    <option value="UNK">UNKGHz</option>
+                  </select>
+                </div>
+
+                <div style={FILTER_ROW_STYLE}>
+                  <div style={FILTER_BOX_LABEL_STYLE}>CH</div>
+                  <select
+                    aria-label="FILTER_CH_SELECT"
+                    value={channelFilter === null ? "ALL" : String(channelFilter)}
+                    onChange={(e) => onChangeChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
+                    style={{ ...selectStyle, flex: 1, minWidth: 0 }}
+                  >
                     <option value="ALL">ALL</option>
                     {availableChannels.map((ch) => <option key={ch} value={String(ch)}>CH {ch}</option>)}
-                </select>
-            </div>
-        </div>
-        <input value={search} onChange={(e) => onChangeSearch(e.target.value)} placeholder="SEARCH: ssid/vendor/bssid" style={selectStyle} />
-      </div>
+                  </select>
+                </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingRight: 4 }}>
+                <div style={FILTER_ROW_STYLE}>
+                  <div style={FILTER_BOX_LABEL_STYLE}>Q</div>
+                  <input
+                    value={search}
+                    onChange={(e) => onChangeSearch(e.target.value)}
+                    placeholder="ssid/vendor/bssid"
+                    style={{ ...selectStyle, flex: 1, minWidth: 0 }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
         {!selected ? (
           <div style={{ color: "rgba(183,255,226,0.7)", fontSize: 12, lineHeight: 1.45 }}>
             Selecciona un nodo del radar para ver detalles.

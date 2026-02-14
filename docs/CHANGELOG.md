@@ -41,6 +41,24 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.50] - UI: dock resizable + panels responsive/scroll (2026-02-14)
+### UI (layout)
+- Dock: soporte real de resize independiente cuando estan abiertos `radar`, `attack_lab` y `settings`:
+  - triple split `Radar | Attack Lab | Settings` con 2 separadores
+  - split `Settings | (Radar|Attack)` con separador propio
+- Se elimina el tope artificial de ancho del dock para poder estirar los paneles hasta el limite real del `NetworkScene`.
+
+### UI (responsive)
+- Radar: modo narrow (stacked) mas estable (breakpoint con histeresis) + `NODE INTEL` con filtros compactos en una sola tira (wrap) en layout lateral.
+- Scroll consistente en paneles pequenos para evitar botones/inputs cortados (Radar/AttackLab/Settings).
+
+### UI (datos)
+- Registro local de alias de dispositivos (hostname/nombre) para rehidratar nombres cuando el scan/audit no los devuelve en el momento.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)
@@ -363,4 +381,3 @@ Nota:
 - Corregida la verificacion de conexion en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para no depender solo de salida en ingles de `netsh`.
 - `is_connected(...)` ahora reconoce estado conectado en ingles y espanol (`connected` / `conectado`) y normaliza comparacion por minusculas.
 - Impacto: cuando se acierta la clave WPA2, `wifi_connect` devuelve `true` correctamente y el escenario `wifi_brute_force_dict` corta el bucle con `return` en el primer acierto.
-

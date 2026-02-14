@@ -34,6 +34,8 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   embedded = false,
 }) => {
   const audit = useAttackLab();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
 
   const [localTarget, setLocalTarget] = useState<DeviceDTO | null>(propTargetDevice || null);
   const [mode, setMode] = useState<"LAB" | "CUSTOM">(() => (localTarget || defaultScenarioId ? "LAB" : "CUSTOM"));
@@ -52,6 +54,28 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const lastSeenPropAutoRunToken = useRef<number>(0);
   
   const abortController = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver === "undefined") return;
+
+    const NARROW_AT = 720;
+    const WIDE_AT = 760;
+
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width ?? 0;
+      if (!w) return;
+      setIsNarrow((prev) => {
+        if (prev && w > WIDE_AT) return false;
+        if (!prev && w < NARROW_AT) return true;
+        return prev;
+      });
+    });
+
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const scenarios = useMemo(() => getAttackLabScenarios(), []);
   const selectedScenario = useMemo(() => scenarios.find((s) => s.id === scenarioId) || null, [scenarios, scenarioId]);
@@ -235,7 +259,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const displayRows = nativeRows.length > 0 ? nativeRows : audit.rows;
 
   return (
-    <div style={{
+    <div ref={rootRef} style={{
       width: embedded ? "100%" : 780,
       maxWidth: embedded ? "none" : "95vw",
       height: embedded ? "100%" : "80vh",
@@ -243,37 +267,51 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
       border: "1px solid rgba(0,255,136,0.25)",
       boxShadow: "0 0 0 1px rgba(0,255,136,0.12), 0 25px 80px rgba(0,0,0,0.65)",
       display: "flex", flexDirection: "column", fontFamily: "'Consolas', 'Courier New', monospace",
-      position: "relative"
+      position: "relative",
+      minWidth: 0,
+      overflow: "hidden",
     }}>
       <AuditHeader 
         mode={mode} setMode={setMode} 
         status={isNativeRunning ? "⚠️ ATTACK IN PROGRESS" : audit.summary} 
         isAutoRun={false} 
+        compact={isNarrow}
         onClose={onClose} 
       />
 
-      {mode === "LAB" ? (
-        <LabModeView 
-          scenarios={scenarios}
-          selectedId={scenarioId}
-          onSelect={(id) => { setScenarioId(id); setNativeRows([]); }} 
-          targetDevice={localTarget}
-          selectedScenario={selectedScenario}
-          isRunning={isAnyRunning} 
-          onRun={handleRunLab}
-          onCancel={handleCancel}
-          onClear={() => { audit.clear(); setNativeRows([]); }}
-        />
-      ) : (
-        <CustomModeView 
-          isRunning={audit.isRunning}
-          onStart={audit.start}
-          onCancel={audit.cancel}
-          onClear={audit.clear}
-        />
-      )}
+      {/*
+        Layout con scroll parcial:
+        - La vista (LAB/CUSTOM) puede scrollear cuando el panel es pequeno.
+        - La consola mantiene su propio scroll y ocupa el resto del alto.
+      */}
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ flex: "0 1 340px", minHeight: 160, overflowY: "auto", overflowX: "hidden" }}>
+          {mode === "LAB" ? (
+            <LabModeView 
+              scenarios={scenarios}
+              selectedId={scenarioId}
+              onSelect={(id) => { setScenarioId(id); setNativeRows([]); }} 
+              targetDevice={localTarget}
+              selectedScenario={selectedScenario}
+              isRunning={isAnyRunning} 
+              onRun={handleRunLab}
+              onCancel={handleCancel}
+              onClear={() => { audit.clear(); setNativeRows([]); }}
+              layout={isNarrow ? "narrow" : "wide"}
+            />
+          ) : (
+            <CustomModeView 
+              isRunning={audit.isRunning}
+              onStart={audit.start}
+              onCancel={audit.cancel}
+              onClear={audit.clear}
+              layout={isNarrow ? "narrow" : "wide"}
+            />
+          )}
+        </div>
 
-      <AuditConsole rows={displayRows} error={audit.error} />
+        <AuditConsole rows={displayRows} error={audit.error} />
+      </div>
 
       {/* MODAL CON STATUS OPSEC */}
       <CyberConfirmModal 

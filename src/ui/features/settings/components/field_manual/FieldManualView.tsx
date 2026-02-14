@@ -1,7 +1,7 @@
 // src/ui/features/settings/components/field_manual/FieldManualView.tsx
 // Descripcion: vista "Field Manual" dentro de Settings. Documenta secciones (Radar/Attack/Console/etc.) y leyenda 3D jugable.
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { HUD_COLORS, HUD_TYPO } from "../../../../styles/hudTokens";
 import { useI18n } from "../../../../i18n";
 import { LegendArena3D, type LegendNodeId } from "./LegendArena3D";
@@ -10,10 +10,11 @@ import { getScenarioManual } from "../../field_manual/attackScenarioManual";
 
 type ManualSection = "legend" | "radar" | "attack_lab" | "console" | "storage";
 
-const navBtn = (active: boolean): React.CSSProperties => ({
+const navBtn = (active: boolean, narrow: boolean): React.CSSProperties => ({
   height: 34,
-  width: "100%",
-  textAlign: "left",
+  width: narrow ? "auto" : "100%",
+  minWidth: narrow ? 140 : undefined,
+  textAlign: narrow ? "center" : "left",
   padding: "0 10px",
   borderRadius: 2,
   border: `1px solid ${active ? "rgba(0,229,255,0.55)" : "rgba(0,255,136,0.18)"}`,
@@ -25,6 +26,7 @@ const navBtn = (active: boolean): React.CSSProperties => ({
   fontWeight: 900,
   letterSpacing: 0.7,
   textTransform: "uppercase",
+  whiteSpace: "nowrap",
 });
 
 const sectionTitle: React.CSSProperties = {
@@ -55,6 +57,21 @@ export function FieldManualView() {
   const { t, language } = useI18n();
   const [section, setSection] = useState<ManualSection>("legend");
   const [legendSelected, setLegendSelected] = useState<LegendNodeId | null>("router");
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width ?? 0;
+      // 760px es el umbral donde el panel empieza a quedarse sin espacio en split/detached.
+      setIsNarrow(Boolean(w && w < 760));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const legendNodes = useMemo(
     () => [
@@ -177,28 +194,50 @@ export function FieldManualView() {
   const scenarios = useMemo(() => getAttackLabScenarios(), []);
 
   return (
-    <div style={{ display: "flex", gap: 12, height: "100%", minHeight: 0 }}>
-      <div style={{ width: 210, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div
+      ref={rootRef}
+      style={{
+        display: "flex",
+        gap: 12,
+        height: "100%",
+        minHeight: 0,
+        minWidth: 0,
+        flexDirection: isNarrow ? "column" : "row",
+      }}
+    >
+      <div
+        style={{
+          width: isNarrow ? "100%" : 210,
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: isNarrow ? "row" : "column",
+          gap: 8,
+          flexWrap: isNarrow ? "wrap" : "nowrap",
+          alignItems: isNarrow ? "center" : "stretch",
+          overflowX: isNarrow ? "auto" : "visible",
+          paddingBottom: isNarrow ? 2 : 0,
+        }}
+      >
         <div style={{ fontFamily: HUD_TYPO.mono, fontSize: 11, fontWeight: 950, letterSpacing: 1.0, color: HUD_COLORS.accentGreen, textTransform: "uppercase" }}>
           {t("settings.manual.title")}
         </div>
-        <button style={navBtn(section === "legend")} onClick={() => setSection("legend")} aria-label="MANUAL_SECTION_LEGEND">
+        <button style={navBtn(section === "legend", isNarrow)} onClick={() => setSection("legend")} aria-label="MANUAL_SECTION_LEGEND">
           {t("settings.manual.sections.legend")}
         </button>
-        <button style={navBtn(section === "radar")} onClick={() => setSection("radar")} aria-label="MANUAL_SECTION_RADAR">
+        <button style={navBtn(section === "radar", isNarrow)} onClick={() => setSection("radar")} aria-label="MANUAL_SECTION_RADAR">
           {t("settings.manual.sections.radar")}
         </button>
-        <button style={navBtn(section === "attack_lab")} onClick={() => setSection("attack_lab")} aria-label="MANUAL_SECTION_ATTACK_LAB">
+        <button style={navBtn(section === "attack_lab", isNarrow)} onClick={() => setSection("attack_lab")} aria-label="MANUAL_SECTION_ATTACK_LAB">
           {t("settings.manual.sections.attackLab")}
         </button>
-        <button style={navBtn(section === "console")} onClick={() => setSection("console")} aria-label="MANUAL_SECTION_CONSOLE">
+        <button style={navBtn(section === "console", isNarrow)} onClick={() => setSection("console")} aria-label="MANUAL_SECTION_CONSOLE">
           {t("settings.manual.sections.console")}
         </button>
-        <button style={navBtn(section === "storage")} onClick={() => setSection("storage")} aria-label="MANUAL_SECTION_STORAGE">
+        <button style={navBtn(section === "storage", isNarrow)} onClick={() => setSection("storage")} aria-label="MANUAL_SECTION_STORAGE">
           {t("settings.manual.sections.storage")}
         </button>
 
-        <div style={{ ...card, marginTop: 8 }}>
+        <div style={{ ...card, marginTop: 8, width: isNarrow ? "100%" : "auto" }}>
           <div style={{ ...sectionTitle, marginBottom: 4 }}>DOCS</div>
           <div style={paragraph}>
             <div>
