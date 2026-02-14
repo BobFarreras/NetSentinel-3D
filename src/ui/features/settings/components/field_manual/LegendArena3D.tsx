@@ -1,11 +1,12 @@
 // src/ui/features/settings/components/field_manual/LegendArena3D.tsx
 // Descripcion: escena 3D mini para la leyenda. Reutiliza `NetworkNode` (misma geometria/animacion) para demo jugable.
 
-import { useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { NetworkNode } from "../../../scene3d/components/NetworkNode";
 import { SCENE_TOKENS } from "../../../scene3d/components/sceneTokens";
+import * as THREE from "three";
 
 export type LegendNodeId = "router" | "host" | "intruder" | "wifi" | "default" | "jammed";
 
@@ -14,6 +15,24 @@ export type LegendNode = {
   title: string;
   color: string;
   subtitle: string;
+};
+
+const LegendAlarmRing = () => {
+  const ringRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (!ringRef.current) return;
+    const t = state.clock.getElapsedTime();
+    const scale = 1 + Math.sin(t * 5) * 0.2;
+    ringRef.current.scale.set(scale, scale, 1);
+    if (Array.isArray(ringRef.current.material)) return;
+    (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.45 + Math.sin(t * 5) * 0.35;
+  });
+  return (
+    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.8, 1.2, 32]} />
+      <meshBasicMaterial color="#ff0000" transparent opacity={0.75} side={THREE.DoubleSide} />
+    </mesh>
+  );
 };
 
 export function LegendArena3D({
@@ -59,6 +78,7 @@ export function LegendArena3D({
               isJammed={n.id === "jammed"}
               onClick={() => onSelect(n.id)}
             />
+            {n.id === "intruder" && <LegendAlarmRing />}
           </group>
         ))}
 
