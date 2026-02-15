@@ -7,3 +7,27 @@ html, body, #root {
   overflow: hidden; /* Evita barras de scroll */
   background-color: #000000;
 }
+
+/* Forzamos esquema oscuro para controles nativos (select dropdown en WebView2/Chrome). */
+:root {
+  color-scheme: dark;
+}
+
+/* Estilo HUD para selects nativos, incluyendo el dropdown (option) cuando el motor lo respeta. */
+select {
+  color-scheme: dark;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: rgba(183, 255, 226, 0.92);
+  border: 1px solid rgba(0, 255, 136, 0.22);
+  border-radius: 2px;
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.22), 0 0 16px rgba(0, 255, 136, 0.12);
+}
+
+option {
+  background-color: #050b08;
+  color: rgba(183, 255, 226, 0.95);
+}

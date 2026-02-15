@@ -8,6 +8,10 @@ type RadarHeaderProps = {
   autoTick: number;
   scanning: boolean;
   compact?: boolean;
+  error: string | null;
+  networksCount: number;
+  visibleCount: number;
+  lastScanAt: number | null;
   onToggleAuto: (checked: boolean) => void;
   onScan: () => void;
   onClose: () => void;
@@ -19,6 +23,10 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
   autoTick,
   scanning,
   compact = false,
+  error,
+  networksCount,
+  visibleCount,
+  lastScanAt,
   onToggleAuto,
   onScan,
   onClose,
@@ -38,7 +46,7 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
         minHeight: 44,
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, flexWrap: "wrap" }}>
         <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1.2, whiteSpace: "nowrap" }}>
           {compact ? "RADAR" : "RADAR VIEW"}
         </div>
@@ -47,6 +55,21 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
             WIFI SPECTRUM / PHASE 0 RECON
           </div>
         )}
+        {/* Status: lo movemos al header para que nunca tape nodos dentro del scope */}
+        <div
+          style={{
+            color: "#6fe9b7",
+            fontSize: 11,
+            opacity: 0.8,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {error
+            ? `ERROR: ${error}`
+            : `NETWORKS: ${networksCount} / VISIBLE: ${visibleCount} / LAST: ${
+                lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"
+              }`}
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>

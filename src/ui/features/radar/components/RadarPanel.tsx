@@ -17,29 +17,63 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
   const state = useRadarPanelState();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [observedWidth, setObservedWidth] = useState<number>(0);
 
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    if (typeof ResizeObserver === "undefined") return;
+
+    // Objetivo UX: no cambiar a stacked hasta que el contenedor sea realmente muy pequeno.
+    // Nota: en runtime Tauri a veces el ResizeObserver no dispara justo al montar (o el panel se monta en un
+    // contenedor con width transitorio). Por eso hacemos una medicion inicial via getBoundingClientRect + RAF.
+    // Si el panel es estrecho pero aún supera NARROW_AT, el scope puede quedar aplastado
+    // porque el Intel lateral consume 290px. Por eso la regla real es: stacked cuando el scope
+    // tendría menos de ~260px de ancho util.
+    const INTEL_SIDE_WIDTH = 290;
+    const MIN_SCOPE_SIDE = 260;
+    const MIN_SCOPE_SIDE_EXIT = 340; // histeresis al volver a modo wide
+
+    const applyWidth = (w: number) => {
+      if (!w) return;
+      setObservedWidth(w);
+      setIsNarrow((prev) => {
+        const scopeW = w - INTEL_SIDE_WIDTH;
+        if (prev && scopeW > MIN_SCOPE_SIDE_EXIT) return false;
+        if (!prev && scopeW < MIN_SCOPE_SIDE) return true;
+        return prev;
+      });
+
+      // Debug opt-in sin ensuciar UI: localStorage ns.debug.radar=1
+      try {
+        if (localStorage.getItem("ns.debug.radar") === "1") {
+          // eslint-disable-next-line no-console
+          console.log("[radar] width=", Math.round(w));
+        }
+      } catch {
+        // ignore
+      }
+    };
 
     // Histeresis para evitar "saltos" al arrastrar el separador cerca del breakpoint.
     // Ajustado: el Radar aguanta mas tiempo en modo wide antes de pasar a stacked (narrow).
-    // Narrow < 640, Wide > 700.
-    const NARROW_AT = 640;
-    const WIDE_AT = 700;
+    // Narrow < NARROW_AT, Wide > WIDE_AT.
 
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect?.width ?? 0;
-      if (!w) return;
-      setIsNarrow((prev) => {
-        if (prev && w > WIDE_AT) return false;
-        if (!prev && w < NARROW_AT) return true;
-        return prev;
+    // Medicion inicial (evita estados pegados tras HMR o mounts transitorios).
+    const raf = requestAnimationFrame(() => applyWidth(el.getBoundingClientRect().width));
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver((entries) => {
+        const w = entries[0]?.contentRect?.width ?? 0;
+        applyWidth(w);
       });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
+      ro.observe(el);
+    }
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
   }, []);
 
   return (
@@ -91,6 +125,10 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
         autoTick={state.autoTick}
         scanning={state.scanning}
         compact={isNarrow}
+        error={state.error}
+        networksCount={state.networks.length}
+        visibleCount={state.filteredNetworks.length}
+        lastScanAt={state.lastScanAt}
         onToggleAuto={state.setAutoRefresh}
         onScan={() => {
           void state.scan();
@@ -116,6 +154,12 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
           paddingRight: isNarrow ? 10 : 0,
         }}
       >
+        {/* Debug opt-in: muestra ancho observado para diagnosticar breakpoints en runtime. */}
+        {false && (
+          <div style={{ position: "absolute", top: 48, right: 10, zIndex: 50, fontSize: 10, color: "#00ff88" }}>
+            w={Math.round(observedWidth)} narrow={String(isNarrow)}
+          </div>
+        )}
         <div
           style={{
             flex: isNarrow ? "0 0 auto" : 1,
@@ -129,11 +173,9 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
             accepted={state.accepted}
             scanning={state.scanning}
             error={state.error}
-            networks={state.networks}
             filteredNetworks={state.filteredNetworks}
             nodes={state.nodes}
             selectedBssid={state.selectedBssid}
-            lastScanAt={state.lastScanAt}
             onSelectNode={state.setSelectedBssid}
           />
         </div>

@@ -9,11 +9,9 @@ type RadarScopeProps = {
   accepted: boolean;
   scanning: boolean;
   error: string | null;
-  networks: WifiNetworkDTO[];
   filteredNetworks: WifiNetworkDTO[];
   nodes: RadarNode[];
   selectedBssid: string | null;
-  lastScanAt: number | null;
   onSelectNode: (bssid: string) => void;
 };
 
@@ -21,11 +19,9 @@ export const RadarScope: React.FC<RadarScopeProps> = ({
   accepted,
   scanning,
   error,
-  networks,
   filteredNetworks,
   nodes,
   selectedBssid,
-  lastScanAt,
   onSelectNode,
 }) => {
   return (
@@ -160,20 +156,7 @@ export const RadarScope: React.FC<RadarScopeProps> = ({
           </div>
         )}
 
-        <div
-          style={{
-            position: "absolute",
-            left: 12,
-            bottom: 10,
-            color: "#6fe9b7",
-            fontSize: 11,
-            opacity: 0.8,
-          }}
-        >
-          {error
-            ? `ERROR: ${error}`
-            : `NETWORKS: ${networks.length} / VISIBLE: ${filteredNetworks.length} / LAST: ${lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"}`}
-        </div>
+        {/* Status movido al header para no tapar nodos en el scope */}
       </div>
     </div>
   );

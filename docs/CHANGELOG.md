@@ -93,6 +93,20 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.53] - UI: Radar Intel refactor + responsive real + filtros plegables (2026-02-15)
+### UI (radar)
+- Refactor: `RadarIntelPanel` deja de ser GOD component (subcomponentes `intel/*` + helper de flujo a Attack Lab).
+- Responsive: el Radar entra en modo stacked (scope arriba + intel abajo) segun ancho util del scope (no solo el ancho total).
+- UX: filtros en layout `bottom` ahora son plegables (search + resumen siempre visibles) para evitar scroll innecesario.
+- Fix: el status `NETWORKS/VISIBLE/LAST` se mueve al header para no tapar nodos dentro del scope.
+
+### UI (global)
+- Estilo cyberpunk para `select/option` (dark scheme) para evitar dropdown blanco en runtime.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)
