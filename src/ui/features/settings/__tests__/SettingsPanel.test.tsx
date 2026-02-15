@@ -25,7 +25,7 @@ describe("SettingsPanel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "SETTINGS_TAB_FIELD_MANUAL" }));
     expect(await screen.findByText(/Leyenda 3D/i)).toBeInTheDocument();
-    // Navegacion interna del manual
-    expect(screen.getByRole("button", { name: "MANUAL_SECTION_ATTACK_LAB" })).toBeInTheDocument();
+    // Navegacion interna del manual (dropdown)
+    expect(screen.getByLabelText("MANUAL_SECTION_SELECT")).toBeInTheDocument();
   });
 });

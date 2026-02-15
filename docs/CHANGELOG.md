@@ -107,6 +107,21 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.54] - UI: i18n por locales + Field Manual refactor (2026-02-15)
+### i18n (infra)
+- Reestructura a formato por locales tipo Next:
+  - claves canonicas en `src/ui/i18n/keys.ts`
+  - diccionarios por idioma en `src/ui/i18n/locales/{es,ca,en}.ts`
+  - agregador compatible en `src/ui/i18n/strings.ts`
+
+### UI (settings)
+- `FieldManualView` refactor: divide en nav/hook de layout/secciones para evitar GOD component.
+- Eliminadas ramas `language === ...` en Field Manual: el contenido pasa a `t(key)` (ES/CA/EN).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)

@@ -106,7 +106,7 @@ const detachBtnStyle: React.CSSProperties = {
   borderRadius: 2,
 };
 
-const DockHeader: React.FC<{ title: string; onUndock: () => void }> = ({ title, onUndock }) => (
+const DockHeader: React.FC<{ title: string; onUndock: () => void; onClose?: () => void }> = ({ title, onUndock, onClose }) => (
   <div
     style={{
       height: 30,
@@ -123,13 +123,25 @@ const DockHeader: React.FC<{ title: string; onUndock: () => void }> = ({ title, 
     }}
   >
     <span>{title}</span>
-    <button onClick={onUndock} style={detachBtnStyle} title="Desacoplar panel" aria-label={`UNLOCK_${title.replace(/\s+/g, "_")}`}>
-      ↗
-    </button>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <button onClick={onUndock} style={detachBtnStyle} title="Desacoplar panel" aria-label={`UNLOCK_${title.replace(/\s+/g, "_")}`}>
+        ↗
+      </button>
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{ ...detachBtnStyle, borderColor: "#550000", color: "#ff6677", background: "#120003" }}
+          title="Cerrar panel"
+          aria-label={`CLOSE_${title.replace(/\s+/g, "_")}`}
+        >
+          X
+        </button>
+      )}
+    </div>
   </div>
 );
 
-const InlinePanelHeader: React.FC<{ title: string; onUndock: () => void }> = ({ title, onUndock }) => (
+const InlinePanelHeader: React.FC<{ title: string; onUndock: () => void; onClose?: () => void }> = ({ title, onUndock, onClose }) => (
   <div
     style={{
       height: 28,
@@ -143,7 +155,21 @@ const InlinePanelHeader: React.FC<{ title: string; onUndock: () => void }> = ({ 
     }}
   >
     <span style={{ color: "#88ffcc", fontSize: 11, fontWeight: 700, letterSpacing: 0.6 }}>{title}</span>
-    <button onClick={onUndock} style={detachBtnStyle} aria-label={`UNLOCK_${title.replace(/\s+/g, "_")}`} title="Desacoplar panel">↗</button>
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <button onClick={onUndock} style={detachBtnStyle} aria-label={`UNLOCK_${title.replace(/\s+/g, "_")}`} title="Desacoplar panel">
+        ↗
+      </button>
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{ ...detachBtnStyle, borderColor: "#550000", color: "#ff6677", background: "#120003" }}
+          title="Cerrar panel"
+          aria-label={`CLOSE_${title.replace(/\s+/g, "_")}`}
+        >
+          X
+        </button>
+      )}
+    </div>
   </div>
 );
 
@@ -292,7 +318,7 @@ export const MainDockedLayout = ({
                     // Triple split: Radar | Attack Lab | Settings. Cada uno se ajusta con separadores.
                     <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
                       <div style={{ width: `${dockTripleLeftRatio * 100}%`, minWidth: 220, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} onClose={() => setShowRadar(false)} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <RadarPanel onClose={() => setShowRadar(false)} />
@@ -307,7 +333,7 @@ export const MainDockedLayout = ({
                         aria-label="RESIZE_DOCK_TRIPLE_LEFT"
                       />
                       <div style={{ width: `${(dockTripleRightRatio - dockTripleLeftRatio) * 100}%`, minWidth: 240, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} onClose={closeAttackLab} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <AttackLabPanel
@@ -329,7 +355,7 @@ export const MainDockedLayout = ({
                         aria-label="RESIZE_DOCK_TRIPLE_RIGHT"
                       />
                       <div style={{ width: `${(1 - dockTripleRightRatio) * 100}%`, minWidth: 300, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <SettingsPanel onClose={() => setShowSettings(false)} />
@@ -341,7 +367,7 @@ export const MainDockedLayout = ({
                     // Split 2 columnas: Radar | Settings (con resize independiente).
                     <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
                       <div style={{ width: `${dockSettingsSplitRatio * 100}%`, minWidth: 260, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} onClose={() => setShowRadar(false)} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <RadarPanel onClose={() => setShowRadar(false)} />
@@ -356,7 +382,7 @@ export const MainDockedLayout = ({
                         aria-label="RESIZE_DOCK_SETTINGS_SPLIT"
                       />
                       <div style={{ width: `${(1 - dockSettingsSplitRatio) * 100}%`, minWidth: 320, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <SettingsPanel onClose={() => setShowSettings(false)} />
@@ -368,7 +394,7 @@ export const MainDockedLayout = ({
                     // Split 2 columnas: Attack Lab | Settings (con resize independiente).
                     <div style={{ display: "flex", width: "100%", minHeight: 0 }}>
                       <div style={{ width: `${dockSettingsSplitRatio * 100}%`, minWidth: 260, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} onClose={closeAttackLab} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <AttackLabPanel
@@ -390,7 +416,7 @@ export const MainDockedLayout = ({
                         aria-label="RESIZE_DOCK_SETTINGS_SPLIT"
                       />
                       <div style={{ width: `${(1 - dockSettingsSplitRatio) * 100}%`, minWidth: 320, minHeight: 0, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                        <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <SettingsPanel onClose={() => setShowSettings(false)} />
@@ -400,7 +426,7 @@ export const MainDockedLayout = ({
                     </div>
                   ) : showDockSettings ? (
                     <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                      <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} />
+                      <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} />
                       <div style={{ flex: 1, minHeight: 0 }}>
                         <Suspense fallback={null}>
                           <SettingsPanel onClose={() => setShowSettings(false)} />
@@ -410,7 +436,7 @@ export const MainDockedLayout = ({
                   ) : showDockRadar && showDockAttackLab ? (
                     <>
                       <div style={{ width: `${dockSplitRatio * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                        <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} onClose={() => setShowRadar(false)} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <RadarPanel onClose={() => setShowRadar(false)} />
@@ -425,7 +451,7 @@ export const MainDockedLayout = ({
                         aria-label="RESIZE_DOCK_SPLIT"
                       />
                       <div style={{ width: `${(1 - dockSplitRatio) * 100}%`, minWidth: 200, display: "flex", flexDirection: "column" }}>
-                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                        <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} onClose={closeAttackLab} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
                             <AttackLabPanel
@@ -442,7 +468,7 @@ export const MainDockedLayout = ({
                     </>
                   ) : showDockRadar ? (
                     <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                      <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} />
+                      <DockHeader title="RADAR" onUndock={() => void undockPanel("radar")} onClose={() => setShowRadar(false)} />
                       <div style={{ flex: 1, minHeight: 0 }}>
                         <Suspense fallback={null}>
                           <RadarPanel onClose={() => setShowRadar(false)} />
@@ -451,7 +477,7 @@ export const MainDockedLayout = ({
                     </div>
                   ) : (
                     <div style={{ width: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                      <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} />
+                      <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} onClose={closeAttackLab} />
                       <div style={{ flex: 1, minHeight: 0 }}>
                         <Suspense fallback={null}>
                           <AttackLabPanel
@@ -540,7 +566,7 @@ export const MainDockedLayout = ({
 
             {selectedDevice ? (
               <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                <InlinePanelHeader title="DEVICE" onUndock={() => void undockPanel("device")} />
+                <InlinePanelHeader title="DEVICE" onUndock={() => void undockPanel("device")} onClose={() => selectDevice(null)} />
                 <Suspense fallback={null}>
                   <DeviceDetailPanel
                     device={selectedDevice}

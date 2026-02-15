@@ -29,7 +29,7 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
   lastScanAt,
   onToggleAuto,
   onScan,
-  onClose,
+  onClose: _onClose,
 }) => {
   return (
     <div
@@ -113,20 +113,6 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
           {scanning ? "..." : compact ? "SCAN" : "SCAN AIRWAVES"}
         </button>
 
-        <button
-          onClick={onClose}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(0,255,136,0.25)",
-            color: "#6fe9b7",
-            padding: compact ? "6px 8px" : "6px 10px",
-            cursor: "pointer",
-            fontSize: 12,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {compact ? "X" : "CLOSE"}
-        </button>
       </div>
     </div>
   );

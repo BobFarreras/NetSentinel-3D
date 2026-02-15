@@ -24,7 +24,7 @@ interface AuditHeaderProps {
   onClose: () => void;
 }
 
-export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status, isAutoRun, compact = false, onClose }) => {
+export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status, isAutoRun, compact = false, onClose: _onClose }) => {
   return (
     <div style={{
       height: "auto",
@@ -64,7 +64,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status,
         {isAutoRun && mode === "LAB" && (
           <div style={{ color: "rgba(0,229,255,0.9)", fontSize: 12, fontWeight: 900, letterSpacing: 0.8 }}>AUTO</div>
         )}
-        <button onClick={onClose} style={btnStyle(false)}>{compact ? "X" : "CLOSE"}</button>
+        
       </div>
     </div>
   );
