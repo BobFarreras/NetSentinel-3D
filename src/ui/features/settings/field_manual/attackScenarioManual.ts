@@ -19,14 +19,21 @@ export const getScenarioManual = (scenarioId: string, lang: UILanguage): Scenari
     case "router_recon_ping_tracert":
       return {
         how: ES
-          ? "Recon no intrusivo: mide latencia y traza la ruta hacia el gateway. Se usa para detectar saltos inesperados, NATs, latencia anomala o segmentacion."
+          ? "Recon no intrusivo: baseline de conectividad hacia el gateway (PTR, ping y ruta). Se usa para detectar saltos inesperados, NAT/bridge/VPN, latencia anomala o segmentacion antes de auditar puertos/servicios."
           : CA
-          ? "Recon no intrusiu: mesura latencia i traça la ruta cap al gateway. Serveix per detectar salts inesperats, NATs, latencia anomala o segmentacio."
+          ? "Recon no intrusiu: baseline de connectivitat cap al gateway (PTR, ping i ruta). Serveix per detectar salts inesperats, NAT/bridge/VPN, latencia anomala o segmentacio abans d'auditar ports/serveis."
           : "Non-intrusive recon: measures latency and traces the route to the gateway. Used to detect unexpected hops, NATs, anomalous latency or segmentation.",
         mitigations: [
           ES ? "Filtrar ICMP en bordes (sin romper MTU/diagnostico interno)." : CA ? "Filtrar ICMP a la vora (sense trencar MTU/diagnostic intern)." : "Filter ICMP at edges (without breaking MTU/internal diagnostics).",
           ES ? "Reducir superficie del router (panel admin solo LAN, desactivar servicios remotos)." : CA ? "Reduir superficie del router (admin nomes LAN, desactivar serveis remots)." : "Reduce router surface (admin LAN-only, disable remote services).",
           ES ? "Segmentar: red de invitados separada del management." : CA ? "Segmentar: xarxa de convidats separada del management." : "Segment: guest network separated from management.",
+        ],
+        notes: [
+          ES
+            ? "Ping/traceroute pueden fallar aunque el router tenga servicios expuestos (ICMP filtrado). Para confirmarlo, usa un scan TCP/puertos."
+            : CA
+            ? "Ping/traceroute poden fallar tot i que el router tingui serveis exposats (ICMP filtrat). Per confirmar-ho, fes un scan TCP/ports."
+            : "Ping/traceroute may fail even if the router exposes services (ICMP filtered). Confirm with a TCP/port scan.",
         ],
       };
     case "device_http_headers":
