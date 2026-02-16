@@ -8,17 +8,14 @@ impl MacValidator {
     /// x2:.., x6:.., xA:.., xE:.. indican dirección local.
     pub fn is_spoofed(mac: &str) -> bool {
         let clean_mac = mac.replace(":", "").replace("-", "");
-        
+
         if clean_mac.len() < 2 {
             return false;
         }
 
         // Cogemos el segundo carácter (índice 1)
         if let Some(second_char) = clean_mac.chars().nth(1) {
-            match second_char.to_ascii_uppercase() {
-                '2' | '6' | 'A' | 'E' => true,
-                _ => false,
-            }
+            matches!(second_char.to_ascii_uppercase(), '2' | '6' | 'A' | 'E')
         } else {
             false
         }

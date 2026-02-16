@@ -29,10 +29,26 @@ impl FileGatewayCredentialPresetRepository {
     fn defaults() -> Vec<GatewayCredentialPreset> {
         vec![
             // Defaults globales ("*"): sirven como base para cualquier gateway.
-            GatewayCredentialPreset { gateway_ip: "*".to_string(), user: "admin".to_string(), pass: "admin".to_string() },
-            GatewayCredentialPreset { gateway_ip: "*".to_string(), user: "admin".to_string(), pass: "1234".to_string() },
-            GatewayCredentialPreset { gateway_ip: "*".to_string(), user: "user".to_string(), pass: "user".to_string() },
-            GatewayCredentialPreset { gateway_ip: "*".to_string(), user: "1234".to_string(), pass: "1234".to_string() },
+            GatewayCredentialPreset {
+                gateway_ip: "*".to_string(),
+                user: "admin".to_string(),
+                pass: "admin".to_string(),
+            },
+            GatewayCredentialPreset {
+                gateway_ip: "*".to_string(),
+                user: "admin".to_string(),
+                pass: "1234".to_string(),
+            },
+            GatewayCredentialPreset {
+                gateway_ip: "*".to_string(),
+                user: "user".to_string(),
+                pass: "user".to_string(),
+            },
+            GatewayCredentialPreset {
+                gateway_ip: "*".to_string(),
+                user: "1234".to_string(),
+                pass: "1234".to_string(),
+            },
         ]
     }
 }
@@ -68,7 +84,11 @@ impl GatewayCredentialPresetRepositoryPort for FileGatewayCredentialPresetReposi
         let migrated: Vec<GatewayCredentialPreset> = legacy
             .into_iter()
             .filter(|p| !p.user.trim().is_empty() && !p.pass.trim().is_empty())
-            .map(|p| GatewayCredentialPreset { gateway_ip: "*".to_string(), user: p.user, pass: p.pass })
+            .map(|p| GatewayCredentialPreset {
+                gateway_ip: "*".to_string(),
+                user: p.user,
+                pass: p.pass,
+            })
             .collect();
         self.save(&migrated)?;
         Ok(migrated)

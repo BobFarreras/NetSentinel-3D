@@ -6,8 +6,10 @@ use std::thread;
 
 pub fn scan_common_ports(ip: &str) -> Vec<OpenPort> {
     // Lista ampliada con tus nuevos objetivos
-    let common_ports = [21, 22, 23, 25, 53, 80, 110, 139, 143, 443, 445, 1433, 3306, 3389, 5432, 8080];
-    
+    let common_ports = [
+        21, 22, 23, 25, 53, 80, 110, 139, 143, 443, 445, 1433, 3306, 3389, 5432, 8080,
+    ];
+
     let mut open_ports = Vec::new();
     let mut handles = vec![];
     let ip_target = ip.to_string();
@@ -16,11 +18,7 @@ pub fn scan_common_ports(ip: &str) -> Vec<OpenPort> {
         let target = ip_target.clone();
         handles.push(thread::spawn(move || {
             // Usamos la nueva funcion scan_service
-            if let Some(banner) = PortScanner::scan_service(&target, port) {
-                Some((port, banner))
-            } else {
-                None
-            }
+            PortScanner::scan_service(&target, port).map(|banner| (port, banner))
         }));
     }
 

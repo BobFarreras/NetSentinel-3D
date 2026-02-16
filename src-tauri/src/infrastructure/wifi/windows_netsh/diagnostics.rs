@@ -8,8 +8,9 @@ pub fn is_windows_wifi_blocked(text: &str) -> bool {
         || lower.contains("privacy-location")
         || lower.contains("ms-settings:privacy-location")
         || lower.contains("location permission");
-    let mentions_elevation =
-        lower.contains("requiere elev") || lower.contains("requires elevation") || lower.contains("error 5");
+    let mentions_elevation = lower.contains("requiere elev")
+        || lower.contains("requires elevation")
+        || lower.contains("error 5");
     mentions_location || mentions_elevation
 }
 
@@ -39,4 +40,3 @@ pub fn diagnose_windows_wlan_block() -> Option<String> {
 
     Some(blocked_message())
 }
-

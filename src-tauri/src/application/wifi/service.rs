@@ -3,9 +3,9 @@
 
 use std::sync::Arc;
 
-use crate::domain::entities::{WifiEntity, WifiScanRecord};
-use crate::domain::ports::{VendorLookupPort, WifiScannerPort, WifiConnectorPort};
 use super::normalizer;
+use crate::domain::entities::{WifiEntity, WifiScanRecord};
+use crate::domain::ports::{VendorLookupPort, WifiConnectorPort, WifiScannerPort};
 
 pub struct WifiService {
     scanner: Arc<dyn WifiScannerPort>,
@@ -42,7 +42,9 @@ impl WifiService {
 
     // --- NUEVO MÉTODO ---
     pub async fn connect_to_network(&self, ssid: String, password: String) -> Result<bool, String> {
-        if password.len() < 8 { return Ok(false); }
+        if password.len() < 8 {
+            return Ok(false);
+        }
 
         // Evitamos bloquear el runtime async: la implementacion puede ser netsh/FS/etc.
         let connector = self.connector.clone();

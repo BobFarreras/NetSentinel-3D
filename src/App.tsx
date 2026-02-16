@@ -19,6 +19,7 @@ function App() {
   const {
     devices,
     selectedDevice,
+    deviceLogsByIp,
     scanning,
     auditing,
     auditResults,
@@ -183,6 +184,9 @@ function App() {
   }, [showAttackLab]);
 
   if (detachedContext) {
+    const detachedConsoleLogs = detachedTargetDevice
+      ? (deviceLogsByIp?.[detachedTargetDevice.ip] || [])
+      : consoleLogs;
     return (
       <DetachedPanelView
         panel={detachedContext.panel}
@@ -193,7 +197,7 @@ function App() {
         clearSystemLogs={clearSystemLogs}
         detachedTargetDevice={detachedTargetDevice}
         auditResults={auditResults}
-        consoleLogs={consoleLogs}
+        consoleLogs={detachedConsoleLogs}
         auditing={auditing}
         startAudit={startAudit}
         jammedDevices={jammedDevices}

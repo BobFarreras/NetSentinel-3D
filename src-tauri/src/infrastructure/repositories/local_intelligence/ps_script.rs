@@ -79,4 +79,3 @@ fn run_powershell(script: &str) -> Result<String, String> {
     text.push_str(&String::from_utf8_lossy(&output.stderr));
     Ok(text)
 }
-

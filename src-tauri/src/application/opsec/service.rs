@@ -3,10 +3,10 @@
 
 use std::sync::Arc;
 
+use super::mac_changer::MacChangerService;
 use crate::application::settings::SettingsService;
 use crate::domain::entities::{HostIdentity, MacSecurityStatus};
 use crate::domain::ports::NetworkScannerPort;
-use super::mac_changer::MacChangerService;
 
 pub struct OpSecService {
     scanner: Arc<dyn NetworkScannerPort>,
@@ -37,7 +37,9 @@ impl OpSecService {
         let current_mac = identity.mac.to_uppercase().replace("-", ":");
 
         // 2) Obtener MAC "real" persistida (si no existe, inicializa con la actual)
-        let real_mac = self.settings.get_or_init_real_mac(current_mac.clone())
+        let real_mac = self
+            .settings
+            .get_or_init_real_mac(current_mac.clone())
             .to_uppercase()
             .replace("-", ":");
 
@@ -52,7 +54,11 @@ impl OpSecService {
         Ok(MacSecurityStatus {
             current_mac,
             is_spoofed,
-            risk_level: if is_spoofed { "LOW".to_string() } else { "HIGH".to_string() },
+            risk_level: if is_spoofed {
+                "LOW".to_string()
+            } else {
+                "HIGH".to_string()
+            },
         })
     }
 

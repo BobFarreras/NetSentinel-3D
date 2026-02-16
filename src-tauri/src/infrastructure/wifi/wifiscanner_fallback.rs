@@ -38,4 +38,3 @@ pub async fn scan_via_wifiscanner() -> Result<Vec<WifiScanRecord>, String> {
 
     Ok(records)
 }
-

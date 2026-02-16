@@ -1,7 +1,7 @@
 // src-tauri/src/api/commands/wordlist.rs
 
-use tauri::State;
 use crate::application::wordlist::WordlistService;
+use tauri::State;
 
 // Nota: SIN #[tauri::command] aquí. Se pone en el padre (commands.rs).
 

@@ -37,4 +37,3 @@ impl SettingsStorePort for FileSettingsStore {
         fs::write(&self.path, json).map_err(|e| e.to_string())
     }
 }
-

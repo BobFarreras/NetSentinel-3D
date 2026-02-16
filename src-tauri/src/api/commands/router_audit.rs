@@ -9,7 +9,10 @@ use crate::application::audit::AuditService;
 use super::internal_validation::validate_router_credentials_input;
 
 // --- ROUTER AUDIT ---
-pub async fn audit_router(service: State<'_, AuditService>, gateway_ip: String) -> Result<RouterAuditResultDTO, String> {
+pub async fn audit_router(
+    service: State<'_, AuditService>,
+    gateway_ip: String,
+) -> Result<RouterAuditResultDTO, String> {
     validate_usable_host_ipv4(&gateway_ip, "gateway_ip")?;
 
     // Nota: el logging se emite via evento global (wiring en `src-tauri/src/lib.rs`).

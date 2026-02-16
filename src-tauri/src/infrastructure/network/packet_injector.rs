@@ -82,4 +82,3 @@ mod tests {
         assert_eq!(PacketInjector::parse_mac("BAD"), MacAddr::zero());
     }
 }
-

@@ -1,7 +1,7 @@
 fn main() {
     // Definimos atributos específicos para Windows
     let mut windows = tauri_build::WindowsAttributes::new();
-    
+
     // Le inyectamos nuestro archivo app.manifest
     windows = windows.app_manifest(include_str!("app.manifest"));
 

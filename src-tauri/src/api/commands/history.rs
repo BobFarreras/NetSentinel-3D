@@ -6,7 +6,10 @@ use crate::application::history::HistoryService;
 use crate::domain::entities::{Device, ScanSession};
 
 // --- HISTORY ---
-pub async fn save_scan(service: State<'_, HistoryService>, devices: Vec<Device>) -> Result<String, String> {
+pub async fn save_scan(
+    service: State<'_, HistoryService>,
+    devices: Vec<Device>,
+) -> Result<String, String> {
     // Nota: el frontend envia JSON que coincide con la estructura de `Device`.
     // Tauri hace el parseo automatico gracias al `Deserialize` de `src-tauri/src/domain/entities.rs`.
     service.save_session(devices).await

@@ -49,7 +49,7 @@ impl ScannerService {
             .into_iter()
             .filter_map(|mut p| {
                 let info = ServiceDictionary::lookup(p.port);
-                let banner = p.service.clone(); 
+                let banner = p.service.clone();
                 let is_silent = banner == "Silent" || banner == "Unknown" || banner.is_empty();
 
                 // REGLA 1: Si l'entorn està "Enverinat" i el port és Silent -> FORA.
@@ -62,7 +62,7 @@ impl ScannerService {
                 // Si estan "Silent", és l'Antivirus interceptant.
                 let chatty_protocols = [21, 25, 110, 143, 587, 993, 995];
                 if is_silent && chatty_protocols.contains(&p.port) {
-                     return None; // FALS POSITIU DETECTAT
+                    return None; // FALS POSITIU DETECTAT
                 }
 
                 // REGLA 3: DNS TCP (53) Silent en Router domèstic -> FORA.
@@ -82,19 +82,23 @@ impl ScannerService {
                 }
 
                 p.risk_level = info.risk.to_string();
-                if p.port == 23 { p.risk_level = "CRITICAL".to_string(); }
-                
+                if p.port == 23 {
+                    p.risk_level = "CRITICAL".to_string();
+                }
+
                 Some(p)
             })
             .collect();
 
         // Càlcul de risc
         let mut global_risk = "SAFE";
-        if !enriched_ports.is_empty() { global_risk = "LOW"; }
-        
+        if !enriched_ports.is_empty() {
+            global_risk = "LOW";
+        }
+
         for p in &enriched_ports {
             if p.service.contains("✓") && p.risk_level == "HIGH" {
-                 global_risk = "HIGH";
+                global_risk = "HIGH";
             }
             if p.risk_level == "CRITICAL" {
                 global_risk = "CRITICAL";

@@ -10,9 +10,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use tokio::sync::{oneshot, Mutex};
 
-use crate::domain::ports::{AttackLabEventSinkPort, AttackLabRunnerPort};
 use super::types::AttackLabRequest;
 use super::validation::validate_request;
+use crate::domain::ports::{AttackLabEventSinkPort, AttackLabRunnerPort};
 
 pub struct RunningAudit {
     pub cancel: oneshot::Sender<()>,
@@ -50,7 +50,9 @@ impl AttackLabService {
         let audit_id_for_task = audit_id.clone();
         let runner = Arc::clone(&self.runner);
         tokio::spawn(async move {
-            runner.run(audit_id_for_task.clone(), request, cancel_rx, sink).await;
+            runner
+                .run(audit_id_for_task.clone(), request, cancel_rx, sink)
+                .await;
 
             // Limpieza del registro de "running" (source of truth en application).
             let mut guard = running_map.lock().await;

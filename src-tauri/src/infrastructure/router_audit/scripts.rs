@@ -39,4 +39,3 @@ impl ScriptArsenal {
         "document.body.innerText"
     }
 }
-

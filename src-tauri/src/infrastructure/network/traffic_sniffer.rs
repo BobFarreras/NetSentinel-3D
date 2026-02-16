@@ -47,7 +47,10 @@ impl TrafficSniffer {
                 }
             };
 
-            println!("✅ [SNIFFER] Interfaz='{}' mi_ip={} objetivo={}", interface.name, my_ip, target_ip);
+            println!(
+                "✅ [SNIFFER] Interfaz='{}' mi_ip={} objetivo={}",
+                interface.name, my_ip, target_ip
+            );
 
             let mut rx = match net::open_ethernet_rx(&interface) {
                 Ok(rx) => rx,
@@ -95,7 +98,12 @@ impl TrafficSnifferPort for TrafficSniffer {
     }
 }
 
-fn map_packet(packet: &[u8], my_ip: &str, target_ip: &str, packet_id: usize) -> Option<TrafficPacket> {
+fn map_packet(
+    packet: &[u8],
+    my_ip: &str,
+    target_ip: &str,
+    packet_id: usize,
+) -> Option<TrafficPacket> {
     let now = protocol::unix_ms();
 
     let eth = EthernetPacket::new(packet)?;
@@ -136,10 +144,26 @@ mod tests {
 
     #[test]
     fn intercepted_detection_is_reasonable() {
-        assert!(!protocol::is_intercepted("192.168.1.10", "192.168.1.10", "192.168.1.20"));
-        assert!(!protocol::is_intercepted("192.168.1.10", "192.168.1.20", "192.168.1.10"));
-        assert!(!protocol::is_intercepted("192.168.1.10", "192.168.1.20", "255.255.255.255"));
-        assert!(protocol::is_intercepted("192.168.1.10", "192.168.1.20", "192.168.1.30"));
+        assert!(!protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.10",
+            "192.168.1.20"
+        ));
+        assert!(!protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.20",
+            "192.168.1.10"
+        ));
+        assert!(!protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.20",
+            "255.255.255.255"
+        ));
+        assert!(protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.20",
+            "192.168.1.30"
+        ));
     }
 
     #[test]

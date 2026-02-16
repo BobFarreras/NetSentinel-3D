@@ -1,7 +1,10 @@
 // src-tauri/src/application/audit/service.rs
 // Servicio de auditoria del gateway: delega en `RouterAuditorPort` para brute-force y lectura de dispositivos conectados.
 
-use crate::domain::{ports::RouterAuditorPort, entities::{RouterAuditResult, Device}};
+use crate::domain::{
+    entities::{Device, RouterAuditResult},
+    ports::RouterAuditorPort,
+};
 use std::sync::Arc;
 
 pub struct AuditService {
@@ -14,7 +17,10 @@ impl AuditService {
     }
 
     pub async fn brute_force_gateway(&self, ip: String) -> RouterAuditResult {
-        println!("🧠 [APP] Iniciando protocolo de auditoria de gateway en {}", ip);
+        println!(
+            "🧠 [APP] Iniciando protocolo de auditoria de gateway en {}",
+            ip
+        );
         self.auditor_port.audit_gateway(&ip).await
     }
 

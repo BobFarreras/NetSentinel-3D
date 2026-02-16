@@ -33,6 +33,9 @@ pub async fn start_attack_lab(
         .await
 }
 
-pub async fn cancel_attack_lab(service: State<'_, AttackLabService>, audit_id: String) -> Result<(), String> {
+pub async fn cancel_attack_lab(
+    service: State<'_, AttackLabService>,
+    audit_id: String,
+) -> Result<(), String> {
     service.cancel_audit(&audit_id).await
 }

@@ -213,7 +213,9 @@ mod tests {
             }
         };
 
-        runner.run(audit_id.clone(), request, cancel_rx, sink.clone()).await;
+        runner
+            .run(audit_id.clone(), request, cancel_rx, sink.clone())
+            .await;
 
         let exits = sink.exits.lock().unwrap().clone();
         assert_eq!(exits.len(), 1);
@@ -221,8 +223,11 @@ mod tests {
         assert!(exits[0].success);
 
         let logs = sink.logs.lock().unwrap().clone();
-        assert!(logs.iter().any(|l| l.stream == "stdout" && l.line.contains("OUT_LINE_1")));
-        assert!(logs.iter().any(|l| l.stream == "stderr" && l.line.contains("ERR_LINE_1")));
+        assert!(logs
+            .iter()
+            .any(|l| l.stream == "stdout" && l.line.contains("OUT_LINE_1")));
+        assert!(logs
+            .iter()
+            .any(|l| l.stream == "stderr" && l.line.contains("ERR_LINE_1")));
     }
 }
-

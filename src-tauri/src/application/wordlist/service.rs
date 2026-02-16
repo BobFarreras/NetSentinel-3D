@@ -65,7 +65,9 @@ mod tests {
 
     impl MockWordlistRepo {
         fn new(words: Vec<String>) -> Self {
-            Self { words: Mutex::new(words) }
+            Self {
+                words: Mutex::new(words),
+            }
         }
     }
 
@@ -109,17 +111,25 @@ mod tests {
 
     #[test]
     fn update_word_debe_persistir_si_existe() {
-        let repo = Arc::new(MockWordlistRepo::new(vec!["a".to_string(), "b".to_string()]));
+        let repo = Arc::new(MockWordlistRepo::new(vec![
+            "a".to_string(),
+            "b".to_string(),
+        ]));
         let service = WordlistService::new(repo.clone());
 
-        let list = service.update_word("a".to_string(), "z".to_string()).unwrap();
+        let list = service
+            .update_word("a".to_string(), "z".to_string())
+            .unwrap();
         assert_eq!(list, vec!["z".to_string(), "b".to_string()]);
         assert_eq!(repo.load().unwrap(), vec!["z".to_string(), "b".to_string()]);
     }
 
     #[test]
     fn remove_word_debe_eliminar_si_existe() {
-        let repo = Arc::new(MockWordlistRepo::new(vec!["a".to_string(), "b".to_string()]));
+        let repo = Arc::new(MockWordlistRepo::new(vec![
+            "a".to_string(),
+            "b".to_string(),
+        ]));
         let service = WordlistService::new(repo.clone());
 
         let list = service.remove_word("b".to_string()).unwrap();

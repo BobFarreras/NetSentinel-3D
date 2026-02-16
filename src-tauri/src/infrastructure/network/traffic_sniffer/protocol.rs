@@ -38,7 +38,12 @@ pub fn analyze_ipv4(ipv4: &Ipv4Packet) -> (String, String) {
     match ipv4.get_next_level_protocol() {
         pnet::packet::ip::IpNextHeaderProtocols::Tcp => {
             if let Some(tcp) = TcpPacket::new(ipv4.payload()) {
-                let (proto, info) = classify(&dst_ip, ProtoKind::Tcp, tcp.get_source(), tcp.get_destination());
+                let (proto, info) = classify(
+                    &dst_ip,
+                    ProtoKind::Tcp,
+                    tcp.get_source(),
+                    tcp.get_destination(),
+                );
 
                 // Fingerprinting best-effort solo en debug.
                 #[cfg(debug_assertions)]
@@ -54,7 +59,12 @@ pub fn analyze_ipv4(ipv4: &Ipv4Packet) -> (String, String) {
         }
         pnet::packet::ip::IpNextHeaderProtocols::Udp => {
             if let Some(udp) = UdpPacket::new(ipv4.payload()) {
-                return classify(&dst_ip, ProtoKind::Udp, udp.get_source(), udp.get_destination());
+                return classify(
+                    &dst_ip,
+                    ProtoKind::Udp,
+                    udp.get_source(),
+                    udp.get_destination(),
+                );
             }
             classify(&dst_ip, ProtoKind::Udp, 0, 0)
         }
@@ -114,4 +124,3 @@ fn try_extract_user_agent(payload: &[u8]) -> Option<String> {
     let end = text[start..].find("\r\n")?;
     Some(text[start..start + end].to_string())
 }
-

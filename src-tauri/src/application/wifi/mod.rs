@@ -5,4 +5,3 @@ pub mod normalizer;
 pub mod service;
 
 pub use service::WifiService;
-
