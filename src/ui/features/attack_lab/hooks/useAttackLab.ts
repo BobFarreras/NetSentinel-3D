@@ -2,7 +2,7 @@
 // Wrapper del runtime persistente del Attack Lab para mantener imports estables en la feature.
 
 import type { AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
-import type { SimStep } from "../catalog/attackLabScenarios";
+import type { SimStep } from "../catalog/types";
 import { useAttackLabRuntime } from "../../../hooks/modules/attack_lab/useAttackLabRuntime";
 
 export const useAttackLab = () => {
@@ -24,4 +24,3 @@ export const useAttackLab = () => {
     clear: () => actions.clear(),
   };
 };
-

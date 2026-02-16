@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import type { DeviceDTO, WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
-import type { AttackLabScenario } from "../catalog/attackLabScenarios";
+import type { AttackLabScenario } from "../catalog/types";
 import { WordlistManagerModal } from "./WordlistManagerModal";
 import { useI18n } from "../../../i18n";
 

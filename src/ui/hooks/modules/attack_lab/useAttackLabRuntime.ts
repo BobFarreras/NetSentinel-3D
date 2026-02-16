@@ -4,7 +4,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { AttackLabExitEvent, AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
 import { attackLabAdapter } from "../../../../adapters/attackLabAdapter";
-import type { SimStep } from "../../../features/attack_lab/catalog/attackLabScenarios";
+import type { SimStep } from "../../../features/attack_lab/catalog/types";
 
 export type AttackLabLogRow = {
   ts: number;

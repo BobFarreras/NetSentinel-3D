@@ -21,7 +21,9 @@ IPC:
 - DTOs: `src/shared/dtos/NetworkDTOs.ts` (tipos `AttackLabLogEvent`, `AttackLabExitEvent`, `DeviceDTO`)
 
 Dependencias internas:
-- Catalogo de escenarios: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
+- Catalogo de escenarios (agregador): `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
+- Tipos del catalogo: `src/ui/features/attack_lab/catalog/types.ts`
+- Escenarios por dominio: `src/ui/features/attack_lab/catalog/scenarios/`
 - Estado/ejecucion: `src/ui/features/attack_lab/hooks/useAttackLab.ts`
 - Sincronizacion en panel detached: `src/ui/features/attack_lab/hooks/useAttackLabDetachedSync.ts`
 - UI principal: `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
@@ -31,4 +33,3 @@ Dependencias internas:
 
 - UI: `src/ui/features/attack_lab/__tests__/AttackLabPanel.test.tsx`
 - Hooks: `src/ui/features/attack_lab/__tests__/useAttackLabDetachedSync.test.ts`
-
