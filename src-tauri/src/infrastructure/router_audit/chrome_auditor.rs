@@ -127,6 +127,18 @@ impl ChromeAuditor {
 
                     // 1) Parseo puro (sin ARP/vendor).
                     let parsed = parse_router_text(text);
+                    if parsed.is_empty() {
+                        // Esto suele indicar:
+                        // - login fallido (seguimos en pantalla de login)
+                        // - firmware/idioma distinto (el DOM no contiene bloques con IP)
+                        // - el router requiere navegar a otra ruta para ver la lista
+                        //
+                        // La UI puede hacer fallback (brute-force o reintento con otras credenciales).
+                        self.log(&format!(
+                            "   ⚠️ SYNC: 0 dispositivos parseados. URL={}",
+                            tab.get_url()
+                        ));
+                    }
 
                     // 2) Enriquecimiento local (ARP + vendor).
                     let devices = enrich_router_devices(parsed);

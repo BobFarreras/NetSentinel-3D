@@ -44,6 +44,66 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   // Usamos el gatewayIp de identity como fallback porque el inventario puede tardar en marcar isGateway.
   const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog, { gatewayIpOverride: identity?.gatewayIp ?? null });
 
+  // Asegurar que el host (la maquina que ejecuta NetSentinel) exista en el inventario con MAC real.
+  // Motivo: el router puede no listar al propio host en su UI, o no exponer MAC; ARP local tampoco siempre
+  // resuelve la propia IP => termina como 00:00.. y el nodo no se identifica como "self".
+  useEffect(() => {
+    if (!identity?.ip || !identity?.mac) return;
+
+    const idIp = identity.ip.trim();
+    const idMac = identity.mac.trim().toUpperCase().replace("-", ":");
+
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => (d.ip ?? "").trim() === idIp);
+      if (idx === -1) {
+        return [
+          ...prev,
+          {
+            ip: idIp,
+            mac: idMac,
+            vendor: "NETSENTINEL (ME)",
+            name: "HOST",
+            hostname: prev.find((d) => (d.vendor ?? "").includes("NETSENTINEL"))?.hostname,
+            isGateway: false,
+          },
+        ];
+      }
+
+      const existing = prev[idx];
+      const next = [...prev];
+      next[idx] = {
+        ...existing,
+        ip: idIp,
+        mac: idMac,
+        vendor: (existing.vendor ?? "").includes("NETSENTINEL") ? existing.vendor : "NETSENTINEL (ME)",
+      };
+      return next;
+    });
+  }, [identity?.ip, identity?.mac, setDevices]);
+
+  // Asegurar que el gateway tenga una etiqueta clara aunque el router no se liste como "cliente"
+  // y aunque el escaner no haya resuelto hostname.
+  useEffect(() => {
+    if (!identity?.gatewayIp) return;
+    const gwIp = identity.gatewayIp.trim();
+    if (!gwIp) return;
+
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => (d.ip ?? "").trim() === gwIp);
+      if (idx === -1) return prev;
+
+      const existing = prev[idx];
+      const next = [...prev];
+      next[idx] = {
+        ...existing,
+        isGateway: true,
+        name: existing.name ?? existing.hostname ?? "GATEWAY",
+        hostname: existing.hostname ?? existing.name ?? "GATEWAY",
+      };
+      return next;
+    });
+  }, [identity?.gatewayIp, setDevices]);
+
   // Si cambia la identidad (por ejemplo, Ghost Mode), eliminamos clones stale del host del inventario.
   // Esto evita duplicados del mismo dispositivo con MAC antigua en la escena.
   useEffect(() => {
