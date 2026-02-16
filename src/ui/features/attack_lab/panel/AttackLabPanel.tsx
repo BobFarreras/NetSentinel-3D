@@ -38,14 +38,47 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   autoRunToken: propAutoRunToken = 0,
   embedded = false,
 }) => {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const runtime = useAttackLabRuntime();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
 
-  const [localTarget, setLocalTarget] = useState<DeviceDTO | null>(propTargetDevice || null);
-  const [mode, setMode] = useState<"LAB" | "CUSTOM">(() => (localTarget || defaultScenarioId ? "LAB" : "CUSTOM"));
-  const [scenarioId, setScenarioId] = useState<string>(() => defaultScenarioId || "");
+  const UI_STATE_KEY = "netsentinel.attackLab.uiState.v1";
+  const loadUiState = (): { scenarioId?: string; mode?: "LAB" | "CUSTOM"; targetIp?: string } | null => {
+    try {
+      const raw = localStorage.getItem(UI_STATE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { scenarioId?: string; mode?: "LAB" | "CUSTOM"; targetIp?: string };
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const persisted = loadUiState();
+
+  const [localTarget, setLocalTarget] = useState<DeviceDTO | null>(() => {
+    if (propTargetDevice) return propTargetDevice;
+    const ip = persisted?.targetIp;
+    if (ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+      // DTO minimo: se enriquecera cuando llegue inventory real (availableDevices/routers).
+      return {
+        ip,
+        mac: "",
+        vendor: "",
+        hostname: ip,
+        isGateway: false,
+        ping: undefined,
+        openPorts: [],
+        os: "",
+        deviceType: "UNKNOWN",
+      };
+    }
+    return null;
+  });
+
+  const [mode, setMode] = useState<"LAB" | "CUSTOM">(() => persisted?.mode ?? (propTargetDevice || defaultScenarioId ? "LAB" : "CUSTOM"));
+  const [scenarioId, setScenarioId] = useState<string>(() => defaultScenarioId || persisted?.scenarioId || "");
   const [wifiTargets, setWifiTargets] = useState<WifiNetworkDTO[]>([]);
   
   // ESTADOS MODAL & OPSEC
@@ -154,6 +187,19 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         });
     }
   }, [propTargetDevice]);
+
+  // Persistimos UI state para que abrir/cerrar otros paneles no borre inputs.
+  useEffect(() => {
+    try {
+      localStorage.setItem(UI_STATE_KEY, JSON.stringify({
+        scenarioId: scenarioId || undefined,
+        mode,
+        targetIp: localTarget?.ip || undefined,
+      }));
+    } catch {
+      // ignore
+    }
+  }, [scenarioId, mode, localTarget?.ip]);
 
   // Si no hay target pero sí routers detectados, seleccionamos el primero solo una vez.
   // Regla: NO rotar a otro router automáticamente por errores.
@@ -282,7 +328,14 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         const support = selectedScenario.isSupported?.({ device: localTarget, identity }) || { supported: true };
         if (support.supported) {
             const req = selectedScenario.buildRequest?.({ device: localTarget, identity });
-            if (req) await runtime.actions.startExternal(req);
+            if (req) {
+              const baseEnv = req.env ?? [];
+              const nextEnv = [
+                ...baseEnv,
+                { key: "NETSENTINEL_UI_LANG", value: language },
+              ];
+              await runtime.actions.startExternal({ ...req, env: nextEnv });
+            }
         }
     }
   };
@@ -353,7 +406,14 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         - La consola mantiene su propio scroll y ocupa el resto del alto.
       */}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ flex: "0 1 340px", minHeight: 160, overflowY: "auto", overflowX: "hidden" }}>
+        {/* Bloque superior (selector/target/acciones): debe ocupar solo lo necesario.
+            Si crece (descripciones largas), scrollea dentro de un maxHeight para no robar espacio a la consola. */}
+        <div style={{
+          flex: "0 0 auto",
+          maxHeight: isNarrow ? 340 : 260,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}>
           {mode === "LAB" ? (
             <LabModeView 
               scenarios={scenarios}

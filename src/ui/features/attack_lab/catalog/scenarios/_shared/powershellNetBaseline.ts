@@ -1,29 +1,87 @@
 // src/ui/features/attack_lab/catalog/scenarios/_shared/powershellNetBaseline.ts
-// Builder de script PowerShell: baseline de conectividad (PTR + ping + tracert) con resumen VERDICT/WHY/NEXT.
+// Builder de script PowerShell: baseline de conectividad (PTR + ping + tracert) con salida localizada (NETSENTINEL_UI_LANG).
 
 const escapePsSingleQuoted = (value: string) => value.replace(/'/g, "''");
 
 export const buildNetBaselinePs = (targetIpRaw: string): string => {
   const targetIp = escapePsSingleQuoted(targetIpRaw);
 
-  // Importante: se devuelve un script inline en una sola linea (se unirá con '; ').
+  // Importante: se devuelve un script inline en una sola linea (se unira con '; ').
   // Esto evita depender de ficheros externos y mantiene el escenario portable.
   return [
     "$ErrorActionPreference = 'Continue'",
+    "$lang = $env:NETSENTINEL_UI_LANG",
+    "if (-not $lang) { $lang = 'es' }",
+    "function _T($k) {",
+    "  switch ($lang) {",
+    "    'ca' {",
+    "      switch ($k) {",
+    "        'banner' { return '=== BASELINE DE XARXA: PTR + PING + TRACERT ===' }",
+    "        'invalidIp' { return 'IPv4 invalid: ' }",
+    "        'dns' { return '== DNS (reverse) ==' }",
+    "        'ping' { return '== PING (Test-Connection) ==' }",
+    "        'tracert' { return '== TRACERT (max 12 hops) ==' }",
+    "        'baselineOk' { return 'Baseline consistent: connectivitat LAN estable cap al target.' }",
+    "        'pingFail' { return 'PING ha fallat (ICMP filtrat o host no respon). No concloent per TCP.' }",
+    "        'tracertHopsPrefix' { return 'TRACERT amb ' }",
+    "        'tracertHopsSuffix' { return ' hops: possible VPN/bridge/segmentacio.' }",
+    "        'highLatencyPrefix' { return 'Latencia mitjana alta (' }",
+    "        'highLatencySuffix' { return 'ms): WiFi saturat/bufferbloat/ruta inestable.' }",
+    "        'nextPorts' { return '- Si vols saber \"que esta exposat\": executa un audit de ports TCP/serveis.' }",
+    "        'nextHttp' { return '- Si es un router amb panell web: executa HTTP Fingerprint (HEAD) i revisa redirects/auth.' }",
+    "      }",
+    "    }",
+    "    'en' {",
+    "      switch ($k) {",
+    "        'banner' { return '=== NET BASELINE: PTR + PING + TRACERT ===' }",
+    "        'invalidIp' { return 'Invalid IPv4: ' }",
+    "        'dns' { return '== DNS (reverse) ==' }",
+    "        'ping' { return '== PING (Test-Connection) ==' }",
+    "        'tracert' { return '== TRACERT (max 12 hops) ==' }",
+    "        'baselineOk' { return 'Consistent baseline: stable LAN connectivity to target.' }",
+    "        'pingFail' { return 'PING failed (ICMP filtered or host not responding). Not conclusive for TCP.' }",
+    "        'tracertHopsPrefix' { return 'TRACERT with ' }",
+    "        'tracertHopsSuffix' { return ' hops: possible VPN/bridge/segmentation.' }",
+    "        'highLatencyPrefix' { return 'High average latency (' }",
+    "        'highLatencySuffix' { return 'ms): congested WiFi/bufferbloat/unstable route.' }",
+    "        'nextPorts' { return '- If you want to know \"what is exposed\": run a TCP ports/services audit.' }",
+    "        'nextHttp' { return '- If it is a router with web UI: run HTTP Fingerprint (HEAD) and review redirects/auth.' }",
+    "      }",
+    "    }",
+    "    default {",
+    "      switch ($k) {",
+    "        'banner' { return '=== NET BASELINE: PTR + PING + TRACERT ===' }",
+    "        'invalidIp' { return 'IPv4 invalida: ' }",
+    "        'dns' { return '== DNS (reverse) ==' }",
+    "        'ping' { return '== PING (Test-Connection) ==' }",
+    "        'tracert' { return '== TRACERT (max 12 hops) ==' }",
+    "        'baselineOk' { return 'Baseline consistente: conectividad LAN estable hacia el target.' }",
+    "        'pingFail' { return 'PING fallo (ICMP filtrado o host no responde). No concluyente para TCP.' }",
+    "        'tracertHopsPrefix' { return 'TRACERT con ' }",
+    "        'tracertHopsSuffix' { return ' hops: posible VPN/bridge/segmentacion.' }",
+    "        'highLatencyPrefix' { return 'Latencia media alta (' }",
+    "        'highLatencySuffix' { return 'ms): WiFi saturado/bufferbloat/ruta inestable.' }",
+    "        'nextPorts' { return '- Si quieres saber \"que esta expuesto\": ejecuta un audit de puertos TCP/servicios.' }",
+    "        'nextHttp' { return '- Si es un router con panel web: ejecuta HTTP Fingerprint (HEAD) y revisa redirects/auth.' }",
+    "      }",
+    "    }",
+    "  }",
+    "  return $k",
+    "}",
     `$targetIp = '${targetIp}'`,
-    "Write-Output '=== NET BASELINE: PTR + PING + TRACERT ==='",
+    "Write-Output (_T 'banner')",
     "Write-Output ('TARGET_IP: ' + $targetIp)",
     "Write-Output ('TIMESTAMP: ' + (Get-Date).ToString('s'))",
     "Write-Output ''",
     "if (-not ([System.Net.IPAddress]::TryParse($targetIp, [ref]$null))) {",
-    "  Write-Error ('Invalid IPv4: ' + $targetIp)",
+    "  Write-Error ((_T 'invalidIp') + $targetIp)",
     "  exit 2",
     "}",
     "",
     // PTR
     "$ptrOk = $false",
     "$ptrValue = ''",
-    "Write-Output '== DNS (reverse) =='",
+    "Write-Output (_T 'dns')",
     "try {",
     "  $ptrValue = Resolve-DnsName -ErrorAction Stop -Type PTR -Name $targetIp | Select-Object -First 1 -ExpandProperty NameHost",
     "  if ($ptrValue) {",
@@ -40,7 +98,7 @@ export const buildNetBaselinePs = (targetIpRaw: string): string => {
     // Ping
     "$pingOk = $false",
     "$avg = $null; $min = $null; $max = $null",
-    "Write-Output '== PING (Test-Connection) =='",
+    "Write-Output (_T 'ping')",
     "try {",
     "  $p = Test-Connection -ComputerName $targetIp -Count 4 -ErrorAction Stop",
     "  $avg = [Math]::Round(($p | Measure-Object -Property ResponseTime -Average).Average, 2)",
@@ -56,7 +114,7 @@ export const buildNetBaselinePs = (targetIpRaw: string): string => {
     "",
     // Tracert
     "$hopCount = 0",
-    "Write-Output '== TRACERT (max 12 hops) =='",
+    "Write-Output (_T 'tracert')",
     "try {",
     // `tracert` puede tardar mucho si ICMP TTL-exceeded esta filtrado.
     // Reducimos timeout por probe para que el escenario siempre llegue a VERDICT en un tiempo razonable.
@@ -71,17 +129,18 @@ export const buildNetBaselinePs = (targetIpRaw: string): string => {
     // Verdict
     "$verdict = 'OK'",
     "$reasons = @()",
-    "if (-not $pingOk) { $verdict = 'WARN'; $reasons += 'PING fallo (ICMP filtrado o host no responde). No concluyente para TCP.' }",
-    "if ($hopCount -gt 1) { $verdict = 'WARN'; $reasons += ('TRACERT con ' + $hopCount + ' hops: posible VPN/bridge/segmentacion.' ) }",
-    "if ($pingOk -and $avg -ne $null -and $avg -gt 50) { $verdict = 'WARN'; $reasons += ('Latencia media alta (' + $avg + 'ms): WiFi saturado/bufferbloat/ruta inestable.') }",
+    "if (-not $pingOk) { $verdict = 'WARN'; $reasons += (_T 'pingFail') }",
+    "if ($hopCount -gt 1) { $verdict = 'WARN'; $reasons += ((_T 'tracertHopsPrefix') + $hopCount + (_T 'tracertHopsSuffix')) }",
+    "if ($pingOk -and $avg -ne $null -and $avg -gt 50) { $verdict = 'WARN'; $reasons += ((_T 'highLatencyPrefix') + $avg + (_T 'highLatencySuffix')) }",
     "Write-Output '== VERDICT =='",
     "Write-Output ('VERDICT: ' + $verdict)",
-    "if ($reasons.Count -eq 0) { $reasons += 'Baseline consistente: conectividad LAN estable hacia el target.' }",
+    "if ($reasons.Count -eq 0) { $reasons += (_T 'baselineOk') }",
     "Write-Output 'WHY:'",
     "$reasons | ForEach-Object { Write-Output ('- ' + $_) }",
     "Write-Output ''",
     "Write-Output 'NEXT:'",
-    "Write-Output '- Si quieres saber \"que esta expuesto\": ejecuta un audit de puertos TCP/servicios.'",
-    "Write-Output '- Si es un router con panel web: ejecuta HTTP Fingerprint (HEAD) y revisa redirects/auth.'",
-  ].join("; ");
+    "Write-Output (_T 'nextPorts')",
+    "Write-Output (_T 'nextHttp')",
+  // Usamos script multilínea para soportar bloques `switch {}` sin romper sintaxis con `;`.
+  ].join("\n");
 };

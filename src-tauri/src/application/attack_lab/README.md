@@ -8,6 +8,11 @@ Caso de uso que coordina la ejecucion de auditorias/labs. Mantiene reglas de neg
 - Ejecucion real: `AttackLabRunnerPort` (infraestructura).
 - Streaming de eventos hacia UI: `AttackLabEventSinkPort` (API/sink).
 
+## Limites (validacion)
+
+- `args`: max 128 elementos, max 16KB por argumento (para soportar scripts PowerShell con salida VERDICT/WHY/NEXT).
+- `env`: max 64 entradas (key max 128, value max 4096).
+
 ## Interconexiones
 
 Puertos:
@@ -22,4 +27,3 @@ Implementaciones concretas:
 
 API:
 - Comandos: `src-tauri/src/api/commands/attack_lab.rs`
-

@@ -13,7 +13,7 @@ describe("httpFingerprintHeadersScenario", () => {
 
     expect(req?.binaryPath).toBe("powershell.exe");
     const cmd = (req?.args ?? []).join(" ");
-    expect(cmd).toContain("Invoke-WebRequest");
+    expect(cmd).toContain("HttpWebRequest");
     expect(cmd).toContain("http://");
     expect(cmd).toContain("https://");
     expect(cmd).toContain("WWW-Authenticate");
@@ -21,4 +21,3 @@ describe("httpFingerprintHeadersScenario", () => {
     expect(cmd).toContain("Location");
   });
 });
-

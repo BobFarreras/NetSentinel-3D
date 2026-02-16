@@ -78,6 +78,24 @@ Nota:
 ### UI (traffic)
 - `JAMMED` ahora reporta targets afectados (no solo paquetes).
 - Nuevo selector `TARGET` en Live Traffic para fijar un dispositivo sin depender solo del nodo seleccionado.
+
+## [v0.8.53] - Attack Lab: HTTP fingerprint + consola teletype + estado persistente (2026-02-16)
+### Attack Lab (runtime/UI)
+- Consola: efecto teletype (linea a linea) + colores por seccion/VERDICT para lectura rapida.
+- Estado UI persistente: `scenarioId/mode/targetIp` se conservan aunque abras/cierres otros paneles (evita perder inputs al abrir Settings).
+- `start_attack_lab`: se inyecta `NETSENTINEL_UI_LANG` como env var para que los scripts impriman `WHY/NEXT` en el idioma UI.
+
+### Attack Lab (catalogo)
+- Nuevo/actualizado: `HTTP: Fingerprint de cabeceras (HEAD)` via `HttpWebRequest` (HEAD en 80/443) con VERDICT/WHY/NEXT.
+- Baseline (router/device): script PowerShell localizado para VERDICT/WHY/NEXT y soporte de bloques `switch {}` (script multilínea).
+
+### Backend (validacion)
+- Attack Lab: se sube limite por argumento a 16KB (necesario para scripts PowerShell inline con parsing + VERDICT).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 - Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
 
 ### UI (scene3d)
