@@ -232,6 +232,23 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.60] - UI: sincronizacion de idioma entre ventana principal y paneles detached (2026-02-16)
+### i18n (frontend)
+- `src/ui/i18n/I18nProvider.tsx`:
+  - anadida sincronizacion de idioma por `storage` event.
+  - anadida sincronizacion local por evento `netsentinel:i18n-changed`.
+  - anadida sincronizacion multiwindow con `BroadcastChannel` (`netsentinel-i18n`).
+- Resultado:
+  - al cambiar idioma desde `Settings` desacoplado, la ventana principal actualiza traducciones en vivo.
+
+### Testing
+- `src/ui/i18n/__tests__/i18n.test.ts`:
+  - nuevo test que valida sincronizacion por evento `storage`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)
