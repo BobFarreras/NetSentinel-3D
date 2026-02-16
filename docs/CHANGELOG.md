@@ -25,6 +25,21 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
+### UI (attack_lab)
+- Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:
+  - targets + sync (Radar/WiFi + ventanas desacopladas)
+  - ejecucion + autorun + next-steps + OPSEC confirm
+  - persistencia local (UI state + evidencia WiFi)
+- Objetivo: reducir responsabilidades por archivo y facilitar mantenimiento/tests sin tocar la UI/UX.
+
+### Tests/Build
+- Nuevos tests unitarios para los hooks extraidos (targets/ejecucion).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.49] - UI: Settings + i18n (CA/ES/EN) (2026-02-13)
 ### UI (settings)
 - Nuevo panel `Settings` con:
