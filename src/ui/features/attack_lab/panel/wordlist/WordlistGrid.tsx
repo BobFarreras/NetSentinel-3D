@@ -10,7 +10,7 @@ interface GridProps {
   loading: boolean;
   selectedWords: Set<string>;
   editingWord: string | null;
-  listEndRef: React.RefObject<HTMLDivElement>;
+  listEndRef: React.RefObject<HTMLDivElement | null>;
   // Callbacks
   onSelect: (word: string) => void;
   onEditStart: (word: string) => void;

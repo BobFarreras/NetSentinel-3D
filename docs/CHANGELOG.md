@@ -286,6 +286,13 @@ Nota:
   - acceso al gestor de wordlists WiFi (AMMO BOX)
   - gestion de credenciales del gateway (Keyring del SO) para login directo en auditorias/sync
 - Settings recibe `identity` para conocer `gatewayIp` (docked y detached).
+- Refactor interno del modal para separar responsabilidades (sin cambios visuales):
+  - `WordlistManagerModal` queda como orquestador + portal.
+  - `GatewayCredsTab` + hook `useGatewayCredsVault` encapsulan la logica de gateway creds/presets.
+  - estilos extraidos a `wordlistManagerModalStyles.ts`.
+
+### Testing
+- Nuevo test de `useGatewayCredsVault` (carga de candidatos + init por `identity`).
 
 ### i18n
 - Nuevas claves `settings.passwords.*` (CA/ES/EN).
