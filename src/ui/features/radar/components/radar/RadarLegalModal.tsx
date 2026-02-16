@@ -1,6 +1,7 @@
 // src/ui/features/radar/components/radar/RadarLegalModal.tsx
 // Modal de consentimiento: gate para activar Radar View antes del primer escaneo (recon pasivo WiFi).
 import React from "react";
+import { useI18n } from "../../../../i18n";
 
 type RadarLegalModalProps = {
   onClose: () => void;
@@ -8,6 +9,7 @@ type RadarLegalModalProps = {
 };
 
 export const RadarLegalModal: React.FC<RadarLegalModalProps> = ({ onClose, onAccept }) => {
+  const { t } = useI18n();
   return (
     <div
       style={{
@@ -30,10 +32,9 @@ export const RadarLegalModal: React.FC<RadarLegalModalProps> = ({ onClose, onAcc
           color: "#b7ffe2",
         }}
       >
-        <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1, marginBottom: 8 }}>AVISO LEGAL</div>
+        <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1, marginBottom: 8 }}>{t("radar.legal.title")}</div>
         <div style={{ fontSize: 12, lineHeight: 1.55, opacity: 0.92 }}>
-          Esta funcionalidad esta destinada a auditoria y formacion en redes propias o con autorizacion explicita. No
-          uses esta herramienta para interferir o acceder a redes ajenas.
+          {t("radar.legal.body")}
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
           <button
@@ -47,7 +48,7 @@ export const RadarLegalModal: React.FC<RadarLegalModalProps> = ({ onClose, onAcc
               fontSize: 12,
             }}
           >
-            CANCELAR
+            {t("radar.legal.cancel")}
           </button>
           <button
             onClick={onAccept}
@@ -62,7 +63,7 @@ export const RadarLegalModal: React.FC<RadarLegalModalProps> = ({ onClose, onAcc
               letterSpacing: 0.6,
             }}
           >
-            ACEPTO Y CONTINUO
+            {t("radar.legal.accept")}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import React from "react";
 import type { BandFilter, RiskFilter } from "../radarTypes";
 import { selectStyle } from "../radarUtils";
 import { FILTER_BOX_LABEL_STYLE, FILTER_ROW_STYLE, FILTER_STRIP_STYLE } from "./radarIntelStyles";
+import { useI18n } from "../../../../../i18n";
 
 type RadarIntelFiltersProps = {
   layout: "side" | "bottom";
@@ -31,6 +32,7 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
   onChangeChannelFilter,
   onChangeSearch,
 }) => {
+  const { t } = useI18n();
   const [collapsed, setCollapsed] = React.useState(layout === "bottom");
 
   // Si cambiamos de layout por resize, reajustamos el colapso por defecto:
@@ -76,45 +78,45 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
     <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid rgba(0,255,136,0.14)" }}>
       {layout === "side" ? (
         <div style={FILTER_STRIP_STYLE}>
-          <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
-            <div style={FILTER_BOX_LABEL_STYLE}>RISK</div>
+            <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
+            <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.risk")}</div>
             <select
               aria-label="FILTER_RISK_SELECT"
               value={riskFilter}
               onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)}
               style={{ ...selectStyle, width: 132 }}
             >
-              <option value="ALL">ALL</option>
-              <option value="HARDENED">HARDENED</option>
-              <option value="STANDARD">STANDARD</option>
-              <option value="LEGACY">LEGACY</option>
-              <option value="OPEN">OPEN</option>
+              <option value="ALL">{t("radar.intel.filters.option.all")}</option>
+              <option value="HARDENED">{t("radar.intel.filters.option.hardened")}</option>
+              <option value="STANDARD">{t("radar.intel.filters.option.standard")}</option>
+              <option value="LEGACY">{t("radar.intel.filters.option.legacy")}</option>
+              <option value="OPEN">{t("radar.intel.filters.option.open")}</option>
             </select>
           </div>
 
           <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
-            <div style={FILTER_BOX_LABEL_STYLE}>BAND</div>
+            <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.band")}</div>
             <select
               value={bandFilter}
               onChange={(e) => onChangeBandFilter(e.target.value as BandFilter)}
               style={{ ...selectStyle, width: 132 }}
             >
-              <option value="ALL">ALL</option>
+              <option value="ALL">{t("radar.intel.filters.option.all")}</option>
               <option value="2.4">2.4GHz</option>
               <option value="5">5GHz</option>
-              <option value="UNK">UNKGHz</option>
+              <option value="UNK">{t("radar.intel.filters.option.unkBand")}</option>
             </select>
           </div>
 
           <div style={{ ...FILTER_ROW_STYLE, flex: "0 0 auto" }}>
-            <div style={FILTER_BOX_LABEL_STYLE}>CH</div>
+            <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.channel")}</div>
             <select
               aria-label="FILTER_CH_SELECT"
               value={channelFilter === null ? "ALL" : String(channelFilter)}
               onChange={(e) => onChangeChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
               style={{ ...selectStyle, width: 120 }}
             >
-              <option value="ALL">ALL</option>
+              <option value="ALL">{t("radar.intel.filters.option.all")}</option>
               {availableChannels.map((ch) => (
                 <option key={ch} value={String(ch)}>
                   CH {ch}
@@ -124,11 +126,11 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
           </div>
 
           <div style={{ ...FILTER_ROW_STYLE, flex: "1 1 180px", minWidth: 180 }}>
-            <div style={FILTER_BOX_LABEL_STYLE}>Q</div>
+            <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.query")}</div>
             <input
               value={search}
               onChange={(e) => onChangeSearch(e.target.value)}
-              placeholder="ssid/vendor/bssid"
+              placeholder={t("radar.intel.filters.searchPlaceholder")}
               style={{ ...selectStyle, width: "100%", minWidth: 0 }}
             />
           </div>
@@ -145,10 +147,10 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexWrap: "wrap" }}>
-              <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1, fontSize: 10 }}>FILTROS</div>
-              <span style={chipStyle}>RISK:{riskFilter}</span>
-              <span style={chipStyle}>BAND:{bandFilter}</span>
-              <span style={chipStyle}>CH:{channelFilter === null ? "ALL" : String(channelFilter)}</span>
+              <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1, fontSize: 10 }}>{t("radar.intel.filters.title")}</div>
+              <span style={chipStyle}>{t("radar.intel.filters.risk")}:{riskFilter}</span>
+              <span style={chipStyle}>{t("radar.intel.filters.band")}:{bandFilter}</span>
+              <span style={chipStyle}>{t("radar.intel.filters.channel")}:{channelFilter === null ? t("radar.intel.filters.option.all") : String(channelFilter)}</span>
             </div>
 
             <button
@@ -168,17 +170,17 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
                 flexShrink: 0,
               }}
             >
-              {collapsed ? "SHOW" : "HIDE"}
+              {collapsed ? t("radar.intel.filters.show") : t("radar.intel.filters.hide")}
             </button>
           </div>
 
           {/* Busqueda siempre visible para no perder control rapido cuando esta plegado. */}
           <div style={{ ...FILTER_ROW_STYLE, marginBottom: collapsed ? 0 : 10 }}>
-            <div style={FILTER_BOX_LABEL_STYLE}>Q</div>
+            <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.query")}</div>
             <input
               value={search}
               onChange={(e) => onChangeSearch(e.target.value)}
-              placeholder="ssid/vendor/bssid"
+              placeholder={t("radar.intel.filters.searchPlaceholder")}
               style={{ ...selectStyle, width: "min(260px, 100%)" }}
             />
           </div>
@@ -186,44 +188,44 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
           {!collapsed && (
             <div style={bottomGridStyle}>
               <div style={FILTER_ROW_STYLE}>
-                <div style={FILTER_BOX_LABEL_STYLE}>RISK</div>
+                <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.risk")}</div>
                 <select
                   aria-label="FILTER_RISK_SELECT"
                   value={riskFilter}
                   onChange={(e) => onChangeRiskFilter(e.target.value as RiskFilter)}
                   style={{ ...selectStyle, ...controlStyle }}
                 >
-                  <option value="ALL">ALL</option>
-                  <option value="HARDENED">HARDENED</option>
-                  <option value="STANDARD">STANDARD</option>
-                  <option value="LEGACY">LEGACY</option>
-                  <option value="OPEN">OPEN</option>
+                  <option value="ALL">{t("radar.intel.filters.option.all")}</option>
+                  <option value="HARDENED">{t("radar.intel.filters.option.hardened")}</option>
+                  <option value="STANDARD">{t("radar.intel.filters.option.standard")}</option>
+                  <option value="LEGACY">{t("radar.intel.filters.option.legacy")}</option>
+                  <option value="OPEN">{t("radar.intel.filters.option.open")}</option>
                 </select>
               </div>
 
               <div style={FILTER_ROW_STYLE}>
-                <div style={FILTER_BOX_LABEL_STYLE}>BAND</div>
+                <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.band")}</div>
                 <select
                   value={bandFilter}
                   onChange={(e) => onChangeBandFilter(e.target.value as BandFilter)}
                   style={{ ...selectStyle, ...controlStyle }}
                 >
-                  <option value="ALL">ALL</option>
+                  <option value="ALL">{t("radar.intel.filters.option.all")}</option>
                   <option value="2.4">2.4GHz</option>
                   <option value="5">5GHz</option>
-                  <option value="UNK">UNKGHz</option>
+                  <option value="UNK">{t("radar.intel.filters.option.unkBand")}</option>
                 </select>
               </div>
 
               <div style={FILTER_ROW_STYLE}>
-                <div style={FILTER_BOX_LABEL_STYLE}>CH</div>
+                <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.channel")}</div>
                 <select
                   aria-label="FILTER_CH_SELECT"
                   value={channelFilter === null ? "ALL" : String(channelFilter)}
                   onChange={(e) => onChangeChannelFilter(e.target.value === "ALL" ? null : Number(e.target.value))}
                   style={{ ...selectStyle, ...controlStyle }}
                 >
-                  <option value="ALL">ALL</option>
+                  <option value="ALL">{t("radar.intel.filters.option.all")}</option>
                   {availableChannels.map((ch) => (
                     <option key={ch} value={String(ch)}>
                       CH {ch}

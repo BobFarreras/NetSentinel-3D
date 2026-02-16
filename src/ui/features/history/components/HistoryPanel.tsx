@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { networkAdapter } from '../../../../adapters/networkAdapter';
 import { DeviceDTO, ScanSession } from '../../../../shared/dtos/NetworkDTOs';
 import { uiLogger } from '../../../utils/logger';
+import { useI18n } from "../../../i18n";
 
 interface HistoryPanelProps {
   onLoadSession: (devices: DeviceDTO[]) => void;
@@ -13,6 +14,7 @@ interface HistoryPanelProps {
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClose }) => {
   const [sessions, setSessions] = useState<ScanSession[]>([]);
+  const { t } = useI18n();
 
   useEffect(() => {
     // Consulta real al backend Rust para recuperar sesiones persistidas.
@@ -29,7 +31,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClo
       boxShadow: '0 0 15px rgba(0, 255, 0, 0.2)'
     }}>
       <h3 style={{ margin: '0 0 10px 0', borderBottom: '1px solid #004400' }}>
-        📂 LOG ARCHIVES
+        {t("history.title")}
       </h3>
       <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
         {sessions.map((session, idx) => (
@@ -37,7 +39,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClo
             <div style={{ fontWeight: 'bold', color: '#ccffcc' }}>
               {new Date(session.timestamp).toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.8em' }}>DEVICES: {session.devices.length}</div>
+            <div style={{ fontSize: '0.8em' }}>{t("history.devices")}: {session.devices.length}</div>
             
             <button 
               onClick={() => onLoadSession(session.devices)}
@@ -49,11 +51,11 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClo
               onMouseOver={(e) => e.currentTarget.style.background = '#005500'}
               onMouseOut={(e) => e.currentTarget.style.background = '#003300'}
             >
-              [ LOAD SNAPSHOT ]
+              {t("history.loadSnapshot")}
             </button>
           </div>
         ))}
-        {sessions.length === 0 && <div>NO RECORDS FOUND (RUST DB)</div>}
+        {sessions.length === 0 && <div>{t("history.noRecords")}</div>}
       </div>
       <button 
         onClick={onClose} 
@@ -63,7 +65,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadSession, onClo
           fontFamily: 'monospace'
         }}
       >
-        [ CLOSE ARCHIVES ]
+        {t("history.closeArchives")}
       </button>
     </div>
   );

@@ -3,6 +3,7 @@
 import React from "react";
 import type { ConsoleTab } from "../hooks/useConsoleLogsState";
 import { CONSOLE_COLORS, formatSpeed } from "./consoleLogsStyles";
+import { useI18n } from "../../../i18n";
 
 type ConsoleLogsHeaderProps = {
   activeTab: ConsoleTab;
@@ -46,6 +47,7 @@ export const ConsoleLogsHeader: React.FC<ConsoleLogsHeaderProps> = ({
   onToggleTraffic,
   onClear,
 }) => {
+  const { t } = useI18n();
   return (
     <div
       style={{
@@ -58,9 +60,9 @@ export const ConsoleLogsHeader: React.FC<ConsoleLogsHeaderProps> = ({
       }}
     >
       <div style={{ display: "flex", gap: "10px" }}>
-        <TabButton label="SYSTEM LOGS" active={activeTab === "SYSTEM"} onClick={() => onSelectTab("SYSTEM")} />
-        <TabButton label="LIVE TRAFFIC" active={activeTab === "TRAFFIC"} onClick={() => onSelectTab("TRAFFIC")} />
-        <TabButton label="RADAR LOGS" active={activeTab === "RADAR"} onClick={() => onSelectTab("RADAR")} />
+        <TabButton label={t("console.header.tabSystem")} active={activeTab === "SYSTEM"} onClick={() => onSelectTab("SYSTEM")} />
+        <TabButton label={t("console.header.tabTraffic")} active={activeTab === "TRAFFIC"} onClick={() => onSelectTab("TRAFFIC")} />
+        <TabButton label={t("console.header.tabRadar")} active={activeTab === "RADAR"} onClick={() => onSelectTab("RADAR")} />
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -73,7 +75,7 @@ export const ConsoleLogsHeader: React.FC<ConsoleLogsHeaderProps> = ({
                 textShadow: isTrafficActive ? `0 0 4px ${CONSOLE_COLORS.cyan}` : "none",
               }}
             >
-              {isTrafficActive ? formatSpeed(trafficSpeed) : "OFFLINE"}
+              {isTrafficActive ? formatSpeed(trafficSpeed) : t("console.header.offline")}
             </span>
             <button
               onClick={onToggleTraffic}
@@ -88,7 +90,7 @@ export const ConsoleLogsHeader: React.FC<ConsoleLogsHeaderProps> = ({
                 fontWeight: "bold",
               }}
             >
-              {isLoading ? "..." : isTrafficActive ? "⏹ STOP" : "▶ START"}
+              {isLoading ? "..." : isTrafficActive ? `⏹ ${t("console.header.stop")}` : `> ${t("console.header.start")}`}
             </button>
           </>
         )}

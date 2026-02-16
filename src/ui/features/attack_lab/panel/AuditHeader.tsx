@@ -2,6 +2,7 @@
 // Cabecera del Attack Lab: tabs LAB/CUSTOM, status y control de cierre.
 
 import React from "react";
+import { useI18n } from "../../../i18n";
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
   background: active ? "rgba(0,255,136,0.12)" : "transparent",
@@ -25,6 +26,7 @@ interface AuditHeaderProps {
 }
 
 export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status, isAutoRun, compact = false, onClose: _onClose }) => {
+  const { t } = useI18n();
   return (
     <div style={{
       height: "auto",
@@ -40,14 +42,14 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status,
       minHeight: 44,
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-        <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1.2, whiteSpace: "nowrap" }}>ATTACK LAB</div>
+        <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 1.2, whiteSpace: "nowrap" }}>{t("attackLab.header.title")}</div>
         {!compact && (
-          <div style={{ color: "rgba(183,255,226,0.75)", fontSize: 12, whiteSpace: "nowrap" }}>System Override Console</div>
+          <div style={{ color: "rgba(183,255,226,0.75)", fontSize: 12, whiteSpace: "nowrap" }}>{t("attackLab.header.subtitle")}</div>
         )}
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-        <button onClick={() => setMode("LAB")} style={btnStyle(mode === "LAB")}>LAB</button>
-        <button onClick={() => setMode("CUSTOM")} style={btnStyle(mode === "CUSTOM")}>CUSTOM</button>
+        <button onClick={() => setMode("LAB")} style={btnStyle(mode === "LAB")}>{t("attackLab.header.tabLab")}</button>
+        <button onClick={() => setMode("CUSTOM")} style={btnStyle(mode === "CUSTOM")}>{t("attackLab.header.tabCustom")}</button>
         <div
           title={status}
           style={{
@@ -62,7 +64,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ mode, setMode, status,
           {status}
         </div>
         {isAutoRun && mode === "LAB" && (
-          <div style={{ color: "rgba(0,229,255,0.9)", fontSize: 12, fontWeight: 900, letterSpacing: 0.8 }}>AUTO</div>
+          <div style={{ color: "rgba(0,229,255,0.9)", fontSize: 12, fontWeight: 900, letterSpacing: 0.8 }}>{t("attackLab.header.auto")}</div>
         )}
         
       </div>

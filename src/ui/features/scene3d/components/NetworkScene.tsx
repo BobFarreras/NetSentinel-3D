@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { NodeLabel } from './NodeLabel';
 import { SCENE_TOKENS } from "./sceneTokens";
 import { useNetworkSceneState } from "../hooks/useNetworkSceneState";
+import { useI18n } from "../../../i18n";
 
 interface NetworkSceneProps {
   devices?: DeviceDTO[];
@@ -74,6 +75,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
   identity = null,
   onUndockScene = null,
 }) => {
+  const { t } = useI18n();
   const state = useNetworkSceneState({ devices, identity, intruders });
   const centerNode = state.centerNode ?? null;
 
@@ -108,7 +110,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
         {onUndockScene && (
           <button
             onClick={onUndockScene}
-            title="Desacoplar escena 3D"
+            title={t("scene.controls.undock")}
             aria-label="UNLOCK_SCENE3D"
             style={{
               width: 34,
@@ -136,7 +138,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
         {/* Toggle UI: oculta/muestra labels sin afectar a los nodos 3D */}
         <button
           onClick={state.toggleLabels}
-          title={state.showLabels ? "Ocultar tarjetas" : "Mostrar tarjetas"}
+          title={state.showLabels ? t("scene.controls.hideCards") : t("scene.controls.showCards")}
           aria-label="TOGGLE_NODE_LABELS"
           style={{
             width: 34,
@@ -186,26 +188,26 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
             <NetworkNode 
               position={[0, 0, 0]} 
               color="#0088ff" 
-              name={`ROUTER (${centerNode.ip})`}
+              name={`${t("scene.node.router")} (${centerNode.ip})`}
               onClick={() => onDeviceSelect && onDeviceSelect(centerNode)}
               isSelected={selectedIp === centerNode.ip}
               isJammed={jammedIps.includes(centerNode.ip)}
             />
             {state.showLabels && (
               <NodeLabel
-                title={centerNode.name || centerNode.hostname || "GATEWAY"}
-                subtitle={`${centerNode.ip} | ${centerNode.vendor || "Router"}`}
+                title={centerNode.name || centerNode.hostname || t("scene.node.gateway")}
+                subtitle={`${centerNode.ip} | ${centerNode.vendor || t("scene.node.routerVendorFallback")}`}
                 meta={`MAC: ${centerNode.mac || "?"} | IF: ${identity?.interfaceName || "?"}`}
                 type={"ROUTER"}
                 confidence={centerNode.deviceTypeConfidence ?? 92}
                 isSelected={selectedIp === centerNode.ip}
                 variant="router"
                 rows={[
-                  { label: "IP", value: centerNode.ip },
-                  { label: "MAC", value: centerNode.mac || "?" },
-                  { label: "VENDOR", value: centerNode.vendor || "Router" },
-                  { label: "IFACE", value: identity?.interfaceName || "?" },
-                  { label: "GW", value: identity?.gatewayIp || "?" },
+                  { label: t("scene.label.ip"), value: centerNode.ip },
+                  { label: t("scene.label.mac"), value: centerNode.mac || "?" },
+                  { label: t("scene.label.vendor"), value: centerNode.vendor || t("scene.node.routerVendorFallback") },
+                  { label: t("scene.label.iface"), value: identity?.interfaceName || "?" },
+                  { label: t("scene.label.gw"), value: identity?.gatewayIp || "?" },
                 ]}
               />
             )}
@@ -215,7 +217,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
             </mesh>
           </group>
         ) : (
-          <NetworkNode position={[0, 0, 0]} color="#333333" name="SEARCHING..." />
+          <NetworkNode position={[0, 0, 0]} color="#333333" name={t("scene.node.searching")} />
         )}
 
         {/* Orbita (resto de dispositivos) */}
@@ -230,7 +232,7 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
           const nodeColor = state.getNodeColor(device);
 
           const labelTitle = device.name || device.hostname || device.ip;
-          const labelSubtitle = `${device.ip} | ${device.vendor || 'Desconocido'}`;
+          const labelSubtitle = `${device.ip} | ${device.vendor || t("scene.node.unknownVendor")}`;
           const labelType = device.deviceType || 'UNKNOWN';
           const labelConfidence = device.deviceTypeConfidence ?? 40;
 

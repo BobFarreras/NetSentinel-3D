@@ -3,6 +3,7 @@
 
 import React from "react";
 import { HEADER_STYLE, HELP_BUTTON_STYLE } from "./radarIntelStyles";
+import { useI18n } from "../../../../../i18n";
 
 type RadarIntelHeaderProps = {
   showIntelHelp: boolean;
@@ -10,9 +11,10 @@ type RadarIntelHeaderProps = {
 };
 
 export const RadarIntelHeader: React.FC<RadarIntelHeaderProps> = ({ showIntelHelp, onToggleHelp }) => {
+  const { t } = useI18n();
   return (
     <div style={HEADER_STYLE}>
-      <span>NODE INTEL</span>
+      <span>{t("radar.intel.header.title")}</span>
       <button
         onClick={onToggleHelp}
         aria-label={showIntelHelp ? "HIDE_INTEL_HELP" : "SHOW_INTEL_HELP"}

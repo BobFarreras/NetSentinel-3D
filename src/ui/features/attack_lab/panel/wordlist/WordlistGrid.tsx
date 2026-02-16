@@ -3,6 +3,7 @@
 
 import React from "react";
 import { WordChip } from "./WordChip"; // El component que vam fer abans
+import { useI18n } from "../../../../i18n";
 
 interface GridProps {
   words: string[];
@@ -21,10 +22,11 @@ export const WordlistGrid: React.FC<GridProps> = ({
   words, loading, selectedWords, editingWord, listEndRef, 
   onSelect, onEditStart, onEditSave, onDeleteRequest 
 }) => {
+  const { t } = useI18n();
   return (
     <div className="cyber-scrollbar" style={{ flex: 1, overflowY: "auto", padding: 15, background: "rgba(0,0,0,0.3)", minHeight: 0 }}>
       {loading ? (
-        <div style={{ color: "#555", textAlign: "center", padding: 20, fontStyle: "italic" }}>LOADING PAYLOADS...</div>
+        <div style={{ color: "#555", textAlign: "center", padding: 20, fontStyle: "italic" }}>{t("wordlist.loadingPayloads")}</div>
       ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignContent: 'flex-start' }}>
           {words.map((w) => (

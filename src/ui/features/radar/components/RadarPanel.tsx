@@ -29,9 +29,9 @@ export const RadarPanel: React.FC<RadarPanelProps> = ({ onClose }) => {
     // Si el panel es estrecho pero aún supera NARROW_AT, el scope puede quedar aplastado
     // porque el Intel lateral consume 290px. Por eso la regla real es: stacked cuando el scope
     // tendría menos de ~260px de ancho util.
-    const INTEL_SIDE_WIDTH = 290;
-    const MIN_SCOPE_SIDE = 260;
-    const MIN_SCOPE_SIDE_EXIT = 340; // histeresis al volver a modo wide
+    const INTEL_SIDE_WIDTH = 190;
+    const MIN_SCOPE_SIDE = 160;
+    const MIN_SCOPE_SIDE_EXIT = 240; // histeresis al volver a modo wide
 
     const applyWidth = (w: number) => {
       if (!w) return;

@@ -2,6 +2,7 @@
 // Consola de salida del Attack Lab: renderiza filas (stdout/stderr) y mantiene autoscroll en ejecuciones largas.
 
 import React, { useEffect, useRef } from "react";
+import { useI18n } from "../../../i18n";
 
 interface AuditConsoleProps {
   rows: { ts: number; stream: "stdout" | "stderr"; line: string }[];
@@ -9,6 +10,7 @@ interface AuditConsoleProps {
 }
 
 export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
+  const { t } = useI18n();
   const logRef = useRef<HTMLDivElement>(null);
   const visibleRowsRef = useRef(0);
   const [visibleRows, setVisibleRows] = React.useState(0);
@@ -39,7 +41,7 @@ export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: "0 12px 12px 12px", display: "flex", flexDirection: "column" }}>
       <div style={{ paddingBottom: 6, color: error ? "#ff7777" : "rgba(183,255,226,0.75)", fontSize: 12 }}>
-        {error ? `ERROR: ${error}` : "Console Output:"}
+        {error ? `${t("attackLab.console.errorPrefix")}: ${error}` : t("attackLab.console.output")}
       </div>
       <div ref={logRef} style={{
         flex: 1,
@@ -55,7 +57,7 @@ export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
         fontFamily: "'Consolas', 'Courier New', monospace",
       }}>
         {rows.length === 0 ? (
-          <div style={{ color: "rgba(183,255,226,0.55)" }}>Waiting for command execution...</div>
+          <div style={{ color: "rgba(183,255,226,0.55)" }}>{t("attackLab.console.waiting")}</div>
         ) : (
           rows.slice(0, visibleRows).map((r, i) => (
             <div key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "2px 0" }}>

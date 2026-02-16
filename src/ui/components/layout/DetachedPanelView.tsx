@@ -4,6 +4,7 @@
 import { lazy, Suspense } from "react";
 import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs";
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
+import { useI18n } from "../../i18n";
 
 const NetworkScene = lazy(async () => {
   const mod = await import("../../features/scene3d/components/NetworkScene");
@@ -79,6 +80,7 @@ export const DetachedPanelView = ({
   intruders,
   selectDevice,
 }: DetachedPanelViewProps) => {
+  const { t } = useI18n();
   return (
     <div
       style={{
@@ -104,7 +106,7 @@ export const DetachedPanelView = ({
         }}
       >
         <span style={{ color: "#8cfcc7", fontSize: 12, fontWeight: 700, letterSpacing: 0.6 }}>
-          DETACHED: {panel.toUpperCase()}
+          {t("detached.headerPrefix")}: {panel.toUpperCase()}
         </span>
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
@@ -142,7 +144,7 @@ export const DetachedPanelView = ({
                 }}
               />
             </div>
-            <span>Inicializando panel...</span>
+            <span>{t("detached.initializing")}</span>
             <style>{`
               @keyframes nsDetachedLoad {
                 0% { transform: translateX(-120%); }
@@ -211,7 +213,7 @@ export const DetachedPanelView = ({
                 </Suspense>
               ) : (
                 <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#66ffcc" }}>
-                  Sin dispositivo objetivo para esta ventana.
+                  {t("detached.noTarget")}
                 </div>
               )
             )}

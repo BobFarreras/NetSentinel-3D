@@ -6,6 +6,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 import App from "../App";
+import { I18nProvider } from "../ui/i18n";
 
 vi.mock("../ui/components/layout/TopBar", () => ({
   TopBar: ({ onRadarToggle, onAttackLabToggle }: { onRadarToggle: () => void; onAttackLabToggle: () => void }) => (
@@ -83,7 +84,11 @@ vi.mock("../ui/hooks/useNetworkManager", async () => {
 
 describe("App panels docking", () => {
   it("debe permitir undock de consola y mostrar contenedor desacoplado", () => {
-    render(<App />);
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    );
     fireEvent.click(screen.getByLabelText("UNLOCK_CONSOLE"));
     return waitFor(() => {
       expect(screen.getByLabelText("DOCK_CONSOLE")).toBeInTheDocument();
@@ -92,7 +97,11 @@ describe("App panels docking", () => {
   });
 
   it("debe mostrar radar + attack lab con split independiente y permitir undock attack lab", async () => {
-    render(<App />);
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    );
     fireEvent.click(screen.getByText("TOGGLE_RADAR"));
     fireEvent.click(screen.getByText("TOGGLE_ATTACK_LAB"));
 

@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { I18nProvider } from "../../../i18n";
 
 vi.mock("../hooks/useWifiRadar", () => ({
   useWifiRadar: () => ({
@@ -47,7 +48,11 @@ describe("RadarPanel", () => {
   });
 
   it("debe mostrar contador VISIBLE y filtrar por riesgo", () => {
-    render(<RadarPanel onClose={() => {}} />);
+    render(
+      <I18nProvider>
+        <RadarPanel onClose={() => {}} />
+      </I18nProvider>
+    );
 
     expect(screen.getByText(/NETWORKS:\s*2/i)).toBeInTheDocument();
     expect(screen.getByText(/VISIBLE:\s*2/i)).toBeInTheDocument();
@@ -57,7 +62,11 @@ describe("RadarPanel", () => {
   });
 
   it("debe filtrar por canal", () => {
-    render(<RadarPanel onClose={() => {}} />);
+    render(
+      <I18nProvider>
+        <RadarPanel onClose={() => {}} />
+      </I18nProvider>
+    );
 
     fireEvent.change(screen.getByLabelText("FILTER_CH_SELECT"), { target: { value: "6" } });
     expect(screen.getByText(/VISIBLE:\s*1/i)).toBeInTheDocument();

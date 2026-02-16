@@ -4,6 +4,7 @@ import React from "react";
 import type { FilterMode, UITrafficPacket } from "../hooks/useTrafficPanelState";
 import { HUD_TYPO } from "../../../styles/hudTokens";
 import { gridTemplate } from "./TrafficStyles";
+import { useI18n } from "../../../i18n";
 
 type TrafficTableProps = {
   isActive: boolean;
@@ -26,6 +27,7 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
   resolveName,
   scrollContainerRef,
 }) => {
+  const { t } = useI18n();
   return (
     <>
       <div
@@ -41,19 +43,19 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
           background: "#080808",
         }}
       >
-        <span style={{ paddingLeft: 5 }}>TYPE</span>
-        <span>SRC</span>
+        <span style={{ paddingLeft: 5 }}>{t("traffic.table.type")}</span>
+        <span>{t("traffic.table.src")}</span>
         <span />
-        <span>DST</span>
-        <span style={{ textAlign: "right", paddingRight: 5 }}>DATA</span>
+        <span>{t("traffic.table.dst")}</span>
+        <span style={{ textAlign: "right", paddingRight: 5 }}>{t("traffic.table.data")}</span>
       </div>
 
       <div ref={scrollContainerRef} onScroll={onScroll} style={{ flex: 1, overflowY: "auto", padding: "2px" }}>
         {visiblePackets.length === 0 ? (
           <div style={{ padding: "20px", textAlign: "center", color: "#444", fontSize: "0.7rem", fontFamily: HUD_TYPO.mono }}>
-            {isActive ? "WAITING FOR TRAFFIC..." : "MONITOR PAUSED"}
-            <div style={{ marginTop: 5, fontSize: "0.6rem" }}>Filter: {filterMode}</div>
-            {filterMode === "JAMMED" && <div style={{ color: "#633", marginTop: 10 }}>No attacks detected yet.</div>}
+            {isActive ? t("traffic.state.waiting") : t("traffic.state.paused")}
+            <div style={{ marginTop: 5, fontSize: "0.6rem" }}>{t("traffic.filter.label")}: {filterMode}</div>
+            {filterMode === "JAMMED" && <div style={{ color: "#633", marginTop: 10 }}>{t("traffic.filter.jammedEmpty")}</div>}
           </div>
         ) : (
           visiblePackets.map((pkt, idx) => {
@@ -84,7 +86,7 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
                 `}</style>
                 <span style={{ fontWeight: "bold", paddingLeft: 5 }}>{isBlocked ? "BLK" : pkt.protocol}</span>
                 <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{resolveName(pkt.sourceIp)}</span>
-                <span style={{ color: "#444", fontSize: "0.6rem" }}>▶</span>
+                <span style={{ color: "#444", fontSize: "0.6rem" }}>{">"}</span>
                 <span
                   style={{
                     whiteSpace: "nowrap",
@@ -105,11 +107,11 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
         )}
 
         {visibleLimit < filteredPacketsCount ? (
-          <div style={{ textAlign: "center", padding: 10, color: "#004400", fontSize: "0.7rem" }}>... SCROLL TO LOAD MORE ...</div>
+          <div style={{ textAlign: "center", padding: 10, color: "#004400", fontSize: "0.7rem" }}>{t("traffic.scrollMore")}</div>
         ) : (
           filteredPacketsCount > 0 && (
             <div style={{ textAlign: "center", padding: 10, color: "#440000", fontSize: "0.7rem", borderTop: "1px solid #330000" }}>
-              --- END OF BUFFER ({filteredPacketsCount}) ---
+              --- {t("traffic.endOfBuffer")} ({filteredPacketsCount}) ---
             </div>
           )
         )}

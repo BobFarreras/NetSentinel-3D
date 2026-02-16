@@ -1,6 +1,8 @@
 // src/ui/components/shared/CyberConfirmModal.tsx
+// Descripcion: modal de confirmacion estilo HUD. Se usa para advertencias OPSEC antes de ejecutar acciones nativas.
 
 import React from "react";
+import { useI18n } from "../../i18n/useI18n";
 
 // Definición del DTO localmente para UI
 export interface MacSecurityStatusDTO {
@@ -23,6 +25,8 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
     isOpen, title, message, macStatus, isLoading = false, onConfirm, onCancel 
 }) => {
   if (!isOpen) return null;
+
+  const { t } = useI18n();
 
   // Determinar colores según riesgo (Si no hay status, asumimos neutro/rojo por seguridad)
   const isHighRisk = macStatus?.risk_level === "HIGH";
@@ -60,7 +64,7 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
           display: "flex",
           justifyContent: "space-between"
         }}>
-          <span>{isHighRisk ? "⚠ CRITICAL ALERT" : "🛡 SECURE OPERATION"}</span>
+          <span>{isHighRisk ? `⚠ ${t("confirmModal.header.criticalAlert")}` : `🛡 ${t("confirmModal.header.secureOperation")}`}</span>
           <span>NET_INTERRUPT_REQ</span>
         </div>
 
@@ -88,8 +92,8 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
                   fontSize: 12,
                 }}
               >
-                <div>ANALYZING INTERFACE IDENTITY</div>
-                <div style={{ opacity: 0.8 }}>PLEASE WAIT...</div>
+                <div>{t("confirmModal.identity.analyzingTitle")}</div>
+                <div style={{ opacity: 0.8 }}>{t("confirmModal.identity.pleaseWait")}</div>
               </div>
           ) : macStatus && (
               <div style={{ 
@@ -97,14 +101,14 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
                   border: `1px dashed ${themeColor}`, 
                   background: "rgba(0,0,0,0.4)" 
               }}>
-                  <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>INTERFACE IDENTITY:</div>
+                  <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{t("confirmModal.identity.label")}</div>
                   <div style={{ fontFamily: "monospace", fontSize: 14, color: themeColor, fontWeight: "bold", letterSpacing: 1 }}>
                       {macStatus.current_mac.toUpperCase()}
                   </div>
                   <div style={{ fontSize: 11, marginTop: 6, fontWeight: 700, color: isHighRisk ? "#ff8888" : "#88ffaa" }}>
                       {isHighRisk 
-                        ? "⚠ WARNING: USING REAL HARDWARE ADDRESS. TRACEABLE." 
-                        : "✓ SAFE: LOCALLY ADMINISTERED ADDRESS (SPOOFED)."}
+                        ? `⚠ ${t("confirmModal.identity.highRisk")}`
+                        : `✓ ${t("confirmModal.identity.lowRisk")}`}
                   </div>
               </div>
           )}
@@ -136,7 +140,7 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
                 fontFamily: "monospace"
               }}
             >
-              ABORT
+              {t("confirmModal.actions.abort")}
             </button>
             <button 
               onClick={onConfirm}
@@ -153,7 +157,11 @@ export const CyberConfirmModal: React.FC<CyberConfirmModalProps> = ({
                 letterSpacing: 1
               }}
             >
-              {isLoading ? "ANALYZING..." : (isHighRisk ? "AUTHORIZE (UNSAFE)" : "AUTHORIZE")}
+              {isLoading
+                ? t("confirmModal.actions.analyzing")
+                : isHighRisk
+                  ? t("confirmModal.actions.authorizeUnsafe")
+                  : t("confirmModal.actions.authorize")}
             </button>
           </div>
         </div>

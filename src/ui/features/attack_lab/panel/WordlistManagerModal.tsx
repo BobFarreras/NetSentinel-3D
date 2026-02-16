@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { useWordlistManager } from "../../wordlist/hooks/useWordlistManager";
 import { CyberConfirmDialog } from "./wordlist/CyberConfirmDialog";
+import { useI18n } from "../../../i18n";
 
 interface WordlistManagerModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ const modalContainerStyle: React.CSSProperties = {
 };
 
 export const WordlistManagerModal: React.FC<WordlistManagerModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useI18n();
   const { state, actions } = useWordlistManager(isOpen);
   const [newWord, setNewWord] = useState("");
   const [editValue, setEditValue] = useState("");
@@ -77,10 +79,10 @@ export const WordlistManagerModal: React.FC<WordlistManagerModalProps> = ({ isOp
         {/* HEADER */}
         <div style={{ padding: "15px 20px", borderBottom: "1px solid #00ff88", background: "rgba(0, 255, 136, 0.05)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-             <span style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 2, fontSize: "1.1rem" }}>AMMO BOX</span>
+             <span style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 2, fontSize: "1.1rem" }}>{t("wordlist.title")}</span>
              {state.selectedWords.size > 0 && (
                  <span style={{ background: '#00ff88', color: '#000', padding: '2px 6px', fontSize: 10, fontWeight: 'bold', borderRadius: 2 }}>
-                     {state.selectedWords.size} SELECTED
+                     {state.selectedWords.size} {t("wordlist.selectedSuffix")}
                  </span>
              )}
           </div>
@@ -90,7 +92,7 @@ export const WordlistManagerModal: React.FC<WordlistManagerModalProps> = ({ isOp
         {/* LISTA */}
         <div className="cyber-scrollbar" style={{ flex: 1, overflowY: "auto", padding: 15, background: "rgba(0,0,0,0.3)", minHeight: 0 }}>
           {state.loading ? (
-            <div style={{ color: "#555", textAlign: "center", padding: 20 }}>LOADING...</div>
+            <div style={{ color: "#555", textAlign: "center", padding: 20 }}>{t("wordlist.loading")}</div>
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignContent: 'flex-start' }}>
               {state.words.map((w, i) => {
@@ -124,7 +126,7 @@ export const WordlistManagerModal: React.FC<WordlistManagerModalProps> = ({ isOp
                         <>
                             <span 
                                 onDoubleClick={(e) => { e.stopPropagation(); startEditing(w); }} 
-                                title="Double-click to Edit"
+                                title={t("wordlist.wordHint")}
                             >
                                 {w}
                             </span>
@@ -149,10 +151,10 @@ export const WordlistManagerModal: React.FC<WordlistManagerModalProps> = ({ isOp
             {state.selectedWords.size > 0 ? (
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={actions.deselectAll} style={{ flex: 1, background: '#222', color: '#888', border: '1px solid #444', padding: 12, cursor: 'pointer', fontWeight: 'bold' }}>
-                        DESELECT ({state.selectedWords.size})
+                        {t("wordlist.actions.deselect")} ({state.selectedWords.size})
                     </button>
                     <button onClick={() => actions.requestDelete()} style={{ flex: 2, background: '#300', color: '#f55', border: '1px solid #f00', padding: 12, cursor: 'pointer', fontWeight: 'bold' }}>
-                        DELETE SELECTED
+                        {t("wordlist.actions.deleteSelected")}
                     </button>
                 </div>
             ) : (
@@ -161,11 +163,11 @@ export const WordlistManagerModal: React.FC<WordlistManagerModalProps> = ({ isOp
                         value={newWord}
                         onChange={(e) => setNewWord(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                        placeholder="Type new password..." 
+                        placeholder={t("wordlist.inputPlaceholder")}
                         style={{ flex: 1, background: "#000", border: "1px solid #333", color: "#fff", padding: "12px", fontFamily: "inherit", outline: "none", fontSize: "0.9rem" }}
                     />
                     <button onClick={handleAdd} style={{ background: "rgba(0, 255, 136, 0.1)", border: "1px solid #00ff88", color: "#00ff88", fontWeight: "bold", padding: "0 25px", cursor: "pointer" }}>
-                        ADD
+                        {t("wordlist.actions.add")}
                     </button>
                 </div>
             )}

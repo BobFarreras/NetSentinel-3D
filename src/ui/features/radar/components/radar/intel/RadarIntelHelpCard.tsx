@@ -2,8 +2,10 @@
 // Tarjeta de ayuda del Intel Panel: explicacion breve del significado de filtros y estado del nodo.
 
 import React from "react";
+import { useI18n } from "../../../../../i18n";
 
 export const RadarIntelHelpCard: React.FC = () => {
+  const { t } = useI18n();
   return (
     <div
       style={{
@@ -16,20 +18,19 @@ export const RadarIntelHelpCard: React.FC = () => {
         lineHeight: 1.45,
       }}
     >
-      <div style={{ color: "#00ff88", fontWeight: 900, marginBottom: 6 }}>Guia rapida</div>
+      <div style={{ color: "#00ff88", fontWeight: 900, marginBottom: 6 }}>{t("radar.intel.help.title")}</div>
       <div style={{ marginBottom: 6 }}>
-        <b>Riesgo</b>: filtro por seguridad inferida (cifrado/legacy/abierto).
+        <b>{t("radar.intel.help.riskLabel")}</b>: {t("radar.intel.help.riskDesc")}
       </div>
       <div style={{ marginBottom: 6 }}>
-        <b>Banda</b>: 2.4/5GHz (si el AP no lo anuncia, aparece como UNK).
+        <b>{t("radar.intel.help.bandLabel")}</b>: {t("radar.intel.help.bandDesc")}
       </div>
       <div style={{ marginBottom: 6 }}>
-        <b>Canal</b>: recorta el espectro a un canal concreto.
+        <b>{t("radar.intel.help.channelLabel")}</b>: {t("radar.intel.help.channelDesc")}
       </div>
       <div>
-        <b>Q</b>: busqueda rapida por SSID/Vendor/BSSID.
+        <b>{t("radar.intel.help.queryLabel")}</b>: {t("radar.intel.help.queryDesc")}
       </div>
     </div>
   );
 };
-

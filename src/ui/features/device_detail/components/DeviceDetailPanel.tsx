@@ -8,6 +8,7 @@ import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 import { useDeviceDetailPanelState } from "../hooks/useDeviceDetailPanelState";
 import { ConsoleDisplay, ConsolePrompt } from "./details/ConsoleDisplay";
 import { PortResults } from "./details/PortResults";
+import { useI18n } from "../../../i18n";
 
 interface Props {
   device: DeviceDTO;
@@ -34,6 +35,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
   onRouterAudit,
   onOpenLabAudit,
 }) => {
+  const { t } = useI18n();
   const state = useDeviceDetailPanelState({ device, onRouterAudit, onOpenLabAudit });
 
   // ESTADO LOCAL DE LOGS
@@ -60,21 +62,21 @@ export const DeviceDetailPanel: React.FC<Props> = ({
     // Limpiar logs anteriores si hubiera
     setLocalLogs([]);
     
-    logToConsole("GHOST PROTOCOL SEQUENCE INITIATED...", "WARN");
-    logToConsole("WARNING: Identity obfuscation requires network adapter restart.", "WARN");
-    logToConsole("Connection will be dropped for ~10 seconds.", "WARN");
+    logToConsole(t("deviceDetail.ghost.logs.sequenceInit"), "WARN");
+    logToConsole(t("deviceDetail.ghost.logs.restartWarning"), "WARN");
+    logToConsole(t("deviceDetail.ghost.logs.connectionDrop"), "WARN");
 
     // ACTIVAR PROMPT EN CONSOLA
     setActivePrompt({
       type: 'CONFIRM',
-      message: "AUTHORIZE MAC ADDRESS RANDOMIZATION?",
-      options: ["YES, EXECUTE GHOST MODE", "CANCEL OPERATION"],
+      message: t("deviceDetail.ghost.prompt.message"),
+      options: [t("deviceDetail.ghost.prompt.confirm"), t("deviceDetail.ghost.prompt.cancel")],
       onSelect: (index) => {
         setActivePrompt(null); // Quitar prompt
         if (index === 0) {
           executeGhostSequence(); // EJECUTAR
         } else {
-          logToConsole("Operation aborted by user.", "ERROR");
+          logToConsole(t("deviceDetail.ghost.logs.userAborted"), "ERROR");
         }
       }
     });
@@ -84,15 +86,15 @@ export const DeviceDetailPanel: React.FC<Props> = ({
   const executeGhostSequence = async () => {
     setIsGhostRunning(true);
     try {
-      logToConsole(`Target Interface: ${state.identity?.interfaceName || "Unknown"}`, "INFO");
-      logToConsole("Generating cryptographically secure MAC address...", "INFO");
+      logToConsole(`${t("deviceDetail.ghost.logs.targetInterfacePrefix")}: ${state.identity?.interfaceName || "Unknown"}`, "INFO");
+      logToConsole(t("deviceDetail.ghost.logs.generatingMac"), "INFO");
       
       // Invocamos el comando (Esto tarda unos segundos)
       const newMac = await invoke<string>("randomize_mac");
       
-      logToConsole(`IDENTITY SWAPPED SUCCESSFULLY!`, "SUCCESS");
-      logToConsole(`New Physical Address: ${newMac}`, "SUCCESS");
-      logToConsole(`Network restart in progress...`, "WARN");
+      logToConsole(t("deviceDetail.ghost.logs.swappedOk"), "SUCCESS");
+      logToConsole(`${t("deviceDetail.ghost.logs.newMacPrefix")}: ${newMac}`, "SUCCESS");
+      logToConsole(t("deviceDetail.ghost.logs.networkRestart"), "WARN");
 
       // Actualizamos el inventario de UI (optimista): el host debe reflejar el nuevo MAC sin esperar a un scan.
       // La identidad real puede tardar en actualizarse hasta que el adaptador reinicie.
@@ -111,9 +113,9 @@ export const DeviceDetailPanel: React.FC<Props> = ({
       window.setTimeout(refresh, 9000);
       
     } catch (e) {
-      logToConsole(`OPERATION FAILED.`, "ERROR");
-      logToConsole(`Error: ${e}`, "ERROR");
-      logToConsole(`Check Administrator privileges.`, "WARN");
+      logToConsole(t("deviceDetail.ghost.logs.failed"), "ERROR");
+      logToConsole(`${t("deviceDetail.ghost.logs.errorPrefix")}: ${e}`, "ERROR");
+      logToConsole(t("deviceDetail.ghost.logs.checkAdmin"), "WARN");
     } finally {
       setIsGhostRunning(false);
     }
@@ -139,48 +141,50 @@ export const DeviceDetailPanel: React.FC<Props> = ({
       <div style={{ width: '100%', height: '100%', padding: '25px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
 
         <h3 style={{ fontSize: '1.4rem', borderBottom: '2px solid #004400', paddingBottom: 15, marginTop: 0, marginBottom: 20, display: 'flex', justifyContent: 'space-between', color: HUD_COLORS.accentGreen }}>
-          <span>DEVICE_INTEL</span>
+          <span>{t("deviceDetail.title")}</span>
           <span className="blinking-cursor" style={{ width: '12px', height: '12px', borderRadius: '50%' }}></span>
         </h3>
 
         {/* INFO BÀSICA */}
         <div style={{ display: 'grid', gap: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} IP ADDR:</span>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.ipLabel")}</span>
             <b>{device.ip}</b>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} MAC ID:</span>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.macLabel")}</span>
             <span>{state.normalizedMac}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} NAME:</span>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.nameLabel")}</span>
             <span style={{ color: '#fff', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={state.resolvedName}>{state.resolvedName}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ opacity: 0.7 }}>{'>'} VENDOR:</span>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.vendorLabel")}</span>
             <span style={{ color: '#adff2f', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={device.vendor}>{device.vendor}</span>
           </div>
         </div>
 
         {/* CONTROLS */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-          <button onClick={onAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? 'SCANNING...' : 'DEEP AUDIT'}</button>
-          <button onClick={state.handleOpenLabAudit} className="retro-button" style={{ flex: 1, borderColor: '#00e5ff', color: '#00e5ff', background: 'transparent' }}>🧪 LAB AUDIT</button>
+          <button onClick={onAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? t("deviceDetail.actions.scanning") : t("deviceDetail.actions.deepAudit")}</button>
+          <button onClick={state.handleOpenLabAudit} className="retro-button" style={{ flex: 1, borderColor: '#00e5ff', color: '#00e5ff', background: 'transparent' }}>🧪 {t("deviceDetail.actions.labAudit")}</button>
           <button onClick={onToggleJam} disabled={isJamPending} className="retro-button" style={{ flex: 1, borderColor: isJammed || isJamPending ? '#ff0000' : '#550000', color: isJammed || isJamPending ? '#fff' : '#ff5555', background: isJammed || isJamPending ? '#ff0000' : 'transparent', animation: isJammed ? 'blink 0.5s infinite' : 'none' }}>
-            {isJamPending ? (isJammed ? '⚫ STOP' : '⏳ JAM...') : (isJammed ? '⚫ STOP' : '☠ KILL NET')}
+            {isJamPending
+              ? (isJammed ? `⚫ ${t("deviceDetail.actions.stop")}` : `⏳ ${t("deviceDetail.actions.jamPending")}`)
+              : (isJammed ? `⚫ ${t("deviceDetail.actions.stop")}` : `☠ ${t("deviceDetail.actions.killNet")}`)}
           </button>
         </div>
 
         {/* BOTÓN GHOST MODE */}
         {(device.vendor === "NETSENTINEL (HOST)" || device.ip === state.identity?.ip) && (
            <button onClick={initGhostMode} className="ghost-button" disabled={isGhostRunning || activePrompt !== null}>
-              <span>👻</span> {isGhostRunning ? "ACTIVATING..." : "ENABLE GHOST MODE"}
+              <span>👻</span> {isGhostRunning ? t("deviceDetail.ghost.activating") : t("deviceDetail.ghost.enable")}
            </button>
         )}
 
         {device.isGateway && (
-          <button onClick={state.handleRouterAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ AUDIT GATEWAY SECURITY</button>
+          <button onClick={state.handleRouterAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ {t("deviceDetail.actions.auditGateway")}</button>
         )}
 
         {/* CONSOLA INTERACTIVA */}

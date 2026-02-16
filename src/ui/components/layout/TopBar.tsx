@@ -71,17 +71,17 @@ export const TopBar: React.FC<TopBarProps> = ({
     const mac = identity.mac ? identity.mac.toUpperCase().replace("-", ":") : "";
     switch (identitySlot) {
       case "ip":
-        return `IP: ${identity.ip}`;
+        return `${t("topbar.identity.prefix.ip")}: ${identity.ip}`;
       case "gw":
-        return `GW: ${identity.gatewayIp}`;
+        return `${t("topbar.identity.prefix.gw")}: ${identity.gatewayIp}`;
       case "iface":
-        return `IF: ${identity.interfaceName}`;
+        return `${t("topbar.identity.prefix.iface")}: ${identity.interfaceName}`;
       case "mac":
-        return `MAC: ${mac || "?"}`;
+        return `${t("topbar.identity.prefix.mac")}: ${mac || "?"}`;
       default:
-        return `IP: ${identity.ip}  |  IF: ${identity.interfaceName}  |  GW: ${identity.gatewayIp}`;
+        return `${t("topbar.identity.prefix.ip")}: ${identity.ip}  |  ${t("topbar.identity.prefix.iface")}: ${identity.interfaceName}  |  ${t("topbar.identity.prefix.gw")}: ${identity.gatewayIp}`;
     }
-  }, [identity, identitySlot]);
+  }, [identity, identitySlot, t]);
 
   const btnBase = (active: boolean, accent: string, border: string): React.CSSProperties => ({
     background: active ? `linear-gradient(180deg, rgba(0,0,0,0.55), ${accent}22)` : 'rgba(0,0,0,0.25)',
@@ -289,7 +289,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           </span>
           {scanning && (
             <span
-              title="Scanner activo"
+              title={t("topbar.scan.activeTitle")}
               style={{
                 width: 8,
                 height: 8,
@@ -327,14 +327,14 @@ export const TopBar: React.FC<TopBarProps> = ({
                 padding: '0 8px',
               }}
             >
-              <option value="ip">IP</option>
-              <option value="gw">GW</option>
-              <option value="iface">IF</option>
-              <option value="mac">MAC</option>
-              <option value="all">ALL</option>
+              <option value="ip">{t("topbar.identity.slot.ip")}</option>
+              <option value="gw">{t("topbar.identity.slot.gw")}</option>
+              <option value="iface">{t("topbar.identity.slot.iface")}</option>
+              <option value="mac">{t("topbar.identity.slot.mac")}</option>
+              <option value="all">{t("topbar.identity.slot.all")}</option>
             </select>
             <div
-              title="Identidad local"
+              title={t("topbar.identity.title")}
               style={{
                 height: 30,
                 display: 'flex',
@@ -377,7 +377,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span style={btnDot(scanning, '#00ff88')} />
           <span style={{ display: "grid", placeItems: "center" }}>{Icons.scan(scanning ? "#00ff88" : "rgba(183,255,226,0.78)")}</span>
           {!menuMode && !iconMode && <span>{scanning ? t('topbar.scanning') : t('topbar.scan')}</span>}
-          {!menuMode && iconMode && <span>{scanning ? "..." : "SCAN"}</span>}
+          {!menuMode && iconMode && <span>{scanning ? t("topbar.scanningShort") : t("topbar.scanShort")}</span>}
         </button>
 
         {!menuMode ? (
@@ -439,7 +439,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               aria-expanded={menuOpen}
             >
               <span style={btnDot(menuOpen || showHistory || showRadar || showAttackLab || showSettings, "#66ffcc")} />
-              <span>PANELS</span>
+              <span>{t("topbar.menu.panels")}</span>
             </button>
             {menuOpen && (
               <div
@@ -504,17 +504,17 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* Controles ventana (solo en runtime Tauri) */}
         {windowingAdapter.isTauriRuntime() && (
           <div style={{ display: "flex", gap: 6, marginLeft: 6 }} aria-label="TOPBAR_WINDOW_CONTROLS">
-            <button style={winBtn} onClick={() => void onMinimize()} aria-label="WIN_MINIMIZE" title="Minimizar">
+            <button style={winBtn} onClick={() => void onMinimize()} aria-label="WIN_MINIMIZE" title={t("topbar.window.minimize")}>
               _
             </button>
-            <button style={winBtn} onClick={() => void onToggleMaximize()} aria-label="WIN_MAXIMIZE" title={isMaximized ? "Restaurar" : "Maximizar"}>
+            <button style={winBtn} onClick={() => void onToggleMaximize()} aria-label="WIN_MAXIMIZE" title={isMaximized ? t("topbar.window.restore") : t("topbar.window.maximize")}>
               {isMaximized ? "▢" : "□"}
             </button>
             <button
               style={{ ...winBtn, border: "1px solid rgba(255,85,85,0.35)", color: "rgba(255,85,85,0.95)" }}
               onClick={() => void onCloseWindow()}
               aria-label="WIN_CLOSE"
-              title="Cerrar"
+              title={t("topbar.window.close")}
             >
               X
             </button>
