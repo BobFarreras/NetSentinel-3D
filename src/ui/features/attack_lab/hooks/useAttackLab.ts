@@ -1,172 +1,27 @@
 // src/ui/features/attack_lab/hooks/useAttackLab.ts
-// Hook runtime del Attack Lab: subscribe a eventos, mantiene buffer de logs y expone start/cancel + ejecucion simulada.
+// Wrapper del runtime persistente del Attack Lab para mantener imports estables en la feature.
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { AttackLabExitEvent, AttackLabLogEvent, AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
-import { attackLabAdapter } from "../../../../adapters/attackLabAdapter";
+import type { AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
 import type { SimStep } from "../catalog/attackLabScenarios";
-import { useI18n } from "../../../i18n";
-
-type LogRow = {
-  ts: number;
-  stream: "stdout" | "stderr";
-  line: string;
-};
-
-const clampLines = (rows: LogRow[], max: number) => {
-  if (rows.length <= max) return rows;
-  return rows.slice(rows.length - max);
-};
+import { useAttackLabRuntime } from "../../../hooks/modules/attack_lab/useAttackLabRuntime";
 
 export const useAttackLab = () => {
-  const { t } = useI18n();
-  const [auditId, setAuditId] = useState<string | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [rows, setRows] = useState<LogRow[]>([]);
-  const [lastExit, setLastExit] = useState<AttackLabExitEvent | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const simTimers = useRef<number[]>([]);
-  const simActive = useRef(false);
+  const { state, actions } = useAttackLabRuntime();
 
-  const auditIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    auditIdRef.current = auditId;
-  }, [auditId]);
-
-  useEffect(() => {
-    let active = true;
-    let unlistenLog: (() => void) | undefined;
-    let unlistenExit: (() => void) | undefined;
-
-    const boot = async () => {
-      unlistenLog = await attackLabAdapter.onLog((evt: AttackLabLogEvent) => {
-        if (!active) return;
-        if (!auditIdRef.current) return;
-        if (evt.auditId !== auditIdRef.current) return;
-
-        setRows((prev) =>
-          clampLines(
-            [...prev, { ts: Date.now(), stream: evt.stream, line: evt.line }],
-            2000
-          )
-        );
-      });
-
-      unlistenExit = await attackLabAdapter.onExit((evt: AttackLabExitEvent) => {
-        if (!active) return;
-        if (!auditIdRef.current) return;
-        if (evt.auditId !== auditIdRef.current) return;
-
-        simActive.current = false;
-        setIsRunning(false);
-        setLastExit(evt);
-        if (!evt.success) setError(evt.error || t("attackLab.runtime.error.finishedWithError"));
-      });
-    };
-
-    boot();
-    return () => {
-      active = false;
-      if (unlistenLog) unlistenLog();
-      if (unlistenExit) unlistenExit();
-    };
-  }, []);
-
-  const start = async (request: AttackLabRequestDTO) => {
-    // Cancelar simulaciones pendientes.
-    simTimers.current.forEach((t) => window.clearTimeout(t));
-    simTimers.current = [];
-    simActive.current = false;
-
-    setError(null);
-    setRows([]);
-      setLastExit(null);
-      setIsRunning(true);
-    try {
-      const id = await attackLabAdapter.start(request);
-      setAuditId(id);
-      setRows([{ ts: Date.now(), stream: "stdout", line: `START auditId=${id}` }]);
-    } catch (e) {
-      setIsRunning(false);
-      setError(e instanceof Error ? e.message : String(e));
-    }
+  return {
+    auditId: state.auditId,
+    isRunning: state.isRunning,
+    rows: state.rows,
+    lastExit: state.lastExit,
+    error: state.error,
+    // Se mantiene por compatibilidad; el panel ahora lo forma con i18n si lo necesita.
+    summary: state.auditId ? `${state.runKind ?? "run"}:${state.auditId}` : "idle",
+    start: (request: AttackLabRequestDTO) => actions.startExternal(request),
+    startSimulated: (label: string, steps: SimStep[]) => actions.startSimulated(label, steps),
+    startNative: (label: string, target: string, run: (ctx: any) => Promise<void>) =>
+      actions.startNative(label, target, run as any),
+    cancel: () => actions.cancel(),
+    clear: () => actions.clear(),
   };
-
-  const startSimulated = async (label: string, steps: SimStep[]) => {
-    // Cancelar cualquier run previo.
-    simTimers.current.forEach((t) => window.clearTimeout(t));
-    simTimers.current = [];
-    simActive.current = true;
-
-    const id = `sim_${Date.now()}`;
-    setAuditId(id);
-    setError(null);
-    setRows([{ ts: Date.now(), stream: "stdout", line: `SIM START: ${label}` }]);
-    setLastExit(null);
-    setIsRunning(true);
-
-    steps.forEach((s) => {
-      const timer = window.setTimeout(() => {
-        if (!simActive.current) return;
-        setRows((prev) => clampLines([...prev, { ts: Date.now(), stream: s.stream, line: s.line }], 2000));
-      }, s.delayMs);
-      simTimers.current.push(timer);
-    });
-
-    const lastDelay = Math.max(0, ...steps.map((s) => s.delayMs));
-    const exitTimer = window.setTimeout(() => {
-      if (!simActive.current) return;
-      simActive.current = false;
-      setIsRunning(false);
-      const exitEvt: AttackLabExitEvent = {
-        auditId: id,
-        success: true,
-        exitCode: 0,
-        durationMs: lastDelay,
-      };
-      setLastExit(exitEvt);
-    }, lastDelay + 150);
-    simTimers.current.push(exitTimer);
-  };
-
-  const cancel = async () => {
-    if (!auditId) return;
-    if (simActive.current) {
-      simActive.current = false;
-      simTimers.current.forEach((t) => window.clearTimeout(t));
-      simTimers.current = [];
-      setIsRunning(false);
-      setLastExit({
-        auditId,
-        success: false,
-        exitCode: 130,
-        durationMs: 0,
-        error: t("attackLab.runtime.error.canceled"),
-      });
-      return;
-    }
-    try {
-      await attackLabAdapter.cancel(auditId);
-      setRows((prev) =>
-        clampLines([...prev, { ts: Date.now(), stream: "stderr", line: t("attackLab.runtime.log.cancelRequested") }], 2000)
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  };
-
-  const clear = () => {
-    setRows([]);
-    setLastExit(null);
-    setError(null);
-  };
-
-  const summary = useMemo(() => {
-    if (!auditId) return t("attackLab.runtime.summary.idle");
-    if (isRunning) return `${t("attackLab.runtime.summary.running")}: ${auditId}`;
-    if (lastExit) return `${t("attackLab.runtime.summary.finished")}: ${auditId} (exit=${lastExit.exitCode ?? "?"}, ok=${lastExit.success})`;
-    return `${t("attackLab.runtime.summary.ready")}: ${auditId}`;
-  }, [auditId, isRunning, lastExit, t]);
-
-  return { auditId, isRunning, rows, lastExit, error, start, startSimulated, cancel, clear, summary };
 };
+

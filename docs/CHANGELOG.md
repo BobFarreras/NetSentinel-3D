@@ -249,6 +249,31 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.61] - UI: Attack Lab persistente + Radar Audit button inline (2026-02-16)
+### UI (attack_lab)
+- Runtime persistente en UI: al cerrar/abrir el panel no se pierde la ejecucion ni la consola (external/simulated/native).
+- LAB: se elimina el boton `CLEAR` (se mantienen `EXECUTE/STOP`).
+- TARGET: selector sincronizado con Radar/Scene (si cambias TARGET en Attack Lab, se refleja la seleccion en la escena).
+- TARGET por tipo de escenario:
+  - `WIFI`: selector de redes (SSID/BSSID) via `scan_airwaves`.
+  - `ROUTER`: selector de gateways (heuristica: `isGateway`, `identity.gatewayIp`, `*.1`).
+  - `DEVICE`: selector de dispositivos detectados por el scanner.
+
+### UI (radar)
+- En layout estrecho (intel bottom): `OPEN AUDIT CONSOLE` se renderiza inline junto al buscador para evitar scroll.
+
+### i18n
+- Attack Lab LAB view: textos hardcodeados (labels/buttons) pasan a i18n.
+- Ajuste de `attackLab.console.output/waiting` para que no aparezca como frase inglesa en ES/CA.
+
+### Testing
+- Nuevo test de `useAttackLabRuntime` (persistencia entre montajes).
+- Ajustado test de `AttackLabPanel` para mockear runtime persistente.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)

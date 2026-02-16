@@ -18,6 +18,10 @@ type RadarIntelFiltersProps = {
   onChangeBandFilter: (value: BandFilter) => void;
   onChangeChannelFilter: (value: number | null) => void;
   onChangeSearch: (value: string) => void;
+  inlineAuditAction?: {
+    enabled: boolean;
+    onClick: () => void;
+  } | null;
 };
 
 export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
@@ -31,6 +35,7 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
   onChangeBandFilter,
   onChangeChannelFilter,
   onChangeSearch,
+  inlineAuditAction = null,
 }) => {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = React.useState(layout === "bottom");
@@ -175,14 +180,40 @@ export const RadarIntelFilters: React.FC<RadarIntelFiltersProps> = ({
           </div>
 
           {/* Busqueda siempre visible para no perder control rapido cuando esta plegado. */}
-          <div style={{ ...FILTER_ROW_STYLE, marginBottom: collapsed ? 0 : 10 }}>
+          <div style={{ ...FILTER_ROW_STYLE, marginBottom: collapsed ? 0 : 10, alignItems: "flex-end" }}>
             <div style={FILTER_BOX_LABEL_STYLE}>{t("radar.intel.filters.query")}</div>
-            <input
-              value={search}
-              onChange={(e) => onChangeSearch(e.target.value)}
-              placeholder={t("radar.intel.filters.searchPlaceholder")}
-              style={{ ...selectStyle, width: "min(260px, 100%)" }}
-            />
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                value={search}
+                onChange={(e) => onChangeSearch(e.target.value)}
+                placeholder={t("radar.intel.filters.searchPlaceholder")}
+                style={{ ...selectStyle, width: "min(220px, 100%)" }}
+              />
+              {inlineAuditAction && (
+                <button
+                  onClick={inlineAuditAction.onClick}
+                  disabled={!inlineAuditAction.enabled}
+                  style={{
+                    height: 30,
+                    padding: "0 10px",
+                    background: inlineAuditAction.enabled ? "rgba(0, 255, 136, 0.12)" : "rgba(0,0,0,0.25)",
+                    border: `1px solid ${inlineAuditAction.enabled ? "#00ff88" : "rgba(0,255,136,0.18)"}`,
+                    color: inlineAuditAction.enabled ? "#00ff88" : "rgba(183,255,226,0.55)",
+                    cursor: inlineAuditAction.enabled ? "pointer" : "not-allowed",
+                    fontSize: 10,
+                    fontWeight: 900,
+                    letterSpacing: 0.8,
+                    textTransform: "uppercase",
+                    fontFamily: "monospace",
+                    borderRadius: 2,
+                    flexShrink: 0,
+                    boxShadow: inlineAuditAction.enabled ? "0 0 10px rgba(0,255,136,0.10)" : "none",
+                  }}
+                >
+                  {t("radar.intel.selection.openAuditConsole")}
+                </button>
+              )}
+            </div>
           </div>
 
           {!collapsed && (

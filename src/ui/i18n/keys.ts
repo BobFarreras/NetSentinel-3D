@@ -250,6 +250,16 @@ export const I18N_KEYS = [
   "attackLab.opsec.warningTitle",
   "attackLab.opsec.safeTitle",
   "attackLab.opsec.wifiExclusiveMessage",
+  "attackLab.lab.selectedScenario",
+  "attackLab.lab.manageWordlist",
+  "attackLab.lab.selectVector",
+  "attackLab.lab.modePrefix",
+  "attackLab.lab.target",
+  "attackLab.lab.noTarget",
+  "attackLab.lab.na",
+  "attackLab.lab.running",
+  "attackLab.lab.execute",
+  "attackLab.lab.stop",
 
   // Confirm modal (OPSEC / acciones peligrosas)
   "confirmModal.header.criticalAlert",

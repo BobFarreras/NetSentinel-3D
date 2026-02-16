@@ -9,6 +9,7 @@ import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs"
 import { DetachedWindowPortal } from "./DetachedWindowPortal";
 import type { DetachablePanelId } from "../../../adapters/windowingAdapter";
 import { useI18n } from "../../i18n";
+import { getRouterCandidates } from "../../utils/routerCandidates";
 
 const NetworkScene = lazy(async () => {
   const mod = await import("../../features/scene3d/components/NetworkScene");
@@ -363,6 +364,8 @@ export const MainDockedLayout = ({
                             <AttackLabPanel
                               onClose={closeAttackLab}
                               targetDevice={attackLabTarget}
+                              availableDevices={devices}
+                              availableRouters={getRouterCandidates(devices, identity)}
                               identity={identity}
                               defaultScenarioId={attackLabScenarioId}
                               autoRunToken={attackLabAutoRunToken}
@@ -424,6 +427,8 @@ export const MainDockedLayout = ({
                             <AttackLabPanel
                               onClose={closeAttackLab}
                               targetDevice={attackLabTarget}
+                              availableDevices={devices}
+                              availableRouters={getRouterCandidates(devices, identity)}
                               identity={identity}
                               defaultScenarioId={attackLabScenarioId}
                               autoRunToken={attackLabAutoRunToken}
@@ -481,6 +486,8 @@ export const MainDockedLayout = ({
                             <AttackLabPanel
                               onClose={closeAttackLab}
                               targetDevice={attackLabTarget}
+                              availableDevices={devices}
+                              availableRouters={getRouterCandidates(devices, identity)}
                               identity={identity}
                               defaultScenarioId={attackLabScenarioId}
                               autoRunToken={attackLabAutoRunToken}
@@ -504,14 +511,16 @@ export const MainDockedLayout = ({
                       <DockHeader title="ATTACK LAB" onUndock={() => void undockPanel("attack_lab")} onClose={closeAttackLab} undockTitle={undockTitle} closeTitle={closeTitle} />
                       <div style={{ flex: 1, minHeight: 0 }}>
                         <Suspense fallback={null}>
-                          <AttackLabPanel
-                            onClose={closeAttackLab}
-                            targetDevice={attackLabTarget}
-                            identity={identity}
-                            defaultScenarioId={attackLabScenarioId}
-                            autoRunToken={attackLabAutoRunToken}
-                            embedded={true}
-                          />
+                            <AttackLabPanel
+                              onClose={closeAttackLab}
+                              targetDevice={attackLabTarget}
+                              availableDevices={devices}
+                              availableRouters={getRouterCandidates(devices, identity)}
+                              identity={identity}
+                              defaultScenarioId={attackLabScenarioId}
+                              autoRunToken={attackLabAutoRunToken}
+                              embedded={true}
+                            />
                         </Suspense>
                       </div>
                     </div>
@@ -663,14 +672,16 @@ export const MainDockedLayout = ({
         <DetachedWindowPortal title={detachedAttackLabTitle} onClose={() => void dockPanel("attack_lab")} width={860} height={680}>
           <DetachedShell title="ATTACK LAB" dockAria="DOCK_ATTACK_LAB" onDock={() => void dockPanel("attack_lab")} dockTitle={dockTitle}>
             <Suspense fallback={null}>
-              <AttackLabPanel
-                onClose={closeAttackLab}
-                targetDevice={attackLabTarget}
-                identity={identity}
-                defaultScenarioId={attackLabScenarioId}
-                autoRunToken={attackLabAutoRunToken}
-                embedded={true}
-              />
+                <AttackLabPanel
+                  onClose={closeAttackLab}
+                  targetDevice={attackLabTarget}
+                  availableDevices={devices}
+                  availableRouters={getRouterCandidates(devices, identity)}
+                  identity={identity}
+                  defaultScenarioId={attackLabScenarioId}
+                  autoRunToken={attackLabAutoRunToken}
+                  embedded={true}
+                />
             </Suspense>
           </DetachedShell>
         </DetachedWindowPortal>

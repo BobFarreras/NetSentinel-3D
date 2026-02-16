@@ -8,9 +8,10 @@ import { useI18n } from "../../../../../i18n";
 type RadarIntelSelectionDetailsProps = {
   selected: WifiNetworkDTO | null;
   onOpenAudit: () => void;
+  showAuditButton?: boolean;
 };
 
-export const RadarIntelSelectionDetails: React.FC<RadarIntelSelectionDetailsProps> = ({ selected, onOpenAudit }) => {
+export const RadarIntelSelectionDetails: React.FC<RadarIntelSelectionDetailsProps> = ({ selected, onOpenAudit, showAuditButton = true }) => {
   const { t } = useI18n();
   if (!selected) {
     return (
@@ -46,7 +47,7 @@ export const RadarIntelSelectionDetails: React.FC<RadarIntelSelectionDetailsProp
         {t("radar.intel.selection.rssi")}: <span style={{ color: "#b7ffe2" }}>{selected.signalLevel} dBm</span>
       </div>
 
-      {!selected.isConnected && (
+      {showAuditButton && !selected.isConnected && (
         <div style={{ marginTop: 20, paddingTop: 10, borderTop: "1px dashed rgba(255, 80, 80, 0.4)" }}>
           <div style={{ color: "#00ff88", fontWeight: 800, marginBottom: 6, fontSize: 10, letterSpacing: 1 }}>
             {t("radar.intel.selection.countermeasures")}

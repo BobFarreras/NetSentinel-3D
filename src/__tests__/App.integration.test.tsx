@@ -11,6 +11,30 @@ vi.mock("../ui/components/layout/TopBar", () => ({
   TopBar: () => <div data-testid="topbar">TOPBAR</div>,
 }));
 
+// Mock del layout para evitar dependencias de `React.lazy` + Three/WebGL en JSDOM.
+// Este test valida el flujo de seleccion (Scene -> App state -> Console/Detail), no el layout real.
+vi.mock("../ui/components/layout/MainDockedLayout", () => ({
+  MainDockedLayout: ({
+    devices,
+    selectedDevice,
+    selectDevice,
+  }: {
+    devices: DeviceDTO[];
+    selectedDevice: DeviceDTO | null;
+    selectDevice: (d: DeviceDTO | null) => void;
+  }) => (
+    <div>
+      <div data-testid="network-scene">
+        <div data-testid="scene-selected-ip">{selectedDevice?.ip ?? "NONE"}</div>
+        <button onClick={() => selectDevice(devices[0])}>SELECT_NODE_1</button>
+        <button onClick={() => selectDevice(null)}>CLEAR_SELECTION</button>
+      </div>
+      <div data-testid="console-logs">CONSOLE_SELECTED:{selectedDevice?.ip ?? "NONE"}</div>
+      {selectedDevice && <div data-testid="device-detail-panel">DETAIL:{selectedDevice.ip}</div>}
+    </div>
+  ),
+}));
+
 vi.mock("../ui/features/history/components/HistoryPanel", () => ({
   HistoryPanel: () => <div data-testid="history-panel">HISTORY</div>,
 }));
@@ -23,35 +47,8 @@ vi.mock("../ui/features/attack_lab/panel/AttackLabPanel", () => ({
   AttackLabPanel: () => <div data-testid="attack-lab-panel">ATTACK-LAB</div>,
 }));
 
-vi.mock("../ui/features/scene3d/components/NetworkScene", () => ({
-  NetworkScene: ({
-    devices,
-    selectedIp,
-    onDeviceSelect,
-  }: {
-    devices: DeviceDTO[];
-    selectedIp?: string | null;
-    onDeviceSelect?: (device: DeviceDTO | null) => void;
-  }) => (
-    <div data-testid="network-scene">
-      <div data-testid="scene-selected-ip">{selectedIp ?? "NONE"}</div>
-      <button onClick={() => onDeviceSelect?.(devices[0])}>SELECT_NODE_1</button>
-      <button onClick={() => onDeviceSelect?.(null)}>CLEAR_SELECTION</button>
-    </div>
-  ),
-}));
-
-vi.mock("../ui/features/device_detail/components/DeviceDetailPanel", () => ({
-  DeviceDetailPanel: ({ device }: { device: DeviceDTO }) => (
-    <div data-testid="device-detail-panel">DETAIL:{device.ip}</div>
-  ),
-}));
-
-vi.mock("../ui/features/console_logs/components/ConsoleLogs", () => ({
-  ConsoleLogs: ({ selectedDevice }: { selectedDevice?: DeviceDTO | null }) => (
-    <div data-testid="console-logs">CONSOLE_SELECTED:{selectedDevice?.ip ?? "NONE"}</div>
-  ),
-}));
+// Los componentes reales de Scene/Console/Detail quedan cubiertos por tests unitarios;
+// aqui basta con el mock del layout.
 
 vi.mock("../ui/hooks/useNetworkManager", async () => {
   const ReactModule = await import("react");

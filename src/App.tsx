@@ -1,7 +1,7 @@
 // src/App.tsx
 // Orquestador de alto nivel: compone layouts, coordina estado global y sincroniza docking/ventanas + contexto entre paneles.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { windowingAdapter } from "./adapters/windowingAdapter";
 import type { DeviceDTO } from "./shared/dtos/NetworkDTOs";
 import { useNetworkManager } from "./ui/hooks/useNetworkManager";
@@ -48,6 +48,17 @@ function App() {
   const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
   const [attackLabAutoRunToken, setAttackLabAutoRunToken] = useState<number>(0);
 
+  // Evita closures stale: el listener de eventos se registra una vez, pero selectDevice cambia por render.
+  const selectDeviceRef = useRef(selectDevice);
+  useEffect(() => {
+    selectDeviceRef.current = selectDevice;
+  }, [selectDevice]);
+
+  const isIpv4 = (value: string | undefined | null): boolean => {
+    if (!value) return false;
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(value);
+  };
+
   // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
   useEffect(() => {
     uiLogger.info("[app] Listening for Dock Panel events...");
@@ -67,6 +78,10 @@ function App() {
         uiLogger.info("[app] Attack Lab Context Update", payload);
         if (payload.targetDevice) {
             setAttackLabTarget(payload.targetDevice);
+            // Sync inverso: si el operador cambia TARGET en Attack Lab, reflejar seleccion en escena (solo targets reales IPv4).
+            if (isIpv4(payload.targetDevice.ip)) {
+              selectDeviceRef.current(payload.targetDevice);
+            }
         }
         if (payload.scenarioId) {
             setAttackLabScenarioId(payload.scenarioId);

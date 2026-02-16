@@ -30,6 +30,15 @@ Es un catalogo de escenarios para juniors/alumnos:
 
 Ventaja: onboarding rapido y consistencia operacional.
 
+### 1.3 Selector de TARGET (LAB)
+El panel mantiene un selector de objetivo para ejecutar escenarios sin tener que abrir Radar/Scene.
+
+Reglas actuales:
+- Escenarios `WIFI`: lista redes detectadas por `scan_airwaves` (SSID/BSSID).
+- Escenarios `ROUTER`: lista candidatos a gateway (heuristica: `isGateway`, `identity.gatewayIp`, `*.1`).
+- Escenarios `DEVICE/IOT/EDU`: lista dispositivos detectados por el scanner.
+- Sincronizacion: cambiar `TARGET` en Attack Lab actualiza la seleccion en la escena cuando el target es una IP real.
+
 ---
 
 ## 2) Arquitectura y flujo de datos (end-to-end)
@@ -42,6 +51,9 @@ Flujo `CUSTOM` o `LAB(external)`:
    - `attack-lab-log` (linea a linea, `stdout`/`stderr`),
    - `attack-lab-exit` (exit code + success + duracion).
 5. Hook UI escucha eventos, filtra por `audit_id` y actualiza la consola del panel.
+
+Nota (persistencia UX):
+- El runtime del Attack Lab es persistente a nivel UI (store compartido). Si cierras/abres el panel, la ejecucion y la consola no se pierden.
 
 Flujo `LAB(simulated)`:
 1. UI genera una lista de pasos con delays (SimStep).
@@ -77,7 +89,8 @@ Flujo `LAB(simulated)`:
 - Adapter (IPC):
   - `src/adapters/attackLabAdapter.ts`
 - Hook de runtime (eventos/logs):
-  - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
+  - Wrapper feature: `src/ui/features/attack_lab/hooks/useAttackLab.ts`
+  - Runtime persistente (shared): `src/ui/hooks/modules/attack_lab/useAttackLabRuntime.ts`
 - UI:
   - `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
   - catalogo LAB: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`

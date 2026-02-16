@@ -3,8 +3,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core"; // <--- IMPORTANTE
-import type { DeviceDTO, HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
-import { useAttackLab } from "../hooks/useAttackLab";
+import type { DeviceDTO, HostIdentity, WifiNetworkDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { useAttackLabRuntime } from "../../../hooks/modules/attack_lab/useAttackLabRuntime";
 import { getAttackLabScenarios } from "../catalog/attackLabScenarios";
 import { AuditHeader } from "./AuditHeader";
 import { AuditConsole } from "./AuditConsole";
@@ -18,6 +18,8 @@ import { useI18n } from "../../../i18n/useI18n";
 interface AttackLabPanelProps {
   onClose: () => void;
   targetDevice?: DeviceDTO | null;
+  availableDevices?: DeviceDTO[];
+  availableRouters?: DeviceDTO[];
   identity?: HostIdentity | null;
   defaultScenarioId?: string | null;
   // Token monotono: si cambia, se intenta ejecutar automaticamente el escenario actual.
@@ -29,22 +31,22 @@ interface AttackLabPanelProps {
 export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   onClose,
   targetDevice: propTargetDevice,
+  availableDevices = [],
+  availableRouters = [],
   identity = null,
   defaultScenarioId = null,
   autoRunToken: propAutoRunToken = 0,
   embedded = false,
 }) => {
   const { t } = useI18n();
-  const audit = useAttackLab();
+  const runtime = useAttackLabRuntime();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
 
   const [localTarget, setLocalTarget] = useState<DeviceDTO | null>(propTargetDevice || null);
   const [mode, setMode] = useState<"LAB" | "CUSTOM">(() => (localTarget || defaultScenarioId ? "LAB" : "CUSTOM"));
   const [scenarioId, setScenarioId] = useState<string>(() => defaultScenarioId || "");
-  
-  const [nativeRows, setNativeRows] = useState<{ ts: number; stream: "stdout" | "stderr"; line: string }[]>([]);
-  const [isNativeRunning, setIsNativeRunning] = useState(false);
+  const [wifiTargets, setWifiTargets] = useState<WifiNetworkDTO[]>([]);
   
   // ESTADOS MODAL & OPSEC
   const [showConfirm, setShowConfirm] = useState(false);
@@ -54,8 +56,6 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const [autoRunToken, setAutoRunToken] = useState<number>(0);
   const lastExecutedToken = useRef<number>(0);
   const lastSeenPropAutoRunToken = useRef<number>(0);
-  
-  const abortController = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -82,6 +82,67 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const scenarios = useMemo(() => getAttackLabScenarios(), []);
   const selectedScenario = useMemo(() => scenarios.find((s) => s.id === scenarioId) || null, [scenarios, scenarioId]);
 
+  const isIpv4 = (value: string | undefined | null): boolean => {
+    if (!value) return false;
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(value);
+  };
+
+  const mergeByIp = (base: DeviceDTO[], extra: DeviceDTO | null): DeviceDTO[] => {
+    const map = new Map<string, DeviceDTO>();
+    for (const d of base) map.set(d.ip, d);
+    if (extra && isIpv4(extra.ip)) map.set(extra.ip, extra);
+    return Array.from(map.values());
+  };
+
+  // IMPORTANT: el selector TARGET debe estar sincronizado con el target actual (Radar/Scene/Detached),
+  // incluso si la heuristica de "routers" no lo incluye aun.
+  const routerTargetOptions = useMemo(
+    () => mergeByIp(availableRouters, localTarget),
+    [availableRouters, localTarget],
+  );
+
+  const deviceTargetOptions = useMemo(() => {
+    // Lista completa de dispositivos para escenarios que apuntan a hosts (DEVICE/IOT/EDU).
+    // Incluye el target actual aunque no venga en `availableDevices` (por latencia de scan).
+    return mergeByIp(availableDevices, localTarget);
+  }, [availableDevices, localTarget]);
+
+  // Cache local de airwaves para selector rapido en escenarios WIFI.
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedScenario?.category !== "WIFI") return;
+
+    void (async () => {
+      try {
+        const networks = await invoke<WifiNetworkDTO[]>("scan_airwaves");
+        if (cancelled) return;
+        // Ordenamos por señal descendente y filtramos duplicados por BSSID.
+        const seen = new Set<string>();
+        const sorted = [...networks]
+          .sort((a, b) => (b.signalLevel ?? 0) - (a.signalLevel ?? 0))
+          .filter((n) => {
+            if (!n.bssid) return false;
+            if (seen.has(n.bssid)) return false;
+            seen.add(n.bssid);
+            return true;
+          });
+        setWifiTargets(sorted);
+      } catch (e) {
+        // No rompemos el panel si el comando falla (por ejemplo sin permisos o sin backend).
+        emitSystemLog({
+          source: "RADAR",
+          level: "WARN",
+          message: `scan_airwaves fallo desde AttackLabPanel: ${String(e)}`,
+        });
+        setWifiTargets([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedScenario?.category]);
+
   useEffect(() => {
     if (propTargetDevice) {
         setLocalTarget(propTargetDevice);
@@ -93,6 +154,17 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         });
     }
   }, [propTargetDevice]);
+
+  // Si no hay target pero sí routers detectados, seleccionamos el primero solo una vez.
+  // Regla: NO rotar a otro router automáticamente por errores.
+  const bootstrappedRouterTarget = useRef(false);
+  useEffect(() => {
+    if (bootstrappedRouterTarget.current) return;
+    if (localTarget) return;
+    if (availableRouters.length === 0) return;
+    setLocalTarget(availableRouters[0]);
+    bootstrappedRouterTarget.current = true;
+  }, [availableRouters, localTarget]);
 
   useEffect(() => {
     const unlistenPromise = windowingAdapter.listenAttackLabContext((payload) => {
@@ -121,17 +193,6 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     if (!selectedScenario) return;
     const targetIp = localTarget?.ip || "unknown";
 
-    setNativeRows([]);
-    setIsNativeRunning(true);
-    abortController.current = new AbortController();
-
-    setNativeRows([
-      {
-        ts: Date.now(),
-        stream: "stdout",
-        line: `🚀 ${t("attackLab.native.startingProtocolPrefix")}: ${selectedScenario.title}`,
-      },
-    ]);
     emitSystemLog({
       source: "ATTACK_LAB",
       level: "INFO",
@@ -139,47 +200,43 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     });
 
     try {
-      if (selectedScenario.executeNative) {
-          await selectedScenario.executeNative({
-            target: targetIp, 
-            signal: abortController.current.signal, 
-            onLog: (stream, line) => {
-              // Las trazas de diagnostico van a SYSTEM LOGS para no saturar la consola del panel.
-              if (line.includes("🧪 TRACE")) {
-                emitSystemLog({
-                  source: "WIFI_NATIVE",
-                  level: stream === "stderr" ? "ERROR" : "DEBUG",
-                  message: line,
-                });
-                return;
-              }
-
-              setNativeRows(prev => [...prev, { ts: Date.now(), stream, line }]);
-
-              // Duplicamos solo eventos de control importantes.
-              if (line.includes("PREDATOR HIT") || line.includes("ATAQUE ABORTADO") || line.includes("DICCIONARIO AGOTADO")) {
-                emitSystemLog({
-                  source: "WIFI_NATIVE",
-                  level: stream === "stderr" ? "WARN" : "INFO",
-                  message: line,
-                });
-              }
+      if (!selectedScenario.executeNative) return;
+      await runtime.actions.startNative(selectedScenario.title, targetIp, async ({ target, onLog, signal }) => {
+        onLog("stdout", `🚀 ${t("attackLab.native.startingProtocolPrefix")}: ${selectedScenario.title}`);
+        await selectedScenario.executeNative?.({
+          target,
+          signal,
+          onLog: (stream, line) => {
+            // Las trazas de diagnostico van a SYSTEM LOGS para no saturar la consola del panel.
+            if (line.includes("🧪 TRACE")) {
+              emitSystemLog({
+                source: "WIFI_NATIVE",
+                level: stream === "stderr" ? "ERROR" : "DEBUG",
+                message: line,
+              });
+              return;
             }
-          });
-      }
+
+            onLog(stream, line);
+
+            // Duplicamos solo eventos de control importantes.
+            if (line.includes("PREDATOR HIT") || line.includes("ATAQUE ABORTADO") || line.includes("DICCIONARIO AGOTADO")) {
+              emitSystemLog({
+                source: "WIFI_NATIVE",
+                level: stream === "stderr" ? "WARN" : "INFO",
+                message: line,
+              });
+            }
+          },
+        });
+      });
     } catch (e) {
-      setNativeRows((prev) => [
-        ...prev,
-        { ts: Date.now(), stream: "stderr", line: `❌ ${t("attackLab.native.criticalErrorPrefix")}: ${e}` },
-      ]);
-    } finally {
-      setIsNativeRunning(false); 
-      abortController.current = null;
+      runtime.actions.pushLocalLog("stderr", `❌ ${t("attackLab.native.criticalErrorPrefix")}: ${e}`);
     }
   };
 
   const handleRunLab = async () => {
-    if (!selectedScenario || isNativeRunning) return;
+    if (!selectedScenario || runtime.state.isRunning) return;
 
     // --- CHECK NATIVO (WIFI) ---
     if (selectedScenario.mode === "native" && selectedScenario.category === "WIFI") {
@@ -220,12 +277,12 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     // LAB (simulated/external)
     if (selectedScenario.mode === "simulated") {
       const steps = selectedScenario.simulate?.({ device: localTarget!, identity }) || [];
-      await audit.startSimulated(selectedScenario.title, steps);
+      await runtime.actions.startSimulated(selectedScenario.title, steps);
     } else if (localTarget) {
         const support = selectedScenario.isSupported?.({ device: localTarget, identity }) || { supported: true };
         if (support.supported) {
             const req = selectedScenario.buildRequest?.({ device: localTarget, identity });
-            if (req) await audit.start(req);
+            if (req) await runtime.actions.startExternal(req);
         }
     }
   };
@@ -233,7 +290,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   useEffect(() => {
     if (autoRunToken === 0) return;
     if (autoRunToken === lastExecutedToken.current) return;
-    if (!selectedScenario || audit.isRunning || isNativeRunning || !localTarget) {
+    if (!selectedScenario || runtime.state.isRunning || !localTarget) {
         return;
     }
 
@@ -241,14 +298,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     // Caso real: el operador "muestra" el Attack Lab (TopBar) y no espera un modal/ejecucion inmediata.
     if (selectedScenario.mode === "native") {
       lastExecutedToken.current = autoRunToken;
-      setNativeRows((prev) => [
-        ...prev,
-        {
-          ts: Date.now(),
-          stream: "stdout",
-          line: `🛑 ${t("attackLab.native.autoRunBlocked")}`,
-        },
-      ]);
+      runtime.actions.pushLocalLog("stdout", `🛑 ${t("attackLab.native.autoRunBlocked")}`);
       emitSystemLog({
         source: "ATTACK_LAB",
         level: "WARN",
@@ -259,15 +309,22 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
 
     lastExecutedToken.current = autoRunToken;
     void handleRunLab();
-  }, [autoRunToken, selectedScenario, audit.isRunning, isNativeRunning, localTarget]);
+  }, [autoRunToken, selectedScenario, runtime.state.isRunning, localTarget]);
 
   const handleCancel = async () => {
-      if (isNativeRunning && abortController.current) abortController.current.abort(); 
-      if (audit.isRunning) await audit.cancel();
+      await runtime.actions.cancel();
   };
 
-  const isAnyRunning = audit.isRunning || isNativeRunning;
-  const displayRows = nativeRows.length > 0 ? nativeRows : audit.rows;
+  const isAnyRunning = runtime.state.isRunning;
+  const displayRows = runtime.state.rows;
+
+  const statusText = (() => {
+    const s = runtime.state;
+    if (!s.auditId) return t("attackLab.runtime.summary.idle");
+    if (s.isRunning) return `${t("attackLab.runtime.summary.running")}: ${s.auditId}`;
+    if (s.lastExit) return `${t("attackLab.runtime.summary.finished")}: ${s.auditId} (exit=${s.lastExit.exitCode ?? "?"}, ok=${s.lastExit.success})`;
+    return `${t("attackLab.runtime.summary.ready")}: ${s.auditId}`;
+  })();
 
     return (
       <div ref={rootRef} style={{
@@ -284,7 +341,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     }}>
       <AuditHeader 
         mode={mode} setMode={setMode} 
-        status={isNativeRunning ? t("attackLab.status.inProgress") : audit.summary} 
+        status={isAnyRunning ? t("attackLab.status.inProgress") : statusText} 
         isAutoRun={false} 
         compact={isNarrow}
         onClose={onClose} 
@@ -301,27 +358,76 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
             <LabModeView 
               scenarios={scenarios}
               selectedId={scenarioId}
-              onSelect={(id) => { setScenarioId(id); setNativeRows([]); }} 
+              onSelect={(id) => { setScenarioId(id); }} 
               targetDevice={localTarget}
+              routerTargets={routerTargetOptions}
+              onSelectRouterTarget={(ip) => {
+                if (!ip) {
+                  setLocalTarget(null);
+                  void windowingAdapter.emitAttackLabContext({ targetDevice: null, scenarioId: scenarioId || undefined, autoRun: false });
+                  return;
+                }
+                const next = routerTargetOptions.find((d) => d.ip === ip) || null;
+                if (next) {
+                  setLocalTarget(next);
+                  void windowingAdapter.emitAttackLabContext({ targetDevice: next, scenarioId: scenarioId || undefined, autoRun: false });
+                }
+              }}
+              deviceTargets={deviceTargetOptions}
+              onSelectDeviceTarget={(ip) => {
+                if (!ip) {
+                  setLocalTarget(null);
+                  void windowingAdapter.emitAttackLabContext({ targetDevice: null, scenarioId: scenarioId || undefined, autoRun: false });
+                  return;
+                }
+                const next = deviceTargetOptions.find((d) => d.ip === ip) || null;
+                if (next) {
+                  setLocalTarget(next);
+                  void windowingAdapter.emitAttackLabContext({ targetDevice: next, scenarioId: scenarioId || undefined, autoRun: false });
+                }
+              }}
+              wifiTargets={wifiTargets}
+              onSelectWifiTarget={(bssid) => {
+                if (!bssid) {
+                  setLocalTarget(null);
+                  void windowingAdapter.emitAttackLabContext({ targetDevice: null, scenarioId: scenarioId || undefined, autoRun: false });
+                  return;
+                }
+                const n = wifiTargets.find((x) => x.bssid === bssid) || null;
+                if (!n) return;
+                const virtualTarget: DeviceDTO = {
+                  ip: n.ssid,
+                  mac: n.bssid,
+                  vendor: n.vendor,
+                  hostname: n.ssid,
+                  isGateway: false,
+                  ping: undefined,
+                  openPorts: [],
+                  os: "WiFi Access Point",
+                  deviceType: "ROUTER",
+                };
+                setLocalTarget(virtualTarget);
+                setScenarioId("wifi_brute_force_dict");
+                setMode("LAB");
+                void windowingAdapter.emitAttackLabContext({ targetDevice: virtualTarget, scenarioId: "wifi_brute_force_dict", autoRun: false });
+              }}
               selectedScenario={selectedScenario}
               isRunning={isAnyRunning} 
               onRun={handleRunLab}
               onCancel={handleCancel}
-              onClear={() => { audit.clear(); setNativeRows([]); }}
               layout={isNarrow ? "narrow" : "wide"}
             />
           ) : (
             <CustomModeView 
-              isRunning={audit.isRunning}
-              onStart={audit.start}
-              onCancel={audit.cancel}
-              onClear={audit.clear}
+              isRunning={runtime.state.isRunning}
+              onStart={runtime.actions.startExternal}
+              onCancel={runtime.actions.cancel}
               layout={isNarrow ? "narrow" : "wide"}
             />
           )}
         </div>
 
-        <AuditConsole rows={displayRows} error={audit.error} />
+        <AuditConsole rows={displayRows} error={runtime.state.error} />
       </div>
 
       {/* MODAL CON STATUS OPSEC */}
