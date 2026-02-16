@@ -6,6 +6,7 @@ import type { DeviceDTO, WifiNetworkDTO } from "../../../../shared/dtos/NetworkD
 import type { AttackLabScenario } from "../catalog/types";
 import { WordlistManagerModal } from "./WordlistManagerModal";
 import { useI18n } from "../../../i18n";
+import { ErrorBoundary } from "../../../components/shared/ErrorBoundary";
 import { parseWifiEvidence, type ParsedWifiEvidence } from "../logic/parseWifiEvidence";
 
 const inputStyle: React.CSSProperties = { width: "100%", background: "rgba(0,0,0,0.35)", border: "1px solid rgba(0,255,136,0.18)", color: "#b7ffe2", padding: "6px 8px", fontSize: 12, outline: "none", fontFamily: "inherit" };
@@ -266,10 +267,9 @@ export const LabModeView: React.FC<LabModeViewProps> = ({
         </div>
 
         {/* MODAL DE DICCIONARIO (Se renderiza condicionalmente) */}
-        <WordlistManagerModal 
-            isOpen={showWordlist} 
-            onClose={() => setShowWordlist(false)} 
-        />
+        <ErrorBoundary label="ATTACK_LAB_PASSWORD_VAULT">
+          <WordlistManagerModal isOpen={showWordlist} onClose={() => setShowWordlist(false)} />
+        </ErrorBoundary>
     </>
   );
 };

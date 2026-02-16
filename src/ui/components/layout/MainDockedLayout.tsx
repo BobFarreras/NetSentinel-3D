@@ -385,7 +385,7 @@ export const MainDockedLayout = ({
                         <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} undockTitle={undockTitle} closeTitle={closeTitle} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
-                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                            <SettingsPanel onClose={() => setShowSettings(false)} identity={identity} />
                           </Suspense>
                         </div>
                       </div>
@@ -412,7 +412,7 @@ export const MainDockedLayout = ({
                         <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} undockTitle={undockTitle} closeTitle={closeTitle} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
-                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                            <SettingsPanel onClose={() => setShowSettings(false)} identity={identity} />
                           </Suspense>
                         </div>
                       </div>
@@ -448,7 +448,7 @@ export const MainDockedLayout = ({
                         <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} undockTitle={undockTitle} closeTitle={closeTitle} />
                         <div style={{ flex: 1, minHeight: 0 }}>
                           <Suspense fallback={null}>
-                            <SettingsPanel onClose={() => setShowSettings(false)} />
+                            <SettingsPanel onClose={() => setShowSettings(false)} identity={identity} />
                           </Suspense>
                         </div>
                       </div>
@@ -458,7 +458,7 @@ export const MainDockedLayout = ({
                       <DockHeader title="SETTINGS" onUndock={() => void undockPanel("settings")} onClose={() => setShowSettings(false)} undockTitle={undockTitle} closeTitle={closeTitle} />
                       <div style={{ flex: 1, minHeight: 0 }}>
                         <Suspense fallback={null}>
-                          <SettingsPanel onClose={() => setShowSettings(false)} />
+                          <SettingsPanel onClose={() => setShowSettings(false)} identity={identity} />
                         </Suspense>
                       </div>
                     </div>
@@ -701,7 +701,7 @@ export const MainDockedLayout = ({
         <DetachedWindowPortal title={detachedSettingsTitle} onClose={() => void dockPanel("settings")} width={980} height={740}>
           <DetachedShell title="SETTINGS" dockAria="DOCK_SETTINGS" onDock={() => void dockPanel("settings")} dockTitle={dockTitle}>
             <Suspense fallback={null}>
-              <SettingsPanel onClose={() => setShowSettings(false)} />
+              <SettingsPanel onClose={() => setShowSettings(false)} identity={identity} />
             </Suspense>
           </DetachedShell>
         </DetachedWindowPortal>

@@ -2,10 +2,13 @@
 // Descripcion: panel de settings (UX). Incluye selector de idioma e "Field Manual" con leyenda visual del 3D.
 
 import React from "react";
+import type { HostIdentity } from "../../../../shared/dtos/NetworkDTOs";
 import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
 import { useSettingsPanelState } from "../hooks/useSettingsPanelState";
 import { useI18n } from "../../../i18n";
 import { FieldManualView } from "./field_manual/FieldManualView";
+import { WordlistManagerModal } from "../../attack_lab/panel/WordlistManagerModal";
+import { ErrorBoundary } from "../../../components/shared/ErrorBoundary";
 
 const panelStyle: React.CSSProperties = {
   width: "100%",
@@ -95,9 +98,10 @@ const selectStyle: React.CSSProperties = {
   padding: "0 10px",
 };
 
-export const SettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose: _onClose }) => {
+export const SettingsPanel: React.FC<{ onClose: () => void; identity?: HostIdentity | null }> = ({ onClose: _onClose, identity = null }) => {
   const state = useSettingsPanelState();
   const { t } = useI18n();
+  const [showPasswords, setShowPasswords] = React.useState(false);
 
   const localStyles = `
     @keyframes nsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -160,6 +164,35 @@ export const SettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose: _onC
                 ))}
               </select>
             </div>
+
+            <div style={sectionTitle}>{t("settings.passwords.sectionTitle")}</div>
+            <div style={formRow}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ ...helpText, fontWeight: 900, color: HUD_COLORS.accentGreen }}>{t("settings.passwords.sectionTitle")}</div>
+                <div style={helpText}>{t("settings.passwords.sectionHelp")}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPasswords(true)}
+                style={{
+                  height: 32,
+                  padding: "0 12px",
+                  borderRadius: 2,
+                  border: "1px solid rgba(0,229,255,0.35)",
+                  background: "rgba(0,229,255,0.10)",
+                  color: HUD_COLORS.accentCyan,
+                  cursor: "pointer",
+                  fontFamily: HUD_TYPO.mono,
+                  fontSize: 12,
+                  fontWeight: 900,
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                }}
+                aria-label="SETTINGS_OPEN_PASSWORDS"
+              >
+                {t("settings.passwords.openButton")}
+              </button>
+            </div>
           </>
         )}
 
@@ -167,6 +200,10 @@ export const SettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose: _onC
           <FieldManualView />
         )}
       </div>
+
+      <ErrorBoundary label="SETTINGS_PASSWORD_VAULT">
+        <WordlistManagerModal isOpen={showPasswords} onClose={() => setShowPasswords(false)} identity={identity} />
+      </ErrorBoundary>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 // src-tauri/src/infrastructure/router_audit/chrome_auditor.rs
+// Auditor de gateway via headless Chrome: intenta credenciales preset (configurables) y sincroniza dispositivos desde el DOM del router.
 
 use crate::domain::{
     entities::{Device, RouterAuditResult},
@@ -12,7 +13,6 @@ use std::thread;
 use std::time::Duration;
 
 use super::browser_driver::BrowserDriver;
-use super::credentials::DEFAULT_GATEWAY_CREDENTIALS;
 use super::dom_parser::parse_router_text;
 use super::enrichment::enrich_router_devices;
 use super::scripts::ScriptArsenal;
@@ -24,11 +24,19 @@ use super::scripts::ScriptArsenal;
 // - Se ejecuta en `spawn_blocking` porque `headless_chrome` y `sleep` bloquean.
 pub struct ChromeAuditor {
     log_callback: Arc<dyn Fn(String) + Send + Sync>,
+    // Provider de credenciales candidato (user/pass) por gateway_ip.
+    // Se inyecta desde `lib.rs` para:
+    // - usar presets persistidos (no hardcodeados)
+    // - permitir que el operador borre/edite el diccionario desde UI
+    credential_provider: Arc<dyn Fn(&str) -> Vec<(String, String)> + Send + Sync>,
 }
 
 impl ChromeAuditor {
-    pub fn new(logger: Arc<dyn Fn(String) + Send + Sync>) -> Self {
-        Self { log_callback: logger }
+    pub fn new(
+        logger: Arc<dyn Fn(String) + Send + Sync>,
+        credential_provider: Arc<dyn Fn(&str) -> Vec<(String, String)> + Send + Sync>,
+    ) -> Self {
+        Self { log_callback: logger, credential_provider }
     }
 
     fn log(&self, msg: &str) {
@@ -53,7 +61,18 @@ impl ChromeAuditor {
                 if let Ok(tab) = browser.new_tab() {
                     let url = format!("http://{}/", ip);
 
-                    for (user, pass) in DEFAULT_GATEWAY_CREDENTIALS {
+                    let candidates = (self.credential_provider)(ip);
+                    if candidates.is_empty() {
+                        self.log("⚠️ Sin presets de credenciales para este gateway. Aborta brute-force.");
+                        return RouterAuditResult {
+                            target_ip: ip.to_string(),
+                            vulnerable: false,
+                            credentials_found: None,
+                            message: "No credential presets configured".to_string(),
+                        };
+                    }
+
+                    for (user, pass) in candidates.iter() {
                         if self.try_credentials(&tab, &url, user, pass) {
                             self.log(&format!("🔓 ACCESO CONFIRMADO: {}/{}", user, pass));
                             self.log("🚀 Credenciales validas. Cerrando auditoria para iniciar sync...");
@@ -191,9 +210,10 @@ impl RouterAuditorPort for ChromeAuditor {
         let ip_for_task = ip.to_string();
         let ip_for_err = ip_for_task.clone();
         let log_callback = self.log_callback.clone();
+        let credential_provider = self.credential_provider.clone();
 
         tauri::async_runtime::spawn_blocking(move || {
-            let auditor = ChromeAuditor { log_callback };
+            let auditor = ChromeAuditor { log_callback, credential_provider };
             auditor.audit_gateway_blocking(&ip_for_task)
         })
         .await
@@ -219,11 +239,12 @@ impl RouterAuditorPort for ChromeAuditor {
         let user = user.to_string();
         let pass = pass.to_string();
         let log_callback = self.log_callback.clone();
+        let credential_provider = self.credential_provider.clone();
 
         let headless = ChromeAuditor::should_run_chrome_headless();
 
         tauri::async_runtime::spawn_blocking(move || {
-            let auditor = ChromeAuditor { log_callback };
+            let auditor = ChromeAuditor { log_callback, credential_provider };
             auditor.fetch_connected_devices_blocking(&ip, &user, &pass, headless)
         })
         .await

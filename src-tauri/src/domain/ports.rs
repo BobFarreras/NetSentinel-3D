@@ -3,7 +3,7 @@
 
 use async_trait::async_trait;
 use crate::domain::entities::{
-    Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials, HostIdentity
+    Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials, HostIdentity, GatewayCredentialPreset
 }; 
 use crate::domain::entities::{AttackLabRequest, AttackLabLogEvent, AttackLabExitEvent};
 use crate::domain::entities::TrafficPacket;
@@ -55,6 +55,14 @@ pub trait CredentialStorePort: Send + Sync {
     async fn save_gateway_credentials(&self, creds: GatewayCredentials) -> Result<(), String>;
     async fn get_gateway_credentials(&self, gateway_ip: &str) -> Result<Option<GatewayCredentials>, String>;
     async fn delete_gateway_credentials(&self, gateway_ip: &str) -> Result<(), String>;
+}
+
+// PORT 3d: DICCIONARIO DE PRESETS (user/pass) PARA GATEWAYS
+//
+// Sync: filesystem local simple. Se usa para sugerir/auto-probar credenciales en auditorias.
+pub trait GatewayCredentialPresetRepositoryPort: Send + Sync {
+    fn load(&self) -> Result<Vec<GatewayCredentialPreset>, String>;
+    fn save(&self, presets: &[GatewayCredentialPreset]) -> Result<(), String>;
 }
 
 // PORT 4: ESCANER WIFI

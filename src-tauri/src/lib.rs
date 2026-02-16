@@ -1,4 +1,5 @@
 // src-tauri/src/lib.rs
+// Entry point Tauri: wiring de infraestructura/aplicacion, registro de comandos y eventos globales.
 
 // 1. Modulos
 mod api;
@@ -12,6 +13,7 @@ use tauri::{Emitter, Manager};
 use crate::application::attack_lab::AttackLabService;
 use crate::application::audit::AuditService;
 use crate::application::credentials::CredentialService;
+use crate::application::gateway_credential_presets::GatewayCredentialPresetService;
 use crate::application::history::HistoryService;
 use crate::application::jammer::JammerService;
 use crate::application::opsec::{MacChangerService, OpSecService};
@@ -24,6 +26,7 @@ use crate::application::wordlist::WordlistService;
 
 // 2. Imports propios (Infraestructura)
 use crate::infrastructure::persistence::credential_store::KeyringCredentialStore;
+use crate::infrastructure::persistence::gateway_credential_preset_repository::FileGatewayCredentialPresetRepository;
 use crate::infrastructure::persistence::latest_snapshot_repository::FileLatestSnapshotRepository;
 use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
@@ -58,12 +61,29 @@ pub fn run() {
             // Seed opcional del OUI para mejorar resolucion de vendors en el primer arranque.
             VendorResolver::ensure_oui_seeded();
 
+            // Presets de credenciales (user/pass) para gateways: JSON local en app_config_dir
+            // Nota: se construye temprano porque el auditor infra lo consume via callback (no hardcode).
+            let gateway_preset_repo = Arc::new(FileGatewayCredentialPresetRepository::new(app.handle()));
+            let gateway_preset_service = GatewayCredentialPresetService::new(gateway_preset_repo.clone());
+
             // Auditor con logger conectado a eventos Tauri.
             let handle = app.handle().clone();
             let logger_callback = Arc::new(move |msg: String| {
                 let _ = handle.emit("audit-log", msg);
             });
-            let auditor_infra = Arc::new(ChromeAuditor::new(logger_callback));
+
+            // Inyectamos el diccionario de presets en el auditor (configurable por UI).
+            // Usamos una instancia dedicada del servicio para evitar acoplar Tauri State al callback.
+            let preset_service_for_auditor = Arc::new(GatewayCredentialPresetService::new(gateway_preset_repo));
+            let credential_provider = Arc::new(move |gateway_ip: &str| {
+                preset_service_for_auditor
+                    .list(gateway_ip)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|p| (p.user, p.pass))
+                    .collect::<Vec<(String, String)>>()
+            });
+            let auditor_infra = Arc::new(ChromeAuditor::new(logger_callback, credential_provider));
 
             let history_infra = Arc::new(FileHistoryRepository);
             let latest_snapshot_infra = Arc::new(FileLatestSnapshotRepository);
@@ -90,6 +110,7 @@ pub fn run() {
             // Infra y Wordlist
             let wordlist_repo = Arc::new(FileWordlistRepository::new(app.handle()));
             let wordlist_service = WordlistService::new(wordlist_repo);
+            // gateway_preset_service ya esta creado arriba.
             //
             let settings_store_infra = Arc::new(FileSettingsStore::new(app.handle()));
             let settings_service = Arc::new(SettingsService::new(settings_store_infra));
@@ -117,6 +138,7 @@ pub fn run() {
 
             // Manage State
             app.manage(wordlist_service);
+            app.manage(gateway_preset_service);
 
             // Registramos el estado
             app.manage(settings_service);
@@ -140,6 +162,10 @@ pub fn run() {
             api::commands::save_gateway_credentials,
             api::commands::get_gateway_credentials,
             api::commands::delete_gateway_credentials,
+            api::commands::list_gateway_credential_presets,
+            api::commands::add_gateway_credential_preset,
+            api::commands::remove_gateway_credential_preset,
+            api::commands::update_gateway_credential_preset,
             // Wifi
             api::commands::scan_airwaves,
             api::commands::wifi_connect,

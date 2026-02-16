@@ -280,6 +280,20 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.62] - Settings: Password Vault (WiFi wordlist + gateway creds) (2026-02-16)
+### UI (settings)
+- Nuevo "Password Vault" en Settings (debajo de idioma):
+  - acceso al gestor de wordlists WiFi (AMMO BOX)
+  - gestion de credenciales del gateway (Keyring del SO) para login directo en auditorias/sync
+- Settings recibe `identity` para conocer `gatewayIp` (docked y detached).
+
+### i18n
+- Nuevas claves `settings.passwords.*` (CA/ES/EN).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.60] - UI: sincronizacion de idioma entre ventana principal y paneles detached (2026-02-16)
 ### i18n (frontend)
 - `src/ui/i18n/I18nProvider.tsx`:

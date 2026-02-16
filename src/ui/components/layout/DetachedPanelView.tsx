@@ -222,7 +222,7 @@ export const DetachedPanelView = ({
             )}
             {panel === "settings" && (
               <Suspense fallback={null}>
-                <SettingsPanel onClose={() => {}} />
+                <SettingsPanel onClose={() => {}} identity={identity} />
               </Suspense>
             )}
           </>
