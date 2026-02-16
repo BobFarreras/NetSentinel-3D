@@ -13,6 +13,8 @@ export const httpFingerprintHeadersScenario: AttackLabScenario = {
     "Auditoria de superficie web (pasiva): HEAD en HTTP/HTTPS, captura status/redirects/headers (auth, cookies, security headers) y genera un VERDICT accionable.",
   mode: "external",
   category: "DEVICE",
+  // Evitamos bucles: HTTP -> IoT -> HTTP. Si el operador quiere IoT, lo lanza manualmente.
+  nextScenarioIds: ["device_recon_ping_tracert"],
   isSupported: () => {
     if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows. Usa modo CUSTOM en otros SO." };
     return { supported: true };

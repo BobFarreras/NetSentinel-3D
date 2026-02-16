@@ -114,6 +114,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
 
   const scenarios = useMemo(() => getAttackLabScenarios(), []);
   const selectedScenario = useMemo(() => scenarios.find((s) => s.id === scenarioId) || null, [scenarios, scenarioId]);
+  const scenarioById = useMemo(() => new Map(scenarios.map((s) => [s.id, s])), [scenarios]);
 
   const isIpv4 = (value: string | undefined | null): boolean => {
     if (!value) return false;
@@ -370,6 +371,30 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
 
   const isAnyRunning = runtime.state.isRunning;
   const displayRows = runtime.state.rows;
+  const canRunNext = !runtime.state.isRunning && Boolean(localTarget);
+
+  const nextSteps = useMemo(() => {
+    if (!selectedScenario?.nextScenarioIds || selectedScenario.nextScenarioIds.length === 0) return [];
+    // Solo mostrar sugerencias cuando hay salida (para no distraer antes de ejecutar).
+    if (displayRows.length === 0) return [];
+    return selectedScenario.nextScenarioIds
+      .map((id) => scenarioById.get(id))
+      .filter((s): s is NonNullable<typeof s> => Boolean(s))
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        disabled: !canRunNext,
+        onRun: () => {
+          setMode("LAB");
+          setScenarioId(s.id);
+          // Dispara auto-run del nuevo escenario sin depender de clicks adicionales.
+          setAutoRunToken((t) => t + 1);
+          // Importante: NO emitimos `autoRun:true` porque este panel tambien escucha el evento y
+          // dispararia un segundo auto-run (doble ejecucion). Sincronizamos solo contexto.
+          void windowingAdapter.emitAttackLabContext({ targetDevice: localTarget, scenarioId: s.id, autoRun: false });
+        },
+      }));
+  }, [selectedScenario?.id, selectedScenario?.nextScenarioIds, scenarioById, displayRows.length, canRunNext, localTarget]);
 
   const statusText = (() => {
     const s = runtime.state;
@@ -487,7 +512,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
           )}
         </div>
 
-        <AuditConsole rows={displayRows} error={runtime.state.error} />
+        <AuditConsole rows={displayRows} error={runtime.state.error} nextSteps={nextSteps} />
       </div>
 
       {/* MODAL CON STATUS OPSEC */}

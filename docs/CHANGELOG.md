@@ -96,6 +96,21 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
+
+## [v0.8.54] - Attack Lab: IoT perfil real + Next Steps (2026-02-16)
+### Attack Lab (catalogo)
+- Nuevo: `IoT: Perfilado de riesgo (puertos comunes)` (`iot_risk_profile_quick_ports`) con probe TCP rapido y VERDICT/WHY/NEXT.
+- Limpieza: se elimina el escenario IoT simulado para evitar confundir al operador.
+
+### Attack Lab (UX)
+- Botones de "Siguiente paso" basados en metadata del escenario (`nextScenarioIds`) para encadenar auditorias sin perder el target.
+- Fix: evitar doble ejecucion al usar "Siguiente paso" (auto-run solo una vez).
+- Sync: seleccionar target en Attack Lab ya reflejaba seleccion en escena; ahora al seleccionar un nodo en la escena, el target del Attack Lab se actualiza (sin auto-ejecutar).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 - Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
 
 ### UI (scene3d)

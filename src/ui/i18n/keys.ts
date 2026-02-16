@@ -226,6 +226,7 @@ export const I18N_KEYS = [
   "attackLab.console.output",
   "attackLab.console.errorPrefix",
   "attackLab.console.waiting",
+  "attackLab.console.nextSteps",
   "attackLab.custom.binaryLabel",
   "attackLab.custom.binaryPlaceholder",
   "attackLab.custom.timeoutLabel",

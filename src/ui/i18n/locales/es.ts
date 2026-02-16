@@ -247,6 +247,7 @@ export const ES_STRINGS: Record<I18nKey, string> = {
   "attackLab.console.output": "SALIDA DE CONSOLA:",
   "attackLab.console.errorPrefix": "ERROR",
   "attackLab.console.waiting": "Sin ejecucion activa.",
+  "attackLab.console.nextSteps": "SIGUIENTE PASO",
   "attackLab.custom.binaryLabel": "BINARIO (ruta absoluta)",
   "attackLab.custom.binaryPlaceholder": "Ej: C:\\Windows\\System32\\ping.exe",
   "attackLab.custom.timeoutLabel": "TIMEOUT (ms)",

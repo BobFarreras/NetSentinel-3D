@@ -111,6 +111,27 @@ function App() {
   const attackLabSync = useAttackLabDetachedSync();
   const { detachedPanelReady } = useDetachedRuntime(detachedContext);
 
+  // Sync directo: seleccionar un nodo en escena/radar actualiza el TARGET del Attack Lab (sin cambiar scenario).
+  // Regla: nunca auto-ejecutamos por un simple cambio de seleccion y no forzamos apertura del panel.
+  useEffect(() => {
+    if (!selectedDevice) return;
+    if (attackLabTarget?.ip === selectedDevice.ip) return;
+    setAttackLabTarget(selectedDevice);
+
+    // Si el panel esta desacoplado, sincronizamos contexto para que el selector TARGET coincida.
+    if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
+      void attackLabSync.emitAttackLabContext({ targetDevice: selectedDevice, scenarioId: attackLabScenarioId ?? undefined, autoRun: false });
+    }
+  }, [
+    selectedDevice?.ip,
+    attackLabTarget?.ip,
+    docking.detachedPanels.attack_lab,
+    docking.detachedModes.attack_lab,
+    attackLabScenarioId,
+    attackLabSync,
+    selectedDevice,
+  ]);
+
   const detachedTargetDevice = useMemo(
     () => (detachedContext?.targetIp ? devices.find((d) => d.ip === detachedContext.targetIp) || null : selectedDevice),
     [detachedContext?.targetIp, devices, selectedDevice]

@@ -12,6 +12,7 @@ export const routerReconPingTracertScenario: AttackLabScenario = {
     "Baseline de conectividad hacia el gateway: resuelve PTR (si existe), mide latencia (ping) y traza ruta (tracert). Util para explicar fallos antes de auditar puertos/servicios.",
   mode: "external",
   category: "ROUTER",
+  nextScenarioIds: ["device_http_headers"],
   isSupported: () => {
     if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows. Usa modo CUSTOM en otros SO." };
     return { supported: true };

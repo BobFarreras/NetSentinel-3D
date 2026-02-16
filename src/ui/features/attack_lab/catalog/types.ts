@@ -30,6 +30,9 @@ export type AttackLabScenario = {
   mode: ScenarioMode;
   category: "ROUTER" | "DEVICE" | "WIFI" | "IOT" | "EDU";
 
+  // UI: escenarios sugeridos a ejecutar despues (flujo guiado). Son ids del propio catalogo.
+  nextScenarioIds?: string[];
+
   // CLI (Mode External)
   buildRequest?: (ctx: { device: DeviceDTO; identity: HostIdentity | null }) => AttackLabRequestDTO;
 
@@ -41,4 +44,3 @@ export type AttackLabScenario = {
 
   isSupported?: (ctx: { device: DeviceDTO; identity: HostIdentity | null }) => ScenarioSupport;
 };
-

@@ -7,9 +7,10 @@ import { useI18n } from "../../../i18n";
 interface AuditConsoleProps {
   rows: { ts: number; stream: "stdout" | "stderr"; line: string }[];
   error?: string | null;
+  nextSteps?: { id: string; title: string; onRun: () => void; disabled?: boolean }[];
 }
 
-export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
+export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error, nextSteps = [] }) => {
   const { t } = useI18n();
   const logRef = useRef<HTMLDivElement>(null);
   const [animatingIndex, setAnimatingIndex] = useState(0);
@@ -110,6 +111,35 @@ export const AuditConsole: React.FC<AuditConsoleProps> = ({ rows, error }) => {
       <div style={{ paddingBottom: 6, color: error ? "#ff7777" : "rgba(183,255,226,0.75)", fontSize: 12 }}>
         {error ? `${t("attackLab.console.errorPrefix")}: ${error}` : t("attackLab.console.output")}
       </div>
+
+      {nextSteps.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingBottom: 8 }}>
+          <div style={{ color: "rgba(183,255,226,0.7)", fontSize: 11, letterSpacing: 0.6, fontWeight: 900 }}>
+            {t("attackLab.console.nextSteps")}:
+          </div>
+          {nextSteps.map((s) => (
+            <button
+              key={s.id}
+              onClick={s.onRun}
+              disabled={s.disabled}
+              style={{
+                background: s.disabled ? "transparent" : "rgba(0,255,136,0.10)",
+                border: `1px solid ${s.disabled ? "rgba(0,255,136,0.12)" : "rgba(0,255,136,0.45)"}`,
+                color: s.disabled ? "rgba(183,255,226,0.35)" : "#00ff88",
+                padding: "6px 10px",
+                cursor: s.disabled ? "not-allowed" : "pointer",
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: 0.4,
+                fontFamily: "'Consolas', 'Courier New', monospace",
+              }}
+              title={s.title}
+            >
+              {s.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div ref={logRef} style={{
         flex: 1,

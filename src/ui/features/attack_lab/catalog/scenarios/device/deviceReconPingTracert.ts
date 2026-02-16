@@ -12,6 +12,7 @@ export const deviceReconPingTracertScenario: AttackLabScenario = {
     "Baseline de conectividad hacia un host: PTR (si existe), ping y ruta. Util para explicar falsos negativos antes de auditar servicios.",
   mode: "external",
   category: "DEVICE",
+  nextScenarioIds: ["device_http_headers", "iot_risk_profile_quick_ports"],
   isSupported: () => {
     if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows. Usa modo CUSTOM en otros SO." };
     return { supported: true };
@@ -24,4 +25,3 @@ export const deviceReconPingTracertScenario: AttackLabScenario = {
     };
   },
 };
-

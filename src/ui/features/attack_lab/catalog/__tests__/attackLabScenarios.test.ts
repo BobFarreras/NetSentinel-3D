@@ -12,8 +12,8 @@ describe("attackLabScenarios catalog", () => {
       "router_recon_ping_tracert",
       "device_recon_ping_tracert",
       "device_http_headers",
+      "iot_risk_profile_quick_ports",
       "edu_pmkid_exposure_sim",
-      "edu_iot_risk_profile",
     ]);
   });
 });
