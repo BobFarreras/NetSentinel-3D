@@ -36,17 +36,43 @@ export const getScenarioManual = (scenarioId: string, lang: UILanguage): Scenari
             : "Ping/traceroute may fail even if the router exposes services (ICMP filtered). Confirm with a TCP/port scan.",
         ],
       };
+    case "device_recon_ping_tracert":
+      return {
+        how: ES
+          ? "Baseline de conectividad hacia un host: PTR (si existe), ping y ruta. Te ayuda a explicar falsos negativos (timeouts) antes de auditar servicios HTTP/TCP."
+          : CA
+          ? "Baseline de connectivitat cap a un host: PTR (si existeix), ping i ruta. Ajuda a explicar falsos negatius (timeouts) abans d'auditar serveis HTTP/TCP."
+          : "Connectivity baseline towards a host: PTR (if any), ping and route. Helps explain timeouts before auditing HTTP/TCP services.",
+        mitigations: [
+          ES ? "Si es un dispositivo crítico: segmentación y ACLs para limitar quién puede alcanzarlo." : CA ? "Si es un dispositiu crític: segmentació i ACLs per limitar qui el pot arribar." : "For critical devices: segment and use ACLs to restrict reachability.",
+          ES ? "Aplicar hardening en el host (firewall, servicios mínimos) y monitorizar latencia/caídas." : CA ? "Aplicar hardening al host (firewall, serveis mínims) i monitoritzar latència/caigudes." : "Harden the host (firewall, minimal services) and monitor latency/outages.",
+        ],
+        notes: [
+          ES
+            ? "ICMP puede estar filtrado: PING_OK=false no implica que no haya puertos TCP abiertos."
+            : CA
+            ? "ICMP pot estar filtrat: PING_OK=false no implica que no hi hagi ports TCP oberts."
+            : "ICMP may be filtered: PING_OK=false does not imply TCP ports are closed.",
+        ],
+      };
     case "device_http_headers":
       return {
         how: ES
-          ? "Fingerprint de cabeceras HTTP: identifica software/stack expuesto (Server, WWW-Authenticate, cookies) sin autenticacion. Ayuda a priorizar hardening y detectar defaults."
+          ? "Baseline de superficie web: intenta HEAD sobre HTTP/HTTPS y extrae headers clave (Server, WWW-Authenticate, Set-Cookie, Location). Sirve para inventario rapido y priorizar hardening."
           : CA
-          ? "Fingerprint de capçaleres HTTP: identifica software/stack exposat (Server, WWW-Authenticate, cookies) sense autenticacio. Ajuda a prioritzar hardening i detectar defaults."
+          ? "Baseline de superficie web: intenta HEAD sobre HTTP/HTTPS i extreu headers clau (Server, WWW-Authenticate, Set-Cookie, Location). Serveix per inventari rapid i prioritzar hardening."
           : "HTTP header fingerprinting: identifies exposed software/stack (Server, WWW-Authenticate, cookies) without auth. Helps prioritize hardening and detect defaults.",
         mitigations: [
           ES ? "Deshabilitar servicios HTTP no necesarios en dispositivos IoT/routers." : CA ? "Deshabilitar serveis HTTP no necessaris en IoT/routers." : "Disable unnecessary HTTP services on IoT/routers.",
           ES ? "Ocultar/versionar minimamente banners (cuando sea posible) y forzar TLS." : CA ? "Minimitzar banners (si es possible) i forçar TLS." : "Minimize banners (when possible) and enforce TLS.",
           ES ? "Cambiar credenciales por defecto y limitar origen (ACL/firewall LAN)." : CA ? "Canviar credencials per defecte i limitar origen (ACL/firewall LAN)." : "Change default credentials and restrict origin (LAN ACL/firewall).",
+        ],
+        notes: [
+          ES
+            ? "Qué mirar: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), y ausencia de HSTS/CSP en paneles expuestos."
+            : CA
+            ? "Que mirar: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), i absencia d'HSTS/CSP en panells exposats."
+            : "Look for: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), and missing HSTS/CSP on exposed panels.",
         ],
       };
     case "wifi_brute_force_dict":

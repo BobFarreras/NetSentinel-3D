@@ -3,6 +3,7 @@
 
 import type { AttackLabScenario } from "./types";
 import { routerReconPingTracertScenario } from "./scenarios/router/routerReconPingTracert";
+import { deviceReconPingTracertScenario } from "./scenarios/device/deviceReconPingTracert";
 import { httpFingerprintHeadersScenario } from "./scenarios/http/httpFingerprintHeaders";
 import { wifiDictionaryAttackScenario } from "./scenarios/wifi/wifiDictionaryAttack";
 import { pmkidExposureSimScenario } from "./scenarios/wifi/pmkidExposureSim";
@@ -12,6 +13,7 @@ export const getAttackLabScenarios = (): AttackLabScenario[] => {
   return [
     wifiDictionaryAttackScenario,
     routerReconPingTracertScenario,
+    deviceReconPingTracertScenario,
     httpFingerprintHeadersScenario,
     pmkidExposureSimScenario,
     iotVendorOuiRiskProfileSimScenario,

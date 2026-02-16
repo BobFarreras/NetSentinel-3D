@@ -10,10 +10,10 @@ describe("attackLabScenarios catalog", () => {
     expect(ids).toEqual([
       "wifi_brute_force_dict",
       "router_recon_ping_tracert",
+      "device_recon_ping_tracert",
       "device_http_headers",
       "edu_pmkid_exposure_sim",
       "edu_iot_risk_profile",
     ]);
   });
 });
-
