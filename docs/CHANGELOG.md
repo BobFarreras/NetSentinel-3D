@@ -257,6 +257,11 @@ Nota:
   - `src/ui/i18n/locales/ca.ts`
   - `src/ui/i18n/locales/en.ts`
 
+### Refactor
+- `src/ui/components/layout/TopBar.tsx`:
+  - extraido estado a `src/ui/components/layout/topbar/useTopBarState.ts`.
+  - iconos/estilos extraidos a `src/ui/components/layout/topbar/topbarIcons.tsx` y `src/ui/components/layout/topbar/topbarStyles.ts` (sin cambios de UI).
+
 ### Testing
 - `src/ui/features/settings/__tests__/SettingsPanel.test.tsx`:
   - se mockea `FieldManualView` para validar cambio de tab sin depender del render 3D interno y evitar timeout espurio.

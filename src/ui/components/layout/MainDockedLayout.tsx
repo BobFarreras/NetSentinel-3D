@@ -6,12 +6,13 @@ import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/
 import { TopBar } from "./TopBar";
 import { HistoryPanel } from "../../features/history/components/HistoryPanel";
 import type { DetachablePanelId } from "../../../adapters/windowingAdapter";
-import { useI18n } from "../../i18n";
 import { DockedLeftArea } from "./main_docked/DockedLeftArea";
 import { DockedScene } from "./main_docked/DockedScene";
 import { DockedConsole } from "./main_docked/DockedConsole";
 import { DockedDeviceSidebar } from "./main_docked/DockedDeviceSidebar";
 import { DetachedPanels } from "./main_docked/DetachedPanels";
+import { useMainDockedLayoutTitles } from "./main_docked/useMainDockedLayoutTitles";
+import { mainDockedBodyStyle, mainDockedCenterColStyle, mainDockedCenterTopStyle, mainDockedRootStyle } from "./main_docked/mainDockedLayoutStyles";
 
 interface MainDockedLayoutProps {
   scanning: boolean;
@@ -130,38 +131,10 @@ export const MainDockedLayout = ({
   isResizing,
   showDockSettings,
 }: MainDockedLayoutProps) => {
-  const { t } = useI18n();
-  const undockTitle = t("common.undockPanel");
-  const closeTitle = t("common.closePanel");
-  const dockTitle = t("common.dockPanel");
-  const detachedConsoleTitle = t("layout.detached.consoleTitle");
-  const detachedDeviceTitlePrefix = t("layout.detached.deviceTitlePrefix");
-  const detachedRadarTitle = t("layout.detached.radarTitle");
-  const detachedAttackLabTitle = t("layout.detached.attackLabTitle");
-  const detachedSceneTitle = t("layout.detached.sceneTitle");
-  const detachedSettingsTitle = t("layout.detached.settingsTitle");
+  const titles = useMainDockedLayoutTitles();
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100vw",
-        height: "100vh",
-        background: "#050505",
-        color: "#0f0",
-        overflow: "hidden",
-        fontFamily: "'Consolas', 'Courier New', monospace",
-        fontSize: "16px",
-        userSelect: isResizing ? "none" : "auto",
-        boxSizing: "border-box",
-        // Borde global para "cerrar" el HUD y eliminar el efecto de ventana sin limite (especialmente abajo).
-        border: "1px solid #0a3a2a",
-        borderBottom: "4px solid rgba(0,255,136,0.22)",
-        boxShadow:
-          "inset 0 -1px 0 rgba(0,255,136,0.18), inset 0 0 0 1px rgba(0,0,0,0.55), 0 14px 34px rgba(0,0,0,0.55)",
-      }}
-    >
+    <div style={mainDockedRootStyle({ isResizing })}>
       <TopBar
         scanning={scanning}
         activeNodes={devices.length}
@@ -177,9 +150,9 @@ export const MainDockedLayout = ({
         identity={identity}
       />
 
-      <div style={{ flex: 1, minHeight: 0, display: "flex", overflow: "hidden" }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", height: "100%", minWidth: 0, overflow: "hidden" }}>
-          <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 0 }}>
+      <div style={mainDockedBodyStyle}>
+        <div style={mainDockedCenterColStyle}>
+          <div style={mainDockedCenterTopStyle}>
           {showHistory && (
             <div style={{ position: "absolute", top: 20, left: 20, zIndex: 20 }}>
               <HistoryPanel
@@ -217,8 +190,8 @@ export const MainDockedLayout = ({
               attackLabTarget={attackLabTarget}
               attackLabScenarioId={attackLabScenarioId}
               attackLabAutoRunToken={attackLabAutoRunToken}
-              undockTitle={undockTitle}
-              closeTitle={closeTitle}
+              undockTitle={titles.undockTitle}
+              closeTitle={titles.closeTitle}
             />
 
             <DockedScene
@@ -239,8 +212,8 @@ export const MainDockedLayout = ({
           consoleHeight={consoleHeight}
           startResizingConsole={startResizingConsole}
           undockPanel={undockPanel}
-          undockTitle={undockTitle}
-          closeTitle={closeTitle}
+          undockTitle={titles.undockTitle}
+          closeTitle={titles.closeTitle}
           systemLogs={systemLogs}
           devices={devices}
           selectedDevice={selectedDevice}
@@ -256,9 +229,9 @@ export const MainDockedLayout = ({
           selectedDevice={selectedDevice}
           selectDevice={selectDevice}
           undockPanel={undockPanel}
-          undockTitle={undockTitle}
-          closeTitle={closeTitle}
-          t={t}
+          undockTitle={titles.undockTitle}
+          closeTitle={titles.closeTitle}
+          t={titles.t}
           auditResults={auditResults}
           consoleLogs={consoleLogs}
           auditing={auditing}
@@ -276,13 +249,13 @@ export const MainDockedLayout = ({
         detachedPanels={detachedPanels}
         detachedModes={detachedModes}
         dockPanel={dockPanel}
-        dockTitle={dockTitle}
-        detachedConsoleTitle={detachedConsoleTitle}
-        detachedDeviceTitlePrefix={detachedDeviceTitlePrefix}
-        detachedRadarTitle={detachedRadarTitle}
-        detachedAttackLabTitle={detachedAttackLabTitle}
-        detachedSceneTitle={detachedSceneTitle}
-        detachedSettingsTitle={detachedSettingsTitle}
+        dockTitle={titles.dockTitle}
+        detachedConsoleTitle={titles.detachedConsoleTitle}
+        detachedDeviceTitlePrefix={titles.detachedDeviceTitlePrefix}
+        detachedRadarTitle={titles.detachedRadarTitle}
+        detachedAttackLabTitle={titles.detachedAttackLabTitle}
+        detachedSceneTitle={titles.detachedSceneTitle}
+        detachedSettingsTitle={titles.detachedSettingsTitle}
         systemLogs={systemLogs}
         devices={devices}
         selectedDevice={selectedDevice}
