@@ -5,6 +5,7 @@ pub mod scan;
 pub mod history;
 pub mod snapshot;
 pub mod credentials;
+pub mod gateway_credential_presets;
 pub mod wordlist;
 pub mod opsec;
 pub mod settings;

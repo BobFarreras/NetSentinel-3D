@@ -25,6 +25,14 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
     let mut current_band = "2.4 GHz".to_string();
 
     let re_ip = Regex::new(r"^(?:\d{1,3}\.){3}\d{1,3}$").unwrap();
+    // Captura IP aunque el firmware cambie el formato del label:
+    // - "IP: 192.168.1.10"
+    // - "IP ADDR: 192.168.1.10"
+    // - "IP address: 192.168.1.10"
+    // - "Dirección IP: 192.168.1.10"
+    //
+    // Nota: hacemos match sobre `\bip\b` para evitar falsos positivos con "BSSID".
+    let re_ip_line = Regex::new(r"(?i)\bip\b[^0-9]*((?:\d{1,3}\.){3}\d{1,3})").unwrap();
     let re_mac = Regex::new(r"(?i)([0-9a-f]{2}[:-]){5}[0-9a-f]{2}").unwrap();
 
     let mut i = 0;
@@ -37,8 +45,15 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
             current_band = "2.4 GHz".to_string();
         }
 
-        if line.starts_with("IP:") {
-            let ip = line.replace("IP:", "").trim().to_string();
+        if let Some(caps) = re_ip_line.captures(line) {
+            let ip = caps
+                .get(1)
+                .map(|m| m.as_str().trim().to_string())
+                .unwrap_or_default();
+            if ip.is_empty() {
+                i += 1;
+                continue;
+            }
 
             // Nombre/alias del dispositivo (si existe).
             let mut name_found: Option<String> = None;

@@ -83,6 +83,15 @@ pub struct GatewayCredentials {
     pub saved_at: u64,
 }
 
+// 5d. PRESETS DE CREDENCIALES (gateway) - Diccionario local de pares user/pass (ligado a gateway_ip o global "*").
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct GatewayCredentialPreset {
+    pub gateway_ip: String,
+    pub user: String,
+    pub pass: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HostIdentity {

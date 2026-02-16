@@ -19,27 +19,60 @@ export const getScenarioManual = (scenarioId: string, lang: UILanguage): Scenari
     case "router_recon_ping_tracert":
       return {
         how: ES
-          ? "Recon no intrusivo: mide latencia y traza la ruta hacia el gateway. Se usa para detectar saltos inesperados, NATs, latencia anomala o segmentacion."
+          ? "Recon no intrusivo: baseline de conectividad hacia el gateway (PTR, ping y ruta). Se usa para detectar saltos inesperados, NAT/bridge/VPN, latencia anomala o segmentacion antes de auditar puertos/servicios."
           : CA
-          ? "Recon no intrusiu: mesura latencia i traça la ruta cap al gateway. Serveix per detectar salts inesperats, NATs, latencia anomala o segmentacio."
+          ? "Recon no intrusiu: baseline de connectivitat cap al gateway (PTR, ping i ruta). Serveix per detectar salts inesperats, NAT/bridge/VPN, latencia anomala o segmentacio abans d'auditar ports/serveis."
           : "Non-intrusive recon: measures latency and traces the route to the gateway. Used to detect unexpected hops, NATs, anomalous latency or segmentation.",
         mitigations: [
           ES ? "Filtrar ICMP en bordes (sin romper MTU/diagnostico interno)." : CA ? "Filtrar ICMP a la vora (sense trencar MTU/diagnostic intern)." : "Filter ICMP at edges (without breaking MTU/internal diagnostics).",
           ES ? "Reducir superficie del router (panel admin solo LAN, desactivar servicios remotos)." : CA ? "Reduir superficie del router (admin nomes LAN, desactivar serveis remots)." : "Reduce router surface (admin LAN-only, disable remote services).",
           ES ? "Segmentar: red de invitados separada del management." : CA ? "Segmentar: xarxa de convidats separada del management." : "Segment: guest network separated from management.",
         ],
+        notes: [
+          ES
+            ? "Ping/traceroute pueden fallar aunque el router tenga servicios expuestos (ICMP filtrado). Para confirmarlo, usa un scan TCP/puertos."
+            : CA
+            ? "Ping/traceroute poden fallar tot i que el router tingui serveis exposats (ICMP filtrat). Per confirmar-ho, fes un scan TCP/ports."
+            : "Ping/traceroute may fail even if the router exposes services (ICMP filtered). Confirm with a TCP/port scan.",
+        ],
+      };
+    case "device_recon_ping_tracert":
+      return {
+        how: ES
+          ? "Baseline de conectividad hacia un host: PTR (si existe), ping y ruta. Te ayuda a explicar falsos negativos (timeouts) antes de auditar servicios HTTP/TCP."
+          : CA
+          ? "Baseline de connectivitat cap a un host: PTR (si existeix), ping i ruta. Ajuda a explicar falsos negatius (timeouts) abans d'auditar serveis HTTP/TCP."
+          : "Connectivity baseline towards a host: PTR (if any), ping and route. Helps explain timeouts before auditing HTTP/TCP services.",
+        mitigations: [
+          ES ? "Si es un dispositivo crítico: segmentación y ACLs para limitar quién puede alcanzarlo." : CA ? "Si es un dispositiu crític: segmentació i ACLs per limitar qui el pot arribar." : "For critical devices: segment and use ACLs to restrict reachability.",
+          ES ? "Aplicar hardening en el host (firewall, servicios mínimos) y monitorizar latencia/caídas." : CA ? "Aplicar hardening al host (firewall, serveis mínims) i monitoritzar latència/caigudes." : "Harden the host (firewall, minimal services) and monitor latency/outages.",
+        ],
+        notes: [
+          ES
+            ? "ICMP puede estar filtrado: PING_OK=false no implica que no haya puertos TCP abiertos."
+            : CA
+            ? "ICMP pot estar filtrat: PING_OK=false no implica que no hi hagi ports TCP oberts."
+            : "ICMP may be filtered: PING_OK=false does not imply TCP ports are closed.",
+        ],
       };
     case "device_http_headers":
       return {
         how: ES
-          ? "Fingerprint de cabeceras HTTP: identifica software/stack expuesto (Server, WWW-Authenticate, cookies) sin autenticacion. Ayuda a priorizar hardening y detectar defaults."
+          ? "Baseline de superficie web: intenta HEAD sobre HTTP/HTTPS y extrae headers clave (Server, WWW-Authenticate, Set-Cookie, Location). Sirve para inventario rapido y priorizar hardening."
           : CA
-          ? "Fingerprint de capçaleres HTTP: identifica software/stack exposat (Server, WWW-Authenticate, cookies) sense autenticacio. Ajuda a prioritzar hardening i detectar defaults."
+          ? "Baseline de superficie web: intenta HEAD sobre HTTP/HTTPS i extreu headers clau (Server, WWW-Authenticate, Set-Cookie, Location). Serveix per inventari rapid i prioritzar hardening."
           : "HTTP header fingerprinting: identifies exposed software/stack (Server, WWW-Authenticate, cookies) without auth. Helps prioritize hardening and detect defaults.",
         mitigations: [
           ES ? "Deshabilitar servicios HTTP no necesarios en dispositivos IoT/routers." : CA ? "Deshabilitar serveis HTTP no necessaris en IoT/routers." : "Disable unnecessary HTTP services on IoT/routers.",
           ES ? "Ocultar/versionar minimamente banners (cuando sea posible) y forzar TLS." : CA ? "Minimitzar banners (si es possible) i forçar TLS." : "Minimize banners (when possible) and enforce TLS.",
           ES ? "Cambiar credenciales por defecto y limitar origen (ACL/firewall LAN)." : CA ? "Canviar credencials per defecte i limitar origen (ACL/firewall LAN)." : "Change default credentials and restrict origin (LAN ACL/firewall).",
+        ],
+        notes: [
+          ES
+            ? "Qué mirar: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), y ausencia de HSTS/CSP en paneles expuestos."
+            : CA
+            ? "Que mirar: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), i absencia d'HSTS/CSP en panells exposats."
+            : "Look for: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), and missing HSTS/CSP on exposed panels.",
         ],
       };
     case "wifi_brute_force_dict":
@@ -57,19 +90,6 @@ export const getScenarioManual = (scenarioId: string, lang: UILanguage): Scenari
         ],
         notes: [
           ES ? "En redes reales, la defensa principal es una passphrase fuerte + WPA3; no hay atajos." : CA ? "En xarxes reals, la defensa principal es una passphrase forta + WPA3; no hi ha dreceres." : "In real networks, the primary defense is a strong passphrase + WPA3; there are no shortcuts.",
-        ],
-      };
-    case "edu_pmkid_exposure_sim":
-      return {
-        how: ES
-          ? "Simulacion: ilustra el concepto de exposicion PMKID en ciertos equipos/configuraciones. No ejecuta acciones ofensivas reales."
-          : CA
-          ? "Simulacio: il·lustra el concepte d'exposicio PMKID en alguns equips/configuracions. No executa accions ofensives reals."
-          : "Simulation: illustrates PMKID exposure concept on some gear/configs. No real offensive actions are executed.",
-        mitigations: [
-          ES ? "WPA3-Personal (SAE) y PMF/802.11w habilitado." : CA ? "WPA3-Personal (SAE) i PMF/802.11w habilitat." : "Use WPA3-Personal (SAE) and enable PMF/802.11w.",
-          ES ? "Actualizar firmware del AP/router." : CA ? "Actualitzar firmware de l'AP/router." : "Update AP/router firmware.",
-          ES ? "Deshabilitar modos legacy cuando no sean necesarios." : CA ? "Deshabilitar modes legacy quan no siguin necessaris." : "Disable legacy modes when not needed.",
         ],
       };
     case "edu_iot_risk_profile":

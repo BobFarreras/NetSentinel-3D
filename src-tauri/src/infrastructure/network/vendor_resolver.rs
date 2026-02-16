@@ -71,6 +71,7 @@ mod tests {
     fn resolve_uses_embedded_seed_map_for_known_ouis() {
         assert_eq!(VendorResolver::resolve("0C:47:C9:00:00:01"), "Amazon");
         assert_eq!(VendorResolver::resolve("B8:27:EB:00:00:01"), "Raspberry Pi");
+        assert_eq!(VendorResolver::resolve("3C:58:5D:D3:68:E7"), "Xiaomi");
     }
 
     #[test]
@@ -80,4 +81,3 @@ mod tests {
         assert_eq!(VendorResolver::resolve("AA:BB"), "Invalid MAC");
     }
 }
-

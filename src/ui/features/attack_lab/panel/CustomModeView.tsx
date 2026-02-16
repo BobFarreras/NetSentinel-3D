@@ -33,11 +33,10 @@ interface CustomModeViewProps {
   isRunning: boolean;
   onStart: (req: AttackLabRequestDTO) => Promise<void>;
   onCancel: () => Promise<void>;
-  onClear: () => void;
   layout?: "wide" | "narrow";
 }
 
-export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onStart, onCancel, onClear, layout = "wide" }) => {
+export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onStart, onCancel, layout = "wide" }) => {
   const { t } = useI18n();
   const [binaryPath, setBinaryPath] = useState("");
   const [cwd, setCwd] = useState("");
@@ -78,7 +77,7 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
           <input
             value={timeoutMs}
             onChange={(e) => setTimeoutMs(e.target.value)}
-            placeholder="300000"
+            placeholder={timeoutMs}
             style={inputStyle}
           />
         </div>
@@ -116,9 +115,6 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
               style={{ ...btnStyle(isRunning), borderColor: "#f55", color: "#f55" }}
             >
               {t("attackLab.actions.cancel")}
-            </button>
-            <button onClick={onClear} style={btnStyle(true)}>
-              {t("attackLab.actions.clear")}
             </button>
           </div>
         </div>

@@ -6,6 +6,8 @@
 // Submodulos (separacion por responsabilidades / SOLID)
 #[path = "commands/credentials.rs"]
 mod credentials;
+#[path = "commands/gateway_credential_presets.rs"]
+mod gateway_credential_presets;
 #[path = "commands/attack_lab.rs"]
 mod attack_lab;
 #[path = "commands/history.rs"]
@@ -152,6 +154,48 @@ pub async fn delete_gateway_credentials(
     gateway_ip: String,
 ) -> Result<(), String> {
     credentials::delete_gateway_credentials(service, gateway_ip).await
+}
+
+// --- PRESETS DE CREDENCIALES (gateway) ---
+
+#[tauri::command]
+pub async fn list_gateway_credential_presets(
+    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    gateway_ip: String,
+) -> Result<Vec<crate::domain::entities::GatewayCredentialPreset>, String> {
+    gateway_credential_presets::list_presets(service, gateway_ip)
+}
+
+#[tauri::command]
+pub async fn add_gateway_credential_preset(
+    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    gateway_ip: String,
+    user: String,
+    pass: String,
+) -> Result<Vec<crate::domain::entities::GatewayCredentialPreset>, String> {
+    gateway_credential_presets::add_preset(service, gateway_ip, user, pass)
+}
+
+#[tauri::command]
+pub async fn remove_gateway_credential_preset(
+    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    gateway_ip: String,
+    user: String,
+    pass: String,
+) -> Result<Vec<crate::domain::entities::GatewayCredentialPreset>, String> {
+    gateway_credential_presets::remove_preset(service, gateway_ip, user, pass)
+}
+
+#[tauri::command]
+pub async fn update_gateway_credential_preset(
+    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    gateway_ip: String,
+    old_user: String,
+    old_pass: String,
+    new_user: String,
+    new_pass: String,
+) -> Result<Vec<crate::domain::entities::GatewayCredentialPreset>, String> {
+    gateway_credential_presets::update_preset(service, gateway_ip, old_user, old_pass, new_user, new_pass)
 }
 
 // --- WIFI RADAR VIEW ---

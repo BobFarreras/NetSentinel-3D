@@ -41,6 +41,8 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
   onChangeSearch,
   layout = "side",
 }) => {
+  const canInlineOpenAudit = layout === "bottom" && !!selected && !selected.isConnected;
+
   return (
     <div
       style={{
@@ -82,6 +84,17 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
           onChangeBandFilter={onChangeBandFilter}
           onChangeChannelFilter={onChangeChannelFilter}
           onChangeSearch={onChangeSearch}
+          inlineAuditAction={
+            canInlineOpenAudit
+              ? {
+                  enabled: !!selected,
+                  onClick: () => {
+                    if (!selected) return;
+                    openWifiAttackLabFromSelection(selected);
+                  },
+                }
+              : null
+          }
         />
 
         <RadarIntelSelectionDetails
@@ -90,6 +103,7 @@ export const RadarIntelPanel: React.FC<RadarIntelPanelProps> = ({
             if (!selected) return;
             openWifiAttackLabFromSelection(selected);
           }}
+          showAuditButton={layout !== "bottom"}
         />
       </div>
     </div>

@@ -36,8 +36,21 @@ const buildAuthoritativeRouterInventory = (prev: DeviceDTO[], routerDevices: Dev
   // Asegurar que el gateway exista (algunos routers no se incluyen en su propia lista de clientes).
   if (!next.some((d) => d.ip === gatewayIp)) {
     const gw = prevByIp.get(gatewayIp) ?? prev.find((d) => Boolean(d.isGateway));
-    if (gw) next.push(gw);
+    if (gw) {
+      next.push({
+        ...gw,
+        // A falta de un hostname real del router, evitamos "Unknown" para mejorar UX.
+        name: gw.name ?? gw.hostname ?? "GATEWAY",
+        hostname: gw.hostname ?? gw.name ?? "GATEWAY",
+        isGateway: true,
+      });
+    }
   }
+
+  // Asegurar que el host (NetSentinel) siga presente aunque el router no lo liste en su UI.
+  // Esto evita que el nodo "self" (verde) desaparezca tras el sync autoritativo.
+  const host = prev.find((d) => (d.vendor ?? "").includes("NETSENTINEL") || (d.vendor ?? "").includes("(ME)"));
+  if (host && !next.some((d) => d.ip === host.ip)) next.push(host);
 
   return next;
 };
@@ -63,6 +76,12 @@ export const useRouterHacker = (
           const routerDevices = await auditAdapter.fetchRouterDevices(gatewayIp, saved.user, saved.pass);
           addLog(gatewayIp, `✨ SYNC COMPLETE (SAVED CREDS): ${routerDevices.length} nodes imported.`);
 
+          // Señal de fallo tipica: credenciales "validas" pero extractor/DOM no devuelve nada.
+          // En ese caso forzamos fallback al brute-force para revalidar y reintentar el sync.
+          if (routerDevices.length === 0) {
+            throw new Error("NETSENTINEL_EMPTY_ROUTER_SYNC");
+          }
+
           setRouterRisk({
             vulnerable: false,
             message: "Credenciales guardadas validas. Sin brute-force.",
@@ -75,8 +94,12 @@ export const useRouterHacker = (
           });
 
           return;
-        } catch {
-          addLog(gatewayIp, `> SAVED CREDENTIALS FAILED. FALLING BACK TO BRUTE...`);
+        } catch (err) {
+          if (err instanceof Error && err.message === "NETSENTINEL_EMPTY_ROUTER_SYNC") {
+            addLog(gatewayIp, `> WARNING: saved-creds sync devolvio 0 nodos. Fallback a brute-force.`);
+          } else {
+            addLog(gatewayIp, `> SAVED CREDENTIALS FAILED. FALLING BACK TO BRUTE...`);
+          }
         }
       }
 
@@ -102,13 +125,17 @@ export const useRouterHacker = (
           
           addLog(gatewayIp, `✨ SYNC COMPLETE: ${routerDevices.length} nodes imported.`);
 
-          // Fusion de inventario priorizando intel valida ya conocida.
-          setDevices(prev => {
-            const merged = buildAuthoritativeRouterInventory(prev, routerDevices, gatewayIp);
-            // Snapshot para que el arranque pinte el inventario completo.
-            void networkAdapter.saveLatestSnapshot(merged);
-            return merged;
-          });
+          if (routerDevices.length === 0) {
+            addLog(gatewayIp, `> WARNING: sync devolvio 0 nodos. Manteniendo inventario actual (no autoritativo).`);
+          } else {
+            // Fusion de inventario priorizando intel valida ya conocida.
+            setDevices(prev => {
+              const merged = buildAuthoritativeRouterInventory(prev, routerDevices, gatewayIp);
+              // Snapshot para que el arranque pinte el inventario completo.
+              void networkAdapter.saveLatestSnapshot(merged);
+              return merged;
+            });
+          }
         }
       } else {
         addLog(gatewayIp, `✅ RESULT: ${result.message}`);

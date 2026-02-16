@@ -7,22 +7,25 @@ import { AttackLabPanel } from "../panel/AttackLabPanel";
 import { I18nProvider } from "../../../i18n";
 
 const startSimulated = vi.fn(async () => {});
-const start = vi.fn(async () => "audit-id");
-const cancel = vi.fn(async () => {});
-const clear = vi.fn();
 
-vi.mock("../hooks/useAttackLab", () => ({
-  useAttackLab: () => ({
-    auditId: null,
-    isRunning: false,
-    rows: [],
-    lastExit: null,
-    error: null,
-    summary: "idle",
-    startSimulated,
-    start,
-    cancel,
-    clear,
+vi.mock("../../../hooks/modules/attack_lab/useAttackLabRuntime", () => ({
+  useAttackLabRuntime: () => ({
+    state: {
+      auditId: null,
+      isRunning: false,
+      runKind: null,
+      rows: [],
+      lastExit: null,
+      error: null,
+    },
+    actions: {
+      startExternal: vi.fn(async () => {}),
+      startSimulated,
+      startNative: vi.fn(async () => {}),
+      cancel: vi.fn(async () => {}),
+      clear: vi.fn(),
+      pushLocalLog: vi.fn(),
+    },
   }),
 }));
 

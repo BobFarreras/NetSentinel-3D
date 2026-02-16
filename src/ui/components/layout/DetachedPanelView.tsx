@@ -5,6 +5,7 @@ import { lazy, Suspense } from "react";
 import { ConsoleLogs } from "../../features/console_logs/components/ConsoleLogs";
 import type { DeviceDTO, HostIdentity, OpenPortDTO } from "../../../shared/dtos/NetworkDTOs";
 import { useI18n } from "../../i18n";
+import { getRouterCandidates } from "../../utils/routerCandidates";
 
 const NetworkScene = lazy(async () => {
   const mod = await import("../../features/scene3d/components/NetworkScene");
@@ -176,6 +177,8 @@ export const DetachedPanelView = ({
                   key={`detached-attack-lab-${detachedAttackLabAutoRunToken}-${detachedAttackLabTargetDevice?.ip || "none"}-${detachedAttackLabScenario || "none"}`}
                   onClose={() => {}}
                   targetDevice={detachedAttackLabTargetDevice}
+                  availableDevices={devices}
+                  availableRouters={getRouterCandidates(devices, identity)}
                   identity={identity}
                   defaultScenarioId={detachedAttackLabScenario}
                   autoRunToken={detachedAttackLabAutoRunToken}
@@ -219,7 +222,7 @@ export const DetachedPanelView = ({
             )}
             {panel === "settings" && (
               <Suspense fallback={null}>
-                <SettingsPanel onClose={() => {}} />
+                <SettingsPanel onClose={() => {}} identity={identity} />
               </Suspense>
             )}
           </>

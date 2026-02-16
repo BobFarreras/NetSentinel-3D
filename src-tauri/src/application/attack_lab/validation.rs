@@ -3,6 +3,15 @@
 
 use super::types::AttackLabRequest;
 
+const MAX_ARGS: usize = 128;
+// PowerShell `-Command` para auditorias puede superar 4096 facilmente si incluye salida estructurada
+// (VERDICT/WHY/NEXT) y parsing de headers. Mantener limite para evitar DoS por payloads absurdos.
+const MAX_ARG_LEN: usize = 16 * 1024;
+
+const MAX_ENV: usize = 64;
+const MAX_ENV_KEY_LEN: usize = 128;
+const MAX_ENV_VALUE_LEN: usize = 4096;
+
 // Validacion defensiva para requests de auditoria externa.
 // Nota DevSecOps:
 // - No usamos shell (Command::new + args tokenizados) para evitar injection.
@@ -23,20 +32,20 @@ pub fn validate_request(req: &AttackLabRequest) -> Result<(), String> {
         }
     }
 
-    if req.args.len() > 128 {
-        return Err("demasiados argumentos (max 128)".to_string());
+    if req.args.len() > MAX_ARGS {
+        return Err(format!("demasiados argumentos (max {MAX_ARGS})"));
     }
     for (i, a) in req.args.iter().enumerate() {
         if a.contains('\0') {
             return Err(format!("argumento #{i} contiene un byte nulo"));
         }
-        if a.len() > 4096 {
-            return Err(format!("argumento #{i} demasiado largo (max 4096)"));
+        if a.len() > MAX_ARG_LEN {
+            return Err(format!("argumento #{i} demasiado largo (max {MAX_ARG_LEN})"));
         }
     }
 
-    if req.env.len() > 64 {
-        return Err("demasiadas variables de entorno (max 64)".to_string());
+    if req.env.len() > MAX_ENV {
+        return Err(format!("demasiadas variables de entorno (max {MAX_ENV})"));
     }
     for (k, v) in req.env.iter() {
         if k.is_empty() {
@@ -45,7 +54,7 @@ pub fn validate_request(req: &AttackLabRequest) -> Result<(), String> {
         if k.contains('\0') || v.contains('\0') {
             return Err("env contiene byte nulo".to_string());
         }
-        if k.len() > 128 || v.len() > 4096 {
+        if k.len() > MAX_ENV_KEY_LEN || v.len() > MAX_ENV_VALUE_LEN {
             return Err("env demasiado largo".to_string());
         }
     }

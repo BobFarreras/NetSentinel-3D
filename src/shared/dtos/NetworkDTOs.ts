@@ -98,6 +98,12 @@ export interface GatewayCredentialsDTO {
   savedAt: number;
 }
 
+export interface GatewayCredentialPresetDTO {
+  gatewayIp: string;
+  user: string;
+  pass: string;
+}
+
 export interface TrafficPacket {
   id: number;
   timestamp: number;

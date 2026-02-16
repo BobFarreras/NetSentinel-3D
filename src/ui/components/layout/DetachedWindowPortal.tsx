@@ -4,6 +4,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+const isTauriRuntime = () => {
+  if (typeof window === "undefined") return false;
+  const scopedWindow = window as Window & {
+    __TAURI_INTERNALS__?: unknown;
+    __TAURI__?: unknown;
+  };
+  return Boolean(scopedWindow.__TAURI_INTERNALS__ || scopedWindow.__TAURI__);
+};
+
 interface DetachedWindowPortalProps {
   title: string;
   onClose: () => void;
@@ -31,6 +40,30 @@ export const DetachedWindowPortal: React.FC<DetachedWindowPortalProps> = ({
   });
 
   useEffect(() => {
+    // En modo web (popup real), las APIs de Tauri no existen y se rompen acciones que dependen de IPC
+    // (p.ej. guardar/borrar credenciales en Keyring). Forzamos fallback overlay en la misma ventana
+    // para mantener paridad funcional.
+    if (!isTauriRuntime()) {
+      setFallbackMode(true);
+      containerEl.dataset.detachedFallback = "true";
+      containerEl.style.position = "fixed";
+      containerEl.style.width = `${Math.max(480, Math.floor(window.innerWidth * 0.66))}px`;
+      containerEl.style.height = `${Math.max(320, Math.floor(window.innerHeight * 0.62))}px`;
+      containerEl.style.left = "48px";
+      containerEl.style.top = "48px";
+      containerEl.style.zIndex = "2147483647";
+      containerEl.style.background = "#050505";
+      containerEl.style.border = "1px solid #0a3";
+      containerEl.style.boxShadow = "0 25px 80px rgba(0,0,0,0.7)";
+      containerEl.style.overflow = "hidden";
+      document.body.appendChild(containerEl);
+      return () => {
+        if (containerEl.parentNode) {
+          containerEl.parentNode.removeChild(containerEl);
+        }
+      };
+    }
+
     const popupWidth = Math.min(width, Math.floor(window.screen.availWidth * 0.82));
     const popupHeight = Math.min(height, Math.floor(window.screen.availHeight * 0.82));
     const next = window.open(

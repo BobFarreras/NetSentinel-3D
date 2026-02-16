@@ -1,6 +1,6 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
-import type { AttackLabExitEvent, AttackLabLogEvent, DeviceDTO, GatewayCredentialsDTO, LatestSnapshotDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
+import type { AttackLabExitEvent, AttackLabLogEvent, DeviceDTO, GatewayCredentialPresetDTO, GatewayCredentialsDTO, LatestSnapshotDTO, TrafficPacket, WifiNetworkDTO } from '../dtos/NetworkDTOs';
 
 type EventEnvelope<T> = { payload: T };
 type EventCallback<T> = (event: EventEnvelope<T>) => void;
@@ -26,6 +26,12 @@ let attackLabSeq = 0;
 let activeAttackLabId: string | null = null;
 let mockLatestSnapshot: LatestSnapshotDTO | null = null;
 const mockGatewayCreds = new Map<string, GatewayCredentialsDTO>();
+let mockGatewayPresets: GatewayCredentialPresetDTO[] = [
+  { gatewayIp: '*', user: 'admin', pass: 'admin' },
+  { gatewayIp: '*', user: 'admin', pass: '1234' },
+  { gatewayIp: '*', user: 'user', pass: 'user' },
+  { gatewayIp: '*', user: '1234', pass: '1234' },
+];
 
 const mockScanDevices: DeviceDTO[] = [
   { ip: '192.168.1.1', mac: 'AA:BB:CC:DD:EE:01', vendor: 'Router', isGateway: true, hostname: 'gateway' },
@@ -177,6 +183,61 @@ const invokeMock = async <T>(command: string, args?: Record<string, unknown>): P
       const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
       mockGatewayCreds.delete(gatewayIp);
       return undefined as T;
+    }
+    case 'list_gateway_credential_presets':
+    {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      const list = mockGatewayPresets.filter((p) => p.gatewayIp === '*' || p.gatewayIp === gatewayIp);
+      // Dedup por user/pass (preferimos el especifico del gateway).
+      const byKey = new Map<string, GatewayCredentialPresetDTO>();
+      list.forEach((p) => {
+        const k = `${p.user}\n${p.pass}`;
+        const existing = byKey.get(k);
+        if (!existing) {
+          byKey.set(k, p);
+        } else {
+          const existingSpecific = existing.gatewayIp === gatewayIp;
+          const currentSpecific = p.gatewayIp === gatewayIp;
+          if (currentSpecific && !existingSpecific) byKey.set(k, p);
+        }
+      });
+      return clone(Array.from(byKey.values())) as T;
+    }
+    case 'add_gateway_credential_preset': {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      const user = (args?.user as string) || '';
+      const pass = (args?.pass as string) || '';
+      if (user.trim() && pass.trim()) {
+        mockGatewayPresets = [...mockGatewayPresets, { gatewayIp, user: user.trim(), pass: pass.trim() }];
+        // dedup
+        const seen = new Set<string>();
+        mockGatewayPresets = mockGatewayPresets.filter((p) => {
+          const k = `${p.gatewayIp}\n${p.user}\n${p.pass}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+      }
+      return (await invokeMock<T>('list_gateway_credential_presets', { gatewayIp })) as T;
+    }
+    case 'remove_gateway_credential_preset': {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      const user = (args?.user as string) || '';
+      const pass = (args?.pass as string) || '';
+      mockGatewayPresets = mockGatewayPresets.filter((p) => !(p.gatewayIp === gatewayIp && p.user === user && p.pass === pass));
+      return (await invokeMock<T>('list_gateway_credential_presets', { gatewayIp })) as T;
+    }
+    case 'update_gateway_credential_preset': {
+      const gatewayIp = (args?.gatewayIp as string) || '192.168.1.1';
+      const oldUser = (args?.oldUser as string) || '';
+      const oldPass = (args?.oldPass as string) || '';
+      const newUser = (args?.newUser as string) || '';
+      const newPass = (args?.newPass as string) || '';
+      mockGatewayPresets = mockGatewayPresets.map((p) => {
+        if (p.gatewayIp === gatewayIp && p.user === oldUser && p.pass === oldPass) return { gatewayIp, user: newUser, pass: newPass };
+        return p;
+      });
+      return (await invokeMock<T>('list_gateway_credential_presets', { gatewayIp })) as T;
     }
     case 'audit_target': {
       const targetIp = (args?.ip as string) || '192.168.1.10';

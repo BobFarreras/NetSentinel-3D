@@ -1,5 +1,5 @@
 import { invokeCommand } from "../shared/tauri/bridge";
-import { DeviceDTO, ScanSession, HostIdentity, LatestSnapshotDTO, GatewayCredentialsDTO } from "../shared/dtos/NetworkDTOs";
+import { DeviceDTO, ScanSession, HostIdentity, LatestSnapshotDTO, GatewayCredentialPresetDTO, GatewayCredentialsDTO } from "../shared/dtos/NetworkDTOs";
 
 export const networkAdapter = {
   scanNetwork: async (range: string = '192.168.1.0/24'): Promise<DeviceDTO[]> => {
@@ -38,5 +38,33 @@ export const networkAdapter = {
 
   deleteGatewayCredentials: async (gatewayIp: string): Promise<void> => {
     await invokeCommand('delete_gateway_credentials', { gatewayIp });
+  },
+
+  listGatewayCredentialPresets: async (gatewayIp: string): Promise<GatewayCredentialPresetDTO[]> => {
+    return await invokeCommand<GatewayCredentialPresetDTO[]>('list_gateway_credential_presets', { gatewayIp });
+  },
+
+  addGatewayCredentialPreset: async (gatewayIp: string, user: string, pass: string): Promise<GatewayCredentialPresetDTO[]> => {
+    return await invokeCommand<GatewayCredentialPresetDTO[]>('add_gateway_credential_preset', { gatewayIp, user, pass });
+  },
+
+  removeGatewayCredentialPreset: async (gatewayIp: string, user: string, pass: string): Promise<GatewayCredentialPresetDTO[]> => {
+    return await invokeCommand<GatewayCredentialPresetDTO[]>('remove_gateway_credential_preset', { gatewayIp, user, pass });
+  },
+
+  updateGatewayCredentialPreset: async (
+    gatewayIp: string,
+    oldUser: string,
+    oldPass: string,
+    newUser: string,
+    newPass: string
+  ): Promise<GatewayCredentialPresetDTO[]> => {
+    return await invokeCommand<GatewayCredentialPresetDTO[]>('update_gateway_credential_preset', {
+      gatewayIp,
+      oldUser,
+      oldPass,
+      newUser,
+      newPass,
+    });
   },
 };

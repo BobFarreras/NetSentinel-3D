@@ -78,6 +78,54 @@ Nota:
 ### UI (traffic)
 - `JAMMED` ahora reporta targets afectados (no solo paquetes).
 - Nuevo selector `TARGET` en Live Traffic para fijar un dispositivo sin depender solo del nodo seleccionado.
+
+## [v0.8.53] - Attack Lab: HTTP fingerprint + consola teletype + estado persistente (2026-02-16)
+### Attack Lab (runtime/UI)
+- Consola: efecto teletype (linea a linea) + colores por seccion/VERDICT para lectura rapida.
+- Estado UI persistente: `scenarioId/mode/targetIp` se conservan aunque abras/cierres otros paneles (evita perder inputs al abrir Settings).
+- `start_attack_lab`: se inyecta `NETSENTINEL_UI_LANG` como env var para que los scripts impriman `WHY/NEXT` en el idioma UI.
+
+### Attack Lab (catalogo)
+- Nuevo/actualizado: `HTTP: Fingerprint de cabeceras (HEAD)` via `HttpWebRequest` (HEAD en 80/443) con VERDICT/WHY/NEXT.
+- Baseline (router/device): script PowerShell localizado para VERDICT/WHY/NEXT y soporte de bloques `switch {}` (script multilínea).
+
+### Backend (validacion)
+- Attack Lab: se sube limite por argumento a 16KB (necesario para scripts PowerShell inline con parsing + VERDICT).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.54] - Attack Lab: IoT perfil real + Next Steps (2026-02-16)
+### Attack Lab (catalogo)
+- Nuevo: `IoT: Perfilado de riesgo (puertos comunes)` (`iot_risk_profile_quick_ports`) con probe TCP rapido y VERDICT/WHY/NEXT.
+- Limpieza: se elimina el escenario IoT simulado para evitar confundir al operador.
+
+### Attack Lab (UX)
+- Botones de "Siguiente paso" basados en metadata del escenario (`nextScenarioIds`) para encadenar auditorias sin perder el target.
+- Fix: evitar doble ejecucion al usar "Siguiente paso" (auto-run solo una vez).
+- Sync: seleccionar target en Attack Lab ya reflejaba seleccion en escena; ahora al seleccionar un nodo en la escena, el target del Attack Lab se actualiza (sin auto-ejecutar).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.55] - Attack Lab: WiFi import evidencias (PMKID/Handshake) + sincronizacion WiFi (2026-02-16)
+### Attack Lab (WiFi)
+- Nuevo: `WIFI: Evidence Import (PMKID/Handshake)` (`wifi_evidence_import`): importador/validador de evidencias (WPA*01/WPA*02) para reporte.
+- UX: el modal OPSEC WiFi ahora es configurable por escenario (`requiresOpsecConfirm`) para no bloquear herramientas pasivas.
+- Fix: seleccionar un objetivo WiFi ya no fuerza el escenario `wifi_brute_force_dict` (mantiene el escenario actual).
+- Sync: Radar (WiFi) <-> Attack Lab (WiFi) por BSSID para mantener el target coherente.
+
+### Documentacion
+- `AGENTS.md` y `docs/ATTACK_LAB.md`: se reemplaza el lenguaje de "simulaciones" por "ejecucion local/pasiva" para reducir ambiguedad.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+- `cd src-tauri && cargo check` (ok)
 - Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
 
 ### UI (scene3d)
@@ -232,6 +280,20 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.62] - Settings: Password Vault (WiFi wordlist + gateway creds) (2026-02-16)
+### UI (settings)
+- Nuevo "Password Vault" en Settings (debajo de idioma):
+  - acceso al gestor de wordlists WiFi (AMMO BOX)
+  - gestion de credenciales del gateway (Keyring del SO) para login directo en auditorias/sync
+- Settings recibe `identity` para conocer `gatewayIp` (docked y detached).
+
+### i18n
+- Nuevas claves `settings.passwords.*` (CA/ES/EN).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.60] - UI: sincronizacion de idioma entre ventana principal y paneles detached (2026-02-16)
 ### i18n (frontend)
 - `src/ui/i18n/I18nProvider.tsx`:
@@ -244,6 +306,31 @@ Nota:
 ### Testing
 - `src/ui/i18n/__tests__/i18n.test.ts`:
   - nuevo test que valida sincronizacion por evento `storage`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.61] - UI: Attack Lab persistente + Radar Audit button inline (2026-02-16)
+### UI (attack_lab)
+- Runtime persistente en UI: al cerrar/abrir el panel no se pierde la ejecucion ni la consola (external/simulated/native).
+- LAB: se elimina el boton `CLEAR` (se mantienen `EXECUTE/STOP`).
+- TARGET: selector sincronizado con Radar/Scene (si cambias TARGET en Attack Lab, se refleja la seleccion en la escena).
+- TARGET por tipo de escenario:
+  - `WIFI`: selector de redes (SSID/BSSID) via `scan_airwaves`.
+  - `ROUTER`: selector de gateways (heuristica: `isGateway`, `identity.gatewayIp`, `*.1`).
+  - `DEVICE`: selector de dispositivos detectados por el scanner.
+
+### UI (radar)
+- En layout estrecho (intel bottom): `OPEN AUDIT CONSOLE` se renderiza inline junto al buscador para evitar scroll.
+
+### i18n
+- Attack Lab LAB view: textos hardcodeados (labels/buttons) pasan a i18n.
+- Ajuste de `attackLab.console.output/waiting` para que no aparezca como frase inglesa en ES/CA.
+
+### Testing
+- Nuevo test de `useAttackLabRuntime` (persistencia entre montajes).
+- Ajustado test de `AttackLabPanel` para mockear runtime persistente.
 
 ### Validaciones
 - `npm test -- --run` (ok)

@@ -1,7 +1,7 @@
 // src/App.tsx
 // Orquestador de alto nivel: compone layouts, coordina estado global y sincroniza docking/ventanas + contexto entre paneles.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { windowingAdapter } from "./adapters/windowingAdapter";
 import type { DeviceDTO } from "./shared/dtos/NetworkDTOs";
 import { useNetworkManager } from "./ui/hooks/useNetworkManager";
@@ -48,6 +48,17 @@ function App() {
   const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
   const [attackLabAutoRunToken, setAttackLabAutoRunToken] = useState<number>(0);
 
+  // Evita closures stale: el listener de eventos se registra una vez, pero selectDevice cambia por render.
+  const selectDeviceRef = useRef(selectDevice);
+  useEffect(() => {
+    selectDeviceRef.current = selectDevice;
+  }, [selectDevice]);
+
+  const isIpv4 = (value: string | undefined | null): boolean => {
+    if (!value) return false;
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(value);
+  };
+
   // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
   useEffect(() => {
     uiLogger.info("[app] Listening for Dock Panel events...");
@@ -67,6 +78,10 @@ function App() {
         uiLogger.info("[app] Attack Lab Context Update", payload);
         if (payload.targetDevice) {
             setAttackLabTarget(payload.targetDevice);
+            // Sync inverso: si el operador cambia TARGET en Attack Lab, reflejar seleccion en escena (solo targets reales IPv4).
+            if (isIpv4(payload.targetDevice.ip)) {
+              selectDeviceRef.current(payload.targetDevice);
+            }
         }
         if (payload.scenarioId) {
             setAttackLabScenarioId(payload.scenarioId);
@@ -95,6 +110,27 @@ function App() {
   });
   const attackLabSync = useAttackLabDetachedSync();
   const { detachedPanelReady } = useDetachedRuntime(detachedContext);
+
+  // Sync directo: seleccionar un nodo en escena/radar actualiza el TARGET del Attack Lab (sin cambiar scenario).
+  // Regla: nunca auto-ejecutamos por un simple cambio de seleccion y no forzamos apertura del panel.
+  useEffect(() => {
+    if (!selectedDevice) return;
+    if (attackLabTarget?.ip === selectedDevice.ip) return;
+    setAttackLabTarget(selectedDevice);
+
+    // Si el panel esta desacoplado, sincronizamos contexto para que el selector TARGET coincida.
+    if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
+      void attackLabSync.emitAttackLabContext({ targetDevice: selectedDevice, scenarioId: attackLabScenarioId ?? undefined, autoRun: false });
+    }
+  }, [
+    selectedDevice?.ip,
+    attackLabTarget?.ip,
+    docking.detachedPanels.attack_lab,
+    docking.detachedModes.attack_lab,
+    attackLabScenarioId,
+    attackLabSync,
+    selectedDevice,
+  ]);
 
   const detachedTargetDevice = useMemo(
     () => (detachedContext?.targetIp ? devices.find((d) => d.ip === detachedContext.targetIp) || null : selectedDevice),
