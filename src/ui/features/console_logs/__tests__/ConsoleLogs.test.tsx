@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { I18nProvider } from "../../../i18n";
 
 // Evitamos dependencias de runtime (Tauri/eventos) en tests de UI.
 vi.mock("../../traffic/hooks/useTrafficMonitor", () => ({
@@ -28,12 +29,14 @@ describe("ConsoleLogs", () => {
     addRadarScanLog(1);
 
     render(
-      <ConsoleLogs
-        logs={["L1"]}
-        devices={[]}
-        selectedDevice={null}
-        onClearSystemLogs={() => {}}
-      />
+      <I18nProvider>
+        <ConsoleLogs
+          logs={["L1"]}
+          devices={[]}
+          selectedDevice={null}
+          onClearSystemLogs={() => {}}
+        />
+      </I18nProvider>
     );
 
     fireEvent.click(screen.getByText("RADAR LOGS"));
@@ -42,12 +45,14 @@ describe("ConsoleLogs", () => {
 
   it("debe mostrar placeholder si no hay RADAR LOGS", () => {
     render(
-      <ConsoleLogs
-        logs={[]}
-        devices={[]}
-        selectedDevice={null}
-        onClearSystemLogs={() => {}}
-      />
+      <I18nProvider>
+        <ConsoleLogs
+          logs={[]}
+          devices={[]}
+          selectedDevice={null}
+          onClearSystemLogs={() => {}}
+        />
+      </I18nProvider>
     );
 
     fireEvent.click(screen.getByText("RADAR LOGS"));

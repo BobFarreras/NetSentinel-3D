@@ -3,6 +3,7 @@
 import React from "react";
 import type { RadarLogEntry } from "../../radar/hooks/useRadarLogs";
 import { CONSOLE_COLORS } from "./consoleLogsStyles";
+import { useI18n } from "../../../i18n";
 
 type RadarLogsViewProps = {
   logs: RadarLogEntry[];
@@ -13,6 +14,7 @@ type RadarLogsViewProps = {
 const gridTemplate = "58px 1.2fr 1fr 1fr 60px 70px 90px 90px";
 
 export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssid, onSelectBssid }) => {
+  const { t } = useI18n();
   return (
     <div style={{ height: "100%", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div
@@ -29,20 +31,20 @@ export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssi
           flexShrink: 0,
         }}
       >
-        <span>TYPE</span>
-        <span>SSID</span>
-        <span>VENDOR</span>
-        <span>SEC</span>
-        <span>CH</span>
-        <span>RSSI</span>
-        <span>RISK</span>
-        <span>LINK</span>
+        <span>{t("radarLogs.columns.type")}</span>
+        <span>{t("radarLogs.columns.ssid")}</span>
+        <span>{t("radarLogs.columns.vendor")}</span>
+        <span>{t("radarLogs.columns.sec")}</span>
+        <span>{t("radarLogs.columns.ch")}</span>
+        <span>{t("radarLogs.columns.rssi")}</span>
+        <span>{t("radarLogs.columns.risk")}</span>
+        <span>{t("radarLogs.columns.link")}</span>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         {logs.length === 0 && (
           <div style={{ color: CONSOLE_COLORS.textDim, fontSize: "0.8rem", padding: "10px 6px" }}>
-            Sin actividad. Abre RADAR VIEW y pulsa SCAN AIRWAVES.
+            {t("radarLogs.empty")}
           </div>
         )}
 
@@ -67,7 +69,7 @@ export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssi
                     background: "rgba(0,255,136,0.04)",
                   }}
                 >
-                  <span style={{ fontWeight: "bold" }}>SCAN</span>
+                  <span style={{ fontWeight: "bold" }}>{t("radarLogs.kind.scan")}</span>
                   <span style={{ gridColumn: "2 / span 7", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     [{time}] {entry.message}
                   </span>
@@ -91,7 +93,7 @@ export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssi
                     background: "rgba(255,0,0,0.04)",
                   }}
                 >
-                  <span style={{ fontWeight: "bold" }}>ERR</span>
+                  <span style={{ fontWeight: "bold" }}>{t("radarLogs.kind.err")}</span>
                   <span style={{ gridColumn: "2 / span 7", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     [{time}] {entry.message}
                   </span>
@@ -105,7 +107,7 @@ export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssi
               <div
                 key={i}
                 onClick={() => onSelectBssid(n.bssid)}
-                title="Seleccionar nodo en Radar View"
+                title={t("radarLogs.tooltip.selectInRadar")}
                 style={{
                   display: "grid",
                   gridTemplateColumns: gridTemplate,
@@ -119,7 +121,7 @@ export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssi
                   background: isSelected ? "rgba(0,229,255,0.08)" : "transparent",
                 }}
               >
-                <span style={{ fontWeight: "bold", color: n.isConnected ? CONSOLE_COLORS.cyan : CONSOLE_COLORS.textDim }}>NET</span>
+                <span style={{ fontWeight: "bold", color: n.isConnected ? CONSOLE_COLORS.cyan : CONSOLE_COLORS.textDim }}>{t("radarLogs.kind.net")}</span>
                 <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={n.ssid}>
                   {n.ssid}
                 </span>
@@ -133,7 +135,7 @@ export const RadarLogsView: React.FC<RadarLogsViewProps> = ({ logs, selectedBssi
                 <span>{n.signalLevel}</span>
                 <span style={{ fontWeight: "bold" }}>{String(n.riskLevel || "").toUpperCase()}</span>
                 <span style={{ fontWeight: 800, color: n.isConnected ? CONSOLE_COLORS.cyan : CONSOLE_COLORS.textDim }}>
-                  {n.isConnected ? "CONNECTED" : "NEARBY"}
+                  {n.isConnected ? t("radarLogs.link.connected") : t("radarLogs.link.nearby")}
                 </span>
               </div>
             );

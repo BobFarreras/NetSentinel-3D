@@ -93,6 +93,162 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.53] - UI: Radar Intel refactor + responsive real + filtros plegables (2026-02-15)
+### UI (radar)
+- Refactor: `RadarIntelPanel` deja de ser GOD component (subcomponentes `intel/*` + helper de flujo a Attack Lab).
+- Responsive: el Radar entra en modo stacked (scope arriba + intel abajo) segun ancho util del scope (no solo el ancho total).
+- UX: filtros en layout `bottom` ahora son plegables (search + resumen siempre visibles) para evitar scroll innecesario.
+- Fix: el status `NETWORKS/VISIBLE/LAST` se mueve al header para no tapar nodos dentro del scope.
+
+### UI (global)
+- Estilo cyberpunk para `select/option` (dark scheme) para evitar dropdown blanco en runtime.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.54] - UI: i18n por locales + Field Manual refactor (2026-02-15)
+### i18n (infra)
+- Reestructura a formato por locales tipo Next:
+  - claves canonicas en `src/ui/i18n/keys.ts`
+  - diccionarios por idioma en `src/ui/i18n/locales/{es,ca,en}.ts`
+  - agregador compatible en `src/ui/i18n/strings.ts`
+
+### UI (settings)
+- `FieldManualView` refactor: divide en nav/hook de layout/secciones para evitar GOD component.
+- Eliminadas ramas `language === ...` en Field Manual: el contenido pasa a `t(key)` (ES/CA/EN).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.55] - UI: i18n transversal (paneles, modal OPSEC, layout) (2026-02-16)
+### i18n (frontend)
+- Migracion de textos hardcodeados a `t(key)` en:
+  - `TrafficFilterBar` (titulos de filtros, ayuda, selector TARGET, boton clear)
+  - `AttackLabPanel` (estado native, logs de inicio/error, bloqueo de auto-run native, modal OPSEC)
+  - `CyberConfirmModal` (headers, estados de analisis, acciones, mensajes de riesgo)
+  - `ConsoleLogsHeader` (tabs, estado offline, botones start/stop)
+  - `DeviceDetailPanel` (labels base, acciones audit/jam/lab/gateway, flujo Ghost Mode y logs)
+  - `DetachedPanelView` y `MainDockedLayout` (textos de desacoplado/inicializacion/awaiting target)
+
+### i18n (catalogo de claves)
+- Se anaden nuevas claves en `src/ui/i18n/keys.ts` y traducciones en:
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
+
+### Testing
+- Ajuste de tests de `DeviceDetailPanel` para ejecutar bajo `I18nProvider`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.56] - UI: i18n transversal (Radar + Wordlist + Attack Header) (2026-02-16)
+### i18n (frontend)
+- Migracion de textos hardcodeados a `t(key)` en:
+  - `src/ui/features/radar/components/radar/RadarHeader.tsx`
+  - `src/ui/features/radar/components/radar/intel/RadarIntelHeader.tsx`
+  - `src/ui/features/radar/components/radar/intel/RadarIntelFilters.tsx`
+  - `src/ui/features/attack_lab/panel/AuditHeader.tsx`
+  - `src/ui/features/attack_lab/panel/WordlistManagerModal.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/CyberConfirmDialog.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordChip.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordlistGrid.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordlistHeader.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordlistFooter.tsx`
+
+### i18n (catalogo de claves)
+- Nuevas claves en `src/ui/i18n/keys.ts` para:
+  - cabecera Radar, filtros Intel y opciones de riesgo/banda
+  - cabecera Attack Lab
+  - flujo completo de Wordlist Manager (acciones, placeholders, confirmaciones)
+- Traducciones anadidas en:
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.57] - UI: i18n en Scene 3D + titulos de ventanas desacopladas (2026-02-16)
+### i18n (frontend)
+- Scene 3D:
+  - `src/ui/features/scene3d/components/NetworkScene.tsx` pasa textos visibles a `t(key)`:
+    - tooltips de controles (undock/show-hide cards)
+    - labels de nodo central (`ROUTER`, `GATEWAY`, `SEARCHING...`)
+    - fallback de vendor desconocido
+    - labels de filas (`IP`, `MAC`, `VENDOR`, `IFACE`, `GW`)
+- Layout:
+  - `src/ui/components/layout/MainDockedLayout.tsx` usa i18n para titulos de `DetachedWindowPortal` (console/device/radar/attack/scene/settings).
+
+### i18n (catalogo de claves)
+- Nuevas claves en `src/ui/i18n/keys.ts` para:
+  - `layout.detached.*`
+  - `scene.controls.*`
+  - `scene.node.*`
+  - `scene.label.*`
+- Traducciones anadidas en:
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
+
+### Validaciones
+- `npm run build` (ok)
+- `npm test -- --run` (ok)
+
+## [v0.8.58] - UI: cierre i18n (TopBar) + estabilizacion de tests Settings (2026-02-16)
+### i18n (frontend)
+- `src/ui/components/layout/TopBar.tsx`:
+  - tooltip de scanner activo migrado a `t("topbar.scan.activeTitle")` para eliminar literal hardcodeado.
+- Catalogo actualizado:
+  - `src/ui/i18n/keys.ts`
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
+
+### Testing
+- `src/ui/features/settings/__tests__/SettingsPanel.test.tsx`:
+  - se mockea `FieldManualView` para validar cambio de tab sin depender del render 3D interno y evitar timeout espurio.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.59] - UI: Attack Lab runtime sin textos hardcodeados (2026-02-16)
+### i18n (frontend)
+- `src/ui/features/attack_lab/hooks/useAttackLab.ts`:
+  - resumen de estado runtime migrado a i18n (`idle/running/finished/ready`).
+  - mensajes de cancelacion y error por defecto migrados a i18n.
+- Catalogo actualizado:
+  - `src/ui/i18n/keys.ts`
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.60] - UI: sincronizacion de idioma entre ventana principal y paneles detached (2026-02-16)
+### i18n (frontend)
+- `src/ui/i18n/I18nProvider.tsx`:
+  - anadida sincronizacion de idioma por `storage` event.
+  - anadida sincronizacion local por evento `netsentinel:i18n-changed`.
+  - anadida sincronizacion multiwindow con `BroadcastChannel` (`netsentinel-i18n`).
+- Resultado:
+  - al cambiar idioma desde `Settings` desacoplado, la ventana principal actualiza traducciones en vivo.
+
+### Testing
+- `src/ui/i18n/__tests__/i18n.test.ts`:
+  - nuevo test que valida sincronizacion por evento `storage`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)

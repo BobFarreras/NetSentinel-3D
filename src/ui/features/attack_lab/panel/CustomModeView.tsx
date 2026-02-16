@@ -3,6 +3,7 @@
 
 import React, { useMemo, useState } from "react";
 import type { AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { useI18n } from "../../../i18n";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -37,6 +38,7 @@ interface CustomModeViewProps {
 }
 
 export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onStart, onCancel, onClear, layout = "wide" }) => {
+  const { t } = useI18n();
   const [binaryPath, setBinaryPath] = useState("");
   const [cwd, setCwd] = useState("");
   const [timeoutMs, setTimeoutMs] = useState<string>("300000");
@@ -63,16 +65,16 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
     <>
       <div style={{ display: "flex", gap: 12, padding: 12, flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>BINARIO (ruta absoluta)</div>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.binaryLabel")}</div>
           <input
             value={binaryPath}
             onChange={(e) => setBinaryPath(e.target.value)}
-            placeholder="Ej: C:\Windows\System32\ping.exe"
+            placeholder={t("attackLab.custom.binaryPlaceholder")}
             style={inputStyle}
           />
         </div>
         <div style={{ width: layout === "narrow" ? "100%" : 180, minWidth: 180 }}>
-          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>TIMEOUT (ms)</div>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.timeoutLabel")}</div>
           <input
             value={timeoutMs}
             onChange={(e) => setTimeoutMs(e.target.value)}
@@ -84,20 +86,20 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
 
       <div style={{ display: "flex", gap: 12, padding: "0 12px 12px 12px", flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>ARGUMENTOS (1 por linea)</div>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.argsLabel")}</div>
           <textarea
             value={argsText}
             onChange={(e) => setArgsText(e.target.value)}
-            placeholder={"Ej:\n-n\n4\n8.8.8.8"}
+            placeholder={t("attackLab.custom.argsPlaceholder")}
             style={{ ...inputStyle, height: 90, resize: "vertical" }}
           />
         </div>
         <div style={{ width: layout === "narrow" ? "100%" : 260, minWidth: 220 }}>
-          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>CWD (opcional)</div>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.cwdLabel")}</div>
           <input
             value={cwd}
             onChange={(e) => setCwd(e.target.value)}
-            placeholder="Ej: C:\temp"
+            placeholder={t("attackLab.custom.cwdPlaceholder")}
             style={inputStyle}
           />
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
@@ -106,17 +108,17 @@ export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onSta
               disabled={isRunning || !binaryPath}
               style={btnStyle(!isRunning && !!binaryPath)}
             >
-              START
+              {t("attackLab.actions.start")}
             </button>
             <button
               onClick={onCancel}
               disabled={!isRunning}
               style={{ ...btnStyle(isRunning), borderColor: "#f55", color: "#f55" }}
             >
-              CANCEL
+              {t("attackLab.actions.cancel")}
             </button>
             <button onClick={onClear} style={btnStyle(true)}>
-              CLEAR
+              {t("attackLab.actions.clear")}
             </button>
           </div>
         </div>

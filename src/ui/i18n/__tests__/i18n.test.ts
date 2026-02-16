@@ -52,4 +52,27 @@ describe("i18n", () => {
     expect(settingsAdapter.setUiLanguage).toHaveBeenCalledWith("ca");
     expect(result.current.t("topbar.history")).toBe("HISTORIAL");
   });
+
+  it("debe sincronizar idioma cuando llega cambio externo por storage", async () => {
+    (settingsAdapter.getAppSettings as any).mockResolvedValue({ uiLanguage: "es" });
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(I18nProvider, null, children);
+    const { result } = renderHook(() => useI18n(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.t("topbar.history")).toBe("HISTORY");
+    });
+
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "netsentinel.uiLanguage",
+          newValue: "ca",
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.t("topbar.history")).toBe("HISTORIAL");
+    });
+  });
 });

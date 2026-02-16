@@ -4,16 +4,15 @@ import React from "react";
 import type { WifiNetworkDTO } from "../../../../../shared/dtos/NetworkDTOs";
 import { riskStyle } from "./radarUtils";
 import type { RadarNode } from "./radarUtils";
+import { useI18n } from "../../../../i18n";
 
 type RadarScopeProps = {
   accepted: boolean;
   scanning: boolean;
   error: string | null;
-  networks: WifiNetworkDTO[];
   filteredNetworks: WifiNetworkDTO[];
   nodes: RadarNode[];
   selectedBssid: string | null;
-  lastScanAt: number | null;
   onSelectNode: (bssid: string) => void;
 };
 
@@ -21,13 +20,12 @@ export const RadarScope: React.FC<RadarScopeProps> = ({
   accepted,
   scanning,
   error,
-  networks,
   filteredNetworks,
   nodes,
   selectedBssid,
-  lastScanAt,
   onSelectNode,
 }) => {
+  const { t } = useI18n();
   return (
     <div style={{ flex: 1, padding: 14, position: "relative" }}>
       <div
@@ -82,7 +80,7 @@ export const RadarScope: React.FC<RadarScopeProps> = ({
         ))}
 
         <div
-          title="HOST"
+          title={t("radar.scope.host")}
           style={{
             position: "absolute",
             left: "50%",
@@ -106,7 +104,7 @@ export const RadarScope: React.FC<RadarScopeProps> = ({
               key={n.bssid}
               onClick={() => onSelectNode(n.bssid)}
               aria-label={`NODE ${n.ssid} CH ${n.channel ?? "?"}`}
-              title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}${isConnected ? " / CONNECTED" : ""}`}
+              title={`${n.ssid} [CH ${n.channel ?? "?"}] / ${style.label}${isConnected ? ` / ${t("radarLogs.link.connected")}` : ""}`}
               style={{
                 position: "absolute",
                 left: `calc(50% + ${n.x * 45}%)`,
@@ -152,28 +150,15 @@ export const RadarScope: React.FC<RadarScopeProps> = ({
               lineHeight: 1.55,
             }}
           >
-            <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 0.8, marginBottom: 6 }}>NO SE DETECTAN REDES</div>
+            <div style={{ color: "#00ff88", fontWeight: 900, letterSpacing: 0.8, marginBottom: 6 }}>{t("radar.scope.noNetworks.title")}</div>
             <div style={{ opacity: 0.9 }}>
-              Si estas en Windows, puede requerirse permiso de ubicacion para escanear WiFi. Verifica que el WiFi esta
-              activado y pulsa <b>SCAN AIRWAVES</b>.
+              {t("radar.scope.noNetworks.body1")} <b>{t("radar.actions.scanAirwaves")}</b>
+              {t("radar.scope.noNetworks.body2")}
             </div>
           </div>
         )}
 
-        <div
-          style={{
-            position: "absolute",
-            left: 12,
-            bottom: 10,
-            color: "#6fe9b7",
-            fontSize: 11,
-            opacity: 0.8,
-          }}
-        >
-          {error
-            ? `ERROR: ${error}`
-            : `NETWORKS: ${networks.length} / VISIBLE: ${filteredNetworks.length} / LAST: ${lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"}`}
-        </div>
+        {/* Status movido al header para no tapar nodos en el scope */}
       </div>
     </div>
   );

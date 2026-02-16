@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { AttackLabExitEvent, AttackLabLogEvent, AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
 import { attackLabAdapter } from "../../../../adapters/attackLabAdapter";
 import type { SimStep } from "../catalog/attackLabScenarios";
+import { useI18n } from "../../../i18n";
 
 type LogRow = {
   ts: number;
@@ -18,6 +19,7 @@ const clampLines = (rows: LogRow[], max: number) => {
 };
 
 export const useAttackLab = () => {
+  const { t } = useI18n();
   const [auditId, setAuditId] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [rows, setRows] = useState<LogRow[]>([]);
@@ -58,7 +60,7 @@ export const useAttackLab = () => {
         simActive.current = false;
         setIsRunning(false);
         setLastExit(evt);
-        if (!evt.success) setError(evt.error || "La auditoria finalizo con error");
+        if (!evt.success) setError(evt.error || t("attackLab.runtime.error.finishedWithError"));
       });
     };
 
@@ -139,13 +141,15 @@ export const useAttackLab = () => {
         success: false,
         exitCode: 130,
         durationMs: 0,
-        error: "cancelado",
+        error: t("attackLab.runtime.error.canceled"),
       });
       return;
     }
     try {
       await attackLabAdapter.cancel(auditId);
-      setRows((prev) => clampLines([...prev, { ts: Date.now(), stream: "stderr", line: "CANCEL solicitado" }], 2000));
+      setRows((prev) =>
+        clampLines([...prev, { ts: Date.now(), stream: "stderr", line: t("attackLab.runtime.log.cancelRequested") }], 2000)
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -158,11 +162,11 @@ export const useAttackLab = () => {
   };
 
   const summary = useMemo(() => {
-    if (!auditId) return "Sin ejecucion activa";
-    if (isRunning) return `En ejecucion: ${auditId}`;
-    if (lastExit) return `Finalizado: ${auditId} (exit=${lastExit.exitCode ?? "?"}, ok=${lastExit.success})`;
-    return `Preparado: ${auditId}`;
-  }, [auditId, isRunning, lastExit]);
+    if (!auditId) return t("attackLab.runtime.summary.idle");
+    if (isRunning) return `${t("attackLab.runtime.summary.running")}: ${auditId}`;
+    if (lastExit) return `${t("attackLab.runtime.summary.finished")}: ${auditId} (exit=${lastExit.exitCode ?? "?"}, ok=${lastExit.success})`;
+    return `${t("attackLab.runtime.summary.ready")}: ${auditId}`;
+  }, [auditId, isRunning, lastExit, t]);
 
   return { auditId, isRunning, rows, lastExit, error, start, startSimulated, cancel, clear, summary };
 };

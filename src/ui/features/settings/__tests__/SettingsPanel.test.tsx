@@ -13,6 +13,10 @@ vi.mock("../../../../adapters/settingsAdapter", () => ({
   },
 }));
 
+vi.mock("../components/field_manual/FieldManualView", () => ({
+  FieldManualView: () => <div>FIELD_MANUAL_MOCK</div>,
+}));
+
 describe("SettingsPanel", () => {
   it("debe renderizar y permitir cambiar a Field Manual", async () => {
     render(
@@ -24,8 +28,6 @@ describe("SettingsPanel", () => {
     expect(await screen.findByLabelText("SETTINGS_PANEL")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "SETTINGS_TAB_FIELD_MANUAL" }));
-    expect(await screen.findByText(/Leyenda 3D/i)).toBeInTheDocument();
-    // Navegacion interna del manual
-    expect(screen.getByRole("button", { name: "MANUAL_SECTION_ATTACK_LAB" })).toBeInTheDocument();
+    expect(await screen.findByText("FIELD_MANUAL_MOCK")).toBeInTheDocument();
   });
 });

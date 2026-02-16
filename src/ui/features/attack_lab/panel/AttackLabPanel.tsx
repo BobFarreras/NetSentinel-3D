@@ -13,6 +13,7 @@ import { CustomModeView } from "./CustomModeView";
 import { windowingAdapter } from "../../../../adapters/windowingAdapter";
 import { CyberConfirmModal, type MacSecurityStatusDTO } from "../../../components/shared/CyberConfirmModal";
 import { emitSystemLog } from "../../../utils/systemLogBus";
+import { useI18n } from "../../../i18n/useI18n";
 
 interface AttackLabPanelProps {
   onClose: () => void;
@@ -33,6 +34,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   autoRunToken: propAutoRunToken = 0,
   embedded = false,
 }) => {
+  const { t } = useI18n();
   const audit = useAttackLab();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
@@ -123,7 +125,13 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     setIsNativeRunning(true);
     abortController.current = new AbortController();
 
-    setNativeRows([{ ts: Date.now(), stream: "stdout", line: `🚀 INICIANDO PROTOCOLO: ${selectedScenario.title}` }]);
+    setNativeRows([
+      {
+        ts: Date.now(),
+        stream: "stdout",
+        line: `🚀 ${t("attackLab.native.startingProtocolPrefix")}: ${selectedScenario.title}`,
+      },
+    ]);
     emitSystemLog({
       source: "ATTACK_LAB",
       level: "INFO",
@@ -160,7 +168,10 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
           });
       }
     } catch (e) {
-      setNativeRows(prev => [...prev, { ts: Date.now(), stream: "stderr", line: `❌ ERROR CRÍTICO: ${e}` }]);
+      setNativeRows((prev) => [
+        ...prev,
+        { ts: Date.now(), stream: "stderr", line: `❌ ${t("attackLab.native.criticalErrorPrefix")}: ${e}` },
+      ]);
     } finally {
       setIsNativeRunning(false); 
       abortController.current = null;
@@ -235,7 +246,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
         {
           ts: Date.now(),
           stream: "stdout",
-          line: "🛑 AUTO-RUN BLOQUEADO (NATIVE). Pulsa EXECUTE para confirmar la ejecucion.",
+          line: `🛑 ${t("attackLab.native.autoRunBlocked")}`,
         },
       ]);
       emitSystemLog({
@@ -258,10 +269,10 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const isAnyRunning = audit.isRunning || isNativeRunning;
   const displayRows = nativeRows.length > 0 ? nativeRows : audit.rows;
 
-  return (
-    <div ref={rootRef} style={{
-      width: embedded ? "100%" : 780,
-      maxWidth: embedded ? "none" : "95vw",
+    return (
+      <div ref={rootRef} style={{
+        width: embedded ? "100%" : 780,
+        maxWidth: embedded ? "none" : "95vw",
       height: embedded ? "100%" : "80vh",
       background: "#050607",
       border: "1px solid rgba(0,255,136,0.25)",
@@ -273,7 +284,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     }}>
       <AuditHeader 
         mode={mode} setMode={setMode} 
-        status={isNativeRunning ? "⚠️ ATTACK IN PROGRESS" : audit.summary} 
+        status={isNativeRunning ? t("attackLab.status.inProgress") : audit.summary} 
         isAutoRun={false} 
         compact={isNarrow}
         onClose={onClose} 
@@ -316,10 +327,14 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
       {/* MODAL CON STATUS OPSEC */}
       <CyberConfirmModal 
         isOpen={showConfirm}
-        title={macStatus?.risk_level === "HIGH" ? "⚠ OPSEC WARNING: REAL IDENTITY" : "✅ OPSEC: IDENTITY OBFUSCATED"}
+        title={
+          macStatus?.risk_level === "HIGH"
+            ? `⚠ ${t("attackLab.opsec.warningTitle")}`
+            : `✅ ${t("attackLab.opsec.safeTitle")}`
+        }
         macStatus={macStatus}
         isLoading={isCheckingOpsec}
-        message={`Este ataque requiere control exclusivo del adaptador WiFi.\n\nSe interrumpirá tu conexión a internet actual para inyectar credenciales contra el objetivo.`}
+        message={t("attackLab.opsec.wifiExclusiveMessage")}
         onConfirm={() => {
           setShowConfirm(false);
           emitSystemLog({ source: "OPSEC", level: "INFO", message: "Operador autorizo ejecucion nativa WiFi" });

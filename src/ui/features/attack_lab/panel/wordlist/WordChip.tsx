@@ -2,6 +2,7 @@
 // Componente visual para una palabra individual del diccionario (seleccion, edicion inline y borrado).
 
 import React, { useState } from "react";
+import { useI18n } from "../../../../i18n";
 
 interface WordChipProps {
   word: string;
@@ -16,6 +17,7 @@ interface WordChipProps {
 export const WordChip: React.FC<WordChipProps> = ({
   word, isSelected, isEditing, onSelect, onEditStart, onEditSave, onDeleteRequest
 }) => {
+  const { t } = useI18n();
   const [editValue, setEditValue] = useState(word);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -50,7 +52,7 @@ export const WordChip: React.FC<WordChipProps> = ({
         <>
           <span 
             onDoubleClick={(e) => { e.stopPropagation(); onEditStart(word); }} 
-            title="Click to Select / Double-click to Edit"
+            title={t("wordlist.wordHint")}
           >
             {word}
           </span>

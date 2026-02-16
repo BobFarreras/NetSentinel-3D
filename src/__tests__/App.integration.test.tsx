@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { DeviceDTO } from "../shared/dtos/NetworkDTOs";
 import App from "../App";
+import { I18nProvider } from "../ui/i18n";
 
 vi.mock("../ui/components/layout/TopBar", () => ({
   TopBar: () => <div data-testid="topbar">TOPBAR</div>,
@@ -88,7 +89,11 @@ vi.mock("../ui/hooks/useNetworkManager", async () => {
 
 describe("App integration (3D -> detail -> console)", () => {
   it("debe sincronizar seleccion desde NetworkScene a DeviceDetail y ConsoleLogs", async () => {
-    render(<App />);
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    );
 
     expect(await screen.findByTestId("scene-selected-ip")).toHaveTextContent("NONE");
     expect(screen.getByTestId("console-logs")).toHaveTextContent("CONSOLE_SELECTED:NONE");

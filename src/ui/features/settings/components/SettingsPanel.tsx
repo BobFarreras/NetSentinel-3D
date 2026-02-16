@@ -20,39 +20,6 @@ const panelStyle: React.CSSProperties = {
   position: "relative",
 };
 
-const headerStyle: React.CSSProperties = {
-  height: 44,
-  padding: "0 12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  borderBottom: `1px solid ${HUD_COLORS.borderSoft}`,
-  background: "linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.2))",
-};
-
-const titleStyle: React.CSSProperties = {
-  fontFamily: HUD_TYPO.mono,
-  fontWeight: 800,
-  letterSpacing: 1.2,
-  color: HUD_COLORS.textMain,
-  fontSize: 12,
-  textTransform: "uppercase",
-};
-
-const closeBtnStyle: React.CSSProperties = {
-  height: 26,
-  padding: "0 10px",
-  borderRadius: 2,
-  border: `1px solid rgba(0,229,255,0.35)`,
-  background: "rgba(0,0,0,0.55)",
-  color: HUD_COLORS.accentCyan,
-  cursor: "pointer",
-  fontFamily: HUD_TYPO.mono,
-  fontSize: 11,
-  fontWeight: 800,
-  letterSpacing: 0.8,
-};
-
 const tabBarStyle: React.CSSProperties = {
   display: "flex",
   gap: 8,
@@ -128,25 +95,23 @@ const selectStyle: React.CSSProperties = {
   padding: "0 10px",
 };
 
-export const SettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+export const SettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose: _onClose }) => {
   const state = useSettingsPanelState();
   const { t } = useI18n();
 
+  const localStyles = `
+    @keyframes nsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  `;
+
   const bodyStyleForTab: React.CSSProperties = {
     ...bodyStyle,
-    // Field manual ya gestiona scroll interno para UX "jugable".
-    overflow: state.tab === "field_manual" ? "hidden" : "auto",
+    // Scroll unificado para todo Settings: evita doble-scroll y barras demasiado pequenas.
+    overflow: "auto",
   };
 
   return (
     <div style={panelStyle} role="dialog" aria-label="SETTINGS_PANEL">
-      <div style={headerStyle}>
-        <div style={titleStyle}>{t("settings.title")}</div>
-        <button onClick={onClose} style={closeBtnStyle} aria-label="CLOSE_SETTINGS">
-          {t("settings.close")}
-        </button>
-      </div>
-
+      <style>{localStyles}</style>
       <div style={tabBarStyle}>
         <button onClick={() => state.setTab("general")} style={tabBtn(state.tab === "general")} aria-label="SETTINGS_TAB_GENERAL">
           {t("settings.tabs.general")}
@@ -163,6 +128,19 @@ export const SettingsPanel: React.FC<{ onClose: () => void }> = ({ onClose }) =>
       <div style={bodyStyleForTab}>
         {state.tab === "general" && (
           <>
+            <div
+              style={{
+                fontFamily: HUD_TYPO.mono,
+                fontWeight: 900,
+                letterSpacing: 1.1,
+                color: HUD_COLORS.textMain,
+                textTransform: "uppercase",
+                margin: "0 0 8px",
+                fontSize: 12,
+              }}
+            >
+              {t("settings.title")}
+            </div>
             <div style={sectionTitle}>{t("settings.language.label")}</div>
             <div style={formRow}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>

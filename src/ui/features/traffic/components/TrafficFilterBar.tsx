@@ -4,6 +4,7 @@ import React from "react";
 import type { DeviceDTO } from "../../../../shared/dtos/NetworkDTOs";
 import type { FilterMode } from "../hooks/useTrafficPanelState";
 import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
+import { useI18n } from "../../../i18n/useI18n";
 
 type TrafficFilterBarProps = {
   packetsCount: number;
@@ -62,6 +63,8 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
   onTargetChange,
   onClear,
 }) => {
+  const { t } = useI18n();
+
   return (
     <div
       style={{
@@ -76,17 +79,17 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
     >
       <div style={{ display: "flex", gap: "5px" }}>
         <FilterBtn
-          label={`ALL (${packetsCount})`}
+          label={`${t("traffic.filters.all")} (${packetsCount})`}
           active={filterMode === "ALL"}
           onClick={() => onFilterChange("ALL")}
-          title="ALL: trafico total observado en la red (no solo del target)."
+          title={t("traffic.filters.allTitle")}
         />
         <FilterBtn
-          label={`💀 JAMMED (${jammedTargetsCount})`}
+          label={`💀 ${t("traffic.filters.jammed")} (${jammedTargetsCount})`}
           active={filterMode === "JAMMED"}
           onClick={() => onFilterChange("JAMMED")}
           color="#ff5555"
-          title={`JAMMED: targets con Kill Net activo (${jammedTargetsCount}) / paquetes marcados (${jammedPacketsCount}).`}
+          title={`${t("traffic.filters.jammedTitle")} (${jammedTargetsCount}/${jammedPacketsCount})`}
         />
         <FilterBtn
           label={targetLabel}
@@ -94,14 +97,14 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
           onClick={() => onFilterChange("TARGET")}
           disabled={!selectedDevice}
           color="#ffff00"
-          title="TARGET: solo trafico del dispositivo seleccionado (o fijado en el selector)."
+          title={t("traffic.filters.targetTitle")}
         />
       </div>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div
-            title={"ALL: trafico total observado.\nJAMMED: trafico afectado por Kill Net.\nTARGET: solo trafico del dispositivo seleccionado o elegido."}
+            title={t("traffic.filters.helpTitle")}
             style={{
               width: 18,
               height: 18,
@@ -124,7 +127,7 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
             value={selectedTargetIp}
             onChange={(e) => onTargetChange(e.target.value)}
             aria-label="TRAFFIC_TARGET_SELECT"
-            title="Selecciona un dispositivo para fijar TARGET sin cambiar el nodo seleccionado."
+            title={t("traffic.targetSelect.title")}
             style={{
               height: 22,
               maxWidth: 280,
@@ -136,12 +139,12 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
               padding: "0 6px",
               outline: "none",
             }}
-          >
-            {targetOptions.map((o) => (
-              <option key={o.ip || "__auto__"} value={o.ip}>
-                {o.label}
-              </option>
-            ))}
+            >
+              {targetOptions.map((o) => (
+                <option key={o.ip || "__auto__"} value={o.ip}>
+                  {o.label}
+                </option>
+              ))}
           </select>
         </div>
 
@@ -159,7 +162,7 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
               fontFamily: HUD_TYPO.mono,
             }}
           >
-            🗑️ CLR
+            🗑️ {t("traffic.actions.clearShort")}
           </button>
         )}
       </div>

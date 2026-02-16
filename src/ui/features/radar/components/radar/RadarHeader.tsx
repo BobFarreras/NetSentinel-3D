@@ -1,6 +1,7 @@
 // src/ui/features/radar/components/radar/RadarHeader.tsx
 // Cabecera del Radar: titulo, estado de escaneo, auto-refresh y controles principales (scan/cerrar).
 import React from "react";
+import { useI18n } from "../../../../i18n";
 
 type RadarHeaderProps = {
   accepted: boolean;
@@ -8,6 +9,10 @@ type RadarHeaderProps = {
   autoTick: number;
   scanning: boolean;
   compact?: boolean;
+  error: string | null;
+  networksCount: number;
+  visibleCount: number;
+  lastScanAt: number | null;
   onToggleAuto: (checked: boolean) => void;
   onScan: () => void;
   onClose: () => void;
@@ -19,10 +24,15 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
   autoTick,
   scanning,
   compact = false,
+  error,
+  networksCount,
+  visibleCount,
+  lastScanAt,
   onToggleAuto,
   onScan,
-  onClose,
+  onClose: _onClose,
 }) => {
+  const { t } = useI18n();
   return (
     <div
       style={{
@@ -38,15 +48,30 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
         minHeight: 44,
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0, flexWrap: "wrap" }}>
         <div style={{ color: "#00ff88", fontWeight: 800, letterSpacing: 1.2, whiteSpace: "nowrap" }}>
-          {compact ? "RADAR" : "RADAR VIEW"}
+          {compact ? t("radar.header.titleCompact") : t("radar.header.titleFull")}
         </div>
         {!compact && (
           <div style={{ color: "#6fe9b7", fontSize: 12, opacity: 0.75, whiteSpace: "nowrap" }}>
-            WIFI SPECTRUM / PHASE 0 RECON
+            {t("radar.header.subtitle")}
           </div>
         )}
+        {/* Status: lo movemos al header para que nunca tape nodos dentro del scope */}
+        <div
+          style={{
+            color: "#6fe9b7",
+            fontSize: 11,
+            opacity: 0.8,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {error
+            ? `${t("radar.header.errorPrefix")}: ${error}`
+            : `${t("radar.header.networks")}: ${networksCount} / ${t("radar.header.visible")}: ${visibleCount} / ${t("radar.header.last")}: ${
+                lastScanAt ? new Date(lastScanAt).toLocaleTimeString() : "-"
+              }`}
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -68,7 +93,7 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
             disabled={!accepted}
             style={{ accentColor: "#00ff88" }}
           />
-          {compact ? "AUTO" : `AUTO${accepted && autoRefresh ? ` (${autoTick}s)` : ""}`}
+          {compact ? t("radar.header.auto") : `${t("radar.header.auto")}${accepted && autoRefresh ? ` (${autoTick}s)` : ""}`}
         </label>
 
         <button
@@ -87,23 +112,9 @@ export const RadarHeader: React.FC<RadarHeaderProps> = ({
             whiteSpace: "nowrap",
           }}
         >
-          {scanning ? "..." : compact ? "SCAN" : "SCAN AIRWAVES"}
+          {scanning ? "..." : compact ? t("radar.header.scan") : t("radar.header.scanAirwaves")}
         </button>
 
-        <button
-          onClick={onClose}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(0,255,136,0.25)",
-            color: "#6fe9b7",
-            padding: compact ? "6px 8px" : "6px 10px",
-            cursor: "pointer",
-            fontSize: 12,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {compact ? "X" : "CLOSE"}
-        </button>
       </div>
     </div>
   );
