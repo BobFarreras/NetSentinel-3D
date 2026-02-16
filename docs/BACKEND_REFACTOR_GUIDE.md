@@ -82,6 +82,10 @@ Acciones recomendadas (sin romper comandos existentes):
 Regla:
 - No reintroducir aliases `start_external_audit/cancel_external_audit` salvo plan explicito de compatibilidad (y documentado).
 
+Nota de catalogo:
+- La fuente de verdad actual de escenarios (frontend) es `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`.
+- Referencias antiguas a `src/core/logic/externalAuditScenarios.ts` se consideran legacy.
+
 ## Fase 3: Dominio e infraestructura (hexagonal real)
 Objetivo: que `application/` dependa de puertos del dominio, no de implementaciones concretas.
 

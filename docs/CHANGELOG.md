@@ -644,7 +644,7 @@ Nota:
 - `src-tauri/src/infrastructure/wifi/windows_netsh/parse_interfaces.rs` ahora parsea correctamente multiples bloques de interfaz y prioriza el bloque realmente conectado.
 - `src-tauri/src/infrastructure/wifi/wifi_connector.rs` deja de exigir IPv4 para declarar enlace WiFi exitoso (evita falsos negativos por latencia DHCP).
 - Añadidas trazas de diagnostico en el flujo nativo WiFi:
-  - `src/core/logic/externalAuditScenarios.ts` ahora loguea tiempo por intento y snapshot `scan_airwaves` tras cada fallo.
+- El catalogo de escenarios vive en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts` (antes `src/core/logic/externalAuditScenarios.ts`).
   - `src-tauri/src/infrastructure/wifi/wifi_connector.rs` ahora loguea estado de `netsh connect` y snapshots de interfaz durante el polling.
 - UX/logging en `ExternalAudit`:
   - nuevas trazas `🧪 TRACE` redirigidas a `SYSTEM LOGS` por bus local (`src/ui/utils/systemLogBus.ts`) para limpiar el `Console Output` del panel.

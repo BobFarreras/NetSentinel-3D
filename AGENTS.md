@@ -17,7 +17,7 @@ Expandir el arsenal de NetSentinel manteniendo la excelencia en **Arquitectura H
 
 Regla de integracion:
 - `DOC-ATTACK.md` nunca se implementa de forma directa en UI o backend sin pasar por `AttackLabSkill`.
-- Toda plantilla nueva del catalogo debe aterrizar en `src/core/logic/externalAuditScenarios.ts`.
+- Toda plantilla nueva del catalogo debe aterrizar en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`.
 - Toda ejecucion debe salir por comandos Tauri `start_attack_lab` / `cancel_attack_lab` o por ejecucion local (sin procesos) en LAB.
 - Si una plantilla implica comando real, debe declarar `isSupported`, `buildRequest` y `timeoutMs`.
 - Si una plantilla no requiere procesos externos ni cambios del sistema, debe implementarse como ejecucion local (pasiva) con pasos (`SimStep`) trazables.
@@ -244,7 +244,7 @@ Directo, tecnico, pragmatico y orientado a robustez. Prioriza soluciones manteni
 5. Consolidar plantillas por objetivo (router/device) enlazando:
    - catalogo tactico en `DOC-ATTACK.md`,
    - runtime de ejecucion en `docs/ATTACK_LAB.md`,
-   - escenarios ejecutables en `src/core/logic/externalAuditScenarios.ts`.
+   - escenarios ejecutables en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`.
 
 Regla:
 - Las prioridades deben cerrarse con evidencia tecnica (tests/build/check) y registro en `docs/CHANGELOG.md`.
