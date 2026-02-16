@@ -331,6 +331,10 @@ export const ES_STRINGS: Record<I18nKey, string> = {
   "attackLab.lab.evidenceClear": "LIMPIAR",
   "attackLab.lab.evidenceEmpty": "Sin evidencia cargada.",
   "attackLab.lab.evidenceLoaded": "Evidencia cargada",
+  "attackLab.lab.evidenceKind": "TIPO",
+  "attackLab.lab.evidenceSsid": "SSID",
+  "attackLab.lab.evidenceAp": "AP",
+  "attackLab.lab.evidenceSta": "STA",
 
   "confirmModal.header.criticalAlert": "CRITICAL ALERT",
   "confirmModal.header.secureOperation": "SECURE OPERATION",
