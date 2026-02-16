@@ -283,6 +283,12 @@ export const ES_STRINGS: Record<I18nKey, string> = {
   "attackLab.lab.running": "EJECUTANDO...",
   "attackLab.lab.execute": "EJECUTAR",
   "attackLab.lab.stop": "DETENER",
+  "attackLab.lab.evidence": "EVIDENCIA",
+  "attackLab.lab.evidenceImport": "IMPORTAR",
+  "attackLab.lab.evidenceImporting": "IMPORTANDO...",
+  "attackLab.lab.evidenceClear": "LIMPIAR",
+  "attackLab.lab.evidenceEmpty": "Sin evidencia cargada.",
+  "attackLab.lab.evidenceLoaded": "Evidencia cargada",
 
   "confirmModal.header.criticalAlert": "CRITICAL ALERT",
   "confirmModal.header.secureOperation": "SECURE OPERATION",

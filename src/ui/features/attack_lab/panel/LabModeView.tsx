@@ -6,6 +6,7 @@ import type { DeviceDTO, WifiNetworkDTO } from "../../../../shared/dtos/NetworkD
 import type { AttackLabScenario } from "../catalog/types";
 import { WordlistManagerModal } from "./WordlistManagerModal";
 import { useI18n } from "../../../i18n";
+import { parseWifiEvidence, type ParsedWifiEvidence } from "../logic/parseWifiEvidence";
 
 const inputStyle: React.CSSProperties = { width: "100%", background: "rgba(0,0,0,0.35)", border: "1px solid rgba(0,255,136,0.18)", color: "#b7ffe2", padding: "6px 8px", fontSize: 12, outline: "none", fontFamily: "inherit" };
 
@@ -38,6 +39,11 @@ interface LabModeViewProps {
   onRun: () => void;
   onCancel: () => void;
   layout?: "wide" | "narrow";
+
+  // Evidencia WiFi (opcional): se usa por el escenario "wifi_evidence_import".
+  wifiEvidence?: ParsedWifiEvidence | null;
+  onWifiEvidenceImported?: (raw: string, parsed: ParsedWifiEvidence | null) => void;
+  onWifiEvidenceCleared?: () => void;
 }
 
 export const LabModeView: React.FC<LabModeViewProps> = ({
@@ -56,14 +62,19 @@ export const LabModeView: React.FC<LabModeViewProps> = ({
   onRun,
   onCancel,
   layout = "wide",
+  wifiEvidence = null,
+  onWifiEvidenceImported,
+  onWifiEvidenceCleared,
 }) => {
   const { t } = useI18n();
   // ESTADO PARA EL MODAL DE DICCIONARIO
   const [showWordlist, setShowWordlist] = useState(false);
+  const [isImportingEvidence, setIsImportingEvidence] = useState(false);
 
   // El selector de TARGET debe ser siempre accesible para ir rapido (sin abrir Radar).
   // Si un escenario NO requiere target, el operador puede dejarlo en "NO TARGET".
   const targetKind = selectedScenario?.category === "WIFI" ? "wifi" : selectedScenario?.category === "ROUTER" ? "router" : "device";
+  const requiresTarget = selectedScenario?.id !== "wifi_evidence_import";
   const showRouterTargetSelect = targetKind === "router" && routerTargets.length > 0 && !!onSelectRouterTarget;
   const showWifiTargetSelect = targetKind === "wifi" && wifiTargets.length > 0 && !!onSelectWifiTarget;
   const showDeviceTargetSelect = targetKind === "device" && deviceTargets.length > 0 && !!onSelectDeviceTarget;
@@ -150,6 +161,62 @@ export const LabModeView: React.FC<LabModeViewProps> = ({
               </div>
             )}
             </div>
+
+            {selectedScenario?.id === "wifi_evidence_import" && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ color: "#5c7", fontSize: 10, marginBottom: 4 }}>{t("attackLab.lab.evidence")}</div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: isRunning ? "not-allowed" : "pointer" }}>
+                    <input
+                      type="file"
+                      accept=".txt,.22000,.hccapx,.cap,.pcap,.pcapng"
+                      disabled={isRunning || isImportingEvidence}
+                      style={{ display: "none" }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          setIsImportingEvidence(true);
+                          const raw = await file.text();
+                          const parsed = parseWifiEvidence(raw);
+                          onWifiEvidenceImported?.(raw, parsed);
+                        } finally {
+                          setIsImportingEvidence(false);
+                          // Permite re-importar el mismo fichero.
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                    <span style={{ ...btnStyle(!isRunning), padding: "6px 10px" }}>
+                      {isImportingEvidence ? t("attackLab.lab.evidenceImporting") : t("attackLab.lab.evidenceImport")}
+                    </span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => onWifiEvidenceCleared?.()}
+                    disabled={isRunning || !wifiEvidence}
+                    style={{ ...btnStyle(!isRunning && !!wifiEvidence), padding: "6px 10px" }}
+                  >
+                    {t("attackLab.lab.evidenceClear")}
+                  </button>
+                </div>
+
+                <div style={{ marginTop: 8, ...inputStyle, whiteSpace: "pre-wrap", lineHeight: 1.35, opacity: 0.95 }}>
+                  {!wifiEvidence ? (
+                    <span style={{ color: "rgba(183,255,226,0.75)" }}>{t("attackLab.lab.evidenceEmpty")}</span>
+                  ) : (
+                    <>
+                      <div style={{ color: "#00ff88", fontWeight: 700 }}>{t("attackLab.lab.evidenceLoaded")}</div>
+                      <div>KIND: {wifiEvidence.kind}</div>
+                      <div>SSID: {wifiEvidence.ssid ?? "-"}</div>
+                      <div>AP: {wifiEvidence.apMac ?? "-"}</div>
+                      <div>STA: {wifiEvidence.staMac ?? "-"}</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {isRunning ? (
                 <button 
@@ -167,7 +234,11 @@ export const LabModeView: React.FC<LabModeViewProps> = ({
                     <span className="blink">⚠️ {t("attackLab.lab.running")}</span>
                 </button>
             ) : (
-                <button onClick={onRun} disabled={!selectedScenario || !targetDevice} style={{ ...btnStyle(!!selectedScenario && !!targetDevice), flex: "1 1 160px", minWidth: 160 }}>
+                <button
+                    onClick={onRun}
+                    disabled={!selectedScenario || (requiresTarget && !targetDevice)}
+                    style={{ ...btnStyle(!!selectedScenario && (!requiresTarget || !!targetDevice)), flex: "1 1 160px", minWidth: 160 }}
+                >
                     {t("attackLab.lab.execute")}
                 </button>
             )}

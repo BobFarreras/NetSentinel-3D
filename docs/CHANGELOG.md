@@ -110,6 +110,21 @@ Nota:
 ### Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
+
+## [v0.8.55] - Attack Lab: WiFi import evidencias (PMKID/Handshake) + sincronizacion WiFi (2026-02-16)
+### Attack Lab (WiFi)
+- Nuevo: `WIFI: Evidence Import (PMKID/Handshake)` (`wifi_evidence_import`): importador/validador de evidencias (WPA*01/WPA*02) para reporte.
+- UX: el modal OPSEC WiFi ahora es configurable por escenario (`requiresOpsecConfirm`) para no bloquear herramientas pasivas.
+- Fix: seleccionar un objetivo WiFi ya no fuerza el escenario `wifi_brute_force_dict` (mantiene el escenario actual).
+- Sync: Radar (WiFi) <-> Attack Lab (WiFi) por BSSID para mantener el target coherente.
+
+### Documentacion
+- `AGENTS.md` y `docs/ATTACK_LAB.md`: se reemplaza el lenguaje de "simulaciones" por "ejecucion local/pasiva" para reducir ambiguedad.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 - `cd src-tauri && cargo check` (ok)
 - Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
 

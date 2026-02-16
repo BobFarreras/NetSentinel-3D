@@ -26,7 +26,7 @@ Permite ejecutar una herramienta externa instalada en el sistema:
 ### 1.2 LAB AUDIT (LAB)
 Es un catalogo de escenarios para juniors/alumnos:
 - `external`: presets que construyen un request automaticamente (por ejemplo PowerShell en Windows).
-- `simulated`: no ejecuta procesos, solo imprime pasos (stdout/stderr) para explicar una tecnica o una defensa.
+- `simulated`: ejecucion local/pasiva. No ejecuta procesos; imprime pasos (stdout/stderr) para documentar evidencia, analisis o hardening.
 
 Ventaja: onboarding rapido y consistencia operacional.
 
@@ -55,10 +55,10 @@ Flujo `CUSTOM` o `LAB(external)`:
 Nota (persistencia UX):
 - El runtime del Attack Lab es persistente a nivel UI (store compartido). Si cierras/abres el panel, la ejecucion y la consola no se pierden.
 
-Flujo `LAB(simulated)`:
+Flujo `LAB(simulated)` (local/pasivo):
 1. UI genera una lista de pasos con delays (SimStep).
 2. Hook los imprime en consola con timers.
-3. Se genera un "exit" simulado con `success=true`.
+3. Se genera un "exit" local con `success=true`.
 
 ---
 
@@ -165,7 +165,7 @@ Esto permite mostrar progreso incremental en UI sin esperar al final.
 
 Editar: `src/ui/features/attack_lab/catalog/attackLabScenarios.ts` (o el catalogo activo en el repo)
 
-### 7.1 Escenario SIMULADO (recomendado para formacion)
+### 7.1 Escenario LOCAL (mode: "simulated") (recomendado para formacion y analisis pasivo)
 1. Anade un `id`, `title`, `description`, `mode: "simulated"`, `category`.
 2. Implementa `simulate(ctx)` devolviendo una lista de pasos:
 
@@ -238,7 +238,7 @@ El cancel es cooperativo:
 - `LAB`: UX guiada, escenarios repetibles y didacticos.
 - `CUSTOM`: potencia total para un administrador que ya sabe que herramienta quiere ejecutar.
 
-### Por que LAB tiene escenarios simulados?
+### Por que LAB tiene escenarios `simulated` (locales/pasivos)?
 Porque la docencia no depende de ejecutar herramientas reales siempre:
 - se puede ensenar el flujo, señales y mitigaciones,
 - y reservar ejecuciones reales para un laboratorio controlado y autorizado.
@@ -279,7 +279,7 @@ Flujo implementado en el estado actual del repo:
    - `autoRun=true` si viene con target + escenario.
 5. `AttackLabPanel` resuelve escenario y ejecuta:
    - externo con `start_attack_lab`, o
-   - simulado con `startSimulated`.
+   - local con `startSimulated`.
 
 Puntos exactos de codigo:
 - `src/App.tsx`
@@ -304,7 +304,7 @@ Caso reportado:
 - Resultado: `exit=1`, `ok=false`, error de conexion remota.
 
 Interpretacion operativa:
-1. Esto **no es simulado**. Es un escenario `mode: "external"` real.
+1. Esto **no es local**. Es un escenario `mode: "external"` real.
 2. NetSentinel lanza PowerShell real en tu sistema (proceso hijo).
 3. PowerShell intenta hacer una peticion HTTP HEAD real a `http://192.168.1.139/`.
 4. El host no responde por HTTP en ese puerto/ruta (o esta filtrado), por eso `Invoke-WebRequest` lanza excepcion.

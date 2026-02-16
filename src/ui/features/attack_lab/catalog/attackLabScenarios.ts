@@ -6,16 +6,16 @@ import { routerReconPingTracertScenario } from "./scenarios/router/routerReconPi
 import { deviceReconPingTracertScenario } from "./scenarios/device/deviceReconPingTracert";
 import { httpFingerprintHeadersScenario } from "./scenarios/http/httpFingerprintHeaders";
 import { wifiDictionaryAttackScenario } from "./scenarios/wifi/wifiDictionaryAttack";
-import { pmkidExposureSimScenario } from "./scenarios/wifi/pmkidExposureSim";
+import { wifiEvidenceImportScenario } from "./scenarios/wifi/wifiEvidenceImport";
 import { iotRiskProfileQuickPortsScenario } from "./scenarios/iot/iotRiskProfileQuickPorts";
 
 export const getAttackLabScenarios = (): AttackLabScenario[] => {
   return [
     wifiDictionaryAttackScenario,
+    wifiEvidenceImportScenario,
     routerReconPingTracertScenario,
     deviceReconPingTracertScenario,
     httpFingerprintHeadersScenario,
     iotRiskProfileQuickPortsScenario,
-    pmkidExposureSimScenario,
   ];
 };

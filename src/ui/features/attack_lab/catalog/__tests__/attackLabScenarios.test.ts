@@ -9,11 +9,11 @@ describe("attackLabScenarios catalog", () => {
     const ids = getAttackLabScenarios().map((s) => s.id);
     expect(ids).toEqual([
       "wifi_brute_force_dict",
+      "wifi_evidence_import",
       "router_recon_ping_tracert",
       "device_recon_ping_tracert",
       "device_http_headers",
       "iot_risk_profile_quick_ports",
-      "edu_pmkid_exposure_sim",
     ]);
   });
 });

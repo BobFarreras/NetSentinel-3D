@@ -14,6 +14,8 @@ import { windowingAdapter } from "../../../../adapters/windowingAdapter";
 import { CyberConfirmModal, type MacSecurityStatusDTO } from "../../../components/shared/CyberConfirmModal";
 import { emitSystemLog } from "../../../utils/systemLogBus";
 import { useI18n } from "../../../i18n/useI18n";
+import type { ParsedWifiEvidence } from "../logic/parseWifiEvidence";
+import { useWifiRadarSelection, setSelectedWifiBssid } from "../../radar/hooks/useWifiRadarSelection";
 
 interface AttackLabPanelProps {
   onClose: () => void;
@@ -42,8 +44,10 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const runtime = useAttackLabRuntime();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
+  const wifiRadarSel = useWifiRadarSelection();
 
   const UI_STATE_KEY = "netsentinel.attackLab.uiState.v1";
+  const WIFI_EVIDENCE_KEY = "netsentinel.attackLab.wifiEvidence.v1";
   const loadUiState = (): { scenarioId?: string; mode?: "LAB" | "CUSTOM"; targetIp?: string } | null => {
     try {
       const raw = localStorage.getItem(UI_STATE_KEY);
@@ -80,6 +84,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
   const [mode, setMode] = useState<"LAB" | "CUSTOM">(() => persisted?.mode ?? (propTargetDevice || defaultScenarioId ? "LAB" : "CUSTOM"));
   const [scenarioId, setScenarioId] = useState<string>(() => defaultScenarioId || persisted?.scenarioId || "");
   const [wifiTargets, setWifiTargets] = useState<WifiNetworkDTO[]>([]);
+  const [wifiEvidence, setWifiEvidence] = useState<ParsedWifiEvidence | null>(null);
   
   // ESTADOS MODAL & OPSEC
   const [showConfirm, setShowConfirm] = useState(false);
@@ -177,6 +182,33 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     };
   }, [selectedScenario?.category]);
 
+  // Sync Radar(WiFi) -> Attack Lab (WiFi): si el operador selecciona un AP en Radar, reflejamos el TARGET
+  // en Attack Lab sin cambiar el escenario (no forzamos dictionary).
+  useEffect(() => {
+    if (selectedScenario?.category !== "WIFI") return;
+    const bssid = wifiRadarSel.selectedBssid;
+    if (!bssid) return;
+    if (localTarget?.mac?.toLowerCase() === bssid.toLowerCase()) return;
+
+    const n = wifiTargets.find((x) => x.bssid?.toLowerCase() === bssid.toLowerCase()) || null;
+    if (!n) return;
+
+    const virtualTarget: DeviceDTO = {
+      ip: n.ssid,
+      mac: n.bssid,
+      vendor: n.vendor,
+      hostname: n.ssid,
+      isGateway: false,
+      ping: undefined,
+      openPorts: [],
+      os: "WiFi Access Point",
+      deviceType: "ROUTER",
+    };
+
+    setLocalTarget(virtualTarget);
+    void windowingAdapter.emitAttackLabContext({ targetDevice: virtualTarget, scenarioId: scenarioId || undefined, autoRun: false });
+  }, [selectedScenario?.category, wifiRadarSel.selectedBssid, wifiTargets, localTarget?.mac, scenarioId]);
+
   useEffect(() => {
     if (propTargetDevice) {
         setLocalTarget(propTargetDevice);
@@ -201,6 +233,32 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
       // ignore
     }
   }, [scenarioId, mode, localTarget?.ip]);
+
+  // Wifi evidence es opcional y se persiste en localStorage para que no se pierda al abrir/cerrar paneles.
+  // Nota: el escenario `wifi_evidence_import` consume el RAW desde `WIFI_EVIDENCE_KEY`.
+  const onWifiEvidenceImported = (raw: string, parsed: ParsedWifiEvidence | null) => {
+    try {
+      localStorage.setItem(WIFI_EVIDENCE_KEY, raw);
+    } catch {
+      // ignore
+    }
+    setWifiEvidence(parsed);
+    emitSystemLog({
+      source: "ATTACK_LAB",
+      level: parsed ? "INFO" : "WARN",
+      message: parsed ? `WiFi evidence import ok kind=${parsed.kind} ssid=${parsed.ssid ?? "-"}` : "WiFi evidence import failed (format unknown)",
+    });
+  };
+
+  const onWifiEvidenceCleared = () => {
+    try {
+      localStorage.removeItem(WIFI_EVIDENCE_KEY);
+    } catch {
+      // ignore
+    }
+    setWifiEvidence(null);
+    emitSystemLog({ source: "ATTACK_LAB", level: "INFO", message: "WiFi evidence cleared" });
+  };
 
   // Si no hay target pero sí routers detectados, seleccionamos el primero solo una vez.
   // Regla: NO rotar a otro router automáticamente por errores.
@@ -286,7 +344,11 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
     if (!selectedScenario || runtime.state.isRunning) return;
 
     // --- CHECK NATIVO (WIFI) ---
-    if (selectedScenario.mode === "native" && selectedScenario.category === "WIFI") {
+    if (
+      selectedScenario.mode === "native" &&
+      selectedScenario.category === "WIFI" &&
+      selectedScenario.requiresOpsecConfirm !== false
+    ) {
         // Mostramos el modal de inmediato y resolvemos el check OPSEC en segundo plano.
         setMacStatus(null);
         setIsCheckingOpsec(true);
@@ -475,6 +537,7 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
               onSelectWifiTarget={(bssid) => {
                 if (!bssid) {
                   setLocalTarget(null);
+                  setSelectedWifiBssid(null);
                   void windowingAdapter.emitAttackLabContext({ targetDevice: null, scenarioId: scenarioId || undefined, autoRun: false });
                   return;
                 }
@@ -492,15 +555,18 @@ export const AttackLabPanel: React.FC<AttackLabPanelProps> = ({
                   deviceType: "ROUTER",
                 };
                 setLocalTarget(virtualTarget);
-                setScenarioId("wifi_brute_force_dict");
-                setMode("LAB");
-                void windowingAdapter.emitAttackLabContext({ targetDevice: virtualTarget, scenarioId: "wifi_brute_force_dict", autoRun: false });
+                setSelectedWifiBssid(n.bssid);
+                // Importante: seleccionar TARGET no debe cambiar el escenario activo.
+                void windowingAdapter.emitAttackLabContext({ targetDevice: virtualTarget, scenarioId: scenarioId || undefined, autoRun: false });
               }}
               selectedScenario={selectedScenario}
               isRunning={isAnyRunning} 
               onRun={handleRunLab}
               onCancel={handleCancel}
               layout={isNarrow ? "narrow" : "wide"}
+              wifiEvidence={wifiEvidence}
+              onWifiEvidenceImported={onWifiEvidenceImported}
+              onWifiEvidenceCleared={onWifiEvidenceCleared}
             />
           ) : (
             <CustomModeView 

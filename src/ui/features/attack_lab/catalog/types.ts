@@ -30,6 +30,10 @@ export type AttackLabScenario = {
   mode: ScenarioMode;
   category: "ROUTER" | "DEVICE" | "WIFI" | "IOT" | "EDU";
 
+  // UX: algunos escenarios WiFi (acciones reales) requieren confirmacion OPSEC.
+  // Otros (analisis pasivo/import) no deben bloquear con el modal.
+  requiresOpsecConfirm?: boolean;
+
   // UI: escenarios sugeridos a ejecutar despues (flujo guiado). Son ids del propio catalogo.
   nextScenarioIds?: string[];
 

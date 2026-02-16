@@ -92,19 +92,6 @@ export const getScenarioManual = (scenarioId: string, lang: UILanguage): Scenari
           ES ? "En redes reales, la defensa principal es una passphrase fuerte + WPA3; no hay atajos." : CA ? "En xarxes reals, la defensa principal es una passphrase forta + WPA3; no hi ha dreceres." : "In real networks, the primary defense is a strong passphrase + WPA3; there are no shortcuts.",
         ],
       };
-    case "edu_pmkid_exposure_sim":
-      return {
-        how: ES
-          ? "Simulacion: ilustra el concepto de exposicion PMKID en ciertos equipos/configuraciones. No ejecuta acciones ofensivas reales."
-          : CA
-          ? "Simulacio: il·lustra el concepte d'exposicio PMKID en alguns equips/configuracions. No executa accions ofensives reals."
-          : "Simulation: illustrates PMKID exposure concept on some gear/configs. No real offensive actions are executed.",
-        mitigations: [
-          ES ? "WPA3-Personal (SAE) y PMF/802.11w habilitado." : CA ? "WPA3-Personal (SAE) i PMF/802.11w habilitat." : "Use WPA3-Personal (SAE) and enable PMF/802.11w.",
-          ES ? "Actualizar firmware del AP/router." : CA ? "Actualitzar firmware de l'AP/router." : "Update AP/router firmware.",
-          ES ? "Deshabilitar modos legacy cuando no sean necesarios." : CA ? "Deshabilitar modes legacy quan no siguin necessaris." : "Disable legacy modes when not needed.",
-        ],
-      };
     case "edu_iot_risk_profile":
       return {
         how: ES

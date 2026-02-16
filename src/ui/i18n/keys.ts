@@ -261,6 +261,12 @@ export const I18N_KEYS = [
   "attackLab.lab.running",
   "attackLab.lab.execute",
   "attackLab.lab.stop",
+  "attackLab.lab.evidence",
+  "attackLab.lab.evidenceImport",
+  "attackLab.lab.evidenceImporting",
+  "attackLab.lab.evidenceClear",
+  "attackLab.lab.evidenceEmpty",
+  "attackLab.lab.evidenceLoaded",
 
   // Confirm modal (OPSEC / acciones peligrosas)
   "confirmModal.header.criticalAlert",
