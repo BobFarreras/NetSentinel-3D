@@ -343,6 +343,10 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+### Refactor
+- `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`:
+  - extraida la logica a `src/ui/features/attack_lab/panel/hooks/useAttackLabPanelState.ts` para evitar componente GOD (sin cambios de UI).
+
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
 ### UI (fix)
