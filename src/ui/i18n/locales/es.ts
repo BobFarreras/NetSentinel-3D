@@ -52,7 +52,7 @@ export const ES_STRINGS: Record<I18nKey, string> = {
   "settings.passwords.gateway.unknownGateway": "<gateway desconocido>",
   "settings.passwords.gateway.user": "USER",
   "settings.passwords.gateway.pass": "PASS",
-  "settings.passwords.gateway.missingGatewayIp": "Selecciona un GATEWAY IP (desde el selector) o escribe uno valido para habilitar GUARDAR/BORRAR.",
+  "settings.passwords.gateway.missingGatewayIp": "Selecciona un GATEWAY IP (desde el selector) o escribe uno valido para habilitar GUARDAR.",
   "settings.passwords.gateway.showPass": "MOSTRAR",
   "settings.passwords.gateway.hidePass": "OCULTAR",
   "settings.passwords.gateway.save": "GUARDAR",

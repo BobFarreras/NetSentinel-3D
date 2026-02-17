@@ -52,7 +52,7 @@ export const CA_STRINGS: Record<I18nKey, string> = {
   "settings.passwords.gateway.unknownGateway": "<gateway desconegut>",
   "settings.passwords.gateway.user": "USER",
   "settings.passwords.gateway.pass": "PASS",
-  "settings.passwords.gateway.missingGatewayIp": "Selecciona un GATEWAY IP (del selector) o escriu-ne un de valid per habilitar GUARDA/BORRA.",
+  "settings.passwords.gateway.missingGatewayIp": "Selecciona un GATEWAY IP (del selector) o escriu-ne un de valid per habilitar GUARDA.",
   "settings.passwords.gateway.showPass": "MOSTRA",
   "settings.passwords.gateway.hidePass": "OCULTA",
   "settings.passwords.gateway.save": "GUARDA",
