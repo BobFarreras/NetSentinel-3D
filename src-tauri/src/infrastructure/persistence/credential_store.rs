@@ -8,6 +8,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::domain::entities::GatewayCredentials;
 use crate::domain::ports::CredentialStorePort;
 
+// Prefijo estable para permitir "best-effort keyring" en comandos Tauri:
+// en algunos entornos (Linux headless, distros sin Secret Service, etc.) el keyring no esta disponible.
+// En ese caso, el backend debe permitir seguir el flujo operativo (fallback a presets) sin tumbar la UI.
+pub const KEYRING_UNAVAILABLE_PREFIX: &str = "KEYRING_UNAVAILABLE:";
+
 pub struct KeyringCredentialStore {
     service: String,
 }
@@ -21,7 +26,8 @@ impl KeyringCredentialStore {
 
     fn entry(&self, gateway_ip: &str) -> Result<Entry, String> {
         let account = format!("gateway:{}", gateway_ip.trim());
-        Entry::new(&self.service, &account).map_err(|e| e.to_string())
+        Entry::new(&self.service, &account)
+            .map_err(|e| format!("{}{}", KEYRING_UNAVAILABLE_PREFIX, e))
     }
 
     fn now_ms() -> u64 {
@@ -42,7 +48,8 @@ impl CredentialStorePort for KeyringCredentialStore {
             ..creds
         })
         .map_err(|e| e.to_string())?;
-        entry.set_password(&json).map_err(|e| e.to_string())?;
+        entry.set_password(&json)
+            .map_err(|e| format!("{}{}", KEYRING_UNAVAILABLE_PREFIX, e))?;
         Ok(())
     }
 
@@ -58,7 +65,7 @@ impl CredentialStorePort for KeyringCredentialStore {
                 Ok(Some(parsed))
             }
             Err(keyring::Error::NoEntry) => Ok(None),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{}{}", KEYRING_UNAVAILABLE_PREFIX, e)),
         }
     }
 
@@ -67,7 +74,7 @@ impl CredentialStorePort for KeyringCredentialStore {
         match entry.delete_password() {
             Ok(()) => Ok(()),
             Err(keyring::Error::NoEntry) => Ok(()),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{}{}", KEYRING_UNAVAILABLE_PREFIX, e)),
         }
     }
 }

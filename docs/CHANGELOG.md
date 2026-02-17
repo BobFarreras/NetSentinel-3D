@@ -87,6 +87,16 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.75] - Backend: keyring best-effort (Linux/mac/headless no rompen comandos) (2026-02-17)
+### Backend (credenciales gateway)
+- `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials` pasan a ser best-effort si el keyring no esta disponible:
+  - `get_*` => `Ok(None)`
+  - `save/delete` => `Ok(())`
+- Motivo: en Linux depende de Secret Service (GNOME Keyring/KWallet). En entornos sin keyring, el flujo debe continuar (presets + brute-force).
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.
