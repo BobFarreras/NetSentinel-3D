@@ -11,4 +11,7 @@ export const trafficRootStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-export const gridTemplate = "45px 1fr 15px 1fr 100px";
+// Columnas:
+// TYPE | SRC | > | DST | DATA | LEN
+// DATA debe tener espacio suficiente (evita truncado agresivo).
+export const gridTemplate = "50px 1.2fr 15px 1.2fr minmax(260px, 2.4fr) 70px";

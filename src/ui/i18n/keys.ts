@@ -171,6 +171,7 @@ export const I18N_KEYS = [
   "traffic.table.src",
   "traffic.table.dst",
   "traffic.table.data",
+  "traffic.table.len",
   "traffic.state.waiting",
   "traffic.state.paused",
   "traffic.filter.label",

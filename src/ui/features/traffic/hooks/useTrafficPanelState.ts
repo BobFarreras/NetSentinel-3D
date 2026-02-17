@@ -90,6 +90,47 @@ export const useTrafficPanelState = ({
     if (ip === "255.255.255.255") return "📢 BROADCAST";
     if (ip.startsWith("224.0") || ip.startsWith("239.")) return "📡 MULTICAST";
     if (ip === "8.8.8.8") return "🔍 GOOGLE DNS";
+
+    // Heuristica ligera: etiqueta algunos destinos comunes por prefijo IP (sin red / sin APIs externas).
+    // Nota: esto NO es autoritativo; solo ayuda a lectura rapida en tabla.
+    const isPrivateIpv4 = (value: string) => {
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(value)) return false;
+      const [a, b] = value.split(".").map((x) => Number(x));
+      if (a === 10) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      return false;
+    };
+
+    const guessOrg = (value: string): string | null => {
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(value)) return null;
+      const [a, b] = value.split(".").map((x) => Number(x));
+      // Google (no exhaustivo)
+      if (a === 172 && (b === 217 || b === 253)) return "GOOGLE";
+      if (a === 216 && b === 239) return "GOOGLE";
+      if (a === 142 && b === 250) return "GOOGLE";
+      if (a === 35 || a === 34) return "GOOGLE CLOUD";
+      // Meta (Instagram/Facebook)
+      if (a === 157 && b === 240) return "META (IG/FB)";
+      if (a === 31 && b === 13) return "META (IG/FB)";
+      if (a === 129 && b === 134) return "META (IG/FB)";
+      // Cloudflare
+      if (a === 104 && b >= 16 && b <= 31) return "CLOUDFLARE";
+      if (a === 104 && b === 21) return "CLOUDFLARE";
+      if (a === 172 && b === 64) return "CLOUDFLARE";
+      // AWS (muy amplio; solo etiquetas tipicas)
+      if (a === 52 || a === 54 || a === 13 || a === 18) return "AWS";
+      // Apple
+      if (a === 17) return "APPLE";
+      // Fastly
+      if (a === 151 && b === 101) return "FASTLY";
+      return null;
+    };
+
+    if (!isPrivateIpv4(ip)) {
+      const org = guessOrg(ip);
+      if (org) return `🌐 ${org} (${ip})`;
+    }
     return ip;
   };
 

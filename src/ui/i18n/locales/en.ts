@@ -188,6 +188,7 @@ export const EN_STRINGS: Record<I18nKey, string> = {
   "traffic.table.src": "SRC",
   "traffic.table.dst": "DST",
   "traffic.table.data": "DATA",
+  "traffic.table.len": "LEN",
   "traffic.state.waiting": "WAITING FOR TRAFFIC...",
   "traffic.state.paused": "MONITOR PAUSED",
   "traffic.filter.label": "Filter",
