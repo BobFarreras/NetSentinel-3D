@@ -11,6 +11,7 @@ use crate::domain::entities::GatewayCredentials;
 use super::internal_validation::validate_router_credentials_input;
 
 // --- CREDENCIALES (gateway) ---
+#[tauri::command]
 pub async fn save_gateway_credentials(
     service: State<'_, CredentialService>,
     gateway_ip: String,
@@ -34,6 +35,7 @@ pub async fn save_gateway_credentials(
         .await
 }
 
+#[tauri::command]
 pub async fn get_gateway_credentials(
     service: State<'_, CredentialService>,
     gateway_ip: String,
@@ -42,6 +44,7 @@ pub async fn get_gateway_credentials(
     service.get_gateway_credentials(&gateway_ip).await
 }
 
+#[tauri::command]
 pub async fn delete_gateway_credentials(
     service: State<'_, CredentialService>,
     gateway_ip: String,

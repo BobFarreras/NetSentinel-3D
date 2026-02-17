@@ -5,6 +5,7 @@ use crate::api::dtos::MacSecurityStatusDTO;
 use crate::application::opsec::OpSecService;
 use tauri::State;
 
+#[tauri::command]
 pub fn check_mac_security(
     service: State<'_, OpSecService>,
 ) -> Result<MacSecurityStatusDTO, String> {
@@ -16,6 +17,7 @@ pub fn check_mac_security(
     })
 }
 
+#[tauri::command]
 pub async fn randomize_mac(service: State<'_, OpSecService>) -> Result<String, String> {
     service.randomize_identity().await
 }

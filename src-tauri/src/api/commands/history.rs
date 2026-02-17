@@ -6,6 +6,7 @@ use crate::application::history::HistoryService;
 use crate::domain::entities::{Device, ScanSession};
 
 // --- HISTORY ---
+#[tauri::command]
 pub async fn save_scan(
     service: State<'_, HistoryService>,
     devices: Vec<Device>,
@@ -15,6 +16,7 @@ pub async fn save_scan(
     service.save_session(devices).await
 }
 
+#[tauri::command]
 pub async fn get_history(service: State<'_, HistoryService>) -> Result<Vec<ScanSession>, String> {
     Ok(service.get_history().await)
 }

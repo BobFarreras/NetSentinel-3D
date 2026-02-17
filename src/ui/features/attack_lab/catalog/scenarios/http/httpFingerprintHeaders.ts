@@ -1,183 +1,62 @@
 // src/ui/features/attack_lab/catalog/scenarios/http/httpFingerprintHeaders.ts
-// Escenario DEVICE external: fingerprint de cabeceras HTTP via HEAD (80/443) con salida localizada (NETSENTINEL_UI_LANG).
+// Escenario DEVICE native: fingerprint HTTP (HEAD en 80/443) via backend Rust, sin PowerShell (cross-platform).
 
 import type { AttackLabScenario } from "../../types";
-import { isWindows } from "../_shared/platform";
-
-const escapePsSingleQuoted = (value: string) => value.replace(/'/g, "''");
+import { invoke } from "@tauri-apps/api/core";
+import type { HttpFingerprintResultDTO } from "../../../../../../shared/dtos/NetworkDTOs";
 
 export const httpFingerprintHeadersScenario: AttackLabScenario = {
   id: "device_http_headers",
   title: "HTTP: Fingerprint de cabeceras (HEAD)",
   description:
     "Auditoria de superficie web (pasiva): HEAD en HTTP/HTTPS, captura status/redirects/headers (auth, cookies, security headers) y genera un VERDICT accionable.",
-  mode: "external",
+  mode: "native",
   category: "DEVICE",
   // Evitamos bucles: HTTP -> IoT -> HTTP. Si el operador quiere IoT, lo lanza manualmente.
   nextScenarioIds: ["device_recon_ping_tracert"],
-  isSupported: () => {
-    if (!isWindows()) return { supported: false, reason: "Preset pensado para Windows. Usa modo CUSTOM en otros SO." };
-    return { supported: true };
-  },
-  buildRequest: ({ device }) => {
-    const ipSafe = escapePsSingleQuoted(device.ip);
+  isSupported: () => ({ supported: true }),
+  executeNative: async ({ onLog, device }) => {
+    const targetIp = device?.ip ?? "";
+    onLog("stdout", "=== HTTP: FINGERPRINT (RUST) ===");
+    onLog("stdout", `TARGET_IP: ${targetIp}`);
+    onLog("stdout", `TIMESTAMP: ${new Date().toISOString()}`);
+    onLog("stdout", "");
 
-    const script = [
-      "$ErrorActionPreference = 'Continue'",
-      "$lang = $env:NETSENTINEL_UI_LANG",
-      "if (-not $lang) { $lang = 'es' }",
-      "function _T($k) {",
-      "  switch ($lang) {",
-      "    'ca' {",
-      "      switch ($k) {",
-      "        'banner' { return '=== AUDITORIA HTTP: HEAD (HTTP/HTTPS) ===' }",
-      "        'noResp' { return 'No hi ha resposta HTTP/HTTPS en 80/443 (pot existir web UI en un altre port).' }",
-      "        'nextPorts' { return '- Executa Deep Audit (ports) per descobrir serveis web en ports alternatius.' }",
-      "        'basicOverHttp' { return 'Auth Basic detectada sobre HTTP sense redirect clar a HTTPS (risc de credencials en clar).' }",
-      "        'httpToHttpsOk' { return 'HTTP redirigeix a HTTPS (be).' }",
-      "        'missingHsts' { return 'Falta HSTS (Strict-Transport-Security) en HTTPS.' }",
-      "        'weakCookiesPrefix' { return 'Cookies potencialment febles: ' }",
-      "        'baselineOk' { return 'Superficie web detectada sense senyals obvies de misconfig basica.' }",
-      "        'nextHardening' { return '- Si hi ha panell web: limitar acces a LAN/VPN, hardening TLS/headers i credencials fortes.' }",
-      "      }",
-      "    }",
-      "    'en' {",
-      "      switch ($k) {",
-      "        'banner' { return '=== HTTP SURFACE AUDIT: HEAD (HTTP/HTTPS) ===' }",
-      "        'noResp' { return 'No HTTP/HTTPS response on 80/443 (web UI may exist on another port).' }",
-      "        'nextPorts' { return '- Run Deep Audit (ports) to discover web services on alternate ports.' }",
-      "        'basicOverHttp' { return 'Basic auth detected over HTTP without clear redirect to HTTPS (risk of cleartext creds).' }",
-      "        'httpToHttpsOk' { return 'HTTP redirects to HTTPS (good).' }",
-      "        'missingHsts' { return 'Missing HSTS (Strict-Transport-Security) on HTTPS.' }",
-      "        'weakCookiesPrefix' { return 'Potentially weak cookies: ' }",
-      "        'baselineOk' { return 'Web surface detected with no obvious basic misconfig signals.' }",
-      "        'nextHardening' { return '- If there is a web UI: restrict to LAN/VPN, harden TLS/headers and use strong credentials.' }",
-      "      }",
-      "    }",
-      "    default {",
-      "      switch ($k) {",
-      "        'banner' { return '=== HTTP SURFACE AUDIT: HEAD (HTTP/HTTPS) ===' }",
-      "        'noResp' { return 'No hay respuesta HTTP/HTTPS en 80/443 (puede existir web UI en otro puerto).' }",
-      "        'nextPorts' { return '- Ejecuta Deep Audit (puertos) para descubrir servicios web en puertos alternativos.' }",
-      "        'basicOverHttp' { return 'Auth Basic detectada sobre HTTP sin redirect claro a HTTPS (riesgo de credenciales en claro).' }",
-      "        'httpToHttpsOk' { return 'HTTP redirige a HTTPS (bien).' }",
-      "        'missingHsts' { return 'Falta HSTS (Strict-Transport-Security) en HTTPS.' }",
-      "        'weakCookiesPrefix' { return 'Cookies potencialmente debiles: ' }",
-      "        'baselineOk' { return 'Superficie web detectada sin senales obvias de misconfig basica.' }",
-      "        'nextHardening' { return '- Si hay panel web: limitar acceso a LAN/VPN, hardening TLS/headers y credenciales fuertes.' }",
-      "      }",
-      "    }",
-      "  }",
-      "  return $k",
-      "}",
-      `$targetIp = '${ipSafe}'`,
-      "Write-Output (_T 'banner')",
-      "Write-Output ('TARGET_IP: ' + $targetIp)",
-      "Write-Output ('TIMESTAMP: ' + (Get-Date).ToString('s'))",
-      "Write-Output ''",
-      "if (-not ([System.Net.IPAddress]::TryParse($targetIp, [ref]$null))) {",
-      "  Write-Error ('Invalid IPv4: ' + $targetIp)",
-      "  exit 2",
-      "}",
-      "",
-      // HEAD robusto: HttpWebRequest captura status+headers incluso en 401/403/404.
-      "function Head-Request($uri, $insecureTls) {",
-      "  try {",
-      "    if ($insecureTls) { [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true } }",
-      "    $req = [System.Net.HttpWebRequest]::Create($uri)",
-      "    $req.Method = 'HEAD'",
-      "    $req.Timeout = 5000",
-      "    $req.ReadWriteTimeout = 5000",
-      "    $req.AllowAutoRedirect = $false",
-      "    $req.UserAgent = 'NetSentinel/AttackLab-HTTP'",
-      "    $resp = $req.GetResponse()",
-      "    return $resp",
-      "  } catch [System.Net.WebException] {",
-      "    if ($_.Exception.Response) { return $_.Exception.Response }",
-      "    return $null",
-      "  } catch {",
-      "    return $null",
-      "  }",
-      "}",
-      "",
-      "function Get-Header($headers, $name) {",
-      "  try { return $headers[$name] } catch { return $null }",
-      "}",
-      "",
-      "function Print-Interesting($resp) {",
-      "  if (-not $resp) { Write-Output 'STATUS: <no response>'; return }",
-      "  $code = $null; try { $code = [int]$resp.StatusCode } catch { $code = $null }",
-      "  $desc = ''; try { $desc = $resp.StatusDescription } catch {}",
-      "  Write-Output ('STATUS: ' + ($code -as [string]) + ' ' + $desc)",
-      "  $h = $resp.Headers",
-      "  $server = Get-Header $h 'Server'",
-      "  $auth = Get-Header $h 'WWW-Authenticate'",
-      "  $cookie = Get-Header $h 'Set-Cookie'",
-      "  $loc = Get-Header $h 'Location'",
-      "  $hsts = Get-Header $h 'Strict-Transport-Security'",
-      "  $xfo = Get-Header $h 'X-Frame-Options'",
-      "  $csp = Get-Header $h 'Content-Security-Policy'",
-      "  if ($server) { Write-Output ('Server: ' + $server) }",
-      "  if ($auth) { Write-Output ('WWW-Authenticate: ' + $auth) }",
-      "  if ($loc) { Write-Output ('Location: ' + $loc) }",
-      "  if ($cookie) { Write-Output ('Set-Cookie: ' + $cookie) }",
-      "  if ($hsts) { Write-Output ('Strict-Transport-Security: ' + $hsts) }",
-      "  if ($xfo) { Write-Output ('X-Frame-Options: ' + $xfo) }",
-      "  if ($csp) { Write-Output ('Content-Security-Policy: ' + $csp) }",
-      "}",
-      "",
-      "Write-Output '== HTTP (80) =='",
-      "$httpUri = ('http://' + $targetIp + '/')",
-      "$httpResp = Head-Request $httpUri $false",
-      "Print-Interesting $httpResp",
-      "Write-Output ''",
-      "Write-Output '== HTTPS (443) =='",
-      "$httpsUri = ('https://' + $targetIp + '/')",
-      "$httpsResp = Head-Request $httpsUri $true",
-      "Print-Interesting $httpsResp",
-      "Write-Output ''",
-      "",
-      // VERDICT/WHY/NEXT (mensajes en el idioma UI)
-      "$verdict = 'OK'",
-      "$reasons = @()",
-      "$next = @()",
-      "$httpLoc = $null; if ($httpResp) { $httpLoc = $httpResp.Headers['Location'] }",
-      "$httpsHsts = $null; if ($httpsResp) { $httpsHsts = $httpsResp.Headers['Strict-Transport-Security'] }",
-      "$httpAuth = $null; if ($httpResp) { $httpAuth = $httpResp.Headers['WWW-Authenticate'] }",
-      "$cookieAny = $null; if ($httpResp -and $httpResp.Headers['Set-Cookie']) { $cookieAny = $httpResp.Headers['Set-Cookie'] } elseif ($httpsResp -and $httpsResp.Headers['Set-Cookie']) { $cookieAny = $httpsResp.Headers['Set-Cookie'] }",
-      "$cookieSecure = $false; $cookieHttpOnly = $false",
-      "if ($cookieAny) {",
-      "  if ($cookieAny -match '(?i)\\bSecure\\b') { $cookieSecure = $true }",
-      "  if ($cookieAny -match '(?i)\\bHttpOnly\\b') { $cookieHttpOnly = $true }",
-      "}",
-      "if (-not $httpResp -and -not $httpsResp) {",
-      "  $verdict = 'WARN'; $reasons += (_T 'noResp');",
-      "  $next += (_T 'nextPorts');",
-      "}",
-      "if ($httpAuth -and ($httpAuth -match '(?i)Basic') -and -not ($httpLoc -and $httpLoc -match '^https://')) {",
-      "  $verdict = 'WARN'; $reasons += (_T 'basicOverHttp');",
-      "}",
-      "if ($httpLoc -and $httpLoc -match '^https://') { $reasons += (_T 'httpToHttpsOk') }",
-      "if ($httpsResp -and -not $httpsHsts) { $verdict = 'WARN'; $reasons += (_T 'missingHsts') }",
-      "if ($cookieAny -and (-not $cookieSecure -or -not $cookieHttpOnly)) {",
-      "  $verdict = 'WARN'; $reasons += ((_T 'weakCookiesPrefix') + 'Secure=' + $cookieSecure + ' HttpOnly=' + $cookieHttpOnly)",
-      "}",
-      "if ($reasons.Count -eq 0) { $reasons += (_T 'baselineOk') }",
-      "$next += (_T 'nextHardening')",
-      "Write-Output '== VERDICT =='",
-      "Write-Output ('VERDICT: ' + $verdict)",
-      "Write-Output 'WHY:'",
-      "$reasons | ForEach-Object { Write-Output ('- ' + $_) }",
-      "Write-Output ''",
-      "Write-Output 'NEXT:'",
-      "$next | ForEach-Object { Write-Output $_ }",
-    // Script multilínea: necesario para `switch {}` / bloques sin errores de parseo.
-    ].join("\n");
+    let res: HttpFingerprintResultDTO;
+    try {
+      res = await invoke<HttpFingerprintResultDTO>("fingerprint_http_headers", { targetIp });
+    } catch (e) {
+      onLog("stderr", `ERROR: backend http fingerprint fallo: ${String(e)}`);
+      return;
+    }
 
-    return {
-      binaryPath: "powershell.exe",
-      args: ["-NoProfile", "-Command", script],
-      timeoutMs: 60000,
+    const printProbe = (label: string, p?: HttpFingerprintResultDTO["http"]) => {
+      onLog("stdout", `== ${label} ==`);
+      if (!p) {
+        onLog("stdout", "STATUS: <no response>");
+        return;
+      }
+      onLog("stdout", `URL: ${p.url}`);
+      onLog("stdout", `STATUS: ${p.status ?? "<unknown>"}`);
+      if (p.server) onLog("stdout", `Server: ${p.server}`);
+      if (p.wwwAuthenticate) onLog("stdout", `WWW-Authenticate: ${p.wwwAuthenticate}`);
+      if (p.location) onLog("stdout", `Location: ${p.location}`);
+      if (p.setCookie) onLog("stdout", `Set-Cookie: ${p.setCookie}`);
+      if (p.strictTransportSecurity) onLog("stdout", `Strict-Transport-Security: ${p.strictTransportSecurity}`);
+      if (p.xFrameOptions) onLog("stdout", `X-Frame-Options: ${p.xFrameOptions}`);
+      if (p.contentSecurityPolicy) onLog("stdout", `Content-Security-Policy: ${p.contentSecurityPolicy}`);
     };
+
+    printProbe("HTTP (80)", res.http);
+    onLog("stdout", "");
+    printProbe("HTTPS (443)", res.https);
+    onLog("stdout", "");
+    onLog("stdout", "== VERDICT ==");
+    onLog("stdout", `VERDICT: ${res.verdict}`);
+    onLog("stdout", "WHY:");
+    res.why.forEach((line) => onLog("stdout", `- ${line}`));
+    onLog("stdout", "");
+    onLog("stdout", "NEXT:");
+    res.next.forEach((line) => onLog("stdout", line));
   },
 };

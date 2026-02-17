@@ -27,6 +27,7 @@ Permite ejecutar una herramienta externa instalada en el sistema:
 Es un catalogo de escenarios para juniors/alumnos:
 - `external`: presets que construyen un request automaticamente (por ejemplo PowerShell en Windows).
 - `simulated`: ejecucion local/pasiva. No ejecuta procesos; imprime pasos (stdout/stderr) para documentar evidencia, analisis o hardening.
+- `native`: ejecucion local (sin procesos externos) con logica TypeScript trazable. Puede invocar comandos Tauri existentes (p. ej. `run_iot_scan`) para reutilizar el motor Rust.
 
 Ventaja: onboarding rapido y consistencia operacional.
 
@@ -60,6 +61,11 @@ Flujo `LAB(simulated)` (local/pasivo):
 2. Hook los imprime en consola con timers.
 3. Se genera un "exit" local con `success=true`.
 
+Flujo `LAB(native)` (local, sin procesos):
+1. UI ejecuta una funcion async (`executeNative`) con un `onLog` tipado y soporte de cancelacion cooperativa.
+2. El runtime imprime logs en consola igual que `external`.
+3. Puede invocar comandos Tauri existentes (si aplica) sin pasar por `start_attack_lab`.
+
 ---
 
 ## 3) Mapa de archivos (fuente de verdad)
@@ -79,7 +85,9 @@ Flujo `LAB(simulated)` (local/pasivo):
   - `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs`: emite eventos Tauri hacia la UI.
 - Comandos Tauri:
   - `src-tauri/src/api/commands/attack_lab.rs` (implementacion)
-  - `src-tauri/src/api/commands.rs` (agregador)
+  - `src-tauri/src/api/commands/mod.rs` (facade / re-exports)
+- Otros comandos relevantes para escenarios `native`:
+  - `src-tauri/src/api/commands/http_fingerprint.rs`: `fingerprint_http_headers`
 - DTOs (contrato Rust):
   - `src-tauri/src/api/dtos.rs` (incluye `AttackLabRequestDTO`)
 
@@ -191,6 +199,11 @@ buildRequest: ({ device }) => ({
 ```
 
 Nota: si quieres ejecutar varios comandos, hazlo dentro del interprete (PowerShell) o crea un script y ejecútalo como binario.
+
+### 7.3 Escenario NATIVE (mode: "native")
+1. Define `mode: "native"`.
+2. Implementa `executeNative(ctx)` y emite logs via `ctx.onLog(stream, line)`.
+3. Si requiere cancelacion cooperativa, comprueba `ctx.signal?.aborted` durante bucles/esperas.
 
 ---
 

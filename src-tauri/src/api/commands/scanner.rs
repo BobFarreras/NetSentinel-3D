@@ -9,6 +9,7 @@ use crate::application::scan::ScannerService;
 use super::internal_validation::validate_scan_range;
 
 // --- NETWORK SCANNER ---
+#[tauri::command]
 pub async fn scan_network(
     service: State<'_, ScannerService>,
     range: Option<String>,
@@ -22,6 +23,7 @@ pub async fn scan_network(
     Ok(devices.into_iter().map(DeviceDTO::from).collect())
 }
 
+#[tauri::command]
 pub async fn audit_target(
     service: State<'_, ScannerService>,
     ip: String,
@@ -37,6 +39,7 @@ pub async fn audit_target(
     })
 }
 
+#[tauri::command]
 pub async fn run_iot_scan(
     service: State<'_, ScannerService>,
     target_ip: String,

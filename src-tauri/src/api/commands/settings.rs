@@ -23,12 +23,14 @@ fn validate_ui_language(lang: &Option<String>) -> Result<(), String> {
     }
 }
 
+#[tauri::command]
 pub fn get_app_settings(
     service: tauri::State<'_, Arc<SettingsService>>,
 ) -> Result<AppSettings, String> {
     Ok(service.get_settings())
 }
 
+#[tauri::command]
 pub fn save_app_settings(
     service: tauri::State<'_, Arc<SettingsService>>,
     settings: AppSettings,
@@ -37,6 +39,7 @@ pub fn save_app_settings(
     service.save_settings(settings)
 }
 
+#[tauri::command]
 pub fn set_ui_language(
     service: tauri::State<'_, Arc<SettingsService>>,
     ui_language: Option<String>,

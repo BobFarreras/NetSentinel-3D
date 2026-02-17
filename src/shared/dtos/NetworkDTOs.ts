@@ -158,3 +158,25 @@ export interface AttackLabExitEvent {
   durationMs: number;
   error?: string;
 }
+
+// 8. HTTP Fingerprint (headers via HEAD)
+export interface HttpProbeResultDTO {
+  url: string;
+  status?: number;
+  server?: string;
+  wwwAuthenticate?: string;
+  location?: string;
+  setCookie?: string;
+  strictTransportSecurity?: string;
+  xFrameOptions?: string;
+  contentSecurityPolicy?: string;
+}
+
+export interface HttpFingerprintResultDTO {
+  targetIp: string;
+  http?: HttpProbeResultDTO;
+  https?: HttpProbeResultDTO;
+  verdict: string;
+  why: string[];
+  next: string[];
+}

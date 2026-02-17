@@ -9,6 +9,25 @@ Nota:
 - Este archivo mantiene el changelog **reciente** y accionable.
 - El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
 
+## [v0.8.70] - Attack Lab: catalogo profesional + backend commands navegable (2026-02-17)
+### Backend (api/commands)
+- Refactor: eliminado `src-tauri/src/api/commands.rs` (monolito). Ahora los comandos viven en:
+  - `src-tauri/src/api/commands/mod.rs` (facade)
+  - `src-tauri/src/api/commands/*.rs` (comandos por feature con `#[tauri::command]`)
+- `src-tauri/src/lib.rs` registra los comandos por modulo (`api::commands::<feature>::...`) para que Tauri resuelva `__cmd__*` correctamente.
+
+### Attack Lab (catalogo)
+- Fix: scripts PowerShell (baseline + HTTP headers) corrigen validacion IPv4 (`TryParse` con output var real).
+- HTTP headers: migrado a backend Rust (cross-platform) via comando `fingerprint_http_headers` (reqwest HEAD 80/443, sin PowerShell).
+
+### Docs
+- Actualizadas referencias de comandos: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ATTACK_LAB.md`, `docs/SECURITY.md`, `src-tauri/src/api/commands/README.md`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.
