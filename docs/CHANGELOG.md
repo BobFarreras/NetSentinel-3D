@@ -83,6 +83,16 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.69] - UI: RadarIntelFilters desacoplado (side/bottom views) (2026-02-17)
+### UI (radar)
+- `RadarIntelFilters` deja de ser un fichero monolitico; ahora compone vistas:
+  - `src/ui/features/radar/components/radar/intel/filters/*`
+- Objetivo: reducir responsabilidades y mantener el layout responsive sin cambios visuales.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
 ### UI (attack_lab)
 - Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:
