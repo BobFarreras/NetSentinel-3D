@@ -49,6 +49,30 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.66] - UI: Scene3D NetworkNode desacoplado (Kill Net FX a subcomponente) (2026-02-17)
+### UI (scene3d)
+- `NetworkNode` deja de contener el FX inline de Kill Net; ahora usa:
+  - `src/ui/features/scene3d/components/network_node/JammerSwarmFx.tsx`
+- Objetivo: reducir responsabilidades del componente 3D sin cambiar UX.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.67] - UI: TopBar desacoplado (brand/identidad/controles) + README de layout (2026-02-17)
+### UI (layout)
+- `TopBar` se divide en subcomponentes reutilizables para reducir responsabilidades sin cambiar UX:
+  - `src/ui/components/layout/topbar/TopBarBrand.tsx`
+  - `src/ui/components/layout/topbar/TopBarIdentity.tsx`
+  - `src/ui/components/layout/topbar/TopBarPanelControls.tsx`
+  - `src/ui/components/layout/topbar/TopBarStatusControls.tsx`
+- Nuevo `README` de la capa layout:
+  - `src/ui/components/layout/README.md`
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
 ### UI (attack_lab)
 - Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:

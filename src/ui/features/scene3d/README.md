@@ -16,9 +16,9 @@ Salidas:
 
 Componentes/hook principales:
 - UI 3D: `src/ui/features/scene3d/components/NetworkScene.tsx`, `NetworkNode.tsx`, `NodeLabel.tsx`
+  - FX internas: `src/ui/features/scene3d/components/network_node/JammerSwarmFx.tsx` (Kill Net), `src/ui/features/scene3d/components/AlarmRing.tsx` (intruso)
 - Estado: `src/ui/features/scene3d/hooks/useNetworkSceneState.ts`, `useNetworkNodeState.ts`, `useNodeLabelState.ts`
 
 ## Tests
 
 - Hooks: `src/ui/features/scene3d/__tests__/useNetworkSceneState.test.ts`, `useNetworkNodeState.test.ts`, `useNodeLabelState.test.ts`
-
