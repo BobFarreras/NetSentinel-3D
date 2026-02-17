@@ -75,6 +75,18 @@ Nota:
 - `npm test -- --run` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.74] - Multi-OS: keyring best-effort (no bloquea flujos) (2026-02-17)
+### IPC (frontend)
+- `networkAdapter.getGatewayCredentials()` ahora es best-effort: si el keyring del SO no esta disponible (Linux headless, etc.), devuelve `null` para permitir fallback a presets/brute-force sin romper el flujo.
+
+### Docs
+- `docs/SECURITY.md`: aclarado comportamiento multi-OS del keyring y regla de robustez.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

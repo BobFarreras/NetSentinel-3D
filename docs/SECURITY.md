@@ -176,6 +176,15 @@ Implementacion:
 - Backend: `KeyringCredentialStore` (crate `keyring`) guarda un blob JSON en el keyring del sistema (Windows Credential Manager).
 - Comandos: `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`.
 
+Multi-OS (comportamiento esperado):
+- Windows/macOS: el keyring suele estar disponible (Credential Manager / Keychain).
+- Linux: depende del entorno de escritorio (Secret Service, GNOME Keyring, KWallet). En entornos headless/minimal puede no estar disponible.
+
+Regla de robustez:
+- Si el keyring no esta disponible o falla, el producto debe seguir funcionando:
+  - `get_gateway_credentials` se trata como `null` (sin fast-path),
+  - el operador puede seguir con presets (`gateway_cred_presets.json`) y brute-force controlado.
+
 Ubicacion real (donde se guardan):
 - Credenciales del gateway (USER/PASS reales): se guardan en el **keyring del SO** (no hay "ruta" de fichero).
   - Windows: aparecen en **Credential Manager** como credenciales genericas asociadas al servicio `netsentinel`.
