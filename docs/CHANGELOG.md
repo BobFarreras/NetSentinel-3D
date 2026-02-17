@@ -97,6 +97,13 @@ Nota:
 ### Validaciones
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.76] - Tests: fallback cuando keyring no esta disponible (2026-02-17)
+### Tests (frontend)
+- `useRouterHacker`: test de regresion para asegurar que si falla `get_gateway_credentials` (keyring no disponible), el flujo no crashea y continua con `audit_router` (fallback a presets/brute-force).
+
+### Validaciones
+- `npm test -- --run` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.
