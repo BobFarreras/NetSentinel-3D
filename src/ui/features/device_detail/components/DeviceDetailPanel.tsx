@@ -9,6 +9,7 @@ import { useDeviceDetailPanelState } from "../hooks/useDeviceDetailPanelState";
 import { ConsoleDisplay, ConsolePrompt } from "./details/ConsoleDisplay";
 import { PortResults } from "./details/PortResults";
 import { useI18n } from "../../../i18n";
+import { deviceAliasRegistry } from "../../../../core/logic/deviceAliasRegistry";
 
 interface Props {
   device: DeviceDTO;
@@ -40,6 +41,10 @@ export const DeviceDetailPanel: React.FC<Props> = ({
 
   // ESTADO LOCAL DE LOGS
   const [localLogs, setLocalLogs] = useState<string[]>([]);
+
+  // Alias manual (nombre amigable) para el operador.
+  const [isEditingAlias, setIsEditingAlias] = useState(false);
+  const [aliasDraft, setAliasDraft] = useState<string>(() => (device.name ?? device.hostname ?? "").trim());
 
   // Selector de detalle: consola vs puertos (evita que PortResults "desaparezca" debajo de la consola).
   const [detailsView, setDetailsView] = useState<"console" | "ports">("console");
@@ -133,6 +138,24 @@ export const DeviceDetailPanel: React.FC<Props> = ({
     onAudit();
   };
 
+  const openAliasEditor = () => {
+    setAliasDraft((device.name ?? device.hostname ?? "").trim());
+    setIsEditingAlias(true);
+  };
+
+  const saveAlias = () => {
+    deviceAliasRegistry.setManualAliasForDevice(device, aliasDraft);
+    window.dispatchEvent(new Event("netsentinel://aliases-updated"));
+    setIsEditingAlias(false);
+  };
+
+  const clearAlias = () => {
+    deviceAliasRegistry.clearManualAliasForDevice(device);
+    window.dispatchEvent(new Event("netsentinel://aliases-updated"));
+    setIsEditingAlias(false);
+    setAliasDraft("");
+  };
+
   return (
     <>
       <style>
@@ -167,7 +190,75 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.nameLabel")}</span>
-            <span style={{ color: '#fff', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={state.resolvedName}>{state.resolvedName}</span>
+            {isEditingAlias ? (
+              <span style={{ display: "flex", gap: 6, alignItems: "center", maxWidth: 360 }}>
+                <input
+                  value={aliasDraft}
+                  onChange={(e) => setAliasDraft(e.target.value)}
+                  placeholder={t("deviceDetail.alias.placeholder")}
+                  style={{
+                    width: 190,
+                    background: "rgba(0,0,0,0.7)",
+                    border: `1px solid ${HUD_COLORS.accentGreen}`,
+                    color: "#fff",
+                    padding: "6px 8px",
+                    fontFamily: HUD_TYPO.mono,
+                    fontSize: 12,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={saveAlias}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1 }}
+                  disabled={!aliasDraft.trim()}
+                >
+                  {t("deviceDetail.alias.save")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingAlias(false)}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1, borderColor: "#444", color: "#aaa" }}
+                >
+                  {t("deviceDetail.alias.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAlias}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1, borderColor: "#aa0000", color: "#ff5555" }}
+                >
+                  {t("deviceDetail.alias.clear")}
+                </button>
+              </span>
+            ) : (
+              <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span
+                  style={{ color: '#fff', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  title={state.resolvedName}
+                >
+                  {state.resolvedName}
+                </span>
+                <button
+                  type="button"
+                  onClick={openAliasEditor}
+                  className="retro-button"
+                  style={{
+                    width: 84,
+                    padding: "6px 8px",
+                    borderWidth: 1,
+                    letterSpacing: 1,
+                    borderColor: "#00e5ff",
+                    color: "#00e5ff",
+                    background: "transparent",
+                  }}
+                >
+                  {t("deviceDetail.alias.edit")}
+                </button>
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.vendorLabel")}</span>

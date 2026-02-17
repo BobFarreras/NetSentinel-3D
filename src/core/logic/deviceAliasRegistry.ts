@@ -5,12 +5,14 @@ import type { DeviceDTO } from "../../shared/dtos/NetworkDTOs";
 
 type AliasRecord = {
   label: string;
+  kind: "learned" | "manual";
   lastSeenAt: number;
 };
 
 type AliasStore = Record<string, AliasRecord>;
 
-const STORAGE_KEY = "netsentinel.deviceAliases:v1";
+const STORAGE_KEY_V1 = "netsentinel.deviceAliases:v1";
+const STORAGE_KEY = "netsentinel.deviceAliases:v2";
 
 const normMac = (mac: string) =>
   mac
@@ -19,6 +21,14 @@ const normMac = (mac: string) =>
     .replace(/[-_]/g, ":");
 
 const safeLabel = (raw: string) => raw.trim().slice(0, 96);
+
+const isValidMac = (mac: string): boolean => {
+  const normalized = normMac(mac);
+  if (!normalized) return false;
+  if (normalized === "00:00:00:00:00:00") return false;
+  if (normalized === "ROUTER_AUTH" || normalized === "UNKNOWN") return false;
+  return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(normalized);
+};
 
 const getLabelFromDevice = (d: DeviceDTO): string | null => {
   const name = (d.name ?? "").trim();
@@ -32,10 +42,27 @@ export const deviceAliasRegistry = {
   load: (): AliasStore => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-      const parsed = JSON.parse(raw) as unknown;
-      if (!parsed || typeof parsed !== "object") return {};
-      return parsed as AliasStore;
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (parsed && typeof parsed === "object") return parsed as AliasStore;
+      }
+
+      // Migracion defensiva desde v1 (sin `kind`).
+      const legacy = localStorage.getItem(STORAGE_KEY_V1);
+      if (!legacy) return {};
+      const parsedLegacy = JSON.parse(legacy) as unknown;
+      if (!parsedLegacy || typeof parsedLegacy !== "object") return {};
+
+      const migrated: AliasStore = {};
+      for (const [k, v] of Object.entries(parsedLegacy as Record<string, any>)) {
+        const label = typeof v?.label === "string" ? v.label : null;
+        const lastSeenAt = typeof v?.lastSeenAt === "number" ? v.lastSeenAt : Date.now();
+        if (!label) continue;
+        migrated[k] = { label: safeLabel(label), kind: "learned", lastSeenAt };
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
     } catch {
       return {};
     }
@@ -49,6 +76,62 @@ export const deviceAliasRegistry = {
     }
   },
 
+  setManualAliasForDevice: (device: Pick<DeviceDTO, "ip" | "mac">, rawLabel: string, now = Date.now()): void => {
+    const label = safeLabel(rawLabel);
+    if (!label) return;
+
+    const store = deviceAliasRegistry.load();
+    const ip = (device.ip ?? "").trim();
+    const mac = (device.mac ?? "").trim();
+
+    if (mac && isValidMac(mac)) {
+      store[`mac:${normMac(mac)}`] = { label, kind: "manual", lastSeenAt: now };
+      // Guardamos tambien por IP como conveniencia, pero el match principal debe ser por MAC.
+      if (ip) store[`ip:${ip}`] = { label, kind: "manual", lastSeenAt: now };
+    } else if (ip) {
+      store[`ip:${ip}`] = { label, kind: "manual", lastSeenAt: now };
+    }
+
+    deviceAliasRegistry.save(store);
+  },
+
+  clearManualAliasForDevice: (device: Pick<DeviceDTO, "ip" | "mac">): void => {
+    const store = deviceAliasRegistry.load();
+    const ip = (device.ip ?? "").trim();
+    const mac = (device.mac ?? "").trim();
+
+    const keys = [
+      mac && isValidMac(mac) ? `mac:${normMac(mac)}` : null,
+      ip ? `ip:${ip}` : null,
+    ].filter(Boolean) as string[];
+
+    for (const k of keys) {
+      const rec = store[k];
+      if (rec?.kind === "manual") delete store[k];
+    }
+
+    deviceAliasRegistry.save(store);
+  },
+
+  forgetLearnedForDevice: (device: Pick<DeviceDTO, "ip" | "mac">): void => {
+    const store = deviceAliasRegistry.load();
+    const ip = (device.ip ?? "").trim();
+    const mac = (device.mac ?? "").trim();
+
+    const keys = [
+      mac && isValidMac(mac) ? `mac:${normMac(mac)}` : null,
+      ip ? `ip:${ip}` : null,
+    ].filter(Boolean) as string[];
+
+    for (const k of keys) {
+      const rec = store[k];
+      if (!rec) continue;
+      if (rec.kind === "learned") delete store[k];
+    }
+
+    deviceAliasRegistry.save(store);
+  },
+
   rememberFromDevices: (devices: DeviceDTO[], now = Date.now()): void => {
     if (!devices.length) return;
     const store = deviceAliasRegistry.load();
@@ -60,11 +143,15 @@ export const deviceAliasRegistry = {
       const ip = (d.ip ?? "").trim();
       const mac = (d.mac ?? "").trim();
 
-      if (mac) {
-        store[`mac:${normMac(mac)}`] = { label, lastSeenAt: now };
-      }
-      if (ip) {
-        store[`ip:${ip}`] = { label, lastSeenAt: now };
+      // Regla anti-colision:
+      // - Si hay MAC valida, recordamos SOLO por MAC (evita que un IP reciclado herede el label).
+      // - Si no hay MAC valida, recordamos por IP (mejor que nada en entornos sin ARP/MAC).
+      if (mac && isValidMac(mac)) {
+        const key = `mac:${normMac(mac)}`;
+        if (store[key]?.kind !== "manual") store[key] = { label, kind: "learned", lastSeenAt: now };
+      } else if (ip) {
+        const key = `ip:${ip}`;
+        if (store[key]?.kind !== "manual") store[key] = { label, kind: "learned", lastSeenAt: now };
       }
     }
 
@@ -81,7 +168,7 @@ export const deviceAliasRegistry = {
 
       const ip = (d.ip ?? "").trim();
       const mac = (d.mac ?? "").trim();
-      const macKey = mac ? `mac:${normMac(mac)}` : null;
+      const macKey = mac && isValidMac(mac) ? `mac:${normMac(mac)}` : null;
       const ipKey = ip ? `ip:${ip}` : null;
 
       const rec = (macKey && store[macKey]) || (ipKey && store[ipKey]) || null;

@@ -132,6 +132,18 @@ Nota:
 - `cd src-tauri && cargo check` (ok)
 - Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
 
+## [v0.8.80] - Inventario: labels consistentes + alias manual (2026-02-17)
+### Backend (router_audit)
+- Fix: soporta firmwares donde `IP ADDR:` y el valor (`192.168.x.x`) aparecen en lineas separadas, sin reutilizar el nombre del bloque anterior.
+
+### UI (inventario)
+- Router sync: no preserva `name/hostname` si cambia o se resuelve la MAC (evita mezclar labels con otra identidad).
+- DeviceDetail: editor de alias manual (p. ej. renombrar a "Alexa") persistido en localStorage.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

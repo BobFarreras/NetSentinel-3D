@@ -6,6 +6,7 @@ import { DeviceDTO, RouterAuditResult } from '../../../../shared/dtos/NetworkDTO
 import { auditAdapter } from '../../../../adapters/auditAdapter';
 import { networkAdapter } from '../../../../adapters/networkAdapter';
 import { isBadVendor, isValidMac } from '../shared/deviceMerge';
+import { deviceAliasRegistry } from '../../../../core/logic/deviceAliasRegistry';
 
 const mergeRouterDevice = (routerDevice: DeviceDTO, oldDevice?: DeviceDTO): DeviceDTO => {
   if (!oldDevice) return routerDevice;
@@ -18,12 +19,20 @@ const mergeRouterDevice = (routerDevice: DeviceDTO, oldDevice?: DeviceDTO): Devi
     ? routerDevice.vendor
     : (!isBadVendor(oldDevice.vendor) ? oldDevice.vendor : routerDevice.vendor);
 
+  const norm = (mac?: string) => (mac ?? "").trim().toUpperCase().replace("-", ":");
+  const oldMac = norm(oldDevice.mac);
+  const newMac = norm(routerDevice.mac);
+  const sameValidMac = isValidMac(oldMac) && isValidMac(newMac) && oldMac === newMac;
+
   return {
     ...routerDevice,
     mac: nextMac,
     vendor: nextVendor,
-    hostname: routerDevice.hostname ?? oldDevice.hostname,
-    name: routerDevice.name ?? oldDevice.name,
+    // Regla: el router es el "source of truth" de inventario, pero puede no exponer nombre/hostname.
+    // Para evitar bugs donde se "roba" el nombre del dispositivo anterior o se mezcla un label con otra MAC,
+    // solo preservamos el label previo si la MAC valida es la misma y el router no aporta label.
+    hostname: routerDevice.hostname ?? (sameValidMac ? oldDevice.hostname : undefined),
+    name: routerDevice.name ?? (sameValidMac ? oldDevice.name : undefined),
   };
 };
 
@@ -133,7 +142,29 @@ export const useRouterHacker = (
             addLog(gatewayIp, `> WARNING: sync devolvio 0 nodos. Manteniendo inventario actual (no autoritativo).`);
           } else {
             // Fusion de inventario priorizando intel valida ya conocida.
-            setDevices(prev => {
+          setDevices(prev => {
+              // Si el router no aporta nombre/hostname y, ademas, la MAC se ha resuelto o cambiado,
+              // limpiamos aliases aprendidos para evitar que una etiqueta vieja se re-aplique.
+              try {
+                const prevByIp = new Map(prev.map((d) => [d.ip, d]));
+                for (const rd of routerDevices) {
+                  const old = prevByIp.get(rd.ip);
+                  if (!old) continue;
+                  const oldMac = (old.mac ?? "").trim().toUpperCase().replace("-", ":");
+                  const newMac = (rd.mac ?? "").trim().toUpperCase().replace("-", ":");
+                  const macChanged =
+                    (isValidMac(newMac) && !isValidMac(oldMac)) ||
+                    (isValidMac(newMac) && isValidMac(oldMac) && oldMac !== newMac);
+
+                  const routerHasLabel = Boolean((rd.name ?? "").trim() || (rd.hostname ?? "").trim());
+                  if (macChanged && !routerHasLabel) {
+                    deviceAliasRegistry.forgetLearnedForDevice({ ip: rd.ip, mac: rd.mac });
+                  }
+                }
+              } catch {
+                // ignore
+              }
+
               const merged = buildAuthoritativeRouterInventory(prev, routerDevices, gatewayIp);
               // Snapshot para que el arranque pinte el inventario completo.
               void networkAdapter.saveLatestSnapshot(merged);

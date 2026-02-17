@@ -1,7 +1,7 @@
 // src/ui/hooks/useNetworkManager.ts
 // Hook orquestador de UI: compone modulos (scanner/audit/router/jammer/logs/bootstrap) y expone una API estable para App/layouts.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
 import { deviceAliasRegistry } from "../../core/logic/deviceAliasRegistry";
 
@@ -133,7 +133,15 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
     deviceAliasRegistry.rememberFromDevices(devices);
   }, [devices]);
 
-  const devicesWithAliases = deviceAliasRegistry.applyAliases(devices);
+  // Fuerza repaint cuando el operador edita un alias manual (localStorage no dispara renders por si solo).
+  const [aliasTick, setAliasTick] = useState(0);
+  useEffect(() => {
+    const handler = () => setAliasTick((t) => t + 1);
+    window.addEventListener("netsentinel://aliases-updated", handler as EventListener);
+    return () => window.removeEventListener("netsentinel://aliases-updated", handler as EventListener);
+  }, []);
+
+  const devicesWithAliases = useMemo(() => deviceAliasRegistry.applyAliases(devices), [devices, aliasTick]);
 
   // 7. Estado local de UI (seleccion)
   const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
