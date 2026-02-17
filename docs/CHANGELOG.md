@@ -37,6 +37,18 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.65] - UI: Scene3D NodeLabel desacoplado (view + icon + estilos) (2026-02-17)
+### UI (scene3d)
+- Refactor de `NodeLabel`: se separa en:
+  - `node_label/NodeLabelView.tsx` (presentacion pura)
+  - `node_label/NodeLabelIcon.tsx` (iconografia)
+  - `node_label/nodeLabelStyles.ts` (CSS/animaciones)
+- Objetivo: evitar god-components en 3D manteniendo exactamente el mismo look & behavior.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
 ### UI (attack_lab)
 - Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:
