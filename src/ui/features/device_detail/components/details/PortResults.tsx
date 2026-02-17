@@ -60,6 +60,9 @@ export const PortResults: React.FC<ResultProps> = ({ results, isAuditing, hasAud
                 border: `1px solid ${HUD_COLORS.accentGreen}`, background: 'rgba(0, 255, 0, 0.1)',
                 marginTop: '10px'
             }}>
+                <div style={{ color: '#8f8', fontSize: '0.8rem', marginBottom: 8 }}>
+                    ANALYSIS COMPLETE. PORTS FOUND: 0
+                </div>
                 <div style={{fontSize: '2rem', marginBottom: '5px'}}>🛡️</div>
                 <div style={{color: HUD_COLORS.accentGreen, fontWeight: 'bold'}}>STEALTH MODE ACTIVE</div>
                 <div style={{color: '#8f8', fontSize: '0.8rem'}}>Firewall efectivo o puertos filtrados.</div>
@@ -70,6 +73,9 @@ export const PortResults: React.FC<ResultProps> = ({ results, isAuditing, hasAud
     // LLISTA DE PORTS
     return (
         <div style={{ marginTop: 15, maxHeight: '200px', overflowY: 'auto', borderTop: '2px solid #002200', paddingTop: 10 }}>
+            <div style={{ color: '#8f8', fontSize: '0.8rem', marginBottom: 10 }}>
+                ANALYSIS COMPLETE. PORTS FOUND: {results.length}
+            </div>
             {results.map((port) => {
                  const isDanger = port.riskLevel === 'DANGER' || !!port.vulnerability;
                  
