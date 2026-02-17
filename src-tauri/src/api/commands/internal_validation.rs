@@ -1,7 +1,9 @@
 // src-tauri/src/api/commands/internal_validation.rs
 
-use crate::api::validators::{validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4};
 use crate::api::validators::validate_mac_address;
+use crate::api::validators::{
+    validate_ipv4_or_cidr, validate_non_empty, validate_usable_host_ipv4,
+};
 
 pub fn validate_scan_range(range: &Option<String>) -> Result<(), String> {
     if let Some(raw) = range {
@@ -10,7 +12,11 @@ pub fn validate_scan_range(range: &Option<String>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn validate_router_credentials_input(gateway_ip: &str, user: &str, pass: &str) -> Result<(), String> {
+pub fn validate_router_credentials_input(
+    gateway_ip: &str,
+    user: &str,
+    pass: &str,
+) -> Result<(), String> {
     validate_usable_host_ipv4(gateway_ip, "gateway_ip")?;
     validate_non_empty(user, "user", 64)?;
     validate_non_empty(pass, "pass", 128)?;
@@ -56,15 +62,25 @@ mod tests {
 
     #[test]
     fn validate_start_jamming_input_accepts_valid_values() {
-        assert!(validate_start_jamming_input("192.168.1.20", "AA:BB:CC:DD:EE:FF", "192.168.1.1").is_ok());
+        assert!(
+            validate_start_jamming_input("192.168.1.20", "AA:BB:CC:DD:EE:FF", "192.168.1.1")
+                .is_ok()
+        );
     }
 
     #[test]
     fn validate_start_jamming_input_rejects_invalid_values() {
-        assert!(validate_start_jamming_input("bad-ip", "AA:BB:CC:DD:EE:FF", "192.168.1.1").is_err());
+        assert!(
+            validate_start_jamming_input("bad-ip", "AA:BB:CC:DD:EE:FF", "192.168.1.1").is_err()
+        );
         assert!(validate_start_jamming_input("192.168.1.20", "BAD-MAC", "192.168.1.1").is_err());
-        assert!(validate_start_jamming_input("192.168.1.20", "AA:BB:CC:DD:EE:FF", "bad-ip").is_err());
-        assert!(validate_start_jamming_input("192.168.1.1", "AA:BB:CC:DD:EE:FF", "192.168.1.1").is_err());
+        assert!(
+            validate_start_jamming_input("192.168.1.20", "AA:BB:CC:DD:EE:FF", "bad-ip").is_err()
+        );
+        assert!(
+            validate_start_jamming_input("192.168.1.1", "AA:BB:CC:DD:EE:FF", "192.168.1.1")
+                .is_err()
+        );
     }
 
     #[test]

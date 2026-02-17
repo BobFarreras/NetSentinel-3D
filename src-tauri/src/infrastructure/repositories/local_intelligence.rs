@@ -40,7 +40,10 @@ pub fn get_host_identity() -> Result<HostIdentity, String> {
 
     let identity = HostIdentity {
         ip: my_ip.clone(),
-        mac: intel.as_ref().and_then(|i| i.mac.clone()).unwrap_or_else(|| "UNKNOWN".to_string()),
+        mac: intel
+            .as_ref()
+            .and_then(|i| i.mac.clone())
+            .unwrap_or_else(|| "UNKNOWN".to_string()),
         netmask: intel
             .as_ref()
             .and_then(|i| i.netmask.clone())
@@ -59,7 +62,10 @@ pub fn get_host_identity() -> Result<HostIdentity, String> {
             .unwrap_or_default(),
     };
 
-    println!("✅ [CORE] Identidad confirmada: ip={} mac={} iface={}", identity.ip, identity.mac, identity.interface_name);
+    println!(
+        "✅ [CORE] Identidad confirmada: ip={} mac={} iface={}",
+        identity.ip, identity.mac, identity.interface_name
+    );
 
     cache_put(identity.clone());
     Ok(identity)
@@ -70,7 +76,9 @@ fn detect_ip_via_udp() -> Result<String, String> {
     socket
         .connect("8.8.8.8:80")
         .map_err(|e| format!("Error connect UDP: {e}"))?;
-    let local_addr = socket.local_addr().map_err(|e| format!("Error local_addr: {e}"))?;
+    let local_addr = socket
+        .local_addr()
+        .map_err(|e| format!("Error local_addr: {e}"))?;
     Ok(local_addr.ip().to_string())
 }
 
@@ -97,6 +105,9 @@ fn cache_get(max_age: Duration) -> Option<HostIdentity> {
 fn cache_put(value: HostIdentity) {
     let lock = CACHE.get_or_init(|| std::sync::Mutex::new(None));
     if let Ok(mut guard) = lock.lock() {
-        *guard = Some(Cache { value, at: Instant::now() });
+        *guard = Some(Cache {
+            value,
+            at: Instant::now(),
+        });
     }
 }

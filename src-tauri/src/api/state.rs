@@ -1,13 +1,13 @@
 // src-tauri/src/api/state.rs
+// Descripcion: tipos de estado gestionados por Tauri (`app.manage(...)`) para comandos runtime (sniffer/jammer).
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-use crate::application::jammer_service::JammerService;
-use crate::application::traffic_service::TrafficService;
+use crate::application::jammer::JammerService;
+use crate::application::traffic::TrafficService;
 
 // Estados gestionados por Tauri (`app.manage(...)`).
 // Objetivo: evitar que `src-tauri/src/lib.rs` tenga que definir tipos privados para los comandos.
 
 pub struct TrafficState(pub Mutex<TrafficService>);
-pub struct JammerState(pub Mutex<JammerService>);
-
+pub struct JammerState(pub Arc<JammerService>);

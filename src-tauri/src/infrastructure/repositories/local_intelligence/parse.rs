@@ -93,7 +93,9 @@ mod tests {
         assert_eq!(out.interface_name.as_deref(), Some("Wi-Fi"));
         assert_eq!(out.netmask.as_deref(), Some("255.255.255.0"));
         assert_eq!(out.gateway_ip.as_deref(), Some("192.168.1.1"));
-        assert_eq!(out.dns_servers, vec!["1.1.1.1".to_string(), "8.8.8.8".to_string()]);
+        assert_eq!(
+            out.dns_servers,
+            vec!["1.1.1.1".to_string(), "8.8.8.8".to_string()]
+        );
     }
 }
-

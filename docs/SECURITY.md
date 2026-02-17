@@ -1,4 +1,5 @@
 <!-- docs/SECURITY.md -->
+<!-- Descripcion: politica de seguridad del proyecto (alcance, reglas, comandos sensibles, hardening y decision records). -->
 
 # Politica de Seguridad de NetSentinel 3D
 
@@ -23,23 +24,39 @@ Politica adicional para modulos educativos avanzados:
 Comandos actualmente registrados:
 - `scan_network`
 - `audit_target`
+- `run_iot_scan`
 - `audit_router`
 - `fetch_router_devices`
 - `save_scan`
 - `get_history`
 - `save_latest_snapshot`
 - `load_latest_snapshot`
+- `get_app_settings`
+- `save_app_settings`
+- `set_ui_language`
 - `save_gateway_credentials`
 - `get_gateway_credentials`
 - `delete_gateway_credentials`
+- `list_gateway_credential_presets`
+- `add_gateway_credential_preset`
+- `remove_gateway_credential_preset`
+- `update_gateway_credential_preset`
 - `scan_airwaves`
+- `wifi_connect`
+- `fingerprint_http_headers`
 - `get_identity`
 - `start_traffic_sniffing`
 - `stop_traffic_sniffing`
 - `start_jamming`
 - `stop_jamming`
-- `start_external_audit`
-- `cancel_external_audit`
+- `start_attack_lab`
+- `cancel_attack_lab`
+- `get_dictionary`
+- `add_to_dictionary`
+- `remove_from_dictionary`
+- `update_in_dictionary`
+- `check_mac_security`
+- `randomize_mac`
 
 Riesgo:
 - Si la UI se compromete, un atacante puede intentar abusar de estos comandos.
@@ -82,16 +99,16 @@ Impacto:
 Siguiente mejora recomendada:
 - Eliminar gradualmente `'unsafe-inline'` en `style-src` migrando estilos inline a hojas CSS controladas.
 
-## 3.3 External Audit (wrapper CLI)
-El modulo `External Audit` esta disenado como **orquestador** (wrapper) para herramientas externas ya instaladas:
+## 3.3 Attack Lab (wrapper CLI)
+El modulo `Attack Lab` esta disenado como **orquestador** (wrapper) para herramientas externas ya instaladas:
 - no reimplementa herramientas,
 - no usa shell por defecto,
 - hace streaming de stdout/stderr a UI,
 - soporta cancelacion y timeout.
 
 Fuente de verdad:
-- `src-tauri/src/application/external_audit/*`
-- `docs/EXTERNAL_AUDIT.md`
+- `src-tauri/src/application/attack_lab/*`
+- `docs/ATTACK_LAB.md`
 
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)
@@ -123,6 +140,15 @@ Riesgos:
 - modulo de mayor impacto operativo (interferencia activa),
 - potencial degradacion de servicio en red local.
 
+Incidente real (2026-02-11):
+- se reprodujo congelacion total de UI al activar jammer en Windows (app "no responde"),
+- causa raiz: contencion/bloqueo en ruta runtime de jamming.
+
+Mitigacion implementada:
+- `start_jamming/stop_jamming` ahora encolan ordenes y retornan inmediato (modelo actor),
+- eliminado `Mutex` global en `JammerState` para esta ruta,
+- worker de jammer con cache de interfaz + refresh periodico (evita loops de deteccion de identidad en caliente).
+
 Controles recomendados:
 - doble confirmacion en UI antes de activar,
 - registro auditable de inicio/parada por objetivo,
@@ -150,6 +176,27 @@ Implementacion:
 - Backend: `KeyringCredentialStore` (crate `keyring`) guarda un blob JSON en el keyring del sistema (Windows Credential Manager).
 - Comandos: `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`.
 
+Multi-OS (comportamiento esperado):
+- Windows/macOS: el keyring suele estar disponible (Credential Manager / Keychain).
+- Linux: depende del entorno de escritorio (Secret Service, GNOME Keyring, KWallet). En entornos headless/minimal puede no estar disponible.
+
+Regla de robustez:
+- Si el keyring no esta disponible o falla, el producto debe seguir funcionando:
+  - `get_gateway_credentials` se trata como `null` (sin fast-path),
+  - el operador puede seguir con presets (`gateway_cred_presets.json`) y brute-force controlado.
+
+Ubicacion real (donde se guardan):
+- Credenciales del gateway (USER/PASS reales): se guardan en el **keyring del SO** (no hay "ruta" de fichero).
+  - Windows: aparecen en **Credential Manager** como credenciales genericas asociadas al servicio `netsentinel`.
+  - Clave usada por el backend: `service="netsentinel"` y `account="gateway:<GATEWAY_IP>"` (ej: `gateway:192.168.1.1`).
+- Presets de credenciales (lista de usuarios/contraseñas sugeridas por gateway):
+  - Se guardan en el directorio de configuracion de la app (Tauri `app_config_dir`) como JSON:
+    - Archivo: `gateway_cred_presets.json`
+    - Windows (tipico con `identifier: com.netsentinel.desktop`): `C:\\Users\\<user>\\AppData\\Roaming\\com.netsentinel.desktop\\gateway_cred_presets.json`
+
+Nota:
+- El "password de audit gateway" es el mismo concepto: `Gateway Credentials` (keyring) usado para autenticar auditorias/sync contra el router.
+
 ## 5. Cadena de Suministro (Dependencias)
 Controles recomendados en CI o rutina semanal:
 - `npm audit` para dependencias frontend.
@@ -174,6 +221,7 @@ Validaciones backend actualmente aplicadas:
 - Rango de escaneo en formato IPv4 o CIDR valido (`scan_network`).
 - Credenciales no vacias y con longitud acotada en `fetch_router_devices`.
 - Formato de MAC address validado en `start_jamming`.
+- La ruta de comando de jamming no debe incluir operaciones bloqueantes (solo validacion + encolado).
 
 ## 7. Checklist Minimo Antes de Release
 - [ ] `npm test -- --run` en verde.
@@ -196,3 +244,10 @@ Si se detecta comportamiento inseguro:
 - El render en UI debe hacerse como texto plano (sin HTML incrustado).
 - El modulo debe mostrar aviso legal de uso autorizado en su primer uso.
 - Las simulaciones de riesgo (PMKID/IoT/MLO) deben mantenerse en modo inferencia didactica.
+
+## 10. Logging y observabilidad segura en frontend
+- Los logs de debug no deben exponer credenciales ni datos sensibles.
+- Cualquier traza nueva en UI debe pasar por `uiLogger` (`src/ui/utils/logger.ts`) para mantener formato y control.
+- El debug detallado de interacciones 3D solo debe habilitarse en desarrollo y bajo flag local:
+  - `localStorage.setItem("netsentinel.debug3d", "true")`
+- En runtime normal, los logs de hover/click 3D deben permanecer desactivados para evitar ruido operativo.

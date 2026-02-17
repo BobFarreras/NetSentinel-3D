@@ -1,3 +1,6 @@
+// src/ui/hooks/__tests__/useNetworkManager.test.ts
+// Tests del hook orquestador: asegura delegacion de acciones, carga de identidad y comportamiento al cambiar de dispositivo.
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useNetworkManager } from '../useNetworkManager';
@@ -32,7 +35,7 @@ vi.mock('../../../adapters/auditAdapter', () => ({
   },
 }));
 
-vi.mock('../modules/useSocketLogs', () => ({
+vi.mock('../modules/network/useSocketLogs', () => ({
   useSocketLogs: () => ({
     deviceLogs: {
       '192.168.1.10': ['L1', 'L2'],
@@ -46,7 +49,7 @@ vi.mock('../modules/useSocketLogs', () => ({
   }),
 }));
 
-vi.mock('../modules/useScanner', () => ({
+vi.mock('../modules/network/useScanner', () => ({
   useScanner: () => ({
     devices: [
       { ip: '192.168.1.10', mac: 'AA', vendor: 'Laptop' },
@@ -61,7 +64,7 @@ vi.mock('../modules/useScanner', () => ({
   }),
 }));
 
-vi.mock('../modules/usePortAuditor', () => ({
+vi.mock('../modules/network/usePortAuditor', () => ({
   usePortAuditor: () => ({
     auditing: false,
     auditResults: [],
@@ -70,7 +73,7 @@ vi.mock('../modules/usePortAuditor', () => ({
   }),
 }));
 
-vi.mock('../modules/useRouterHacker', () => ({
+vi.mock('../modules/network/useRouterHacker', () => ({
   useRouterHacker: () => ({
     routerRisk: null,
     setRouterRisk: setRouterRiskMock,
@@ -78,7 +81,7 @@ vi.mock('../modules/useRouterHacker', () => ({
   }),
 }));
 
-vi.mock('../modules/useJamming', () => ({
+vi.mock('../modules/network/useJamming', () => ({
   useJamming: () => ({
     jammedDevices: [],
     toggleJammer: toggleJammerMock,

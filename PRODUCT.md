@@ -1,71 +1,72 @@
-# PRODUCT.md - Especificación Funcional de NetSentinel 3D (Rust Edition)
+# PRODUCT.md - NetSentinel 3D: Red Team Operations Platform
 
 ## 1. Visión del Producto
-NetSentinel 3D es una plataforma de **Ciberseguridad Defensiva y Visualización** de alto rendimiento para entornos domésticos.
-Transforma datos abstractos de red (IPs, Puertos, Latencia) en un entorno 3D gamificado (Sistema Solar), permitiendo a usuarios no técnicos entender, monitorizar y proteger su infraestructura digital sin el consumo de recursos de las herramientas corporativas pesadas.
+NetSentinel 3D ya no es una herramienta de auditoría pasiva. Es una **Plataforma de Mando y Control (C2)** y operaciones ofensivas locales, impulsada por un motor híbrido Rust/Tauri/Three.js.
 
----
+Objetivo del producto:
+- **Domini del Campo de Batalla:** Visualización táctica en 3D de la infraestructura de red.
+- **Weaponization Real:** Ejecución de exploits y escaneos nativos (Rust) sin intermediarios (PowerShell).
+- **Kill Chain Integration:** Flujo completo desde Reconocimiento hasta Explotación y Post-Explotación.
+- **Sin Filtros:** Capacidades ofensivas desbloqueadas para entornos de Cyber Range y Red Teaming profesional.
 
-## 2. Perfil de Usuario (User Persona)
-* **Target:** Estudiantes, trabajadores remotos, gamers y entusiastas tech.
-* **Dolor:** "Mi internet va lento", "No sé si mi vecino me roba wifi", "No entiendo qué es un puerto abierto", "Las herramientas de hacking son consola pura y difíciles".
-* **Objetivo:** Tener un panel de control tipo "Minority Report" para su casa: visual, rápido y efectivo.
+## 2. Público Objetivo
+- **Operadores Red Team & APT Simulators.**
+- **Pentesters** que requieren herramientas personalizadas (Rust Native).
+- **Investigadores de Seguridad** que analizan protocolos IoT/Wi-Fi.
 
----
+## 3. Arsenal y Capacidades (Functionality)
 
-## 3. Funcionalidades Core (El "Qué")
+### 3.1 Reconocimiento Activo (Target Acquisition)
+- **Comando:** `scan_network`
+- **Capacidad:** Mapeo agresivo de la red (ARP/ICMP). Identificación de objetivos de alto valor (HVT) mediante fingerprints MAC y OUI.
+- **Salida:** `DeviceDTO[]` enriquecido con vectores de ataque potenciales.
 
-### A. El Radar (Network Discovery)
-El sistema utiliza el motor de Rust para detectar dispositivos en la red local.
-* **Comportamiento:** Al iniciar, lanza hilos paralelos para mapear la red `/24`.
-* **Datos requeridos:** IP, MAC Address, Fabricante (Vendor) y Latencia.
-* **Visualización:** El Router se sitúa en el centro (Sol) y los dispositivos orbitan a su alrededor.
+### 3.2 Vectores de Ataque & Perfilado (Exploitation Profiles)
+- **Motor:** `Native Rust Engine` (Multithreaded Sockets).
+- **Módulos:**
+  - **IoT Kill Chain:** (`run_iot_scan`) Detección de vulnerabilidades críticas en dispositivos inteligentes (Telnet, MQTT, RTSP, UPnP).
+  - **Router Pwn:** (`audit_router`, `fetch_router_devices`) Extracción de topología y credenciales de gateways.
+  - **HTTP Recon:** (`fingerprint_http_headers`) Fingerprinting de cabeceras (HEAD en 80/443) via backend Rust (cross-platform).
 
-### B. El Auditor (Deep Inspection)
-Herramienta de análisis de vulnerabilidades bajo demanda.
-* **Acción:** El usuario hace clic en un planeta y selecciona "DEEP AUDIT".
-* **Operación:** Rust abre conexiones TCP reales contra los puertos más comunes (21, 22, 23, 80, 443, 3389, etc.).
-* **Ciber-Inteligencia:**
-    * Cruza los puertos abiertos con una base de datos de vulnerabilidades.
-    * **Ejemplo:** Si detecta el puerto 23 (Telnet), marca el riesgo como **CRITICAL** y sugiere "Deshabilitar inmediatamente".
-    * **Ejemplo:** Si detecta el puerto 80 (HTTP), sugiere "Migrar a HTTPS".
+### 3.3 Persistencia de Campaña (Campaign State)
+- **Historial de Operaciones:** `save_scan`, `get_history`. Trazabilidad forense de las acciones realizadas.
+- **Snapshots Tácticos:** `save_latest_snapshot`. Congelación del estado de la red para reanudar ataques.
+- **Credential Harvesting:** Almacenamiento seguro (Keyring) de credenciales comprometidas (`save_gateway_credentials`).
 
-### C. El Escudo (Defensa Activa / Kill Switch)
-Sistema de respuesta ante intrusiones.
-* **Funcionalidad:** "Jammer" o desconexión selectiva.
-* **Acción:** Botón "KILL NET" en el panel del dispositivo.
-* **Efecto:** Corta la comunicación del dispositivo seleccionado con el Router (simulado visualmente en MVP, preparado para ARP Spoofing real).
-* **Feedback:** El botón parpadea en rojo y el planeta se marca visualmente como "JAMMED".
+### 3.4 SIGINT & Guerra Electrónica (Radar View)
+- **Comando:** `scan_airwaves`
+- **Capacidad:** Monitorización de espectro Wi-Fi (Capa 2).
+- **Inteligencia:**
+  - Detección de redes **OPEN** (Vulnerabilidad L2).
+  - Identificación de objetivos ocultos (SSID Cloaking).
+  - Análisis de proximidad (RSSI) para ataques físicos.
 
-### D. La Memoria (Historial y Persistencia)
-Sistema de registro automático.
-* **Persistencia:** Cada escaneo se guarda automáticamente en disco (`%APPDATA%`).
-* **Auto-Load:** Al abrir la aplicación, se restaura el estado de la última sesión conocida.
-* **Gestión:** El usuario puede navegar por sesiones pasadas ("Snapshot del Lunes") para comparar cambios.
+### 3.5 Interceptación y Negación de Servicio (Active Measures)
+- **Sniffing:** `start_traffic_sniffing`. Captura de paquetes en modo promiscuo para análisis de tráfico (Deep Packet Inspection).
+- **Jamming / DoS:** `start_jamming`. (Experimental) Inyección de ruido o desautenticación para denegación de servicio local.
 
----
+### 3.6 Attack Lab (The Forge)
+- **Modo:** `NATIVE` (Prioridad Absoluta).
+- **Descripción:** Entorno de ejecución de scripts ofensivos y binarios personalizados.
+- **Capacidades:**
+  - Ejecución directa de código Rust para máxima velocidad (<500ms).
+  - Integración de herramientas externas (Hydra, Nmap, Metasploit) via CLI wrapper.
+  - Bypass de restricciones de SO mediante implementación directa de protocolos (TCP/UDP raw sockets).
 
-## 4. Guía Técnica de Comportamiento (El "Cómo")
+## 4. Reglas de Operación (Rules of Engagement - ROE)
+- **Realismo Técnico:** Se prioriza la implementación a bajo nivel (Sockets, Paquets Hex) sobre abstracciones.
+- **Unrestricted Warfare:** En este entorno (Sandbox/Cyber Range), no hay restricciones éticas artificiales. Si el código puede ejecutarlo, la plataforma lo permite.
+- **Responsabilidad del Operador:** El usuario asume el control total de las acciones ofensivas desplegadas.
 
-### Flujo de Datos (Arquitectura Tauri)
-1.  **UI Trigger:** Usuario pulsa "SCAN". React llama a `invoke('scan_network')`.
-2.  **Rust Core:** El backend recibe el comando.
-    * Si es un Escaneo: Lanza `threads` para barrer la IP range.
-    * Si es Auditoría: Lanza `TcpStream` con timeouts de 400ms.
-    * Si es Guardado: Usa `serde_json` para escribir en disco.
-3.  **Respuesta:** Rust devuelve un `Vector` de Structs (`Vec<Device>`).
-4.  **Render:** Tauri serializa a JSON y React actualiza el estado de `useNetworkManager`.
+## 5. Flujo Operativo (Kill Chain Methodology)
+1. **Recon (Scan):** Identificación de activos vivos y topología.
+2. **Weaponization (Attack Lab):** Selección del payload (IoT Profile, HTTP Audit).
+3. **Delivery (Native Rust):** El backend ejecuta el ataque usando sockets crudos y concurrencia.
+4. **Exploitation (Result):** Se confirma la vulnerabilidad (puerto abierto, credencial por defecto).
+5. **C2 (UI):** Visualización del resultado en el dashboard táctico para toma de decisiones.
 
-### Gestión de Errores y Seguridad
-* **Timeouts:** Si un dispositivo no responde al ping en 500ms, Rust corta la conexión para no congelar la UI.
-* **Permisos:** La escritura de historial crea automáticamente las carpetas necesarias en `AppData` si no existen.
-* **Memory Safety:** El uso de Rust garantiza que no habrá fugas de memoria (Memory Leaks) durante escaneos largos, a diferencia de la versión anterior en Node.js.
-
----
-
-## 5. Requisitos No Funcionales
-* **Privacidad:** Cero telemetría. Ningún dato sale de `localhost`. Todo el procesamiento es local.
-* **Rendimiento (Rust):**
-    * El backend debe consumir < 50MB de RAM.
-    * El tamaño del instalador debe ser < 10MB (vs los 100MB+ de Electron).
-* **Fluidez:** La escena 3D debe mantenerse a 60FPS incluso mientras Rust está auditando puertos en segundo plano.
+## 6. Criterios de Calidad (Elite Standards)
+- **Velocidad:** Los escaneos deben ser instantáneos (Multithreading Rust). Nada de scripts lentos.
+- **Stealth:** Capacidad de operar sin levantar alertas excesivas (ajuste de timeouts y retries).
+- **Estabilidad:** Gestión de errores robusta ("No crash on fail"). Si un exploit falla, la plataforma sigue operativa.
+- **Portabilidad:** El núcleo ofensivo debe ser agnóstico del SO (Windows/Linux/macOS).

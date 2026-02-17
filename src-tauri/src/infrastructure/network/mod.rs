@@ -1,10 +1,9 @@
 pub mod arp_client;
+pub mod hostname_resolver;
+pub mod jammer_engine;
+pub mod packet_injector;
 pub mod ping_executor;
 pub mod port_scanner;
+pub mod traffic_sniffer;
 pub mod vendor_lookup;
 pub mod vendor_resolver;
-pub mod service_dictionary;
-pub mod packet_injector;
-pub mod traffic_sniffer;
-pub mod hostname_resolver;
-

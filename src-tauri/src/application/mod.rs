@@ -1,11 +1,17 @@
-pub mod scanner_service;
-pub mod audit_service;
-pub mod history_service;
-pub mod traffic_service;
-pub mod jammer_service;
-pub mod wifi_service;
-pub mod wifi_normalizer;
-pub mod external_audit;
-pub mod external_audit_service;
-pub mod latest_snapshot_service;
-pub mod credential_service;
+// src-tauri/src/application/mod.rs
+// Modulo de aplicacion: expone casos de uso/servicios y coordina la estructura por dominios (manteniendo wrappers legacy durante la migracion).
+
+pub mod attack_lab;
+pub mod audit;
+pub mod credentials;
+pub mod gateway_credential_presets;
+pub mod history;
+pub mod http_fingerprint;
+pub mod jammer;
+pub mod opsec;
+pub mod scan;
+pub mod settings;
+pub mod snapshot;
+pub mod traffic;
+pub mod wifi;
+pub mod wordlist;

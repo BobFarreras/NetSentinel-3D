@@ -1,13 +1,13 @@
 // src-tauri/src/infrastructure/system_scanner/enrich.rs
 
-use crate::domain::entities::Device;
-use crate::infrastructure::network::{arp_client::ArpClient, hostname_resolver::HostnameResolver, vendor_resolver::VendorResolver};
-use crate::infrastructure::repositories::local_intelligence;
+use crate::domain::entities::{Device, HostIdentity};
+use crate::infrastructure::network::{
+    arp_client::ArpClient, hostname_resolver::HostnameResolver, vendor_resolver::VendorResolver,
+};
 
-pub fn enrich_ips(active_ips: &[String]) -> Vec<Device> {
-    let my_identity = local_intelligence::get_host_identity().ok();
-    let my_ip = my_identity.as_ref().map(|id| id.ip.clone()).unwrap_or_default();
-    let my_mac = my_identity.as_ref().map(|id| id.mac.clone()).unwrap_or_default();
+pub fn enrich_ips(active_ips: &[String], my_identity: Option<&HostIdentity>) -> Vec<Device> {
+    let my_ip = my_identity.map(|id| id.ip.clone()).unwrap_or_default();
+    let my_mac = my_identity.map(|id| id.mac.clone()).unwrap_or_default();
 
     let arp_table = ArpClient::get_table();
 
@@ -68,10 +68,10 @@ fn resolve_hostname(ip: &str, my_ip: &str) -> Option<String> {
         .as_deref()
         .map(|s| s.eq_ignore_ascii_case("localhost"))
         .unwrap_or(false)
+        && ip != my_ip
+        && ip != "127.0.0.1"
     {
-        if ip != my_ip && ip != "127.0.0.1" {
-            hostname = None;
-        }
+        hostname = None;
     }
 
     hostname
@@ -87,4 +87,3 @@ mod tests {
         assert!(!is_gateway_ip("192.168.1.2"));
     }
 }
-

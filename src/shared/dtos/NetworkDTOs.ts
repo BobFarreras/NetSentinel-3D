@@ -13,12 +13,12 @@ export interface OpenPortDTO {
   port: number;
   status: string; // 👈 AQUESTA ÉS LA QUE FALTAVA (Error 2)
   service: string; // 'http', 'ssh', 'unknown'
-  riskLevel: 'SAFE' | 'POTENTIAL' | 'DANGER'; 
+  riskLevel: 'SAFE' | 'POTENTIAL' | 'DANGER';
   description?: string;
   version?: string;
-  
+
   // Camp opcional per si trobem info de seguretat
-  vulnerability?: VulnerabilityDTO; 
+  vulnerability?: VulnerabilityDTO;
 }
 
 // 3. Report Final d'Auditoria
@@ -32,7 +32,7 @@ export interface SecurityReportDTO {
 // 4. Progrés en temps real (Console Logs)
 export interface AuditProgressDTO {
   // 👇 AFEGIT 'WARNING' PER SOLUCIONAR L'ERROR 1
-  type: 'ERROR' | 'INFO' | 'FOUND' | 'WARNING'; 
+  type: 'ERROR' | 'INFO' | 'FOUND' | 'WARNING';
   message: string;
   port?: number;
 }
@@ -44,16 +44,23 @@ export interface DeviceDTO {
   vendor: string;
   name?: string;
   isGateway?: boolean; // Per pintar el sol al centre
-  ping?: number; 
-  hostname?: string; 
-  signal_strength?: number; 
-  signal_rate?: number; 
-  wifi_band?: string; 
+  ping?: number;
+  hostname?: string;
+  signal_strength?: number;
+  signal_rate?: number;
+  wifi_band?: string;
 
   // Intel local (frontend): calculado en UI a partir de señales (vendor/hostname/servicios).
   // No depende de backend y no rompe contratos, porque es opcional.
   deviceType?: DeviceType;
   deviceTypeConfidence?: number; // 0..100
+
+
+  
+  openPorts?: OpenPortDTO[]; 
+  os?: string;     
+  
+  security?: string;
 }
 
 export type DeviceType = 'PHONE' | 'PC' | 'TV' | 'SPEAKER' | 'ROUTER' | 'IOT' | 'UNKNOWN';
@@ -93,6 +100,12 @@ export interface GatewayCredentialsDTO {
   savedAt: number;
 }
 
+export interface GatewayCredentialPresetDTO {
+  gatewayIp: string;
+  user: string;
+  pass: string;
+}
+
 export interface TrafficPacket {
   id: number;
   timestamp: number;
@@ -118,30 +131,52 @@ export interface WifiNetworkDTO {
   isConnected: boolean;
 }
 
-// 7. External Audit (Wrapper CLI)
-export interface ExternalAuditEnvVarDTO {
+// 7. Attack Lab (runner de herramientas externas / wrapper CLI)
+export interface AttackLabEnvVarDTO {
   key: string;
   value: string;
 }
 
-export interface ExternalAuditRequestDTO {
+export interface AttackLabRequestDTO {
   binaryPath: string;
   args: string[];
   cwd?: string;
   timeoutMs?: number;
-  env?: ExternalAuditEnvVarDTO[];
+  env?: AttackLabEnvVarDTO[];
 }
 
-export interface ExternalAuditLogEvent {
+export interface AttackLabLogEvent {
   auditId: string;
   stream: 'stdout' | 'stderr';
   line: string;
 }
 
-export interface ExternalAuditExitEvent {
+export interface AttackLabExitEvent {
   auditId: string;
   success: boolean;
   exitCode?: number;
   durationMs: number;
   error?: string;
+}
+
+// 8. HTTP Fingerprint (headers via HEAD)
+export interface HttpProbeResultDTO {
+  url: string;
+  status?: number;
+  server?: string;
+  wwwAuthenticate?: string;
+  location?: string;
+  setCookie?: string;
+  strictTransportSecurity?: string;
+  xFrameOptions?: string;
+  contentSecurityPolicy?: string;
+}
+
+export interface HttpFingerprintResultDTO {
+  targetIp: string;
+  http?: HttpProbeResultDTO;
+  https?: HttpProbeResultDTO;
+  verdict: string;
+  why: string[];
+  next: string[];
 }

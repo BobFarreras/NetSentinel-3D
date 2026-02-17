@@ -1,634 +1,898 @@
+<!-- docs/CHANGELOG.md -->
+<!-- Descripcion: registro cronologico de cambios (arquitectura, features, refactors) y validaciones ejecutadas. -->
+
 # Diario de desarrollo (CHANGELOG)
 
 Todos los cambios notables en NetSentinel deben documentarse aqui.
 
-## [v0.8.4] - Integracion 3D->HUD + lazy loading + debug 3D controlado (2026-02-11)
-### ✅ Integracion UI
-- Nuevo test `src/__tests__/App.integration.test.tsx` para validar flujo:
-  - seleccion en `NetworkScene` -> sincronizacion en `DeviceDetailPanel` y `ConsoleLogs`.
+Nota:
+- Este archivo mantiene el changelog **reciente** y accionable.
+- El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
 
-### ⚡ Performance (bundle inicial)
-- `App.tsx` actualizado con `React.lazy` + `Suspense` para cargar bajo demanda:
-  - `NetworkScene`
-  - `RadarPanel`
-  - `ExternalAuditPanel`
-  - `DeviceDetailPanel`
+## [v0.8.70] - Attack Lab: catalogo profesional + backend commands navegable (2026-02-17)
+### Backend (api/commands)
+- Refactor: eliminado `src-tauri/src/api/commands.rs` (monolito). Ahora los comandos viven en:
+  - `src-tauri/src/api/commands/mod.rs` (facade)
+  - `src-tauri/src/api/commands/*.rs` (comandos por feature con `#[tauri::command]`)
+- `src-tauri/src/lib.rs` registra los comandos por modulo (`api::commands::<feature>::...`) para que Tauri resuelva `__cmd__*` correctamente.
 
-### 🧪 Debug 3D
-- `useNetworkNodeState` ya no escribe logs de hover/click por defecto.
-- Activacion de logs solo en desarrollo y con flag:
-  - `localStorage.setItem("netsentinel.debug3d", "true")`
+### Attack Lab (catalogo)
+- Fix: scripts PowerShell (baseline + HTTP headers) corrigen validacion IPv4 (`TryParse` con output var real).
+- HTTP headers: migrado a backend Rust (cross-platform) via comando `fingerprint_http_headers` (reqwest HEAD 80/443, sin PowerShell).
 
-### 📚 Documentacion
-- `docs/ARCHITECTURE.md`: añadido diagrama rapido del flujo 3D -> manager -> HUD.
-- `README.md`: añadida seccion de testing por capas (unit/integracion frontend).
+### Docs
+- Actualizadas referencias de comandos: `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/ATTACK_LAB.md`, `docs/SECURITY.md`, `src-tauri/src/api/commands/README.md`.
 
-## [v0.8.3] - Refactor capa 3D + cobertura de hooks (2026-02-11)
-### ♻️ Frontend 3D (Scene)
-- Extraida logica de escena a `src/ui/hooks/modules/useNetworkSceneState.ts`:
-  - persistencia de `showLabels`,
-  - enriquecimiento de dispositivos,
-  - deteccion de nodo central (gateway),
-  - calculo de color por nodo.
-- Extraida logica de nodo a `src/ui/hooks/modules/useNetworkNodeState.ts`:
-  - hover/cursor/click,
-  - estado visual (escala y emisivo).
-- Extraida logica de label a `src/ui/hooks/modules/useNodeLabelState.ts`:
-  - paleta por tipo de dispositivo,
-  - normalizacion de confianza (LOW/MED/HIGH).
-- `NetworkScene`, `NetworkNode` y `NodeLabel` quedan mas orientados a presentacion.
-
-### 🎨 Tokens / estilo
-- Nuevo modulo `src/ui/components/3d/sceneTokens.ts` conectado con `hudTokens` para unificar colores/tipografia en la capa 3D.
-
-### ✅ Testing
-- Nuevos tests:
-  - `src/ui/hooks/modules/__tests__/useNetworkSceneState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useNetworkNodeState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useNodeLabelState.test.ts`
-
-### 📚 Documentacion
-- `README.md`: añadido resumen del patron frontend modular.
-- `docs/ARCHITECTURE.md`: documentada estructura frontend por feature y capa 3D.
-- `AGENTS.md`: regla explicita para aplicar patron modular tambien en componentes 3D.
-
-## [v0.8.2] - Cierre documental del refactor frontend (2026-02-11)
-### 📚 Documentacion
-- `docs/ARCHITECTURE.md` actualizado con el patron frontend modular:
-  - panel contenedor + hook `useXxxPanelState` + sub-vistas puras + tokens visuales.
-- Añadidos ejemplos reales aplicados (Radar, ConsoleLogs, Traffic y DeviceDetail).
-- `AGENTS.md` actualizado con reglas operativas para evitar componentes monoliticos y exigir test unitario por hook de panel.
-
-## [v0.8.1] - Cobertura de hooks refactorizados (2026-02-11)
-### ✅ Testing (frontend)
-- Nuevos tests unitarios para hooks extraidos:
-  - `src/ui/hooks/modules/__tests__/useConsoleLogsState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useTrafficPanelState.test.ts`
-  - `src/ui/hooks/modules/__tests__/useDeviceDetailPanelState.test.ts`
-- Cobertura añadida en:
-  - cambios de pestaña y limpieza contextual en `ConsoleLogs`,
-  - filtros/paginacion/resolucion de nombres en `Traffic`,
-  - derivadas y handlers de acciones en `DeviceDetail`.
-
-### ✅ Validaciones
-- `npm test -- --run` (20 files / 54 tests en verde)
+### Validaciones
+- `npm test -- --run` (ok)
 - `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 
-## [v0.8.0] - Tokens visuales HUD compartidos (2026-02-11)
-### 🎨 Frontend (estilos)
-- Añadido `src/ui/styles/hudTokens.ts` como fuente compartida de:
-  - tipografia mono (`HUD_TYPO.mono`)
-  - paleta base HUD (`HUD_COLORS`)
-- Integracion inicial de tokens en modulos refactorizados:
-  - `ConsoleLogs` (`src/ui/components/panels/ConsoleLogs.tsx`, `src/ui/components/panels/console_logs/consoleLogsStyles.ts`)
-  - `Traffic` (`src/ui/components/panels/traffic/TrafficStyles.ts`, `src/ui/components/panels/traffic/TrafficFilterBar.tsx`, `src/ui/components/panels/traffic/TrafficTable.tsx`)
-  - `Radar` (`src/ui/components/hud/RadarPanel.tsx`, `src/ui/components/hud/radar/radarUtils.ts`)
-  - `DeviceDetail` (tipografia/colores clave en `src/ui/components/hud/DeviceDetailPanel.tsx`)
-- Objetivo: reducir hardcodes, mejorar consistencia visual y facilitar cambios de tema sin deuda tecnica.
+## [v0.8.71] - Frontend: bridge Tauri mantenible (split E2E mock) (2026-02-17)
+### IPC (frontend)
+- Refactor: `src/shared/tauri/bridge.ts` deja de ser un GOD module.
+  - `bridge.ts` queda como fachada minima (`invokeCommand`, `listenEvent`).
+  - E2E mock se mueve a `src/shared/tauri/e2e_mock/*` (bus de eventos + router de comandos).
+- Nuevo `README` de la capa IPC:
+  - `src/shared/tauri/README.md`
 
-### ✅ Validaciones
+### Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
-## [v0.7.9] - Refactor DeviceDetailPanel: acciones y derivadas en hook (2026-02-11)
-### ♻️ Frontend (Device Detail)
-- Extraida logica de derivadas/acciones de `DeviceDetailPanel` a `src/ui/hooks/modules/useDeviceDetailPanelState.ts`.
-- El panel mantiene su UI y contratos actuales, pero delega:
-  - nombre resuelto (`name/hostname/Unknown`),
-  - MAC normalizada,
-  - visibilidad de bloque WiFi,
-  - color de señal,
-  - handlers de `LAB AUDIT` y `AUDIT GATEWAY SECURITY`.
-- Objetivo: reducir responsabilidad del componente y facilitar pruebas/escalado.
+## [v0.8.72] - UX: DeviceDetail ports visibles + Attack Lab sin auto-escenario + delete creds robusto (2026-02-17)
+### UI (Device Detail)
+- Mejora: selector `CONSOLE/PORTS` para integrar `ConsoleDisplay` y `PortResults` sin que los puertos queden ocultos.
+- Fix: `PortResults` ya no depende de logs de consola para renderizar; muestra estados claros:
+  - sin audit aun, audit en progreso, stealth mode y lista real de puertos.
 
-### ✅ Validaciones
-- `npm test -- --run src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx` (ok)
+### UI (Attack Lab)
+- Cambio de UX: el boton `LAB AUDIT` desde Device Detail abre Attack Lab con target, pero **sin auto-seleccionar escenario**.
+
+### UI (Settings / Password Vault)
+- Fix: borrado de credenciales del gateway evita condiciones de carrera (un auto-load antiguo ya no repinta credenciales tras `delete`).
+
+### Docs
+- `docs/SECURITY.md`: documentada ubicacion real de credenciales (Keyring del SO) y presets (archivo `gateway_cred_presets.json`).
+
+### Validaciones
+- `npm test -- --run` (ok)
 - `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 
-## [v0.7.8] - Refactor TrafficPanel: estado y vistas separadas (2026-02-11)
-### ♻️ Frontend (Traffic)
-- Extraida la logica de filtros, paginacion incremental y resolucion de nombres a `src/ui/hooks/modules/useTrafficPanelState.ts`.
-- `src/ui/components/panels/TrafficPanel.tsx` queda como ensamblador de UI.
-- Troceo de UI en componentes:
-  - `src/ui/components/panels/traffic/TrafficFilterBar.tsx`
-  - `src/ui/components/panels/traffic/TrafficTable.tsx`
-  - `src/ui/components/panels/traffic/TrafficStyles.ts`
-- Se mantiene comportamiento funcional: filtros `ALL/JAMMED/TARGET`, selector automatico de `TARGET`, scroll incremental y accion `CLR`.
+## [v0.8.73] - Fix: Gateway presets sin bloat (multi-target) + borrado real persistente (2026-02-17)
+### Backend (gateway credential presets)
+- Cambio de arquitectura: `GatewayCredentialPresetService.list(gateway_ip)` ahora devuelve:
+  - presets especificos del gateway, y
+  - presets globales (`gatewayIp="*"`) en la misma lista.
+- Fix: eliminados los marcadores legacy `__seeded__` y la siembra de clones por gateway (causaba que `gateway_cred_presets.json` creciera sin control).
+- Auto-clean: al listar/modificar, se compacta storage eliminando duplicados redundantes (si un preset especifico duplica uno global, se elimina del disco).
 
-### ✅ Validaciones
-- `npm test -- --run src/ui/components/panels/__tests__/TrafficPanel.test.tsx` (ok)
+### Impacto UX
+- El operador puede borrar presets y ver el JSON limpiarse de verdad (incluyendo los clones historicos por IP).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.74] - Multi-OS: keyring best-effort (no bloquea flujos) (2026-02-17)
+### IPC (frontend)
+- `networkAdapter.getGatewayCredentials()` ahora es best-effort: si el keyring del SO no esta disponible (Linux headless, etc.), devuelve `null` para permitir fallback a presets/brute-force sin romper el flujo.
+
+### Docs
+- `docs/SECURITY.md`: aclarado comportamiento multi-OS del keyring y regla de robustez.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.75] - Backend: keyring best-effort (Linux/mac/headless no rompen comandos) (2026-02-17)
+### Backend (credenciales gateway)
+- `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials` pasan a ser best-effort si el keyring no esta disponible:
+  - `get_*` => `Ok(None)`
+  - `save/delete` => `Ok(())`
+- Motivo: en Linux depende de Secret Service (GNOME Keyring/KWallet). En entornos sin keyring, el flujo debe continuar (presets + brute-force).
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.76] - Tests: fallback cuando keyring no esta disponible (2026-02-17)
+### Tests (frontend)
+- `useRouterHacker`: test de regresion para asegurar que si falla `get_gateway_credentials` (keyring no disponible), el flujo no crashea y continua con `audit_router` (fallback a presets/brute-force).
+
+### Validaciones
+- `npm test -- --run` (ok)
+
+## [v0.8.77] - Router sync: parser DOM mas robusto (MAC placeholder + nombre) (2026-02-17)
+### Backend (router_audit)
+- `parse_router_text` ahora:
+  - ignora MAC placeholder `00:00:00:00:00:00` si existe otra MAC real en el bloque,
+  - evita usar lineas `IP: ...` como nombre del dispositivo.
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+- Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
+
+## [v0.8.78] - LIVE TRAFFIC: tabla legible (LEN + DATA ancho) + contador JAMMED con logs (2026-02-17)
+### UI (traffic)
+- Mejora: `DATA` ya no queda cortado por defecto (grid template con `minmax`).
+- Añadido: columna `LEN` (bytes) para entender el volumen del paquete.
+- UX: el filtro `JAMMED` muestra `targets | logs` en la etiqueta.
+- Destinos: etiqueta heuristica para algunos IPs publicos comunes (GOOGLE/META/AWS/CLOUDFLARE/etc.) para lectura rapida.
+
+### Validaciones
+- `npm test -- --run` (ok)
+
+## [v0.8.79] - Router sync: no reutilizar nombre entre IPs (2026-02-17)
+### Backend (router_audit)
+- Fix: el parser del DOM del router ya no copia el nombre del dispositivo anterior cuando un bloque no trae nombre (evita duplicados de hostname entre IPs distintas).
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+- Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
+
+## [v0.8.80] - Inventario: labels consistentes + alias manual (2026-02-17)
+### Backend (router_audit)
+- Fix: soporta firmwares donde `IP ADDR:` y el valor (`192.168.x.x`) aparecen en lineas separadas, sin reutilizar el nombre del bloque anterior.
+
+### UI (inventario)
+- Router sync: no preserva `name/hostname` si cambia o se resuelve la MAC (evita mezclar labels con otra identidad).
+- DeviceDetail: editor de alias manual (p. ej. renombrar a "Alexa") persistido en localStorage.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.81] - Docs: SOP de release automatizado (2026-02-17)
+### Docs
+- Nuevo: `docs/RELEASE_SOP.md` (guia paso a paso para publicar releases via tags `v*` y GitHub Actions).
+
+## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
+### UI (inventario)
+- Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.
+- Tras sync del gateway, el inventario pasa a ser autoritativo (se eliminan nodos stale no presentes en el router).
+- Scan: sigue siendo merge defensivo (no reduce inventario en scans parciales), pero mantiene fingerprint para no hidratar otra red.
+
+### OpSec (Ghost Mode)
+- Fix: `randomize_mac` ya no se basa en el toggle de `WlanSvc` (puede no cambiar la MAC).
+- Ahora aplica override via `NetworkAddress` + reinicio + verificacion; si no cambia, devuelve error.
+- UI: actualizacion optimista del MAC del host via evento `netsentinel://ghost-mode-applied`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.64] - UI: Attack Lab runtime desacoplado (store + runners) (2026-02-17)
+### UI (attack_lab)
+- Refactor del runtime persistente `useAttackLabRuntime`:
+  - store singleton (estado + persistencia + listeners de eventos)
+  - acciones/runners (external/simulated/native + cancel/clear)
+  - hook wrapper fino (solo `useSyncExternalStore`)
+- Objetivo: reducir deuda tecnica y hacer el runtime mas testeable sin tocar la UX.
+
+### Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
-## [v0.7.7] - Refactor ConsoleLogs: separacion por vistas y estado (2026-02-11)
-### ♻️ Frontend (ConsoleLogs)
-- Extraida la logica de estado/acciones a `src/ui/hooks/modules/useConsoleLogsState.ts`.
-- `src/ui/components/panels/ConsoleLogs.tsx` pasa a ser un contenedor de composicion.
-- Nuevo troceo por responsabilidad:
-  - `src/ui/components/panels/console_logs/ConsoleLogsHeader.tsx`
-  - `src/ui/components/panels/console_logs/SystemLogsView.tsx`
-  - `src/ui/components/panels/console_logs/RadarLogsView.tsx`
-  - `src/ui/components/panels/console_logs/consoleLogsStyles.ts`
-- Se mantiene el comportamiento actual de pestañas, limpieza contextual y seleccion de nodo desde `RADAR LOGS`.
+## [v0.8.65] - UI: Scene3D NodeLabel desacoplado (view + icon + estilos) (2026-02-17)
+### UI (scene3d)
+- Refactor de `NodeLabel`: se separa en:
+  - `node_label/NodeLabelView.tsx` (presentacion pura)
+  - `node_label/NodeLabelIcon.tsx` (iconografia)
+  - `node_label/nodeLabelStyles.ts` (CSS/animaciones)
+- Objetivo: evitar god-components en 3D manteniendo exactamente el mismo look & behavior.
 
-### ✅ Validaciones
+### Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
-## [v0.7.6] - Refactor RadarPanel: separacion UI/logica (2026-02-11)
-### ♻️ Frontend (HUD Radar)
-- Extraida la logica de estado/efectos/memos a `src/ui/hooks/modules/useRadarPanelState.ts`.
-- `src/ui/components/hud/RadarPanel.tsx` queda como contenedor de composicion (sin logica de negocio de radar).
-- Troceado de UI en subcomponentes dedicados:
-  - `src/ui/components/hud/radar/RadarHeader.tsx`
-  - `src/ui/components/hud/radar/RadarScope.tsx`
-  - `src/ui/components/hud/radar/RadarIntelPanel.tsx`
-  - `src/ui/components/hud/radar/RadarLegalModal.tsx`
-  - utilidades/tipos en `src/ui/components/hud/radar/radarUtils.ts` y `src/ui/components/hud/radar/radarTypes.ts`
+## [v0.8.66] - UI: Scene3D NetworkNode desacoplado (Kill Net FX a subcomponente) (2026-02-17)
+### UI (scene3d)
+- `NetworkNode` deja de contener el FX inline de Kill Net; ahora usa:
+  - `src/ui/features/scene3d/components/network_node/JammerSwarmFx.tsx`
+- Objetivo: reducir responsabilidades del componente 3D sin cambiar UX.
 
-### ✅ Validaciones
+### Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
-## [v0.7.3] - Inventario estable + mejoras de labels 3D + logs (2026-02-10)
-### 🧠 Scanner (UX / estabilidad)
-- `Scan Net` ya no reduce el inventario si el escaneo devuelve menos dispositivos temporalmente (merge por union).
-- Evitado el conflicto de hidratacion (snapshot/historial) que podia sobrescribir el inventario durante el auto-scan.
-- Añadido test de regresion para asegurar que el inventario no se recorta cuando el scan ve menos nodos.
+## [v0.8.67] - UI: TopBar desacoplado (brand/identidad/controles) + README de layout (2026-02-17)
+### UI (layout)
+- `TopBar` se divide en subcomponentes reutilizables para reducir responsabilidades sin cambiar UX:
+  - `src/ui/components/layout/topbar/TopBarBrand.tsx`
+  - `src/ui/components/layout/topbar/TopBarIdentity.tsx`
+  - `src/ui/components/layout/topbar/TopBarPanelControls.tsx`
+  - `src/ui/components/layout/topbar/TopBarStatusControls.tsx`
+- Nuevo `README` de la capa layout:
+  - `src/ui/components/layout/README.md`
 
-### 🧩 UI (Labels 3D)
-- Tarjetas (labels) mas grandes y legibles con estetica terminal/cyberpunk.
-- El router/gateway usa una tarjeta especial con filas (IP/MAC/Vendor/iface/GW).
-- Toggle para ocultar/mostrar tarjetas persistido en `localStorage`.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### 🧾 Logs (trazabilidad)
-- `SYSTEM LOGS` pinta eventos `CRITICAL`/`💀` en rojo.
-- `audit_router/fetch_router_devices`: logging de dispositivos conectado tras enriquecimiento ARP para evitar `MAC=00:00:...` en consola cuando ya existe MAC real.
+## [v0.8.68] - UI: Password Vault GatewayCredsTab desacoplado por secciones (2026-02-17)
+### UI (attack_lab)
+- `GatewayCredsTab` se divide en subcomponentes puros para reducir responsabilidades sin cambiar UX:
+  - `src/ui/features/attack_lab/panel/wordlist/gateway_creds/*`
+- Objetivo: eliminar god-components en el Password Vault manteniendo estilos/aria-labels.
 
-## [v0.7.4] - Documentacion External Audit / LAB Audit (2026-02-10)
-### 📚 Documentacion
-- Añadido `docs/EXTERNAL_AUDIT.md`:
-  - arquitectura end-to-end (UI -> Tauri -> proceso -> eventos),
-  - mapa de archivos,
-  - DTOs y eventos,
-  - limitaciones,
-  - guia paso a paso para añadir escenarios LAB (simulados o externos).
-### 🧭 Onboarding
-- `README.md`: enlace directo a `docs/EXTERNAL_AUDIT.md`.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.7.5] - Refactor backend (SOLID) + hardening runtime + fixtures (2026-02-10)
-### 🦀 API (Tauri)
-- `src-tauri/src/api/commands.rs`: comandos agrupados por dominio con submodulos `api/commands/*`.
-- `src-tauri/src/lib.rs`: wiring mas limpio (solo dependencias + registro de comandos).
+## [v0.8.69] - UI: RadarIntelFilters desacoplado (side/bottom views) (2026-02-17)
+### UI (radar)
+- `RadarIntelFilters` deja de ser un fichero monolitico; ahora compone vistas:
+  - `src/ui/features/radar/components/radar/intel/filters/*`
+- Objetivo: reducir responsabilidades y mantener el layout responsive sin cambios visuales.
 
-### 🦀 External Audit (wrapper CLI)
-- `src-tauri/src/application/external_audit/*`: runner/validacion/sink testeable.
-- Streaming real de `stdout/stderr`, cancelacion y timeout con tests.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### 🦀 WiFi / Vendor
-- Resolver OUI data-driven con seed embebido y override en AppData (`oui.json`).
-- `WifiService` como caso de uso fino + normalizacion pura (`wifi_normalizer`).
+## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
+### UI (attack_lab)
+- Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:
+  - targets + sync (Radar/WiFi + ventanas desacopladas)
+  - ejecucion + autorun + next-steps + OPSEC confirm
+  - persistencia local (UI state + evidencia WiFi)
+- Objetivo: reducir responsabilidades por archivo y facilitar mantenimiento/tests sin tocar la UI/UX.
 
-### 🦀 Runtime (identidad/traffic/jammer)
-- Identidad local robusta con parser puro + fixtures (`local_intelligence/*`).
-- Preflight del sniffer: si no se abre el canal, no se marca el monitor como running.
-- Hardening de `JammerService` y `PacketInjector` (menos `unwrap()`, mas checks, tests).
+### Tests/Build
+- Nuevos tests unitarios para los hooks extraidos (targets/ejecucion).
 
-### 📚 Docs
-- Sincronizada documentacion con arquitectura real (README, External Audit, Architecture, etc.).
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.6.3] - Plan Radar View y prioridades 2026 (2026-02-10)
-### 📚 Documentacion estrategica
-- Creado `docs/RADAR_VIEW.md` con guia paso a paso para implementar `Radar View (WiFi Spectrum)`:
-  - arquitectura backend/frontend,
-  - fases de entrega,
-  - criterios de aceptacion,
-  - reglas de seguridad.
+## [v0.8.49] - UI: Settings + i18n (CA/ES/EN) (2026-02-13)
+### UI (settings)
+- Nuevo panel `Settings` con:
+  - selector de idioma (CA/ES/EN)
+  - "Field Manual" jugable con leyenda 3D (reusa `NetworkNode`) + documentacion por seccion (Radar/Attack/Console/Storage)
+  - soporte de docking/undocking (panel `settings`)
 
-### 🧭 Priorizacion de producto
-- Actualizadas `Prioridades actuales` en `AGENTS.md` con foco en:
-  - `scan_airwaves` y vista Radar,
-  - simulaciones educativas controladas de PMKID/IoT/MLO (modo inferencia),
-  - hardening legal/sanitizacion/trazabilidad,
-  - cobertura de testing.
+### i18n (infra)
+- Provider global `I18nProvider` + hook `useI18n`.
+- Persistencia via backend settings (`get_app_settings`, `set_ui_language`) con fallback a `localStorage`.
 
-### 🔐 Seguridad y alcance
-- Actualizado `docs/SECURITY.md` para dejar explicito:
-  - uso autorizado en laboratorio,
-  - simulaciones didacticas permitidas,
-  - exclusion de automatizaciones ofensivas reales.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 
-### 🏗️ Arquitectura y testing
-- Actualizado `docs/ARCHITECTURE.md` con roadmap de `scan_airwaves`.
-- Actualizado `docs/TESTING.md` con prioridades de pruebas para Radar View.
-- Actualizado `README.md` con seccion de roadmap inmediato y enlace a `docs/RADAR_VIEW.md`.
+## [v0.8.50] - UI: dock resizable + panels responsive/scroll (2026-02-14)
+### UI (layout)
+- Dock: soporte real de resize independiente cuando estan abiertos `radar`, `attack_lab` y `settings`:
+  - triple split `Radar | Attack Lab | Settings` con 2 separadores
+  - split `Settings | (Radar|Attack)` con separador propio
+- Se elimina el tope artificial de ancho del dock para poder estirar los paneles hasta el limite real del `NetworkScene`.
 
-## [v0.6.4] - Backend inicial Radar View: scan_airwaves (2026-02-10)
-### 🦀 Backend (Rust + Tauri)
-- Añadido servicio `WifiService` con normalizacion defensiva:
-  - saneo de SSID (control chars, longitud, `<hidden>`),
-  - clasificacion de riesgo (`HARDENED|STANDARD|LEGACY|OPEN`),
-  - calculo `distance_mock` para visualizacion.
-- Añadido puerto `WifiScannerPort` y scanner de sistema con `wifiscanner`.
-- Añadido comando Tauri `scan_airwaves` y DTO `WifiNetworkDTO`.
+### UI (responsive)
+- Radar: modo narrow (stacked) mas estable (breakpoint con histeresis) + `NODE INTEL` con filtros compactos en una sola tira (wrap) en layout lateral.
+- Scroll consistente en paneles pequenos para evitar botones/inputs cortados (Radar/AttackLab/Settings).
 
-### ✅ Verificacion
-- `cargo check --tests` en verde.
+### UI (datos)
+- Registro local de alias de dispositivos (hostname/nombre) para rehidratar nombres cuando el scan/audit no los devuelve en el momento.
 
-## [v0.6.5] - Gobernanza GitHub: PR review obligatorio (2026-02-10)
-### 🧭 Proceso
-- Añadido `CONTRIBUTING.md` con politica de PR y revision senior.
-- Añadidos ficheros de soporte GitHub:
-  - `.github/CODEOWNERS`
-  - `.github/pull_request_template.md`
-- Actualizado `AGENTS.md` para prohibir commits finales automaticos por agentes IA sin confirmacion.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### 🛠️ Calidad
-- Ajuste de tipos explicitos en `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` para evitar errores de inferencia en IDE.
+## [v0.8.51] - UI: Kill Net (Jammer) robusto + JAMMED en Traffic (2026-02-14)
+### UI (jammer)
+- `useJamming`: acepta `identity.gatewayIp` como fallback si el inventario aun no marca `isGateway`.
+- Normalizacion defensiva de MAC (soporta `AA-BB-..` y `AA:BB:..`) antes de invocar `start_jamming`.
 
-## [v0.6.6] - Radar View UI inicial (CRT terminal) + soporte E2E (2026-02-10)
-### 🎛️ Frontend
-- Añadido panel `RadarPanel` con estetica CRT/cyberpunk y aviso legal de primer uso:
-  - `src/ui/components/hud/RadarPanel.tsx`
-- Integrado el toggle `RADAR` en:
-  - `src/ui/components/layout/TopBar.tsx`
-  - `src/App.tsx`
+### UI (traffic)
+- `TrafficMonitor`: clasifica paquetes como `JAMMED` si:
+  - vienen marcados como `isIntercepted`, o
+  - el `sourceIp/destinationIp` pertenece a una IP con jammer activo.
+- `ConsoleLogs`: inyecta `jammedIps` al monitor para que la pestaña/filtro `JAMMED` refleje el estado real.
 
-### 🧪 E2E
-- Extendida la bridge mock con `scan_airwaves`:
-  - `src/shared/tauri/bridge.ts`
-- Añadido test E2E de Radar View:
-  - `e2e/app.spec.ts`
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.6.7] - Radar View UI v2: filtros y auto-refresh (2026-02-10)
-### 🎛️ Frontend
-- `src/ui/components/hud/RadarPanel.tsx`:
-  - filtros por riesgo, banda, canal y busqueda (SSID/vendor/BSSID),
-  - contador `VISIBLE` para ver impacto de filtros,
-  - auto-refresh opcional (sin solapar escaneos),
-  - `aria-label` para tests estables.
+## [v0.8.52] - UI: Multi Kill Net + Traffic UX + FX 3D (2026-02-14)
+### UI (traffic)
+- `JAMMED` ahora reporta targets afectados (no solo paquetes).
+- Nuevo selector `TARGET` en Live Traffic para fijar un dispositivo sin depender solo del nodo seleccionado.
 
-### 🧪 Tests
-- Añadido `src/ui/components/hud/__tests__/RadarPanel.test.tsx`.
+## [v0.8.53] - Attack Lab: HTTP fingerprint + consola teletype + estado persistente (2026-02-16)
+### Attack Lab (runtime/UI)
+- Consola: efecto teletype (linea a linea) + colores por seccion/VERDICT para lectura rapida.
+- Estado UI persistente: `scenarioId/mode/targetIp` se conservan aunque abras/cierres otros paneles (evita perder inputs al abrir Settings).
+- `start_attack_lab`: se inyecta `NETSENTINEL_UI_LANG` como env var para que los scripts impriman `WHY/NEXT` en el idioma UI.
 
-## [v0.6.8] - Radar View: escaneo Windows mas fiable + layout dock a la izquierda (2026-02-10)
-### 🦀 Backend (Windows)
-- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
-  - preferencia por `netsh wlan show networks mode=bssid` como fuente de verdad en Windows.
-  - parser tolerante a locales (claves como `Señal/Senal/Signal`, `Canal/Channel`, `Autenticacion/Auth`).
-  - fallback cuando Windows omite BSSID/canal/señal: se genera un pseudo-BSSID estable para no devolver lista vacia.
-  - enriquecimiento con `netsh wlan show interfaces` para obtener RSSI/canal/AP BSSID reales de la red conectada.
+### Attack Lab (catalogo)
+- Nuevo/actualizado: `HTTP: Fingerprint de cabeceras (HEAD)` via `HttpWebRequest` (HEAD en 80/443) con VERDICT/WHY/NEXT.
+- Baseline (router/device): script PowerShell localizado para VERDICT/WHY/NEXT y soporte de bloques `switch {}` (script multilínea).
 
-### 🎛️ Frontend (Layout)
-- `src/App.tsx`:
-  - Radar View acoplado a la izquierda (resizable por anchura) sin invadir el espacio vertical de `ConsoleLogs`.
+### Backend (validacion)
+- Attack Lab: se sube limite por argumento a 16KB (necesario para scripts PowerShell inline con parsing + VERDICT).
 
-### 📚 Documentacion
-- `docs/RADAR_VIEW.md`:
-  - seccion de troubleshooting en Windows (cache de escaneo, permisos, limitaciones de driver).
-  - glosario/guia de `NODE INTEL` (CH, bandas, riesgo, auto, busqueda).
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
 
-## [v0.6.9] - Radar View: RADAR LOGS + AP conectado resaltado + ayuda in-app (2026-02-10)
-### 🎛️ Frontend
-- `src/ui/components/panels/ConsoleLogs.tsx`:
-  - nueva pestaña `RADAR LOGS` para trazabilidad local de escaneos WiFi.
-- `src/ui/hooks/modules/useWifiRadar.ts`:
-  - registra resumen y detalle de cada escaneo en `RADAR LOGS` (SSID/BSSID/vendor/seguridad/canal/RSSI/riesgo).
-- `src/ui/components/hud/RadarPanel.tsx`:
-  - el AP conectado se resalta con anillo cian y etiqueta `CONNECTED (TU ROUTER)`.
-  - boton `?` para explicar `NODE INTEL` (riesgo/banda/canal/busqueda/auto) directamente en la UI.
+## [v0.8.54] - Attack Lab: IoT perfil real + Next Steps (2026-02-16)
+### Attack Lab (catalogo)
+- Nuevo: `IoT: Perfilado de riesgo (puertos comunes)` (`iot_risk_profile_quick_ports`) con probe TCP rapido y VERDICT/WHY/NEXT.
+- Limpieza: se elimina el escenario IoT simulado para evitar confundir al operador.
 
-### 🦀 Backend (Contratos)
-- `src-tauri/src/domain/entities.rs`, `src-tauri/src/api/dtos.rs`:
-  - añadido `isConnected` en WiFi Radar para identificar el AP conectado cuando el SO lo expone.
-- `src-tauri/src/infrastructure/wifi/wifi_scanner.rs`:
-  - marca `is_connected` a partir de `netsh wlan show interfaces` en Windows.
+### Attack Lab (UX)
+- Botones de "Siguiente paso" basados en metadata del escenario (`nextScenarioIds`) para encadenar auditorias sin perder el target.
+- Fix: evitar doble ejecucion al usar "Siguiente paso" (auto-run solo una vez).
+- Sync: seleccionar target en Attack Lab ya reflejaba seleccion en escena; ahora al seleccionar un nodo en la escena, el target del Attack Lab se actualiza (sin auto-ejecutar).
 
-### 🧪 Tests
-- Añadidos tests:
-  - `src/ui/hooks/modules/__tests__/useRadarLogs.test.ts`
-  - `src/ui/components/panels/__tests__/ConsoleLogs.test.tsx`
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.7.0] - ExternalAuditService: wrapper async de herramientas CLI (2026-02-10)
-### 🦀 Backend (Rust + Tauri)
-- Añadido `ExternalAuditService` como orquestador de herramientas externas ya instaladas por el administrador:
-  - `src-tauri/src/application/external_audit_service.rs`
-- Nuevos comandos Tauri:
-  - `start_external_audit`
-  - `cancel_external_audit`
-- Streaming en tiempo real de logs via eventos Tauri:
-  - `external-audit-log` (stdout/stderr)
-  - `external-audit-exit` (exit code, success, duration)
+## [v0.8.55] - Attack Lab: WiFi import evidencias (PMKID/Handshake) + sincronizacion WiFi (2026-02-16)
+### Attack Lab (WiFi)
+- Nuevo: `WIFI: Evidence Import (PMKID/Handshake)` (`wifi_evidence_import`): importador/validador de evidencias (WPA*01/WPA*02) para reporte.
+- UX: el modal OPSEC WiFi ahora es configurable por escenario (`requiresOpsecConfirm`) para no bloquear herramientas pasivas.
+- Fix: seleccionar un objetivo WiFi ya no fuerza el escenario `wifi_brute_force_dict` (mantiene el escenario actual).
+- Sync: Radar (WiFi) <-> Attack Lab (WiFi) por BSSID para mantener el target coherente.
 
-### 🔐 Seguridad (DevSecOps)
-- Ejecucion sin shell (args tokenizados) y validaciones defensivas (limites de args/env/timeout) para reducir riesgos operativos.
+### Documentacion
+- `AGENTS.md` y `docs/ATTACK_LAB.md`: se reemplaza el lenguaje de "simulaciones" por "ejecucion local/pasiva" para reducir ambiguedad.
 
-## [v0.7.1] - External Audit UI: LAB por dispositivo + escenarios (2026-02-10)
-### 🎛️ Frontend
-- Añadido panel `ExternalAuditPanel` con dos modos:
-  - `LAB`: escenarios preconfigurados por dispositivo (externo o simulado).
-  - `CUSTOM`: ejecucion manual (binario + args).
-- Añadido boton `LAB AUDIT` en `DeviceDetailPanel` para abrir auditorias por dispositivo.
-- Añadido boton `EXT AUDIT` en TopBar para abrir el panel en modo manual.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+- `cd src-tauri && cargo check` (ok)
+- Resolucion de nombre en tabla: prioriza `hostname`/`name` antes de `vendor`.
 
-### 🧠 Logica (escenarios)
-- Nuevo catalogo de escenarios en `src/core/logic/externalAuditScenarios.ts`:
-  - presets no intrusivos (recon basico, fingerprint de cabeceras),
-  - simulaciones didacticas (PMKID/IoT) sin ejecucion ofensiva.
+### UI (scene3d)
+- FX visual para nodos con Kill Net activo:
+  - anillo rojo pulsante
+  - swarm de "naves" orbitando con trayectorias pseudo-aleatorias
+  - rayos intermitentes (beams) al nodo objetivo
 
-## [v0.7.2] - Auto-scan + snapshot + credenciales locales (2026-02-10)
-### ⚡ Arranque (UX)
-- Al iniciar la app, se puede ejecutar auto-scan (preferencia `netsentinel:autoScanOnStartup` en `localStorage`).
-- El escaneo usa el CIDR derivado de `get_identity` (IP + netmask), con fallback a `/24`.
+### Settings (Field Manual)
+- Leyenda 3D incluye estado `KILL NET (JAMMER ACTIVO)` con la misma animacion para aprendizaje in-app.
 
-### 💾 Persistencia
-- Nuevo snapshot rapido en AppData: `latest_snapshot.json` (carga inmediata de inventario al abrir la app).
-- Nuevos comandos:
-  - `save_latest_snapshot`, `load_latest_snapshot`
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### 🔐 Credenciales (local, seguro)
-- Al detectar credenciales del gateway, se guardan en el keyring del sistema (Windows Credential Manager) para:
-  - sincronizar `fetch_router_devices` automaticamente en el arranque (si existe credencial almacenada),
-  - reducir dependencia de repetir `audit_router`.
-- Nuevos comandos:
-  - `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`
+## [v0.8.53] - UI: Radar Intel refactor + responsive real + filtros plegables (2026-02-15)
+### UI (radar)
+- Refactor: `RadarIntelPanel` deja de ser GOD component (subcomponentes `intel/*` + helper de flujo a Attack Lab).
+- Responsive: el Radar entra en modo stacked (scope arriba + intel abajo) segun ancho util del scope (no solo el ancho total).
+- UX: filtros en layout `bottom` ahora son plegables (search + resumen siempre visibles) para evitar scroll innecesario.
+- Fix: el status `NETWORKS/VISIBLE/LAST` se mueve al header para no tapar nodos dentro del scope.
 
-### 🧠 Identificacion
-- Mejorado `VendorResolver` con deteccion de MAC aleatoria (privacy) y soporte opcional de `oui.json` en AppData.
-- Filtro defensivo de hostnames: se descarta `localhost` en IPs remotas para evitar falsos positivos (TV/Alexa por cable, etc.).
+### UI (global)
+- Estilo cyberpunk para `select/option` (dark scheme) para evitar dropdown blanco en runtime.
 
-## [v0.6.2] - Prioridades operativas: Logs, Live Traffic y Guia funcional (2026-02-10)
-### 🧭 Gobierno y prioridades
-- Actualizadas prioridades en `AGENTS.md` para enfocar:
-  - comentarios en castellano en archivos afectados,
-  - correccion de `SYSTEM LOGS` (scroll y textos),
-  - correccion de filtros de `LIVE TRAFFIC`,
-  - documentacion funcional en `README.md`.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### 🖥️ UI: Console y trafico
-- `src/ui/components/panels/ConsoleLogs.tsx`:
-  - activado paso de `jammedPackets` a `TrafficPanel`.
-  - ajuste de contenedores flex (`minHeight: 0`) para scroll fiable.
-  - eliminado recorte por `ellipsis` en logs de sistema y habilitado wrapping.
-- `src/ui/components/panels/TrafficPanel.tsx`:
-  - etiqueta del filtro `TARGET` usando `vendor`/`hostname` antes que IP.
-  - limpieza de comentarios y tipado de `FilterBtn` sin `any`.
-- `src/ui/hooks/modules/useTrafficMonitor.ts`:
-  - comentarios actualizados a castellano tecnico.
+## [v0.8.54] - UI: i18n por locales + Field Manual refactor (2026-02-15)
+### i18n (infra)
+- Reestructura a formato por locales tipo Next:
+  - claves canonicas en `src/ui/i18n/keys.ts`
+  - diccionarios por idioma en `src/ui/i18n/locales/{es,ca,en}.ts`
+  - agregador compatible en `src/ui/i18n/strings.ts`
 
-### 📚 Documentacion
-- `README.md`:
-  - nueva guia de `LIVE TRAFFIC` (colores, columnas y filtros).
-  - guia paso a paso para implementar prioridades sin romper funcionalidad.
+### UI (settings)
+- `FieldManualView` refactor: divide en nav/hook de layout/secciones para evitar GOD component.
+- Eliminadas ramas `language === ...` en Field Manual: el contenido pasa a `t(key)` (ES/CA/EN).
 
-## [v0.6.1] - Reestructuracion de AGENTS.md para Agentes IA (2026-02-10)
-### 📚 Documentacion de gobierno
-- Reestructurado `AGENTS.md` a formato explicito de perfil de agente:
-  - `Descripcion`
-  - `Instrucciones`
-  - `Tono`
-  - `Prioridades actuales`
-- Conservadas y reorganizadas las reglas tecnicas existentes:
-  - arquitectura hexagonal real del repositorio,
-  - comandos Tauri vigentes,
-  - contratos Rust/TypeScript,
-  - validaciones minimas,
-  - Definition of Done y flujo operativo.
-- Objetivo del cambio: facilitar onboarding de juniors y reducir ambiguedad operativa de agentes IA.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.6.0] - Hardening Continuo de CI, Validacion y Resiliencia E2E (2026-02-09)
-### 🔐 Seguridad y validacion
-- CSP reforzada en `src-tauri/tauri.conf.json` con directivas adicionales:
-  - `script-src 'self'`
-  - `object-src 'none'`
-  - `base-uri 'none'`
-  - `form-action 'none'`
-  - `frame-ancestors 'none'`
-- Validacion semantica de IPs en backend:
-  - nuevo validador `validate_usable_host_ipv4` en `src-tauri/src/api/validators.rs`.
-  - aplicado en comandos de auditoria y jamming para bloquear IPs no operativas (`0.0.0.0`, loopback, multicast, broadcast).
+## [v0.8.55] - UI: i18n transversal (paneles, modal OPSEC, layout) (2026-02-16)
+### i18n (frontend)
+- Migracion de textos hardcodeados a `t(key)` en:
+  - `TrafficFilterBar` (titulos de filtros, ayuda, selector TARGET, boton clear)
+  - `AttackLabPanel` (estado native, logs de inicio/error, bloqueo de auto-run native, modal OPSEC)
+  - `CyberConfirmModal` (headers, estados de analisis, acciones, mensajes de riesgo)
+  - `ConsoleLogsHeader` (tabs, estado offline, botones start/stop)
+  - `DeviceDetailPanel` (labels base, acciones audit/jam/lab/gateway, flujo Ghost Mode y logs)
+  - `DetachedPanelView` y `MainDockedLayout` (textos de desacoplado/inicializacion/awaiting target)
 
-### 🧪 Testing y robustez
-- Ampliados tests unitarios Rust:
-  - `src-tauri/src/application/jammer_service.rs`
-  - `src-tauri/src/application/traffic_service.rs`
-  - ajustes de tests en `src-tauri/src/api/commands.rs`, `src-tauri/src/lib.rs` y `src-tauri/src/api/validators.rs`.
-- E2E ampliado con escenarios negativos controlados:
-  - fallo forzado de `scan_network`.
-  - fallo forzado de `start_traffic_sniffing`.
-  - implementado soporte de flags de escenario en `src/shared/tauri/bridge.ts`.
+### i18n (catalogo de claves)
+- Se anaden nuevas claves en `src/ui/i18n/keys.ts` y traducciones en:
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
 
-### ⚙️ CI
-- Workflow `.github/workflows/ci.yml` actualizado con auditorias de dependencias no bloqueantes:
-  - `npm audit --omit=dev --audit-level=high`
-  - `cargo audit` (instalando `cargo-audit`)
-- Actualizada dependencia `reqwest` de `0.11` a `0.12` en `src-tauri/Cargo.toml` para corregir vulnerabilidad transitiva reportada por RustSec (`RUSTSEC-2024-0421` / `idna`).
+### Testing
+- Ajuste de tests de `DeviceDetailPanel` para ejecutar bajo `I18nProvider`.
 
-### 📚 Documentacion
-- Actualizados `docs/SECURITY.md` y `docs/TESTING.md` con el nuevo estado de seguridad, CI y cobertura E2E.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.5.9] - Validacion Defensiva de Inputs en Comandos Rust (2026-02-09)
-### 🔐 Hardening backend
-- Añadido modulo de validadores:
-  - `src-tauri/src/api/validators.rs`
-- Aplicadas validaciones en comandos API:
-  - `scan_network`: rango IPv4/CIDR valido.
-  - `audit_target`: IPv4 valida.
-  - `audit_router`: IPv4 valida.
-  - `fetch_router_devices`: IPv4 valida + `user/pass` no vacios y con longitud maxima.
-- Aplicadas validaciones en comandos de jamming:
-  - `start_jamming`: valida `ip`, `mac`, `gateway_ip` y bloquea `ip == gateway_ip`.
-  - `stop_jamming`: valida `ip`.
+## [v0.8.56] - UI: i18n transversal (Radar + Wordlist + Attack Header) (2026-02-16)
+### i18n (frontend)
+- Migracion de textos hardcodeados a `t(key)` en:
+  - `src/ui/features/radar/components/radar/RadarHeader.tsx`
+  - `src/ui/features/radar/components/radar/intel/RadarIntelHeader.tsx`
+  - `src/ui/features/radar/components/radar/intel/RadarIntelFilters.tsx`
+  - `src/ui/features/attack_lab/panel/AuditHeader.tsx`
+  - `src/ui/features/attack_lab/panel/WordlistManagerModal.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/CyberConfirmDialog.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordChip.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordlistGrid.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordlistHeader.tsx`
+  - `src/ui/features/attack_lab/panel/wordlist/WordlistFooter.tsx`
 
-### 🧪 Tests añadidos
-- Tests unitarios de validadores en `src-tauri/src/api/validators.rs`.
-- Tests unitarios de validacion en:
-  - `src-tauri/src/api/commands.rs`
-  - `src-tauri/src/lib.rs`
+### i18n (catalogo de claves)
+- Nuevas claves en `src/ui/i18n/keys.ts` para:
+  - cabecera Radar, filtros Intel y opciones de riesgo/banda
+  - cabecera Attack Lab
+  - flujo completo de Wordlist Manager (acciones, placeholders, confirmaciones)
+- Traducciones anadidas en:
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
 
-### 📚 Documentacion
-- Actualizado `docs/SECURITY.md` con el estado actual de validacion de inputs.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### ✅ Verificacion
-- `cargo check --tests` en verde.
-- `npm test -- --run` en verde.
+## [v0.8.57] - UI: i18n en Scene 3D + titulos de ventanas desacopladas (2026-02-16)
+### i18n (frontend)
+- Scene 3D:
+  - `src/ui/features/scene3d/components/NetworkScene.tsx` pasa textos visibles a `t(key)`:
+    - tooltips de controles (undock/show-hide cards)
+    - labels de nodo central (`ROUTER`, `GATEWAY`, `SEARCHING...`)
+    - fallback de vendor desconocido
+    - labels de filas (`IP`, `MAC`, `VENDOR`, `IFACE`, `GW`)
+- Layout:
+  - `src/ui/components/layout/MainDockedLayout.tsx` usa i18n para titulos de `DetachedWindowPortal` (console/device/radar/attack/scene/settings).
 
-## [v0.5.8] - Hardening CSP en Tauri (2026-02-09)
-### 🔐 Seguridad runtime
-- Sustituida configuracion insegura `csp: null` por una politica CSP explicita en:
-  - `src-tauri/tauri.conf.json`
-- Definida `csp` para produccion y `devCsp` para desarrollo local (`localhost:1420` y websocket de Vite).
+### i18n (catalogo de claves)
+- Nuevas claves en `src/ui/i18n/keys.ts` para:
+  - `layout.detached.*`
+  - `scene.controls.*`
+  - `scene.node.*`
+  - `scene.label.*`
+- Traducciones anadidas en:
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
 
-### ✅ Estado de proteccion
-- Se restringen origenes por defecto para scripts/conexiones/imagenes/fuentes.
-- Se mantiene compatibilidad actual con `style-src 'unsafe-inline'` por uso de estilos inline existentes.
+### Validaciones
+- `npm run build` (ok)
+- `npm test -- --run` (ok)
 
-### 📚 Documentacion
-- Actualizado `docs/SECURITY.md` con la nueva politica CSP, impacto y siguiente mejora recomendada.
+## [v0.8.58] - UI: cierre i18n (TopBar) + estabilizacion de tests Settings (2026-02-16)
+### i18n (frontend)
+- `src/ui/components/layout/TopBar.tsx`:
+  - tooltip de scanner activo migrado a `t("topbar.scan.activeTitle")` para eliminar literal hardcodeado.
+- Catalogo actualizado:
+  - `src/ui/i18n/keys.ts`
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
 
-## [v0.5.7] - Workflow CI con GitHub Actions (2026-02-09)
-### ⚙️ Automatizacion
-- Añadido workflow de CI en:
-  - `.github/workflows/ci.yml`
+### Refactor
+- `src/ui/components/layout/TopBar.tsx`:
+  - extraido estado a `src/ui/components/layout/topbar/useTopBarState.ts`.
+  - iconos/estilos extraidos a `src/ui/components/layout/topbar/topbarIcons.tsx` y `src/ui/components/layout/topbar/topbarStyles.ts` (sin cambios de UI).
 
-### ✅ Pipeline definido
-- Job `frontend-e2e` en Ubuntu:
-  - `npm ci`
-  - `npm test -- --run`
-  - `npm run build`
-  - `npx playwright install --with-deps chromium`
-  - `npm run test:e2e`
-- Job `rust-check` en Windows:
-  - `cargo check --tests`
+### Testing
+- `src/ui/features/settings/__tests__/SettingsPanel.test.tsx`:
+  - se mockea `FieldManualView` para validar cambio de tab sin depender del render 3D interno y evitar timeout espurio.
 
-### 📚 Documentacion
-- Actualizado `docs/TESTING.md` con seccion de CI y checks automatizados.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.5.6] - E2E Funcional Completo con Mock Tauri (2026-02-09)
-### 🧪 E2E y estabilidad
-- Implementado bridge unificado para Tauri en:
-  - `src/shared/tauri/bridge.ts`
-- Añadido modo mock E2E (`VITE_E2E_MOCK_TAURI=true`) en `playwright.config.ts`.
-- Adaptados consumidores de `invoke/listen` al bridge:
-  - `src/adapters/networkAdapter.ts`
-  - `src/adapters/auditAdapter.ts`
-  - `src/adapters/systemAdapter.ts`
-  - `src/ui/hooks/modules/useJamming.ts`
-  - `src/ui/hooks/modules/useTrafficMonitor.ts`
-  - `src/ui/components/hud/HistoryPanel.tsx`
+## [v0.8.59] - UI: Attack Lab runtime sin textos hardcodeados (2026-02-16)
+### i18n (frontend)
+- `src/ui/features/attack_lab/hooks/useAttackLab.ts`:
+  - resumen de estado runtime migrado a i18n (`idle/running/finished/ready`).
+  - mensajes de cancelacion y error por defecto migrados a i18n.
+- Catalogo actualizado:
+  - `src/ui/i18n/keys.ts`
+  - `src/ui/i18n/locales/es.ts`
+  - `src/ui/i18n/locales/ca.ts`
+  - `src/ui/i18n/locales/en.ts`
 
-### ✅ Cobertura E2E ampliada
-- `e2e/app.spec.ts` cubre flujos funcionales:
-  - carga inicial,
-  - scan de red,
-  - carga de snapshot desde historial,
-  - monitor de trafico en vivo,
-  - seleccion de nodo + auditoria + alerta critica de gateway.
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-### 🛠️ Ajustes de calidad
-- Corregido `useRouterHacker` para actualizar `routerRisk` y permitir visualizacion del modal de riesgo.
-- Ajustada configuracion de Vitest para excluir `e2e/**` sin romper excludes por defecto (`configDefaults.exclude`).
-- Actualizados tests unitarios para mockear el bridge:
-  - `src/adapters/__tests__/networkAdapter.test.ts`
-  - `src/adapters/__tests__/auditAdapter.test.ts`
-  - `src/ui/hooks/modules/__tests__/useTrafficMonitor.test.ts`
+## [v0.8.62] - Settings: Password Vault (WiFi wordlist + gateway creds) (2026-02-16)
+### UI (settings)
+- Nuevo "Password Vault" en Settings (debajo de idioma):
+  - acceso al gestor de wordlists WiFi (AMMO BOX)
+  - gestion de credenciales del gateway (Keyring del SO) para login directo en auditorias/sync
+- Settings recibe `identity` para conocer `gatewayIp` (docked y detached).
+- Refactor interno del modal para separar responsabilidades (sin cambios visuales):
+  - `WordlistManagerModal` queda como orquestador + portal.
+  - `GatewayCredsTab` + hook `useGatewayCredsVault` encapsulan la logica de gateway creds/presets.
+  - estilos extraidos a `wordlistManagerModalStyles.ts`.
 
-### ✅ Verificacion
-- `npm test -- --run` en verde (`33` tests).
-- `npm run test:e2e` en verde (`6` tests).
-- `npm run build` en verde.
-- `cargo check --tests` en verde.
+### Testing
+- Nuevo test de `useGatewayCredsVault` (carga de candidatos + init por `identity`).
 
-## [v0.5.5] - Base E2E con Playwright (2026-02-09)
-### 🧪 E2E
-- Añadida configuracion de Playwright:
-  - `playwright.config.ts`
-- Añadidos scripts npm:
-  - `test:e2e`
-  - `test:e2e:ui`
-- Añadidos tests E2E iniciales:
-  - `e2e/app.spec.ts`
-  - Smoke de carga principal.
-  - Apertura y cierre de panel de historial.
+### i18n
+- Nuevas claves `settings.passwords.*` (CA/ES/EN).
 
-### ✅ Verificacion
-- `npm run test:e2e` en verde (`2` tests).
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
 
-## [v0.5.4] - Ampliacion de Cobertura en UI y Servicios (2026-02-09)
-### 🧪 Frontend testing
-- Añadidos tests de componentes criticos:
-  - `src/ui/components/panels/__tests__/TrafficPanel.test.tsx`
-  - `src/ui/components/__tests__/DangerModal.test.tsx`
-  - `src/ui/components/hud/__tests__/DeviceDetailPanel.test.tsx`
-- Añadido test de integracion para:
-  - `src/ui/hooks/__tests__/useNetworkManager.test.ts`
+## [v0.8.60] - UI: sincronizacion de idioma entre ventana principal y paneles detached (2026-02-16)
+### i18n (frontend)
+- `src/ui/i18n/I18nProvider.tsx`:
+  - anadida sincronizacion de idioma por `storage` event.
+  - anadida sincronizacion local por evento `netsentinel:i18n-changed`.
+  - anadida sincronizacion multiwindow con `BroadcastChannel` (`netsentinel-i18n`).
+- Resultado:
+  - al cambiar idioma desde `Settings` desacoplado, la ventana principal actualiza traducciones en vivo.
 
-### 🦀 Backend unit testing
-- Añadidos tests unitarios en servicios Rust:
+### Testing
+- `src/ui/i18n/__tests__/i18n.test.ts`:
+  - nuevo test que valida sincronizacion por evento `storage`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.61] - UI: Attack Lab persistente + Radar Audit button inline (2026-02-16)
+### UI (attack_lab)
+- Runtime persistente en UI: al cerrar/abrir el panel no se pierde la ejecucion ni la consola (external/simulated/native).
+- LAB: se elimina el boton `CLEAR` (se mantienen `EXECUTE/STOP`).
+- TARGET: selector sincronizado con Radar/Scene (si cambias TARGET en Attack Lab, se refleja la seleccion en la escena).
+- TARGET por tipo de escenario:
+  - `WIFI`: selector de redes (SSID/BSSID) via `scan_airwaves`.
+  - `ROUTER`: selector de gateways (heuristica: `isGateway`, `identity.gatewayIp`, `*.1`).
+  - `DEVICE`: selector de dispositivos detectados por el scanner.
+
+### UI (radar)
+- En layout estrecho (intel bottom): `OPEN AUDIT CONSOLE` se renderiza inline junto al buscador para evitar scroll.
+
+### i18n
+- Attack Lab LAB view: textos hardcodeados (labels/buttons) pasan a i18n.
+- Ajuste de `attackLab.console.output/waiting` para que no aparezca como frase inglesa en ES/CA.
+
+### Testing
+- Nuevo test de `useAttackLabRuntime` (persistencia entre montajes).
+- Ajustado test de `AttackLabPanel` para mockear runtime persistente.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+### Refactor
+- `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`:
+  - extraida la logica a `src/ui/features/attack_lab/panel/hooks/useAttackLabPanelState.ts` para evitar componente GOD (sin cambios de UI).
+
+
+## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
+### UI (fix)
+- Al desacoplar `attack_lab`, la ventana hija ya no pierde `targetDevice/defaultScenarioId` en el primer render.
+- Se anade bootstrap efimero (TTL) via `localStorage` + emision redundante de contexto para evitar carreras al abrir la webview.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+
+## [v0.8.46] - Frontend: Attack Lab (auto-ejecucion solo por token) (2026-02-13)
+### UI (comportamiento)
+- Corregido bug: al cerrar/mostrar el Attack Lab (antes "HIDE LAB") no debe auto-ejecutar el escenario ni disparar `CyberConfirmModal`.
+- El auto-run pasa a ser explicito via `autoRunToken` (solo cambia cuando se abre el lab con `autoRun`), en lugar de inferirse por `target + scenario`.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+
+## [v0.8.45] - Backend/Frontend: eliminacion de shims legacy (2026-02-13)
+### ♻️ Limpieza (sin compat)
+- Eliminados comandos legacy `start_external_audit` / `cancel_external_audit` y eventos `external-audit-*`:
+  - backend Tauri solo expone `start_attack_lab` / `cancel_attack_lab` + eventos `attack-lab-*`.
+- Eliminados shims legacy de backend:
+  - `src-tauri/src/application/legacy/*`
+- Eliminados shims legacy de frontend:
+  - `src/adapters/externalAuditAdapter.ts`
+  - aliases `ExternalAudit*` en `src/shared/dtos/NetworkDTOs.ts`
+  - shims de windowing para `panel="external"` y evento `netsentinel://external-context`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+- `cd src-tauri && cargo test --lib -q` (ok)
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.44] - Backend: Fase 3 (Attack Lab + settings via puertos) (2026-02-13)
+### ♻️ Backend (hexagonal real)
+- Attack Lab:
+  - Tipos movidos a dominio: `src-tauri/src/domain/entities.rs` (`AttackLabRequest`, `AttackLabLogEvent`, `AttackLabExitEvent`).
+  - Nuevo puerto runner + sink: `src-tauri/src/domain/ports.rs` (`AttackLabRunnerPort`, `AttackLabEventSinkPort`).
+  - Runner real movido a infraestructura: `src-tauri/src/infrastructure/attack_lab/runner.rs` (`TokioProcessAttackLabRunner`).
+  - Sink Tauri movido a API: `src-tauri/src/api/sinks/attack_lab_tauri_sink.rs` (emite eventos `attack-lab-*`).
+  - `src-tauri/src/application/attack_lab/service.rs` ya no depende de `tauri::AppHandle`.
+- Settings:
+  - Nuevo `AppSettings` en dominio: `src-tauri/src/domain/entities.rs`.
+  - Nuevo puerto `SettingsStorePort`: `src-tauri/src/domain/ports.rs`.
+  - Implementacion file-backed: `src-tauri/src/infrastructure/persistence/settings_store.rs` (`FileSettingsStore`).
+  - `src-tauri/src/application/settings/service.rs` ahora usa DI via `SettingsStorePort` (sin Tauri/FS directo).
+  - `src-tauri/src/application/opsec/service.rs` ya no usa `Mutex<SettingsService>` (mutex interno en SettingsService).
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.43] - Backend: Fase 3 (puertos + DI: scan/opsec/traffic/wordlist) (2026-02-13)
+### ♻️ Backend (hexagonal real)
+- `domain/ports.rs`: ampliado `NetworkScannerPort` con `probe_tcp_banner()` y nuevo puerto `TrafficSnifferPort`.
+- `domain/knowledge/service_dictionary.rs`: movido el diccionario de servicios por puerto fuera de infraestructura.
+- `application/scan/service.rs`: ya no depende de `infrastructure/*` (canario via puerto + diccionario en dominio).
+- `application/opsec/service.rs`: desacoplado de `api/dtos` e infraestructura (retorna entidad de dominio `MacSecurityStatus`).
+- `application/traffic/service.rs`: DI por puertos (`NetworkScannerPort` + `TrafficSnifferPort`) y callback de paquetes (sin Tauri dentro del caso de uso).
+- `application/wifi/service.rs`: DI del conector via `WifiConnectorPort` (evita dependencia directa de infraestructura en el caso de uso).
+- `api/commands/system.rs`: `get_identity` ahora delega en `OpSecService` y el `traffic-event` se emite desde comandos (presentacion), no desde application.
+- `application/wordlist/service.rs`: DI via `WordlistRepositoryPort` (repositorio file implementado en `infrastructure/persistence`).
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.33] - Backend: inicio Fase 1 (application/scan) (2026-02-13)
+### ♻️ Backend (estructura)
+- Iniciada migracion progresiva de `src-tauri/src/application` a modulos por dominio:
+  - Servicio de escaneo movido a `src-tauri/src/application/scan/service.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/scanner_service.rs`
+  - Nuevo modulo: `src-tauri/src/application/scan/mod.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.34] - Backend: Fase 1 (application/history) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de historial migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/history/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/history/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/history_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.35] - Backend: Fase 1 (application/snapshot) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de snapshot migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/snapshot/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/snapshot/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/latest_snapshot_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.36] - Backend: Fase 1 (application/credentials) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicio de credenciales migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/credentials/service.rs`
+  - Nuevo modulo: `src-tauri/src/application/credentials/mod.rs`
+  - Wrapper legacy mantenido: `src-tauri/src/application/credential_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.37] - Backend: Fase 1 (wordlist/opsec/settings) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicios migrados a modulos por dominio (con wrappers legacy):
+  - Wordlist: `src-tauri/src/application/wordlist/service.rs` + `src-tauri/src/application/wordlist/mod.rs`
+  - OpSec: `src-tauri/src/application/opsec/service.rs` + `src-tauri/src/application/opsec/mod.rs`
+  - Settings: `src-tauri/src/application/settings/service.rs` + `src-tauri/src/application/settings/mod.rs`
+- Wrappers legacy mantenidos:
+  - `src-tauri/src/application/wordlist_service.rs`
+  - `src-tauri/src/application/opsec_service.rs`
+  - `src-tauri/src/application/settings_service.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.38] - Backend: Fase 1 (audit/traffic/jammer/mac_changer) (2026-02-13)
+### ♻️ Backend (estructura)
+- Servicios migrados a modulos por dominio (con wrappers legacy):
+  - Audit: `src-tauri/src/application/audit/service.rs` + `src-tauri/src/application/audit/mod.rs`
+  - Traffic: `src-tauri/src/application/traffic/service.rs` + `src-tauri/src/application/traffic/mod.rs`
+  - Jammer: `src-tauri/src/application/jammer/service.rs` + `src-tauri/src/application/jammer/mod.rs`
+  - Mac changer movido bajo OpSec: `src-tauri/src/application/opsec/mac_changer.rs`
+- Wrappers legacy mantenidos:
   - `src-tauri/src/application/audit_service.rs`
-  - `src-tauri/src/application/history_service.rs`
+  - `src-tauri/src/application/traffic_service.rs`
+  - `src-tauri/src/application/jammer_service.rs`
+  - `src-tauri/src/application/mac_changer_service.rs`
 
-### ✅ Verificacion
-- `npm test -- --run` en verde (`33` tests).
-- `npm run build` en verde.
-- `cargo check --tests` en verde.
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
 
-## [v0.5.3] - Cobertura de Testing para IPC y Trafico (2026-02-09)
-### 🧪 Nuevos tests
-- Añadidos tests de contratos IPC para adapters:
-  - `src/adapters/__tests__/networkAdapter.test.ts`
-  - `src/adapters/__tests__/auditAdapter.test.ts`
-- Añadidos tests del hook de monitorizacion de trafico:
-  - `src/ui/hooks/modules/__tests__/useTrafficMonitor.test.ts`
-  - Cobertura de arranque/parada, procesamiento de paquetes, lista de paquetes interceptados y limpieza de buffers.
+## [v0.8.39] - Backend: Fase 1 (legacy/ + WiFi module) (2026-02-13)
+### ♻️ Backend (estructura)
+- Centralizada compatibilidad legacy en `src-tauri/src/application/legacy/*` y `application/mod.rs` usa `#[path = \"legacy/...\" ]`:
+  - shims: `*_service.rs` y `wifi_normalizer.rs`
+- WiFi migrado a modulo por dominio:
+  - Servicio real: `src-tauri/src/application/wifi/service.rs`
+  - Normalizador real: `src-tauri/src/application/wifi/normalizer.rs`
+  - Modulo: `src-tauri/src/application/wifi/mod.rs`
+  - Wrappers legacy: `src-tauri/src/application/legacy/wifi_service.rs`, `src-tauri/src/application/legacy/wifi_normalizer.rs`
 
-### ✅ Verificacion
-- `npm test -- --run` en verde con la nueva suite.
-- `npm run build` en verde.
-- `cargo check` en verde.
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
 
-## [v0.5.2] - Limpieza de Warnings en Backend Rust (2026-02-09)
-### 🧹 Calidad de codigo
-- Eliminados imports no usados en `src-tauri/src/application/jammer_service.rs`.
-- Simplificado `NetworkScannerPort` eliminando el metodo no utilizado `resolve_vendor`.
-- Actualizadas implementaciones y mocks afectados:
-  - `src-tauri/src/infrastructure/system_scanner.rs`
-  - `src-tauri/src/application/scanner_service.rs`
-- Eliminado codigo muerto no referenciado:
-  - `src-tauri/src/application/intel.rs` (y su export en `application/mod.rs`)
-  - `src-tauri/src/domain/network_math.rs` (y su export en `domain/mod.rs`)
+## [v0.8.40] - Backend: API commands legacy (external_audit) (2026-02-13)
+### ♻️ Backend (estructura)
+- Comandos legacy de API movidos a carpeta `legacy/`:
+  - `src-tauri/src/api/commands/legacy/external_audit.rs`
+- `src-tauri/src/api/commands.rs` actualizado para referenciar el nuevo path.
 
-### ✅ Verificacion
-- `cargo check` completado en verde y sin warnings.
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
 
-## [v0.5.1] - Alineacion de Documentacion y Reglas de Calidad (2026-02-09)
+## [v0.8.41] - Backend: reducir dependencia de shims legacy (2026-02-13)
+### ♻️ Backend (mantenibilidad)
+- Wiring interno actualizado para depender de modulos reales (`application::<dominio>`) en vez de `application::<shim>_service`:
+  - `src-tauri/src/lib.rs`
+  - `src-tauri/src/api/state.rs`
+  - `src-tauri/src/api/commands.rs`
+  - `src-tauri/src/api/commands/*`
+- OpSec ahora referencia Settings/MacChanger por modulos reales:
+  - `src-tauri/src/application/opsec/service.rs`
+- Shims legacy anotados para evitar warnings cuando no se usan en el crate:
+  - `src-tauri/src/application/legacy/*.rs`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.42] - Docs: paths backend actualizados (2026-02-13)
+### 📝 Documentacion
+- Actualizados paths y estructura backend por dominios/legacy:
+  - `docs/ARCHITECTURE.md`
+  - `docs/BACKEND_REFACTOR_GUIDE.md`
+  - `docs/RADAR_VIEW.md`
+  - `docs/ATTACK_LAB.md`
+  - `docs/TESTING.md`
+  - `docs/REFACTOR_AUDIT.md`
+- Nota operativa de shims:
+  - `src-tauri/src/application/legacy/README.md`
+
+### ✅ Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.31] - Reestructura frontend: History por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- History movido a feature-folder:
+  - `src/ui/features/history/components/HistoryPanel.tsx`
+- Layouts/tests actualizados para el nuevo path:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/__tests__/App.panels.test.tsx`
+  - `src/__tests__/App.integration.test.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.32] - Limpieza frontend: cabeceras obligatorias + logs de debug (2026-02-13)
+### ♻️ Frontend (mantenibilidad)
+- Eliminado `console.log/debug` en runtime de UI (ahora `uiLogger.info` solo en DEV) y normalizados errores:
+  - `src/App.tsx`
+  - `src/ui/hooks/modules/ui/usePanelDockingState.ts`
+  - `src/ui/features/attack_lab/hooks/useAttackLabDetachedSync.ts`
+  - `src/ui/features/radar/components/radar/RadarIntelPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
+  - `src/ui/features/wordlist/hooks/useWordlistManager.ts`
+- Cabecera aplicada a todos los `.ts/.tsx` bajo `src/ui` (ruta + descripcion en las dos primeras lineas).
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.27] - Reestructura frontend: Radar + Console Logs por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Radar movido a feature-folder:
+  - `src/ui/features/radar/components/*`
+  - `src/ui/features/radar/hooks/*`
+  - tests: `src/ui/features/radar/__tests__/*`
+- Console Logs movido a feature-folder:
+  - `src/ui/features/console_logs/components/*`
+  - `src/ui/features/console_logs/hooks/*`
+  - tests: `src/ui/features/console_logs/__tests__/*`
+- Integracion actualizada en layouts:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.28] - Reestructura frontend: Device Detail por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Device Detail movido a feature-folder:
+  - `src/ui/features/device_detail/components/DeviceDetailPanel.tsx`
+  - `src/ui/features/device_detail/hooks/useDeviceDetailPanelState.ts`
+  - tests: `src/ui/features/device_detail/__tests__/*`
+- Layouts actualizados para lazy-load del panel:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.29] - Reestructura frontend: Traffic por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Traffic movido a feature-folder:
+  - `src/ui/features/traffic/components/*`
+  - `src/ui/features/traffic/hooks/*`
+  - tests: `src/ui/features/traffic/__tests__/*`
+- Console Logs ahora consume `TrafficPanel` desde la feature `traffic`.
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.30] - Reestructura frontend: Scene3D por feature (2026-02-13)
+### ♻️ Frontend (estructura y separacion de responsabilidades)
+- Scene3D movido a feature-folder:
+  - `src/ui/features/scene3d/components/*`
+  - `src/ui/features/scene3d/hooks/*`
+  - tests: `src/ui/features/scene3d/__tests__/*`
+- Layouts actualizados para lazy-load de `NetworkScene`:
+  - `src/ui/components/layout/MainDockedLayout.tsx`
+  - `src/ui/components/layout/DetachedPanelView.tsx`
+
+### ✅ Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.26] - Renombrado External Audit -> Attack Lab + reestructura por feature (2026-02-13)
+### ♻️ Frontend (estructura y naming)
+- Nuevo feature-folder: `src/ui/features/attack_lab/*` (panel + hooks + catalogo + tests).
+- Docking/windowing renombrado a `attack_lab` con compatibilidad legacy:
+  - contexto principal: `netsentinel://attack-lab-context`
+  - compat: `netsentinel://external-context`
+  - nota: la compatibilidad legacy se elimino en `v0.8.45`.
+
+### 🦀 Backend (Tauri / application)
+- Modulo application renombrado a `src-tauri/src/application/attack_lab/*`.
+- Nuevos comandos Tauri:
+  - `start_attack_lab`, `cancel_attack_lab`
+  - alias legacy mantenido: `start_external_audit`, `cancel_external_audit`
+- Nuevos eventos:
+  - `attack-lab-log`, `attack-lab-exit`
+  - alias legacy mantenido: `external-audit-log`, `external-audit-exit`
+
 ### 📚 Documentacion
-- Reescrito `AGENTS.md` con arquitectura real actual (`api/application/domain/infrastructure`) y flujo operativo para juniors/agentes IA.
-- Actualizado `docs/ARCHITECTURE.md` para reflejar estructura vigente, comandos Tauri actuales y flujo IPC real (`invoke` + eventos).
-- Actualizado `docs/SECURITY.md` con superficie de comandos expuesta, riesgos por modulo y checklist minimo pre-release.
-- Creado `docs/TESTING.md` con estrategia por capas, comandos de validacion y roadmap de mejora de cobertura.
+- Renombrados docs: `docs/ATTACK_LAB.md`, `docs/ATTACK_LAB_REFACTOR.md`.
+- `AGENTS.md` actualizado con la nueva regla de cabecera por archivo (ruta + descripcion).
 
-### ✅ Gobernanza de cambios
-- Se establece como norma en `AGENTS.md` que todo cambio funcional, de arquitectura, de seguridad o testing debe registrarse en `docs/CHANGELOG.md`.
-- Se añade el requisito de changelog en el flujo de trabajo y en la Definition of Done.
+## [v0.8.25] - Hardening de conexion WiFi real (2026-02-12)
+### 🦀 Backend (validacion de enlace)
+- Refactor en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para eliminar falsos positivos de conexion:
+  - desconexion explicita previa (`netsh wlan disconnect`) antes de cada intento,
+  - validacion estricta por estado real de interfaz (`connected/conectado`) y SSID exacto.
+- `src-tauri/src/infrastructure/wifi/windows_netsh.rs` ajusta la marca de red conectada para depender tambien de `iface.is_connected`.
+- `src-tauri/src/infrastructure/wifi/windows_netsh/parse_interfaces.rs` ahora parsea correctamente multiples bloques de interfaz y prioriza el bloque realmente conectado.
+- `src-tauri/src/infrastructure/wifi/wifi_connector.rs` deja de exigir IPv4 para declarar enlace WiFi exitoso (evita falsos negativos por latencia DHCP).
+- Añadidas trazas de diagnostico en el flujo nativo WiFi:
+- El catalogo de escenarios vive en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts` (antes `src/core/logic/externalAuditScenarios.ts`).
+  - `src-tauri/src/infrastructure/wifi/wifi_connector.rs` ahora loguea estado de `netsh connect` y snapshots de interfaz durante el polling.
+- UX/logging en `ExternalAudit`:
+  - nuevas trazas `🧪 TRACE` redirigidas a `SYSTEM LOGS` por bus local (`src/ui/utils/systemLogBus.ts`) para limpiar el `Console Output` del panel.
+  - `src/ui/hooks/modules/network/useSocketLogs.ts` ahora escucha ese bus y persiste eventos de sistema con timestamp.
+- `src/ui/features/attack_lab/panel/AuditConsole.tsx` renderiza salida de forma progresiva (stagger) para evitar bloque visual al autorizar.
+  - `src/ui/components/shared/CyberConfirmModal.tsx` añade estado `isLoading` para mostrar el modal OPSEC de inmediato mientras se resuelve `check_mac_security`.
+- Impacto: `wifi_connect` solo devuelve `true` cuando hay enlace WiFi realmente establecido sobre el SSID objetivo, evitando continuar el flujo por falsos negativos de parseo o demora DHCP.
 
-## [v0.5.0] - Migració a Rust & Tauri (Current)
-### 🚀 Canvi de Motor (Engine Swap)
-- **Rust Backend:** S'ha substituït tot el nucli de Node.js per **Rust**.
-  - Ara l'escaneig de xarxa utilitza fils (Threads) natius per a màxim rendiment.
-  - S'ha eliminat la dependència d'Electron. L'app ara pesa un 90% menys i és més ràpida.
-- **Persistència Nativa:** Sistema d'historial reescrit per utilitzar rutes estàndard del sistema (`%APPDATA%` a Windows) gràcies al crate `directories`.
-- **Rotació Automàtica:** Implementada lògica LIFO que manté només les últimes 50 sessions per estalviar espai.
-- **Tauri Bridge:** Implementació de comandes `invoke` per comunicar Frontend i Backend sense latència.
-
-### ✨ Millores de Seguretat (Intel)
-- **Deep Audit Multithreaded:** L'escaneig de vulnerabilitats ara llança 12 fils simultanis per comprovar ports. És molt més ràpid que l'anterior seqüencial.
-- **Smart Recon:** Detecció automàtica de serveis crítics (SMB, RDP, Telnet) amb assignació de nivell de risc en temps real.
-
-### 🛠️ Tècnic
-- **Arquitectura Hexagonal (Rust):**
-  - `models.rs`: Entitats del Domini (Device, Vulnerability).
-  - `network_commands.rs`: Casos d'Ús de Xarxa.
-  - `history_commands.rs`: Adaptador de Persistència.
-- **Neteja de Codi:** Eliminat tot el codi llegat de `src/core`. El Frontend ara és pur React/Vite.
-
-## [v0.4.0] - Fase d'Intel·ligència (Vulnerability Matching)
-### ✨ Afegit (Features)
-- **Cyber Intelligence:** Creuament de ports amb Base de Coneixement de vulnerabilitats.
-- **Avaluació de Risc:** Etiquetatge automàtic (`[SAFE]`, `[DANGER]`).
-- **Stealth Mode Detection:** Visualització d'Escut Verd.
-
-## [v0.3.0] - Fase de Defensa Activa (Kill Switch)
-### ✨ Afegit
-- **The Kill Switch:** Botó d'acció directa.
-- **Arquitectura Jammer:** Preparada per ARP Spoofing.
-- **Mode Simulació:** Logs visuals `[SPOOF]`.
-
-## [v0.2.0] - Fase de Persistència
-### ✨ Afegit
-- **Historial de Vigilància:** Sessions anteriors.
-- **Auto-Load:** Càrrega automàtica a l'inici.
-
-## [v0.1.0] - MVP Inicial
-### ✨ Afegit
-- Escaneig bàsic, Visualització 3D Sistema Solar.
+## [v0.8.24] - Fix de corte en diccionario WiFi (2026-02-12)
+### 🦀 Backend (WiFi connector)
+- Corregida la verificacion de conexion en `src-tauri/src/infrastructure/wifi/wifi_connector.rs` para no depender solo de salida en ingles de `netsh`.
+- `is_connected(...)` ahora reconoce estado conectado en ingles y espanol (`connected` / `conectado`) y normaliza comparacion por minusculas.
+- Impacto: cuando se acierta la clave WPA2, `wifi_connect` devuelve `true` correctamente y el escenario `wifi_brute_force_dict` corta el bucle con `return` en el primer acierto.

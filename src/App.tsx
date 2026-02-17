@@ -1,345 +1,279 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
-import { TopBar } from './ui/components/layout/TopBar';
-import { HistoryPanel } from './ui/components/hud/HistoryPanel';
-import { ConsoleLogs } from './ui/components/panels/ConsoleLogs';
-import { useNetworkManager } from './ui/hooks/useNetworkManager';
-import type { DeviceDTO } from './shared/dtos/NetworkDTOs';
+// src/App.tsx
+// Orquestador de alto nivel: compone layouts, coordina estado global y sincroniza docking/ventanas + contexto entre paneles.
 
-const NetworkScene = lazy(async () => {
-  const mod = await import('./ui/components/3d/NetworkScene');
-  return { default: mod.NetworkScene };
-});
-
-const DeviceDetailPanel = lazy(async () => {
-  const mod = await import('./ui/components/hud/DeviceDetailPanel');
-  return { default: mod.DeviceDetailPanel };
-});
-
-const RadarPanel = lazy(async () => {
-  const mod = await import('./ui/components/hud/RadarPanel');
-  return { default: mod.RadarPanel };
-});
-
-const ExternalAuditPanel = lazy(async () => {
-  const mod = await import('./ui/components/hud/ExternalAuditPanel');
-  return { default: mod.ExternalAuditPanel };
-});
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { windowingAdapter } from "./adapters/windowingAdapter";
+import type { DeviceDTO } from "./shared/dtos/NetworkDTOs";
+import { useNetworkManager } from "./ui/hooks/useNetworkManager";
+import { useAppLayoutState } from "./ui/hooks/modules/ui/useAppLayoutState";
+import { usePanelDockingState } from "./ui/hooks/modules/ui/usePanelDockingState";
+import { useDetachedRuntime } from "./ui/hooks/modules/ui/useDetachedRuntime";
+import { DetachedPanelView } from "./ui/components/layout/DetachedPanelView";
+import { MainDockedLayout } from "./ui/components/layout/MainDockedLayout";
+import { useAttackLabDetachedSync } from "./ui/features/attack_lab/hooks/useAttackLabDetachedSync";
+import { uiLogger } from "./ui/utils/logger";
 
 function App() {
+  const detachedContext = windowingAdapter.parseDetachedContextFromLocation();
+
   const {
-    devices, selectedDevice, scanning, auditing,
-    auditResults, consoleLogs,
-    startScan, startAudit, selectDevice, loadSession, jammedDevices,
-    toggleJammer, checkRouterSecurity,
-    systemLogs, clearSystemLogs,
-    intruders, identity
-  } = useNetworkManager();
+    devices,
+    selectedDevice,
+    deviceLogsByIp,
+    scanning,
+    auditing,
+    auditResults,
+    consoleLogs,
+    startScan,
+    startAudit,
+    selectDevice,
+    loadSession,
+    jammedDevices,
+    jamPendingDevices,
+    toggleJammer,
+    checkRouterSecurity,
+    systemLogs,
+    clearSystemLogs,
+    intruders,
+    identity,
+  } = useNetworkManager({
+    enableAutoBootstrap: !detachedContext,
+    enableScannerHydration: !detachedContext || detachedContext.panel === "device" || detachedContext.panel === "scene3d",
+  });
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
-  const [showExternalAudit, setShowExternalAudit] = useState(false);
-  const [externalAuditTarget, setExternalAuditTarget] = useState<DeviceDTO | null>(null);
-  const [externalAuditScenarioId, setExternalAuditScenarioId] = useState<string | null>(null);
+  const [showAttackLab, setShowAttackLab] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [attackLabTarget, setAttackLabTarget] = useState<DeviceDTO | null>(null);
+  const [attackLabScenarioId, setAttackLabScenarioId] = useState<string | null>(null);
+  const [attackLabAutoRunToken, setAttackLabAutoRunToken] = useState<number>(0);
 
-  // --- ESTADOS DE TAMAÑO (RESIZABLE) ---
-  const [sidebarWidth, setSidebarWidth] = useState(450); // Amplada inicial Sidebar
-  const [consoleHeight, setConsoleHeight] = useState(250); // Alçada inicial Consola
-  const [radarWidth, setRadarWidth] = useState(520); // Anchura inicial del radar (panel izquierdo)
+  // Evita closures stale: el listener de eventos se registra una vez, pero selectDevice cambia por render.
+  const selectDeviceRef = useRef(selectDevice);
+  useEffect(() => {
+    selectDeviceRef.current = selectDevice;
+  }, [selectDevice]);
 
-  // Refs para gestionar el arrastre sin lag
-  const resizeMode = useRef<null | 'sidebar' | 'console' | 'radar'>(null);
-  const dragStartX = useRef(0);
-  const dragStartY = useRef(0);
-  const startSidebarWidth = useRef(450);
-  const startConsoleHeight = useRef(250);
-  const startRadarWidth = useRef(520);
+  const isIpv4 = (value: string | undefined | null): boolean => {
+    if (!value) return false;
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(value);
+  };
 
-  // --- GESTION DEL RESIZE ---
-  const startResizingSidebar = useCallback((e: React.MouseEvent) => {
-    resizeMode.current = 'sidebar';
-    dragStartX.current = e.clientX;
-    startSidebarWidth.current = sidebarWidth;
-  }, [sidebarWidth]);
+  // [NUEVO] ESCUCHAR PETICIONES DE CAMBIO DE PANEL (DESDE RADAR, ETC)
+  useEffect(() => {
+    uiLogger.info("[app] Listening for Dock Panel events...");
+    const unlistenPromise = windowingAdapter.listenDockPanel((panelName) => {
+        uiLogger.info("[app] Request to open panel", panelName);
+        if (panelName === "attack_lab") {
+            setShowAttackLab(true);
+            // Opcional: Cerrar otros si es política de UI
+            // setShowRadar(false); 
+        } else if (panelName === "radar") {
+            setShowRadar(true);
+        }
+    });
 
-  const startResizingConsole = useCallback((e: React.MouseEvent) => {
-    resizeMode.current = 'console';
-    dragStartY.current = e.clientY;
-    startConsoleHeight.current = consoleHeight;
-  }, [consoleHeight]);
+    // TAMBIÉN ESCUCHAR CONTEXTO PARA ACTUALIZAR OBJETIVO
+    const unlistenContext = windowingAdapter.listenAttackLabContext((payload) => {
+        uiLogger.info("[app] Attack Lab Context Update", payload);
+        if (payload.targetDevice) {
+            setAttackLabTarget(payload.targetDevice);
+            // Sync inverso: si el operador cambia TARGET en Attack Lab, reflejar seleccion en escena (solo targets reales IPv4).
+            if (isIpv4(payload.targetDevice.ip)) {
+              selectDeviceRef.current(payload.targetDevice);
+            }
+        }
+        // `null` significa "limpiar escenario"; `undefined` significa "no tocarlo".
+        if (payload.scenarioId !== undefined) {
+            setAttackLabScenarioId(payload.scenarioId ?? null);
+        }
+        if (payload.autoRun) {
+            setAttackLabAutoRunToken((t) => t + 1);
+        }
+        // Aseguramos que se abra
+        setShowAttackLab(true);
+    });
 
-  const startResizingRadar = useCallback((e: React.MouseEvent) => {
-    resizeMode.current = 'radar';
-    dragStartX.current = e.clientX;
-    startRadarWidth.current = radarWidth;
-  }, [radarWidth]);
-
-  const stopResizing = useCallback(() => {
-    resizeMode.current = null;
-    document.body.style.cursor = 'default'; // Restaurar cursor
+    return () => {
+        unlistenPromise.then(u => u());
+        unlistenContext.then(u => u());
+    };
   }, []);
 
-  const resize = useCallback((e: MouseEvent) => {
-    if (resizeMode.current === 'sidebar') {
-      // Arrastrar hacia la izquierda aumenta la anchura del sidebar.
-      const delta = dragStartX.current - e.clientX;
-      const next = Math.max(300, Math.min(800, startSidebarWidth.current + delta));
-      setSidebarWidth(next);
-      document.body.style.cursor = 'col-resize';
-      return;
-    }
+  const layout = useAppLayoutState();
+  const docking = usePanelDockingState({
+    selectedDeviceIp: selectedDevice?.ip,
+    attackLabTargetIp: attackLabTarget?.ip,
+    attackLabScenarioId,
+    showRadar,
+    showAttackLab,
+    showSettings,
+  });
+  const attackLabSync = useAttackLabDetachedSync();
+  const { detachedPanelReady } = useDetachedRuntime(detachedContext);
 
-    if (resizeMode.current === 'console') {
-      // Resizer entre panel superior y consola: mover hacia arriba aumenta altura.
-      const delta = dragStartY.current - e.clientY;
-      const next = Math.max(120, Math.min(window.innerHeight - 160, startConsoleHeight.current + delta));
-      setConsoleHeight(next);
-      document.body.style.cursor = 'row-resize';
-      return;
-    }
-
-    if (resizeMode.current === 'radar') {
-      // Resizer entre radar (izquierda) y escena (derecha): mover hacia la derecha aumenta anchura.
-      const delta = e.clientX - dragStartX.current;
-      const next = Math.max(360, Math.min(820, startRadarWidth.current + delta));
-      setRadarWidth(next);
-      document.body.style.cursor = 'col-resize';
-    }
-  }, [setSidebarWidth, setConsoleHeight, setRadarWidth]);
-
-  // Listeners globales de raton
+  // Sync directo: seleccionar un nodo en escena/radar actualiza el TARGET del Attack Lab (sin cambiar scenario).
+  // Regla: nunca auto-ejecutamos por un simple cambio de seleccion y no forzamos apertura del panel.
   useEffect(() => {
-    window.addEventListener('mousemove', resize);
-    window.addEventListener('mouseup', stopResizing);
-    return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
-    };
-  }, [resize, stopResizing]);
+    if (!selectedDevice) return;
+    if (attackLabTarget?.ip === selectedDevice.ip) return;
+    setAttackLabTarget(selectedDevice);
+
+    // Si el panel esta desacoplado, sincronizamos contexto para que el selector TARGET coincida.
+    if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
+      void attackLabSync.emitAttackLabContext({ targetDevice: selectedDevice, scenarioId: attackLabScenarioId ?? undefined, autoRun: false });
+    }
+  }, [
+    selectedDevice?.ip,
+    attackLabTarget?.ip,
+    docking.detachedPanels.attack_lab,
+    docking.detachedModes.attack_lab,
+    attackLabScenarioId,
+    attackLabSync,
+    selectedDevice,
+  ]);
+
+  const detachedTargetDevice = useMemo(
+    () => (detachedContext?.targetIp ? devices.find((d) => d.ip === detachedContext.targetIp) || null : selectedDevice),
+    [detachedContext?.targetIp, devices, selectedDevice]
+  );
+
+  const detachedAttackLabTargetDevice = attackLabSync.detachedAttackLabTarget || detachedTargetDevice;
+  const detachedAttackLabScenario =
+    attackLabSync.detachedAttackLabScenarioId || detachedContext?.scenarioId || attackLabScenarioId;
+
+  const openLabAuditForDevice = useCallback(
+    (device: DeviceDTO) => {
+      setAttackLabTarget(device);
+      // Importante: desde DeviceDetail no auto-seleccionamos escenario (el operador decide).
+      setAttackLabScenarioId(null);
+      setShowAttackLab(true);
+
+      if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
+        void attackLabSync.emitAttackLabContext({ targetDevice: device, scenarioId: null, autoRun: false });
+      }
+    },
+    [attackLabSync, docking.detachedModes.attack_lab, docking.detachedPanels.attack_lab]
+  );
+
+  const undockPanel = useCallback(
+    async (panel: Parameters<typeof docking.undockPanel>[0]) => {
+      // Si vamos a abrir Attack Lab en una ventana nueva, persistimos bootstrap para que la ventana
+      // pueda pintar target/escenario aunque aun no haya recibido eventos o no tenga lista de devices.
+      if (panel === "attack_lab") {
+        windowingAdapter.setAttackLabDetachedBootstrap({ targetDevice: attackLabTarget, scenarioId: attackLabScenarioId });
+
+        // Redundancia: emitimos el contexto despues de iniciar la apertura (puede llegar si la ventana ya esta escuchando).
+        window.setTimeout(() => {
+          void windowingAdapter.emitAttackLabContext({ targetDevice: attackLabTarget, scenarioId: attackLabScenarioId ?? undefined, autoRun: false });
+        }, 350);
+      }
+
+      await docking.undockPanel(panel);
+    },
+    [attackLabScenarioId, attackLabTarget, docking.undockPanel]
+  );
+
+  const toggleAttackLab = useCallback(() => {
+    const next = !showAttackLab;
+    setShowAttackLab(next);
+    if (next) {
+      // Si se abre manualmente, quizás queramos limpiar o mantener el último
+    }
+  }, [showAttackLab]);
+
+  if (detachedContext) {
+    const detachedConsoleLogs = detachedTargetDevice
+      ? (deviceLogsByIp?.[detachedTargetDevice.ip] || [])
+      : consoleLogs;
+    return (
+      <DetachedPanelView
+        panel={detachedContext.panel}
+        detachedPanelReady={detachedPanelReady}
+        systemLogs={systemLogs}
+        devices={devices}
+        selectedDevice={selectedDevice}
+        clearSystemLogs={clearSystemLogs}
+        detachedTargetDevice={detachedTargetDevice}
+        auditResults={auditResults}
+        consoleLogs={detachedConsoleLogs}
+        auditing={auditing}
+        startAudit={startAudit}
+        jammedDevices={jammedDevices}
+        jamPendingDevices={jamPendingDevices}
+        toggleJammer={toggleJammer}
+        checkRouterSecurity={checkRouterSecurity}
+        onOpenLabAudit={openLabAuditForDevice}
+        detachedAttackLabTargetDevice={detachedAttackLabTargetDevice}
+        identity={identity}
+        detachedAttackLabScenario={detachedAttackLabScenario}
+        detachedAttackLabAutoRunToken={attackLabSync.detachedAttackLabAutoRunToken}
+        intruders={intruders}
+        selectDevice={selectDevice}
+      />
+    );
+  }
 
   return (
-    // Contenedor principal
-    <div style={{
-      display: 'flex',
-      width: '100vw',
-      height: '100vh',
-      background: '#050505',
-      color: '#0f0',
-      overflow: 'hidden',
-      fontFamily: "'Consolas', 'Courier New', monospace",
-      fontSize: '16px',
-      userSelect: (resizeMode.current !== null) ? 'none' : 'auto' // Evitar seleccionar texto mientras se arrastra
-    }}>
-
-      {/* Modal de riesgo */}
-      {/* =================================================================================
-          COLUMNA ESQUERRA: TOPBAR + MAPA + CONSOLA (FLEX 1)
-         ================================================================================= */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        height: '100%',
-        minWidth: 0,
-        overflow: 'hidden'
-      }}>
-
-        {/* 1. Barra superior */}
-        <TopBar
-          scanning={scanning}
-          activeNodes={devices.length}
-          onScan={startScan}
-          onHistoryToggle={() => setShowHistory(!showHistory)}
-          showHistory={showHistory}
-          onRadarToggle={() => setShowRadar(!showRadar)}
-          showRadar={showRadar}
-          onExternalAuditToggle={() => {
-            const next = !showExternalAudit;
-            setShowExternalAudit(next);
-            if (next) {
-              setExternalAuditTarget(null);
-              setExternalAuditScenarioId(null);
-            }
-          }}
-          showExternalAudit={showExternalAudit}
-          identity={identity}
-        />
-
-        {/* 2. Zona superior: Radar (izquierda) + Mapa 3D (centro) */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-          {showHistory && (
-            <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 20 }}>
-              <HistoryPanel
-                onClose={() => setShowHistory(false)}
-                onLoadSession={(oldDevices) => { loadSession(oldDevices); setShowHistory(false); }}
-              />
-            </div>
-          )}
-
-          {showExternalAudit && (
-            <Suspense fallback={null}>
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 20,
-                  zIndex: 60,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'flex-start',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div style={{ pointerEvents: 'auto' }}>
-                  <ExternalAuditPanel
-                    onClose={() => setShowExternalAudit(false)}
-                    targetDevice={externalAuditTarget}
-                    identity={identity}
-                    defaultScenarioId={externalAuditScenarioId}
-                    autoRun={Boolean(externalAuditTarget && externalAuditScenarioId)}
-                  />
-                </div>
-              </div>
-            </Suspense>
-          )}
-
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', minHeight: 0 }}>
-            {showRadar && (
-              <>
-                <div style={{ width: `${radarWidth}px`, minWidth: 360, maxWidth: 820, minHeight: 0, background: '#000', overflow: 'hidden', zIndex: 12 }}>
-                  <Suspense fallback={null}>
-                    <RadarPanel onClose={() => setShowRadar(false)} />
-                  </Suspense>
-                </div>
-                <div
-                  onMouseDown={startResizingRadar}
-                  style={{
-                    width: '2px',
-                    background: '#004400',
-                    cursor: 'col-resize',
-                    zIndex: 13,
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
-                />
-              </>
-            )}
-
-            <div style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
-              <Suspense fallback={null}>
-                <NetworkScene
-                  devices={devices}
-                  onDeviceSelect={selectDevice}
-                  selectedIp={selectedDevice?.ip}
-                  intruders={intruders}
-                  identity={identity}
-                />
-              </Suspense>
-            </div>
-          </div>
-        </div>
-
-        {/* Resizer horizontal (para arrastrar la consola) */}
-        <div
-          onMouseDown={startResizingConsole}
-          style={{
-            height: '2px',
-            background: '#004400',
-            cursor: 'row-resize',
-            zIndex: 15,
-            transition: 'background 0.2s',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
-        />
-
-        {/* 3. Consola / sniffer (altura dinamica) */}
-     
-        <div style={{
-          height: `${consoleHeight}px`,
-          minHeight: 0,
-          zIndex: 10,
-          boxShadow: '0 -5px 20px rgba(0,0,0,0.5)',
-          background: '#000'
-        }}>
-          <ConsoleLogs
-            logs={systemLogs}
-            devices={devices}
-            selectedDevice={selectedDevice} // Necesario para filtros por objetivo
-            onClearSystemLogs={clearSystemLogs}
-          />
-        </div>
-
-      </div>
-
-      {/* Resizer vertical (para arrastrar el sidebar) */}
-      <div
-        onMouseDown={startResizingSidebar}
-        style={{
-          width: '2px',
-          background: '#004400',
-          cursor: 'col-resize',
-          zIndex: 40,
-          transition: 'background 0.2s'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = '#00ff00'}
-        onMouseLeave={(e) => e.currentTarget.style.background = '#004400'}
-      />
-
-      {/* =================================================================================
-          Columna derecha: sidebar (anchura dinamica)
-         ================================================================================= */}
-      <div style={{
-        width: `${sidebarWidth}px`,
-        minWidth: '300px',
-        flexShrink: 0,
-        height: '100vh',
-        background: '#020202',
-        // borderLeft: '2px solid #004400', // Ja no cal, fem servir el resizer com a vora
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '-10px 0 30px rgba(0, 50, 0, 0.2)',
-        position: 'relative',
-        zIndex: 30
-      }}>
-
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'linear-gradient(rgba(0, 20, 0, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 20, 0, 0.1) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          opacity: 0.3
-        }}></div>
-
-        {selectedDevice ? (
-          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <Suspense fallback={null}>
-              <DeviceDetailPanel
-                device={selectedDevice}
-                auditResults={auditResults}
-                consoleLogs={consoleLogs}
-                auditing={auditing}
-                onAudit={() => startAudit(selectedDevice.ip)}
-                isJammed={jammedDevices.includes(selectedDevice.ip)}
-                onToggleJam={() => toggleJammer(selectedDevice.ip)}
-                onRouterAudit={checkRouterSecurity}
-                onOpenLabAudit={(d) => {
-                  setExternalAuditTarget(d);
-                  setExternalAuditScenarioId(d.isGateway ? "router_recon_ping_tracert" : "device_http_headers");
-                  setShowExternalAudit(true);
-                }}
-              />
-            </Suspense>
-          </div>
-        ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#004400', textAlign: 'center', padding: 40 }}>
-            <div style={{ fontSize: '5rem', marginBottom: 20, opacity: 0.3, textShadow: '0 0 20px #0f0' }}>⌖</div>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: 10, color: '#0f0' }}>AWAITING TARGET</h3>
-            <p style={{ fontSize: '1rem', opacity: 0.7 }}>SELECT A NODE FROM THE NETWORK GRID</p>
-          </div>
-        )}
-      </div>
-
-    </div>
+    <MainDockedLayout
+      scanning={scanning}
+      devices={devices}
+      showHistory={showHistory}
+      setShowHistory={setShowHistory}
+      showRadar={showRadar}
+      setShowRadar={setShowRadar}
+      showAttackLab={showAttackLab}
+      onToggleAttackLab={toggleAttackLab}
+      closeAttackLab={() => setShowAttackLab(false)}
+      showSettings={showSettings}
+      setShowSettings={setShowSettings}
+      identity={identity}
+      startScan={startScan}
+      loadSession={loadSession}
+      showDockRadar={docking.showDockRadar}
+      showDockAttackLab={docking.showDockAttackLab}
+      showDockSettings={docking.showDockSettings}
+      showDockScene={docking.showDockScene}
+      showDockConsole={docking.showDockConsole}
+      showDockDevice={docking.showDockDevice}
+      radarWidth={layout.radarWidth}
+      dockSplitRatio={layout.dockSplitRatio}
+      dockTripleLeftRatio={layout.dockTripleLeftRatio}
+      dockTripleRightRatio={layout.dockTripleRightRatio}
+      dockSettingsSplitRatio={layout.dockSettingsSplitRatio}
+      consoleHeight={layout.consoleHeight}
+      sidebarWidth={layout.sidebarWidth}
+      startResizingDockSplit={layout.startResizingDockSplit}
+      startResizingDockSettingsSplit={layout.startResizingDockSettingsSplit}
+      startResizingDockTripleLeft={layout.startResizingDockTripleLeft}
+      startResizingDockTripleRight={layout.startResizingDockTripleRight}
+      startResizingRadar={layout.startResizingRadar}
+      startResizingConsole={layout.startResizingConsole}
+      startResizingSidebar={layout.startResizingSidebar}
+      undockPanel={(panel) => void undockPanel(panel)}
+      dockPanel={(panel) => void docking.dockPanel(panel)}
+      selectedDevice={selectedDevice}
+      selectDevice={selectDevice}
+      intruders={intruders}
+      systemLogs={systemLogs}
+      clearSystemLogs={clearSystemLogs}
+      auditResults={auditResults}
+      consoleLogs={consoleLogs}
+      auditing={auditing}
+      startAudit={startAudit}
+      jammedDevices={jammedDevices}
+      jamPendingDevices={jamPendingDevices}
+      toggleJammer={toggleJammer}
+      checkRouterSecurity={checkRouterSecurity}
+      attackLabTarget={attackLabTarget}
+      attackLabScenarioId={attackLabScenarioId}
+      attackLabAutoRunToken={attackLabAutoRunToken}
+      onOpenLabAudit={openLabAuditForDevice}
+      detachedPanels={docking.detachedPanels}
+      detachedModes={docking.detachedModes}
+      isResizing={layout.isResizing}
+    />
   );
 }
 

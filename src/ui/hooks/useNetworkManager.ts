@@ -1,21 +1,31 @@
-import { useState, useEffect, useRef } from 'react';
-import { DeviceDTO, HostIdentity } from '../../shared/dtos/NetworkDTOs';
-import { networkAdapter } from '../../adapters/networkAdapter';
-import { auditAdapter } from '../../adapters/auditAdapter';
+// src/ui/hooks/useNetworkManager.ts
+// Hook orquestador de UI: compone modulos (scanner/audit/router/jammer/logs/bootstrap) y expone una API estable para App/layouts.
 
-// Importem els mòduls petits (Ara inclòs el Jammer)
-import { useSocketLogs } from './modules/useSocketLogs';
-import { useScanner } from './modules/useScanner';
-import { usePortAuditor } from './modules/usePortAuditor';
-import { useRouterHacker } from './modules/useRouterHacker';
-import { useJamming } from './modules/useJamming'; // 👈 IMPORT NOU
+import { useEffect, useMemo, useState } from 'react';
+import { DeviceDTO } from '../../shared/dtos/NetworkDTOs';
+import { deviceAliasRegistry } from "../../core/logic/deviceAliasRegistry";
 
-export const useNetworkManager = () => {
+// Importamos los modulos de negocio de UI.
+import { useSocketLogs } from './modules/network/useSocketLogs';
+import { useScanner } from './modules/network/useScanner';
+import { usePortAuditor } from './modules/network/usePortAuditor';
+import { useRouterHacker } from './modules/network/useRouterHacker';
+import { useJamming } from './modules/network/useJamming';
+import { useBootstrapNetwork } from './modules/network/useBootstrapNetwork';
+
+interface UseNetworkManagerOptions {
+  enableAutoBootstrap?: boolean;
+  enableScannerHydration?: boolean;
+}
+
+export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   // 1. Logs (Base)
   const { deviceLogs, systemLogs, addLog, clearLogs, clearSystemLogs, setActiveTarget } = useSocketLogs();
 
   // 2. Scanner (Core)
-  const { devices, setDevices, history, intruders, scanning, startScan, loadSession } = useScanner();
+  const { devices, setDevices, history, intruders, scanning, startScan, loadSession } = useScanner(
+    options?.enableScannerHydration ?? true
+  );
 
   // 3. Auditor (Ports)
   const { auditing, auditResults, startAudit, clearResults } = usePortAuditor(addLog);
@@ -23,146 +33,186 @@ export const useNetworkManager = () => {
   // 4. Hacker (Router)
   const { routerRisk, setRouterRisk, checkRouterSecurity } = useRouterHacker(addLog, setDevices, setActiveTarget);
 
-  // 5. Jammer (Active Countermeasures) 👈 NOVA RESPONSABILITAT SEPARADA
-  // Li passem 'devices' perquè pugui trobar el Gateway, i 'addLog' per escriure a la consola
-  const { jammedDevices, toggleJammer } = useJamming(devices, addLog);
+  // 5. Bootstrap (identidad + autoscan + autosync de gateway)
+  const { identity, deriveCidr } = useBootstrapNetwork({
+    startScan,
+    setDevices,
+    enableAutoBootstrap: options?.enableAutoBootstrap ?? true,
+  });
 
-  // 6. Estat local de UI (Selecció i Identitat)
-  const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
-  const [identity, setIdentity] = useState<HostIdentity | null>(null);
-  const bootAutoScanDone = useRef(false);
-  const bootRouterSyncDone = useRef(false);
+  // 6. Jammer (Active Countermeasures)
+  // Usamos el gatewayIp de identity como fallback porque el inventario puede tardar en marcar isGateway.
+  const { jammedDevices, jamPendingDevices, toggleJammer } = useJamming(devices, addLog, { gatewayIpOverride: identity?.gatewayIp ?? null });
+
+  // Asegurar que el host (la maquina que ejecuta NetSentinel) exista en el inventario con MAC real.
+  // Motivo: el router puede no listar al propio host en su UI, o no exponer MAC; ARP local tampoco siempre
+  // resuelve la propia IP => termina como 00:00.. y el nodo no se identifica como "self".
+  useEffect(() => {
+    if (!identity?.ip || !identity?.mac) return;
+
+    const idIp = identity.ip.trim();
+    const idMac = identity.mac.trim().toUpperCase().replace("-", ":");
+
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => (d.ip ?? "").trim() === idIp);
+      if (idx === -1) {
+        return [
+          ...prev,
+          {
+            ip: idIp,
+            mac: idMac,
+            vendor: "NETSENTINEL (ME)",
+            name: "HOST",
+            hostname: prev.find((d) => (d.vendor ?? "").includes("NETSENTINEL"))?.hostname,
+            isGateway: false,
+          },
+        ];
+      }
+
+      const existing = prev[idx];
+      const next = [...prev];
+      next[idx] = {
+        ...existing,
+        ip: idIp,
+        mac: idMac,
+        vendor: (existing.vendor ?? "").includes("NETSENTINEL") ? existing.vendor : "NETSENTINEL (ME)",
+      };
+      return next;
+    });
+  }, [identity?.ip, identity?.mac, setDevices]);
+
+  // Asegurar que el gateway tenga una etiqueta clara aunque el router no se liste como "cliente"
+  // y aunque el escaner no haya resuelto hostname.
+  useEffect(() => {
+    if (!identity?.gatewayIp) return;
+    const gwIp = identity.gatewayIp.trim();
+    if (!gwIp) return;
+
+    setDevices((prev) => {
+      const idx = prev.findIndex((d) => (d.ip ?? "").trim() === gwIp);
+      if (idx === -1) return prev;
+
+      const existing = prev[idx];
+      const next = [...prev];
+      next[idx] = {
+        ...existing,
+        isGateway: true,
+        name: existing.name ?? existing.hostname ?? "GATEWAY",
+        hostname: existing.hostname ?? existing.name ?? "GATEWAY",
+      };
+      return next;
+    });
+  }, [identity?.gatewayIp, setDevices]);
+
+  // Si cambia la identidad (por ejemplo, Ghost Mode), eliminamos clones stale del host del inventario.
+  // Esto evita duplicados del mismo dispositivo con MAC antigua en la escena.
+  useEffect(() => {
+    if (!identity?.mac || !identity?.ip) return;
+    const idMac = identity.mac.trim().toUpperCase();
+    const idIp = identity.ip.trim();
+
+    setDevices((prev) => {
+      const next = prev.filter((d) => {
+        const vendor = (d.vendor ?? "");
+        const looksLikeHost = vendor.includes("NETSENTINEL") || vendor.includes("(ME)");
+        if (!looksLikeHost) return true;
+
+        const dMac = (d.mac ?? "").trim().toUpperCase();
+        const dIp = (d.ip ?? "").trim();
+
+        // Mantener solo el host "real" (IP o MAC actuales). El resto son stale.
+        if (dIp === idIp) return dMac === idMac || !dMac;
+        return dMac === idMac;
+      });
+      return next;
+    });
+  }, [identity?.ip, identity?.mac, setDevices]);
+
+  // Memoria UX: aprendemos labels/hostnames de dispositivos y los reutilizamos si un scan futuro no los devuelve.
+  useEffect(() => {
+    deviceAliasRegistry.rememberFromDevices(devices);
+  }, [devices]);
+
+  // Fuerza repaint cuando el operador edita un alias manual (localStorage no dispara renders por si solo).
+  const [aliasTick, setAliasTick] = useState(0);
+  useEffect(() => {
+    const handler = () => setAliasTick((t) => t + 1);
+    window.addEventListener("netsentinel://aliases-updated", handler as EventListener);
+    return () => window.removeEventListener("netsentinel://aliases-updated", handler as EventListener);
+  }, []);
+
+  const devicesWithAliases = useMemo(() => deviceAliasRegistry.applyAliases(devices), [devices, aliasTick]);
+
+  // 7. Estado local de UI (seleccion)
+  // Guardamos solo la IP para que el objeto seleccionado se refresque cuando cambian aliases/inventario.
+  const [selectedIp, setSelectedIp] = useState<string | null>(null);
+  const selectedDevice = useMemo(() => {
+    if (!selectedIp) return null;
+    return devicesWithAliases.find((d) => (d.ip ?? "").trim() === selectedIp) ?? null;
+  }, [devicesWithAliases, selectedIp]);
+
+  // Ghost Mode: el backend devuelve el MAC generado pero la identidad real puede tardar en refrescarse.
+  // Actualizamos el inventario del host de forma optimista para evitar duplicados visuales y mostrar el MAC nuevo.
+  useEffect(() => {
+    const handler = (evt: Event) => {
+      const custom = evt as CustomEvent<{ hostIp?: string; newMac?: string }>;
+      const hostIp = custom.detail?.hostIp;
+      const newMac = custom.detail?.newMac;
+      if (!hostIp || !newMac) return;
+
+      setDevices((prev) => {
+        const normalizedNew = newMac.trim().toUpperCase();
+        return prev
+          .map((d) => {
+            if (d.ip !== hostIp) return d;
+            return { ...d, mac: normalizedNew };
+          })
+          // Si existian clones (mismo nombre/vendor NETSENTINEL) con otra IP/MAC vieja, los eliminamos.
+          .filter((d) => {
+            const vendor = (d.vendor ?? "");
+            const looksLikeHost = vendor.includes("NETSENTINEL") || vendor.includes("(ME)");
+            if (!looksLikeHost) return true;
+            if (d.ip === hostIp) return true;
+            const dMac = (d.mac ?? "").trim().toUpperCase();
+            return dMac === normalizedNew;
+          });
+      });
+    };
+
+    window.addEventListener("netsentinel://ghost-mode-applied", handler as EventListener);
+    return () => window.removeEventListener("netsentinel://ghost-mode-applied", handler as EventListener);
+  }, [setDevices]);
 
   // Helpers UI
   const selectDevice = (d: DeviceDTO | null) => {
-    setSelectedDevice(d);
-    if (d?.ip !== selectedDevice?.ip) clearResults();
+    const nextIp = d?.ip ?? null;
+    setSelectedIp(nextIp);
+    if (nextIp !== selectedIp) clearResults();
   };
 
   const dismissRisk = () => setRouterRisk(null);
-  
-  // Càrrega inicial d'identitat
-  useEffect(() => {
-    let mounted = true;
-    const loadIdentity = async () => {
-      try {
-        const id = await networkAdapter.getHostIdentity();
-        if (mounted) setIdentity(id);
-      } catch (e) {
-        console.error("Identity error:", e);
-      }
-    };
-    loadIdentity();
-    return () => { mounted = false; };
-  }, []);
-
-  const netmaskToPrefix = (netmask: string): number | null => {
-    // Convierte "255.255.255.0" -> 24. Si el formato no es valido, devuelve null.
-    const parts = netmask.split('.').map((p) => Number(p));
-    if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n) || n < 0 || n > 255)) return null;
-    let bits = 0;
-    for (const n of parts) {
-      // Cuenta bits 1 por octeto (255=8, 254=7, 252=6, 248=5, 240=4, 224=3, 192=2, 128=1, 0=0)
-      const map: Record<number, number> = { 255: 8, 254: 7, 252: 6, 248: 5, 240: 4, 224: 3, 192: 2, 128: 1, 0: 0 };
-      if (map[n] === undefined) return null;
-      bits += map[n];
-    }
-    return bits;
-  };
-
-  const deriveCidrFromIdentity = (id: HostIdentity | null): string => {
-    if (!id?.ip) return '192.168.1.0/24';
-    const prefix = netmaskToPrefix(id.netmask) ?? 24;
-    const ipParts = id.ip.split('.').map((p) => Number(p));
-    if (ipParts.length !== 4 || ipParts.some((n) => !Number.isFinite(n))) return '192.168.1.0/24';
-    // Asumimos red /24 si el netmask es raro; si no, calculamos red con una aproximacion segura /24.
-    if (prefix !== 24) {
-      return `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}.0/${prefix}`;
-    }
-    return `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}.0/24`;
-  };
-
-  // Auto-scan al arrancar (educativo): mantiene inventario actualizado sin acciones manuales.
-  useEffect(() => {
-    if (!identity) return;
-    if (bootAutoScanDone.current) return;
-
-    bootAutoScanDone.current = true;
-    const cidr = deriveCidrFromIdentity(identity);
-
-    // Guardamos preferencia en localStorage (frontend). Si no existe, asumimos true.
-    const pref = localStorage.getItem('netsentinel:autoScanOnStartup');
-    const enabled = pref === null ? true : pref === 'true';
-    if (!enabled) return;
-
-    void startScan(cidr);
-  }, [identity]);
-
-  // Auto-sync de dispositivos del router si ya tenemos credenciales almacenadas localmente.
-  useEffect(() => {
-    if (!identity?.gatewayIp) return;
-    if (bootRouterSyncDone.current) return;
-
-    bootRouterSyncDone.current = true;
-
-    const run = async () => {
-      try {
-        const creds = await networkAdapter.getGatewayCredentials(identity.gatewayIp);
-        if (!creds) return;
-
-        const routerDevices = await auditAdapter.fetchRouterDevices(identity.gatewayIp, creds.user, creds.pass);
-
-        // Fusion defensiva: no pisar vendor/hostname validos.
-        setDevices((prev) => {
-          const map = new Map(prev.map((d) => [d.ip, d]));
-          routerDevices.forEach((rd) => {
-            const existing = map.get(rd.ip);
-            if (!existing) {
-              map.set(rd.ip, rd);
-              return;
-            }
-            map.set(rd.ip, {
-              ...existing,
-              vendor: (rd.vendor && rd.vendor !== rd.ip) ? rd.vendor : existing.vendor,
-              hostname: rd.hostname ?? existing.hostname,
-              signal_strength: rd.signal_strength ?? existing.signal_strength,
-              signal_rate: rd.signal_rate ?? existing.signal_rate,
-              wifi_band: rd.wifi_band ?? existing.wifi_band
-            });
-          });
-          const merged = Array.from(map.values());
-          void networkAdapter.saveLatestSnapshot(merged);
-          return merged;
-        });
-      } catch (e) {
-        // Silencioso: si falla (sin keyring, router no accesible), no bloqueamos la app.
-        console.warn('Auto router sync failed', e);
-      }
-    };
-
-    void run();
-  }, [identity?.gatewayIp]);
 
   return {
-    // Dades
-    devices, selectedDevice, history, intruders,
-    auditResults, routerRisk, jammedDevices,
+    // Datos
+    devices: devicesWithAliases, selectedDevice, history, intruders,
+    auditResults, routerRisk, jammedDevices, jamPendingDevices,
     consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
+    deviceLogsByIp: deviceLogs,
     systemLogs,
     identity,
 
-    // Estats
+    // Estados
     scanning, auditing,
 
-    // Accions (Delegades als hooks corresponents)
+    // Acciones (delegadas a hooks especializados)
     // Importante: TopBar pasa el evento si se asigna directamente como handler.
     // Exponemos un wrapper sin argumentos para evitar regresiones.
-    startScan: (range?: string) => startScan(range ?? deriveCidrFromIdentity(identity)),
+    startScan: (range?: string) => startScan(range ?? deriveCidr()),
     startAudit, 
     checkRouterSecurity,
     selectDevice, 
     loadSession, 
-    toggleJammer, // 👈 Ara ve del useJamming
+    toggleJammer,
     dismissRisk, 
     clearLogs: () => selectedDevice && clearLogs(selectedDevice.ip),
     clearSystemLogs,

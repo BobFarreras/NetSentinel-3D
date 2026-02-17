@@ -1,6 +1,6 @@
 // src-tauri/src/domain/entities.rs
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 // 1. DISPOSITIU
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,7 +12,7 @@ pub struct Device {
     pub hostname: Option<String>,
     pub name: Option<String>,
     pub is_gateway: bool,
-    pub ping: Option<u16>, 
+    pub ping: Option<u16>,
     // Compat: el frontend historico usa snake_case en algunos campos.
     #[serde(alias = "signal_strength")]
     pub signal_strength: Option<String>,
@@ -59,10 +59,10 @@ pub struct RouterAuditResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanSession {
-    pub id: String,       
-    pub timestamp: u64,   
-    pub devices: Vec<Device>, 
-    pub label: String,    
+    pub id: String,
+    pub timestamp: u64,
+    pub devices: Vec<Device>,
+    pub label: String,
 }
 
 // 5b. ULTIMA FOTO (snapshot) - Persistencia rapida para arranque
@@ -83,6 +83,15 @@ pub struct GatewayCredentials {
     pub saved_at: u64,
 }
 
+// 5d. PRESETS DE CREDENCIALES (gateway) - Diccionario local de pares user/pass (ligado a gateway_ip o global "*").
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct GatewayCredentialPreset {
+    pub gateway_ip: String,
+    pub user: String,
+    pub pass: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HostIdentity {
@@ -94,6 +103,15 @@ pub struct HostIdentity {
     pub dns_servers: Vec<String>,
 }
 
+// Estado de seguridad OpSec (MAC spoofing) calculado en application.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MacSecurityStatus {
+    pub current_mac: String,
+    pub is_spoofed: bool,
+    pub risk_level: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TrafficPacket {
@@ -103,8 +121,46 @@ pub struct TrafficPacket {
     pub destination_ip: String,
     pub protocol: String, // TCP, UDP, ICMP
     pub length: usize,
-    pub info: String,     // Ex: "HTTPS Traffic" o "DNS Query"
+    pub info: String, // Ex: "HTTPS Traffic" o "DNS Query"
     pub is_intercepted: bool,
+}
+
+// 7. ATTACK LAB (ejecucion de herramientas externas con streaming)
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttackLabRequest {
+    pub binary_path: String,
+    pub args: Vec<String>,
+    pub cwd: Option<String>,
+    pub timeout_ms: Option<u64>,
+    pub env: Vec<(String, String)>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttackLabLogEvent {
+    pub audit_id: String,
+    pub stream: String, // "stdout" | "stderr"
+    pub line: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttackLabExitEvent {
+    pub audit_id: String,
+    pub success: bool,
+    pub exit_code: Option<i32>,
+    pub duration_ms: u128,
+    pub error: Option<String>,
+}
+
+// 8. SETTINGS (config local persistida)
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AppSettings {
+    pub real_mac_address: Option<String>,
+    // Idioma preferido de UI: "es" | "ca" | "en". Se trata como dato de UX (no de seguridad).
+    pub ui_language: Option<String>,
 }
 
 // 6. WIFI (Radar View)
@@ -135,7 +191,7 @@ pub struct WifiEntity {
     pub security_type: String,
     pub vendor: String,
     pub distance_mock: f32,
-    pub risk_level: String,     // HARDENED | STANDARD | LEGACY | OPEN
-    pub is_targetable: bool,    // true si la configuracion es debil (legacy/open) en modo educativo
-    pub is_connected: bool,     // true si es el AP actual del host
+    pub risk_level: String,  // HARDENED | STANDARD | LEGACY | OPEN
+    pub is_targetable: bool, // true si la configuracion es debil (legacy/open) en modo educativo
+    pub is_connected: bool,  // true si es el AP actual del host
 }

@@ -1,0 +1,124 @@
+// src/ui/features/settings/field_manual/attackScenarioManual.ts
+// Descripcion: contenido didactico (alto nivel) para escenarios del Attack Lab. Enfatiza mitigacion/hardening.
+
+import type { UILanguage } from "../../../../shared/dtos/SettingsDTOs";
+
+export type ScenarioManual = {
+  how: string;
+  mitigations: string[];
+  notes?: string[];
+};
+
+// Importante: esto NO es un tutorial operativo paso-a-paso.
+// La idea es dar contexto y defensas a un operador/junior dentro del producto.
+export const getScenarioManual = (scenarioId: string, lang: UILanguage): ScenarioManual => {
+  const ES = lang === "es";
+  const CA = lang === "ca";
+
+  switch (scenarioId) {
+    case "router_recon_ping_tracert":
+      return {
+        how: ES
+          ? "Recon no intrusivo: baseline de conectividad hacia el gateway (PTR, ping y ruta). Se usa para detectar saltos inesperados, NAT/bridge/VPN, latencia anomala o segmentacion antes de auditar puertos/servicios."
+          : CA
+          ? "Recon no intrusiu: baseline de connectivitat cap al gateway (PTR, ping i ruta). Serveix per detectar salts inesperats, NAT/bridge/VPN, latencia anomala o segmentacio abans d'auditar ports/serveis."
+          : "Non-intrusive recon: measures latency and traces the route to the gateway. Used to detect unexpected hops, NATs, anomalous latency or segmentation.",
+        mitigations: [
+          ES ? "Filtrar ICMP en bordes (sin romper MTU/diagnostico interno)." : CA ? "Filtrar ICMP a la vora (sense trencar MTU/diagnostic intern)." : "Filter ICMP at edges (without breaking MTU/internal diagnostics).",
+          ES ? "Reducir superficie del router (panel admin solo LAN, desactivar servicios remotos)." : CA ? "Reduir superficie del router (admin nomes LAN, desactivar serveis remots)." : "Reduce router surface (admin LAN-only, disable remote services).",
+          ES ? "Segmentar: red de invitados separada del management." : CA ? "Segmentar: xarxa de convidats separada del management." : "Segment: guest network separated from management.",
+        ],
+        notes: [
+          ES
+            ? "Ping/traceroute pueden fallar aunque el router tenga servicios expuestos (ICMP filtrado). Para confirmarlo, usa un scan TCP/puertos."
+            : CA
+            ? "Ping/traceroute poden fallar tot i que el router tingui serveis exposats (ICMP filtrat). Per confirmar-ho, fes un scan TCP/ports."
+            : "Ping/traceroute may fail even if the router exposes services (ICMP filtered). Confirm with a TCP/port scan.",
+        ],
+      };
+    case "device_recon_ping_tracert":
+      return {
+        how: ES
+          ? "Baseline de conectividad hacia un host: PTR (si existe), ping y ruta. Te ayuda a explicar falsos negativos (timeouts) antes de auditar servicios HTTP/TCP."
+          : CA
+          ? "Baseline de connectivitat cap a un host: PTR (si existeix), ping i ruta. Ajuda a explicar falsos negatius (timeouts) abans d'auditar serveis HTTP/TCP."
+          : "Connectivity baseline towards a host: PTR (if any), ping and route. Helps explain timeouts before auditing HTTP/TCP services.",
+        mitigations: [
+          ES ? "Si es un dispositivo crítico: segmentación y ACLs para limitar quién puede alcanzarlo." : CA ? "Si es un dispositiu crític: segmentació i ACLs per limitar qui el pot arribar." : "For critical devices: segment and use ACLs to restrict reachability.",
+          ES ? "Aplicar hardening en el host (firewall, servicios mínimos) y monitorizar latencia/caídas." : CA ? "Aplicar hardening al host (firewall, serveis mínims) i monitoritzar latència/caigudes." : "Harden the host (firewall, minimal services) and monitor latency/outages.",
+        ],
+        notes: [
+          ES
+            ? "ICMP puede estar filtrado: PING_OK=false no implica que no haya puertos TCP abiertos."
+            : CA
+            ? "ICMP pot estar filtrat: PING_OK=false no implica que no hi hagi ports TCP oberts."
+            : "ICMP may be filtered: PING_OK=false does not imply TCP ports are closed.",
+        ],
+      };
+    case "device_http_headers":
+      return {
+        how: ES
+          ? "Baseline de superficie web: intenta HEAD sobre HTTP/HTTPS y extrae headers clave (Server, WWW-Authenticate, Set-Cookie, Location). Sirve para inventario rapido y priorizar hardening."
+          : CA
+          ? "Baseline de superficie web: intenta HEAD sobre HTTP/HTTPS i extreu headers clau (Server, WWW-Authenticate, Set-Cookie, Location). Serveix per inventari rapid i prioritzar hardening."
+          : "HTTP header fingerprinting: identifies exposed software/stack (Server, WWW-Authenticate, cookies) without auth. Helps prioritize hardening and detect defaults.",
+        mitigations: [
+          ES ? "Deshabilitar servicios HTTP no necesarios en dispositivos IoT/routers." : CA ? "Deshabilitar serveis HTTP no necessaris en IoT/routers." : "Disable unnecessary HTTP services on IoT/routers.",
+          ES ? "Ocultar/versionar minimamente banners (cuando sea posible) y forzar TLS." : CA ? "Minimitzar banners (si es possible) i forçar TLS." : "Minimize banners (when possible) and enforce TLS.",
+          ES ? "Cambiar credenciales por defecto y limitar origen (ACL/firewall LAN)." : CA ? "Canviar credencials per defecte i limitar origen (ACL/firewall LAN)." : "Change default credentials and restrict origin (LAN ACL/firewall).",
+        ],
+        notes: [
+          ES
+            ? "Qué mirar: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), y ausencia de HSTS/CSP en paneles expuestos."
+            : CA
+            ? "Que mirar: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), i absencia d'HSTS/CSP en panells exposats."
+            : "Look for: WWW-Authenticate (Basic/Digest), Location (/login), Set-Cookie (Secure/HttpOnly), and missing HSTS/CSP on exposed panels.",
+        ],
+      };
+    case "wifi_brute_force_dict":
+      return {
+        how: ES
+          ? "Ataque activo de diccionario: prueba un conjunto de credenciales contra un SSID objetivo. Es un caso de laboratorio para entender la importancia de una passphrase robusta."
+          : CA
+          ? "Atac actiu de diccionari: prova un conjunt de credencials contra un SSID objectiu. Es un cas de laboratori per entendre la importancia d'una passphrase robusta."
+          : "Active dictionary attempt: tries a credential set against a target SSID. Lab case to understand the importance of a strong passphrase.",
+        mitigations: [
+          ES ? "WPA3-Personal (SAE) si el hardware lo soporta." : CA ? "WPA3-Personal (SAE) si el hardware ho suporta." : "Use WPA3-Personal (SAE) if supported.",
+          ES ? "Passphrase larga (>= 16-20) y no derivada del SSID ni patrones tipicos." : CA ? "Passphrase llarga (>= 16-20) i no derivada de l'SSID ni patrons tipics." : "Long passphrase (>= 16-20) not derived from SSID/patterns.",
+          ES ? "Desactivar WPS y revisar listas de clientes autorizados." : CA ? "Desactivar WPS i revisar clients autoritzats." : "Disable WPS and review allowed clients.",
+          ES ? "Rotar credenciales ante sospecha y segmentar IoT/Guest." : CA ? "Rotar credencials si hi ha sospita i segmentar IoT/Guest." : "Rotate credentials on suspicion and segment IoT/Guest.",
+        ],
+        notes: [
+          ES ? "En redes reales, la defensa principal es una passphrase fuerte + WPA3; no hay atajos." : CA ? "En xarxes reals, la defensa principal es una passphrase forta + WPA3; no hi ha dreceres." : "In real networks, the primary defense is a strong passphrase + WPA3; there are no shortcuts.",
+        ],
+      };
+    case "edu_iot_risk_profile":
+      return {
+        how: ES
+          ? "Simulacion: usa el vendor/OUI para explicar riesgos tipicos IoT (firmware desactualizado, servicios expuestos, credenciales por defecto)."
+          : CA
+          ? "Simulacio: usa el vendor/OUI per explicar riscos tipics IoT (firmware desactualitzat, serveis exposats, credencials per defecte)."
+          : "Simulation: uses vendor/OUI to explain typical IoT risks (outdated firmware, exposed services, default creds).",
+        mitigations: [
+          ES ? "VLAN/SSID IoT separado." : CA ? "VLAN/SSID IoT separat." : "Separate IoT VLAN/SSID.",
+          ES ? "Bloquear trafico lateral y solo permitir destinos necesarios." : CA ? "Bloquejar trafic lateral i nomes permetre destins necessaris." : "Block lateral traffic and allow only necessary destinations.",
+          ES ? "Actualizar firmware y deshabilitar UPnP si no es imprescindible." : CA ? "Actualitzar firmware i deshabilitar UPnP si no es imprescindible." : "Update firmware and disable UPnP unless required.",
+        ],
+      };
+    default:
+      return {
+        how: ES
+          ? "Escenario sin manual especifico. Revisa la descripcion del catalogo y los docs del repo."
+          : CA
+          ? "Escenari sense manual especific. Revisa la descripcio del cataleg i els docs del repo."
+          : "Scenario without a dedicated manual. Check catalog description and repo docs.",
+        mitigations: [
+          ES
+            ? "Aplicar hardening basico: segmentacion, actualizaciones, minimo privilegio, logs y monitorizacion."
+            : CA
+            ? "Aplicar hardening basic: segmentacio, actualitzacions, minim privilegi, logs i monitoritzacio."
+            : "Apply baseline hardening: segmentation, updates, least privilege, logs and monitoring.",
+        ],
+      };
+  }
+};

@@ -19,7 +19,7 @@
         "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
-        "decorations": true,
+        "decorations": false,
         "transparent": false
       }
     ],
@@ -61,6 +61,7 @@
       "icons/icon.ico"
     ],
     "windows": {
+   
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",

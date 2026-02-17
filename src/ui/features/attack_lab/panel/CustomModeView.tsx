@@ -1,0 +1,124 @@
+// src/ui/features/attack_lab/panel/CustomModeView.tsx
+// Vista CUSTOM del Attack Lab: construye un request (binario/args/cwd/timeout) y delega ejecucion/cancelacion al hook.
+
+import React, { useMemo, useState } from "react";
+import type { AttackLabRequestDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { useI18n } from "../../../i18n";
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "rgba(0,0,0,0.35)",
+  border: "1px solid rgba(0,255,136,0.18)",
+  color: "#b7ffe2",
+  padding: "6px 8px",
+  fontSize: 12,
+  outline: "none",
+  fontFamily: "'Consolas', 'Courier New', monospace",
+};
+
+const btnStyle = (active: boolean): React.CSSProperties => ({
+  background: active ? "rgba(0,255,136,0.12)" : "transparent",
+  border: `1px solid ${active ? "rgba(0,255,136,0.45)" : "rgba(0,255,136,0.18)"}`,
+  color: active ? "#00ff88" : "rgba(183,255,226,0.85)",
+  padding: "6px 10px",
+  cursor: active ? "pointer" : "not-allowed",
+  opacity: active ? 1 : 0.5,
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: 0.4,
+  fontFamily: "'Consolas', 'Courier New', monospace",
+});
+
+interface CustomModeViewProps {
+  isRunning: boolean;
+  onStart: (req: AttackLabRequestDTO) => Promise<void>;
+  onCancel: () => Promise<void>;
+  layout?: "wide" | "narrow";
+}
+
+export const CustomModeView: React.FC<CustomModeViewProps> = ({ isRunning, onStart, onCancel, layout = "wide" }) => {
+  const { t } = useI18n();
+  const [binaryPath, setBinaryPath] = useState("");
+  const [cwd, setCwd] = useState("");
+  const [timeoutMs, setTimeoutMs] = useState<string>("300000");
+  const [argsText, setArgsText] = useState("");
+
+  const request = useMemo<AttackLabRequestDTO>(() => {
+    const args = argsText.split("\n").map((s) => s.trim()).filter(Boolean);
+    const parsedTimeout = Number(timeoutMs);
+    return {
+      binaryPath: binaryPath.trim(),
+      args,
+      cwd: cwd.trim() ? cwd.trim() : undefined,
+      timeoutMs: Number.isFinite(parsedTimeout) && parsedTimeout > 0 ? parsedTimeout : undefined,
+      env: undefined,
+    };
+  }, [binaryPath, argsText, cwd, timeoutMs]);
+
+  const handleStart = () => {
+    if (!binaryPath.trim()) return;
+    onStart(request);
+  };
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 12, padding: 12, flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.binaryLabel")}</div>
+          <input
+            value={binaryPath}
+            onChange={(e) => setBinaryPath(e.target.value)}
+            placeholder={t("attackLab.custom.binaryPlaceholder")}
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ width: layout === "narrow" ? "100%" : 180, minWidth: 180 }}>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.timeoutLabel")}</div>
+          <input
+            value={timeoutMs}
+            onChange={(e) => setTimeoutMs(e.target.value)}
+            placeholder={timeoutMs}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 12, padding: "0 12px 12px 12px", flexShrink: 0, flexDirection: layout === "narrow" ? "column" : "row", alignItems: "stretch" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.argsLabel")}</div>
+          <textarea
+            value={argsText}
+            onChange={(e) => setArgsText(e.target.value)}
+            placeholder={t("attackLab.custom.argsPlaceholder")}
+            style={{ ...inputStyle, height: 90, resize: "vertical" }}
+          />
+        </div>
+        <div style={{ width: layout === "narrow" ? "100%" : 260, minWidth: 220 }}>
+          <div style={{ color: "rgba(183,255,226,0.65)", fontSize: 11, marginBottom: 4 }}>{t("attackLab.custom.cwdLabel")}</div>
+          <input
+            value={cwd}
+            onChange={(e) => setCwd(e.target.value)}
+            placeholder={t("attackLab.custom.cwdPlaceholder")}
+            style={inputStyle}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={handleStart}
+              disabled={isRunning || !binaryPath}
+              style={btnStyle(!isRunning && !!binaryPath)}
+            >
+              {t("attackLab.actions.start")}
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={!isRunning}
+              style={{ ...btnStyle(isRunning), borderColor: "#f55", color: "#f55" }}
+            >
+              {t("attackLab.actions.cancel")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};

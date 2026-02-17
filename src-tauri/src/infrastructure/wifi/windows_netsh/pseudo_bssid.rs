@@ -37,4 +37,3 @@ pub fn stable_pseudo_bssid(ssid: &str, auth: &str) -> String {
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]
     )
 }
-

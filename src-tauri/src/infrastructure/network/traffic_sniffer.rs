@@ -1,6 +1,8 @@
 // src-tauri/src/infrastructure/network/traffic_sniffer.rs
+// Descripcion: sniffer ethernet (pnet) que captura paquetes IPv4 y produce `TrafficPacket` para consumir via `TrafficSnifferPort`.
 
 use crate::domain::entities::TrafficPacket;
+use crate::domain::ports::TrafficSnifferPort;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket};
 use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::Packet;
@@ -45,7 +47,10 @@ impl TrafficSniffer {
                 }
             };
 
-            println!("✅ [SNIFFER] Interfaz='{}' mi_ip={} objetivo={}", interface.name, my_ip, target_ip);
+            println!(
+                "✅ [SNIFFER] Interfaz='{}' mi_ip={} objetivo={}",
+                interface.name, my_ip, target_ip
+            );
 
             let mut rx = match net::open_ethernet_rx(&interface) {
                 Ok(rx) => rx,
@@ -75,7 +80,30 @@ impl TrafficSniffer {
     }
 }
 
-fn map_packet(packet: &[u8], my_ip: &str, target_ip: &str, packet_id: usize) -> Option<TrafficPacket> {
+impl TrafficSnifferPort for TrafficSniffer {
+    fn preflight(&self, interface_hint: &str, target_ip: &str) -> Result<(), String> {
+        TrafficSniffer::preflight(interface_hint, target_ip)
+    }
+
+    fn start_capture(
+        &self,
+        interface_hint: String,
+        target_ip: String,
+        running: Arc<AtomicBool>,
+        callback: Arc<dyn Fn(TrafficPacket) + Send + Sync + 'static>,
+    ) {
+        TrafficSniffer::start_capture(interface_hint, target_ip, running, move |packet| {
+            (callback)(packet);
+        })
+    }
+}
+
+fn map_packet(
+    packet: &[u8],
+    my_ip: &str,
+    target_ip: &str,
+    packet_id: usize,
+) -> Option<TrafficPacket> {
     let now = protocol::unix_ms();
 
     let eth = EthernetPacket::new(packet)?;
@@ -116,10 +144,26 @@ mod tests {
 
     #[test]
     fn intercepted_detection_is_reasonable() {
-        assert!(!protocol::is_intercepted("192.168.1.10", "192.168.1.10", "192.168.1.20"));
-        assert!(!protocol::is_intercepted("192.168.1.10", "192.168.1.20", "192.168.1.10"));
-        assert!(!protocol::is_intercepted("192.168.1.10", "192.168.1.20", "255.255.255.255"));
-        assert!(protocol::is_intercepted("192.168.1.10", "192.168.1.20", "192.168.1.30"));
+        assert!(!protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.10",
+            "192.168.1.20"
+        ));
+        assert!(!protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.20",
+            "192.168.1.10"
+        ));
+        assert!(!protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.20",
+            "255.255.255.255"
+        ));
+        assert!(protocol::is_intercepted(
+            "192.168.1.10",
+            "192.168.1.20",
+            "192.168.1.30"
+        ));
     }
 
     #[test]

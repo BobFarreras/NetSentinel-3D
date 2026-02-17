@@ -1,0 +1,333 @@
+// src/ui/features/device_detail/components/DeviceDetailPanel.tsx
+// Panel de detalle de dispositivo: UI de intel/puertos/logs y acciones (audit, jammer, router audit, Attack Lab, Ghost Mode).
+
+import React, { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import type { DeviceDTO, OpenPortDTO } from "../../../../shared/dtos/NetworkDTOs";
+import { HUD_COLORS, HUD_TYPO } from "../../../styles/hudTokens";
+import { useDeviceDetailPanelState } from "../hooks/useDeviceDetailPanelState";
+import { ConsoleDisplay, ConsolePrompt } from "./details/ConsoleDisplay";
+import { PortResults } from "./details/PortResults";
+import { useI18n } from "../../../i18n";
+import { deviceAliasRegistry } from "../../../../core/logic/deviceAliasRegistry";
+
+interface Props {
+  device: DeviceDTO;
+  auditResults: OpenPortDTO[];
+  consoleLogs: string[];
+  auditing: boolean;
+  onAudit: () => void;
+  isJammed: boolean;
+  isJamPending: boolean;
+  onToggleJam: () => void;
+  onRouterAudit: (ip: string) => void;
+  onOpenLabAudit: (device: DeviceDTO) => void;
+}
+
+export const DeviceDetailPanel: React.FC<Props> = ({
+  device,
+  auditResults,
+  consoleLogs,
+  auditing,
+  isJamPending,
+  onAudit,
+  isJammed,
+  onToggleJam,
+  onRouterAudit,
+  onOpenLabAudit,
+}) => {
+  const { t } = useI18n();
+  const state = useDeviceDetailPanelState({ device, onRouterAudit, onOpenLabAudit });
+
+  // ESTADO LOCAL DE LOGS
+  const [localLogs, setLocalLogs] = useState<string[]>([]);
+
+  // Alias manual (nombre amigable) para el operador.
+  const [isEditingAlias, setIsEditingAlias] = useState(false);
+  const [aliasDraft, setAliasDraft] = useState<string>(() => (device.name ?? device.hostname ?? "").trim());
+
+  // Selector de detalle: consola vs puertos (evita que PortResults "desaparezca" debajo de la consola).
+  const [detailsView, setDetailsView] = useState<"console" | "ports">("console");
+  const [hasAuditRun, setHasAuditRun] = useState(false);
+  
+  // ESTADO DEL PROMPT INTERACTIVO
+  const [activePrompt, setActivePrompt] = useState<ConsolePrompt | null>(null);
+  const [isGhostRunning, setIsGhostRunning] = useState(false);
+
+  const logToConsole = (msg: string, type: "INFO" | "SUCCESS" | "ERROR" | "WARN" = "INFO") => {
+    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+    let icon = "🔹";
+    if (type === "SUCCESS") icon = "✅";
+    if (type === "ERROR") icon = "❌";
+    if (type === "WARN") icon = "⚠️";
+    setLocalLogs(prev => [...prev, `${timestamp} ${icon} ${msg}`]);
+  };
+
+  // 1. INICIAR PROCESO (Solo logs y prompt)
+  const initGhostMode = () => {
+    const isHost = device.vendor === "NETSENTINEL (HOST)" || device.ip === state.identity?.ip;
+    if (!isHost) return;
+
+    // Limpiar logs anteriores si hubiera
+    setLocalLogs([]);
+    
+    logToConsole(t("deviceDetail.ghost.logs.sequenceInit"), "WARN");
+    logToConsole(t("deviceDetail.ghost.logs.restartWarning"), "WARN");
+    logToConsole(t("deviceDetail.ghost.logs.connectionDrop"), "WARN");
+
+    // ACTIVAR PROMPT EN CONSOLA
+    setActivePrompt({
+      type: 'CONFIRM',
+      message: t("deviceDetail.ghost.prompt.message"),
+      options: [t("deviceDetail.ghost.prompt.confirm"), t("deviceDetail.ghost.prompt.cancel")],
+      onSelect: (index) => {
+        setActivePrompt(null); // Quitar prompt
+        if (index === 0) {
+          executeGhostSequence(); // EJECUTAR
+        } else {
+          logToConsole(t("deviceDetail.ghost.logs.userAborted"), "ERROR");
+        }
+      }
+    });
+  };
+
+  // 2. EJECUCIÓN REAL (Después de que el usuario elija SI)
+  const executeGhostSequence = async () => {
+    setIsGhostRunning(true);
+    try {
+      logToConsole(`${t("deviceDetail.ghost.logs.targetInterfacePrefix")}: ${state.identity?.interfaceName || "Unknown"}`, "INFO");
+      logToConsole(t("deviceDetail.ghost.logs.generatingMac"), "INFO");
+      
+      // Invocamos el comando (Esto tarda unos segundos)
+      const newMac = await invoke<string>("randomize_mac");
+      
+      logToConsole(t("deviceDetail.ghost.logs.swappedOk"), "SUCCESS");
+      logToConsole(`${t("deviceDetail.ghost.logs.newMacPrefix")}: ${newMac}`, "SUCCESS");
+      logToConsole(t("deviceDetail.ghost.logs.networkRestart"), "WARN");
+
+      // Actualizamos el inventario de UI (optimista): el host debe reflejar el nuevo MAC sin esperar a un scan.
+      // La identidad real puede tardar en actualizarse hasta que el adaptador reinicie.
+      try {
+        const hostIp = state.identity?.ip ?? device.ip;
+        window.dispatchEvent(new CustomEvent("netsentinel://ghost-mode-applied", { detail: { hostIp, newMac } }));
+      } catch {
+        // ignore
+      }
+
+      // Refrescamos identidad en el core para que la escena 3D y el resto de UI no se queden con el host "viejo".
+      // Disparamos varios intentos porque el adaptador puede reiniciarse y cambiar IP/DHCP con delay.
+      const refresh = () => window.dispatchEvent(new Event("netsentinel://refresh-identity"));
+      refresh();
+      window.setTimeout(refresh, 4000);
+      window.setTimeout(refresh, 9000);
+      
+    } catch (e) {
+      logToConsole(t("deviceDetail.ghost.logs.failed"), "ERROR");
+      logToConsole(`${t("deviceDetail.ghost.logs.errorPrefix")}: ${e}`, "ERROR");
+      logToConsole(t("deviceDetail.ghost.logs.checkAdmin"), "WARN");
+    } finally {
+      setIsGhostRunning(false);
+    }
+  };
+
+  const displayLogs = [...consoleLogs, ...localLogs];
+  
+  const handleDeepAudit = () => {
+    setHasAuditRun(true);
+    setDetailsView("ports");
+    onAudit();
+  };
+
+  const openAliasEditor = () => {
+    setAliasDraft((device.name ?? device.hostname ?? "").trim());
+    setIsEditingAlias(true);
+  };
+
+  const saveAlias = () => {
+    deviceAliasRegistry.setManualAliasForDevice(device, aliasDraft);
+    window.dispatchEvent(new Event("netsentinel://aliases-updated"));
+    setIsEditingAlias(false);
+  };
+
+  const clearAlias = () => {
+    deviceAliasRegistry.clearManualAliasForDevice(device);
+    window.dispatchEvent(new Event("netsentinel://aliases-updated"));
+    setIsEditingAlias(false);
+    setAliasDraft("");
+  };
+
+  return (
+    <>
+      <style>
+        {`
+          @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+          .blinking-cursor { display: inline-block; width: 8px; height: 14px; background-color: ${HUD_COLORS.accentGreen}; margin-left: 4px; vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+          .retro-button { width: 100%; background: #000; color: ${HUD_COLORS.accentGreen}; border: 2px solid ${HUD_COLORS.accentGreen}; padding: 12px; font-family: ${HUD_TYPO.mono}; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); }
+          .retro-button:hover:not(:disabled) { background: ${HUD_COLORS.accentGreen}; color: #000; box-shadow: 0 0 15px ${HUD_COLORS.accentGreen}; }
+          .retro-button:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+          
+          .ghost-button { margin-top: 15px; background: rgba(0, 255, 136, 0.05); border: 1px solid #00ff88; color: #00ff88; padding: 12px; font-family: ${HUD_TYPO.mono}; font-weight: 900; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; }
+          .ghost-button:hover { background: #00ff88; color: #000; box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
+        `}
+      </style>
+
+      <div style={{ width: '100%', height: '100%', padding: '25px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+
+        <h3 style={{ fontSize: '1.4rem', borderBottom: '2px solid #004400', paddingBottom: 15, marginTop: 0, marginBottom: 20, display: 'flex', justifyContent: 'space-between', color: HUD_COLORS.accentGreen }}>
+          <span>{t("deviceDetail.title")}</span>
+          <span className="blinking-cursor" style={{ width: '12px', height: '12px', borderRadius: '50%' }}></span>
+        </h3>
+
+        {/* INFO BÀSICA */}
+        <div style={{ display: 'grid', gap: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.ipLabel")}</span>
+            <b>{device.ip}</b>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.macLabel")}</span>
+            <span>{state.normalizedMac}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.nameLabel")}</span>
+            {isEditingAlias ? (
+              <span style={{ display: "flex", gap: 6, alignItems: "center", maxWidth: 360 }}>
+                <input
+                  value={aliasDraft}
+                  onChange={(e) => setAliasDraft(e.target.value)}
+                  placeholder={t("deviceDetail.alias.placeholder")}
+                  style={{
+                    width: 190,
+                    background: "rgba(0,0,0,0.7)",
+                    border: `1px solid ${HUD_COLORS.accentGreen}`,
+                    color: "#fff",
+                    padding: "6px 8px",
+                    fontFamily: HUD_TYPO.mono,
+                    fontSize: 12,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={saveAlias}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1 }}
+                  disabled={!aliasDraft.trim()}
+                >
+                  {t("deviceDetail.alias.save")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingAlias(false)}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1, borderColor: "#444", color: "#aaa" }}
+                >
+                  {t("deviceDetail.alias.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAlias}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1, borderColor: "#aa0000", color: "#ff5555" }}
+                >
+                  {t("deviceDetail.alias.clear")}
+                </button>
+              </span>
+            ) : (
+              <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span
+                  style={{ color: '#fff', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  title={state.resolvedName}
+                >
+                  {state.resolvedName}
+                </span>
+                <button
+                  type="button"
+                  onClick={openAliasEditor}
+                  className="retro-button"
+                  style={{
+                    width: 84,
+                    padding: "6px 8px",
+                    borderWidth: 1,
+                    letterSpacing: 1,
+                    borderColor: "#00e5ff",
+                    color: "#00e5ff",
+                    background: "transparent",
+                  }}
+                >
+                  {t("deviceDetail.alias.edit")}
+                </button>
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.vendorLabel")}</span>
+            <span style={{ color: '#adff2f', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={device.vendor}>{device.vendor}</span>
+          </div>
+        </div>
+
+        {/* CONTROLS */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+          <button onClick={handleDeepAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? t("deviceDetail.actions.scanning") : t("deviceDetail.actions.deepAudit")}</button>
+          <button onClick={state.handleOpenLabAudit} className="retro-button" style={{ flex: 1, borderColor: '#00e5ff', color: '#00e5ff', background: 'transparent' }}>🧪 {t("deviceDetail.actions.labAudit")}</button>
+          <button onClick={onToggleJam} disabled={isJamPending} className="retro-button" style={{ flex: 1, borderColor: isJammed || isJamPending ? '#ff0000' : '#550000', color: isJammed || isJamPending ? '#fff' : '#ff5555', background: isJammed || isJamPending ? '#ff0000' : 'transparent', animation: isJammed ? 'blink 0.5s infinite' : 'none' }}>
+            {isJamPending
+              ? (isJammed ? `⚫ ${t("deviceDetail.actions.stop")}` : `⏳ ${t("deviceDetail.actions.jamPending")}`)
+              : (isJammed ? `⚫ ${t("deviceDetail.actions.stop")}` : `☠ ${t("deviceDetail.actions.killNet")}`)}
+          </button>
+        </div>
+
+        {/* BOTÓN GHOST MODE */}
+        {(device.vendor === "NETSENTINEL (HOST)" || device.ip === state.identity?.ip) && (
+           <button onClick={initGhostMode} className="ghost-button" disabled={isGhostRunning || activePrompt !== null}>
+              <span>👻</span> {isGhostRunning ? t("deviceDetail.ghost.activating") : t("deviceDetail.ghost.enable")}
+           </button>
+        )}
+
+        {device.isGateway && (
+          <button onClick={state.handleRouterAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ {t("deviceDetail.actions.auditGateway")}</button>
+        )}
+
+        {/* Selector de vista: consola vs puertos */}
+        <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
+          <button
+            type="button"
+            onClick={() => setDetailsView("console")}
+            className="retro-button"
+            style={{
+              flex: 1,
+              padding: 10,
+              borderColor: detailsView === "console" ? HUD_COLORS.accentGreen : "#003300",
+              color: detailsView === "console" ? HUD_COLORS.accentGreen : "#66aa66",
+              background: detailsView === "console" ? "rgba(0, 255, 0, 0.06)" : "transparent",
+            }}
+          >
+            {t("deviceDetail.tabs.console")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDetailsView("ports")}
+            className="retro-button"
+            style={{
+              flex: 1,
+              padding: 10,
+              borderColor: detailsView === "ports" ? HUD_COLORS.accentGreen : "#003300",
+              color: detailsView === "ports" ? HUD_COLORS.accentGreen : "#66aa66",
+              background: detailsView === "ports" ? "rgba(0, 255, 0, 0.06)" : "transparent",
+            }}
+          >
+            {t("deviceDetail.tabs.ports")}
+          </button>
+        </div>
+
+        {detailsView === "console" ? (
+          <div style={{ margin: "15px 0" }}>
+            <ConsoleDisplay logs={displayLogs} isBusy={isGhostRunning} prompt={activePrompt} />
+          </div>
+        ) : (
+          <PortResults results={auditResults} isAuditing={auditing} hasAuditRun={hasAuditRun} />
+        )}
+      </div>
+    </>
+  );
+};

@@ -35,8 +35,11 @@ dns-lookup = "2.0"
 wifiscanner = "0.5.1"
 windows = { version = "0.58", features = ["Win32_Foundation", "Win32_NetworkManagement_WiFi"] }
 keyring = "2"
+default-net = "0.22"
+
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
+
 
 # Per ara farem servir comandes de sistema per l'ARP inicial per assegurar estabilitat
 # Més endavant afegirem 'pnet' per l'atac.

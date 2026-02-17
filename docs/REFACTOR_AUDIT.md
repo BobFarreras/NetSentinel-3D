@@ -1,4 +1,5 @@
 <!-- docs/REFACTOR_AUDIT.md -->
+<!-- Descripcion: auditoria de mantenibilidad (SOLID) y backlog de refactors recomendados sin romper funcionalidad. -->
 
 # Auditoria de Mantenibilidad y Refactor (SOLID) - NetSentinel 3D
 
@@ -25,11 +26,11 @@ Reglas adicionales solicitadas:
 Fuentes escaneadas: `src/`, `src-tauri/src/`, `docs/`.
 
 Top archivos por tamaño (lineas):
-- `src/ui/components/hud/RadarPanel.tsx` (~664)  **GOD UI**
+- `src/ui/features/radar/components/RadarPanel.tsx` (~664)  **GOD UI**
 - `src-tauri/src/infrastructure/wifi/wifi_scanner.rs` (~463)  **GOD infra**
-- `src/ui/components/hud/ExternalAuditPanel.tsx` (~364)  **UI grande**
+- `src/ui/features/attack_lab/panel/AttackLabPanel.tsx` (~364)  **UI grande**
 - `src-tauri/src/infrastructure/chrome_auditor.rs` (~301)  **infra multi-responsabilidad**
-- `src-tauri/src/application/external_audit_service.rs` (~295)  **servicio grande**
+- `src-tauri/src/application/attack_lab/*` (~)  **servicio grande** (runner/eventos/validacion)
 - `src/App.tsx` (~294)  **shell UI**
 
 Duplicaciones detectadas (ejemplos):
@@ -116,14 +117,14 @@ Muy largo y con parsing complejo (locales, fallbacks, interfaces), dificil de ma
 ---
 
 ### P0 - Trocear `RadarPanel.tsx` (UI) en componentes y hooks
-Archivo actual: `src/ui/components/hud/RadarPanel.tsx`
+Archivo actual: `src/ui/features/radar/components/RadarPanel.tsx`
 
 **Problema**
 UI monolitica: filtros, layout, legal modal, auto-refresh, lista, detalles, etc.
 
 **Refactor propuesto**
 Crear carpeta:
-`src/ui/components/hud/radar/`
+`src/ui/features/radar/components/radar/`
 - `RadarPanel.tsx` (composicion)
 - `RadarHeader.tsx` (titulo, botones scan/auto/close)
 - `RadarFilters.tsx` (Node Intel: risk/band/ch/search)
@@ -132,7 +133,7 @@ Crear carpeta:
 - `RadarLegalModal.tsx` (aviso legal)
 
 Y mover logica a hooks:
-- `src/ui/hooks/modules/useWifiRadar.ts` (ya existe): mantener como “fuente de datos”.
+- `src/ui/features/radar/hooks/useWifiRadar.ts` (ya existe): mantener como “fuente de datos”.
 - `useRadarFilters.ts` (nuevo): filtros puros (testeables).
 
 **Criterios de aceptacion**
@@ -145,8 +146,8 @@ Y mover logica a hooks:
 ### P1 - Centralizar helpers de dispositivos (evitar duplicacion)
 **Problema**
 Validacion/merge de `mac/vendor/name` repetido en:
-- `src/ui/hooks/modules/useScanner.ts`
-- `src/ui/hooks/modules/useRouterHacker.ts`
+- `src/ui/hooks/modules/network/useScanner.ts`
+- `src/ui/hooks/modules/network/useRouterHacker.ts`
 
 **Refactor propuesto**
 Crear util puro:

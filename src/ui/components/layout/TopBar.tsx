@@ -1,152 +1,110 @@
+// src/ui/components/layout/TopBar.tsx
+// Barra superior: acciones globales (scan/history/radar/attack lab) e informacion de identidad local.
+
 import React from 'react';
 import { HostIdentity } from '../../../shared/dtos/NetworkDTOs';
+import { useTopBarState } from './topbar/useTopBarState';
+import { TopBarBrand } from './topbar/TopBarBrand';
+import { TopBarIdentity } from './topbar/TopBarIdentity';
+import { TopBarPanelControls } from './topbar/TopBarPanelControls';
+import { TopBarStatusControls } from './topbar/TopBarStatusControls';
 interface TopBarProps {
   scanning: boolean;
   activeNodes: number;
   onScan: () => void;
   onHistoryToggle: () => void;
   onRadarToggle: () => void;
-  onExternalAuditToggle: () => void;
+  onAttackLabToggle: () => void;
+  onSettingsToggle: () => void;
   showHistory: boolean;
   showRadar: boolean;
-  showExternalAudit: boolean;
+  showAttackLab: boolean;
+  showSettings: boolean;
   identity: HostIdentity | null;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ 
-  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onExternalAuditToggle, showHistory, showRadar, showExternalAudit, identity
+  scanning, activeNodes, onScan, onHistoryToggle, onRadarToggle, onAttackLabToggle, onSettingsToggle, showHistory, showRadar, showAttackLab, showSettings, identity
 }) => {
+  const st = useTopBarState({ identity });
+  const { t } = st;
+
   return (
     <div style={{
-      height: '50px', // ⬇️ Més petit (era 60px)
+      height: '44px',
+      width: "100%",
       background: '#020202',
       borderBottom: '1px solid #004400', // Vora més fina
       display: 'flex',
       alignItems: 'center',
-      padding: '0 15px',
+      // En Windows (decorations: false) existe un borde de resize invisible que puede recortar el ultimo boton.
+      // Reservamos un poco mas de "safe area" a la derecha para que la X nunca quede cortada.
+      padding: '0 16px 0 10px',
       justifyContent: 'space-between',
       boxShadow: '0 5px 15px rgba(0, 255, 0, 0.02)',
       zIndex: 50,
-      userSelect: 'none' // Evita seleccionar text per error
-    }}>
+      userSelect: 'none', // Evita seleccionar text per error
+      boxSizing: "border-box",
+      gap: 10,
+    }}
+    onMouseDown={st.maybeStartDragging}
+    aria-label="TOPBAR_ROOT"
+    >
       {/* Izquierda: logo e identidad */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <h2 style={{ 
-          margin: 0, 
-          fontSize: '1.2rem', // ⬇️ Més discret
-          letterSpacing: '1px', 
-          color: '#0f0',
-          textShadow: '0 0 5px rgba(0,255,0,0.5)',
-          whiteSpace: 'nowrap' // No trencar línia
-        }}>
-          NETSENTINEL 
-        </h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <TopBarBrand compact={st.compact} scanning={scanning} scanTitle={t("topbar.scan.activeTitle")} />
 
-        {/* Identidad local */}
+        {/* Selector de identidad (para ganar espacio) */}
         {identity && (
-          <div style={{ 
-            display: 'flex', gap: '15px', fontSize: '0.85rem', fontFamily: 'monospace',
-            borderLeft: '1px solid #004400', paddingLeft: '15px', color: '#88ff88'
-          }}>
-            <span title="Local IP">
-              IP: <b style={{ color: '#fff' }}>{identity.ip}</b>
-            </span>
-            <span title="Interface Name" style={{ opacity: 0.7 }}>
-              [{identity.interfaceName}]
-            </span>
-            {/* Gateway */}
-            <span title="Gateway" style={{ opacity: 0.5 }}>
-              GW: {identity.gatewayIp}
-            </span>
-          </div>
+          <TopBarIdentity
+            identitySlot={st.identitySlot}
+            setIdentitySlot={st.setIdentitySlot}
+            identityTitle={t("topbar.identity.title")}
+            identityLine={st.identityLine ?? ""}
+            menuMode={st.menuMode}
+            compact={st.compact}
+            tSlotIp={t("topbar.identity.slot.ip")}
+            tSlotGw={t("topbar.identity.slot.gw")}
+            tSlotIface={t("topbar.identity.slot.iface")}
+            tSlotMac={t("topbar.identity.slot.mac")}
+            tSlotAll={t("topbar.identity.slot.all")}
+          />
         )}
       </div>
 
       {/* Centro: controles */}
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <button
-          onClick={() => onScan()}
-          disabled={scanning}
-          style={{
-            background: scanning ? '#002200' : '#003300',
-            color: scanning ? '#005500' : '#0f0',
-            border: '1px solid #0f0', 
-            borderRadius: '2px', // Cantons lleugerament arrodonits (estil xip)
-            padding: '6px 16px', // ⬇️ Botó més compacte
-            fontSize: '0.9rem', 
-            fontWeight: 'bold',
-            cursor: scanning ? 'wait' : 'pointer',
-            transition: 'all 0.2s',
-            fontFamily: 'inherit',
-            minWidth: '120px'
-          }}
-        >
-          {scanning ? 'SCANNING...' : 'SCAN NET'}
-        </button>
+      <TopBarPanelControls
+        scanning={scanning}
+        onScan={onScan}
+        showHistory={showHistory}
+        showRadar={showRadar}
+        showAttackLab={showAttackLab}
+        showSettings={showSettings}
+        onHistoryToggle={onHistoryToggle}
+        onRadarToggle={onRadarToggle}
+        onAttackLabToggle={onAttackLabToggle}
+        onSettingsToggle={onSettingsToggle}
+        compact={st.compact}
+        menuMode={st.menuMode}
+        iconMode={st.iconMode}
+        menuOpen={st.menuOpen}
+        setMenuOpen={st.setMenuOpen}
+        menuRef={st.menuRef}
+        t={t}
+      />
 
-        <button
-          onClick={onHistoryToggle}
-          style={{
-            background: showHistory ? '#004400' : 'transparent',
-            color: '#0f0',
-            border: '1px solid #008800', 
-            borderRadius: '2px',
-            padding: '6px 16px', // ⬇️ Botó més compacte
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            fontFamily: 'inherit'
-          }}
-        >
-          {showHistory ? 'HIDE LOGS' : 'HISTORY'}
-        </button>
-
-        <button
-          onClick={onRadarToggle}
-          style={{
-            background: showRadar ? '#003320' : 'transparent',
-            color: showRadar ? '#00ff88' : '#66ffcc',
-            border: `1px solid ${showRadar ? '#00ff88' : '#006644'}`,
-            borderRadius: '2px',
-            padding: '6px 16px',
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            fontFamily: 'inherit'
-          }}
-        >
-          {showRadar ? 'HIDE RADAR' : 'RADAR'}
-        </button>
-
-        <button
-          onClick={onExternalAuditToggle}
-          style={{
-            background: showExternalAudit ? '#00202a' : 'transparent',
-            color: showExternalAudit ? '#00e5ff' : '#77e8ff',
-            border: `1px solid ${showExternalAudit ? '#00e5ff' : '#003a45'}`,
-            borderRadius: '2px',
-            padding: '6px 16px',
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            fontFamily: 'inherit'
-          }}
-        >
-          {showExternalAudit ? 'HIDE AUDIT' : 'EXT AUDIT'}
-        </button>
-      </div>
-
-      {/* Derecha: estado */}
-      <div style={{ 
-        fontSize: '0.9rem', 
-        color: '#88ff88', 
-        fontFamily: 'monospace',
-        borderLeft: '1px solid #004400',
-        paddingLeft: '15px',
-        whiteSpace: 'nowrap'
-      }}>
-        NODES: <b style={{ color: '#fff' }}>{activeNodes}</b>
-      </div>
+      <TopBarStatusControls
+        activeNodes={activeNodes}
+        nodesLabel={t("topbar.nodes")}
+        onMinimize={st.onMinimize}
+        onToggleMaximize={st.onToggleMaximize}
+        onCloseWindow={st.onCloseWindow}
+        isMaximized={st.isMaximized}
+        tMinimize={t("topbar.window.minimize")}
+        tMaximize={t("topbar.window.maximize")}
+        tRestore={t("topbar.window.restore")}
+        tClose={t("topbar.window.close")}
+      />
     </div>
   );
 };

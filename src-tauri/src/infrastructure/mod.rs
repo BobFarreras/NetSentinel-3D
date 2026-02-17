@@ -1,10 +1,9 @@
 // src-tauri/src/infrastructure/mod.rs
 
-pub mod system_scanner;
-pub mod router_audit;
-pub mod fs_repository;  
-pub mod latest_snapshot_repository;
-pub mod credential_store;
-pub mod repositories;
+pub mod attack_lab;
 pub mod network;
+pub mod persistence;
+pub mod repositories;
+pub mod router_audit;
+pub mod system_scanner;
 pub mod wifi;

@@ -45,4 +45,3 @@ pub fn discover_active_ips(subnet_base: &str) -> Vec<String> {
     ips.sort();
     ips
 }
-

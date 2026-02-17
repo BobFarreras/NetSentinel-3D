@@ -1,5 +1,6 @@
-use serde::{Serialize, Deserialize};
+// src-tauri/src/api/dtos.rs
 use crate::domain::entities::{Device, RouterAuditResult, WifiEntity};
+use serde::{Deserialize, Serialize};
 
 // 1) DISPOSITIVO DTO (queremos `camelCase` para React).
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -11,10 +12,10 @@ pub struct DeviceDTO {
     pub hostname: Option<String>,
     pub name: Option<String>,
     pub is_gateway: bool,
-    pub ping: Option<u16>, 
-    pub signal_strength: Option<String>, 
-    pub signal_rate: Option<String>,     
-    pub wifi_band: Option<String>,       
+    pub ping: Option<u16>,
+    pub signal_strength: Option<String>,
+    pub signal_rate: Option<String>,
+    pub wifi_band: Option<String>,
 }
 
 impl From<Device> for DeviceDTO {
@@ -39,7 +40,7 @@ impl From<Device> for DeviceDTO {
 #[serde(rename_all = "camelCase")]
 pub struct SecurityReportDTO {
     pub target_ip: String,
-    pub open_ports: Vec<crate::domain::entities::OpenPort>, 
+    pub open_ports: Vec<crate::domain::entities::OpenPort>,
     pub risk_level: String,
 }
 
@@ -95,21 +96,53 @@ impl From<WifiEntity> for WifiNetworkDTO {
     }
 }
 
-// 5. External Audit (Wrapper de herramientas CLI)
+// 5. Attack Lab (Wrapper de herramientas CLI)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ExternalAuditEnvVarDTO {
+pub struct AttackLabEnvVarDTO {
     pub key: String,
     pub value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ExternalAuditRequestDTO {
+pub struct AttackLabRequestDTO {
     pub binary_path: String,
     pub args: Vec<String>,
     pub cwd: Option<String>,
     pub timeout_ms: Option<u64>,
-    pub env: Option<Vec<ExternalAuditEnvVarDTO>>,
+    pub env: Option<Vec<AttackLabEnvVarDTO>>,
 }
-// src-tauri/src/api/dtos.rs
+
+// 6. HTTP Fingerprint (headers via HEAD)
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HttpProbeResultDTO {
+    pub url: String,
+    pub status: Option<u16>,
+    pub server: Option<String>,
+    pub www_authenticate: Option<String>,
+    pub location: Option<String>,
+    pub set_cookie: Option<String>,
+    pub strict_transport_security: Option<String>,
+    pub x_frame_options: Option<String>,
+    pub content_security_policy: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HttpFingerprintResultDTO {
+    pub target_ip: String,
+    pub http: Option<HttpProbeResultDTO>,
+    pub https: Option<HttpProbeResultDTO>,
+    pub verdict: String,
+    pub why: Vec<String>,
+    pub next: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+pub struct MacSecurityStatusDTO {
+    pub current_mac: String,
+    pub is_spoofed: bool,
+    pub risk_level: String, // "HIGH" (Real) o "LOW" (Spoofed)
+}
