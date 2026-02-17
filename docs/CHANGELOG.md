@@ -124,6 +124,14 @@ Nota:
 ### Validaciones
 - `npm test -- --run` (ok)
 
+## [v0.8.79] - Router sync: no reutilizar nombre entre IPs (2026-02-17)
+### Backend (router_audit)
+- Fix: el parser del DOM del router ya no copia el nombre del dispositivo anterior cuando un bloque no trae nombre (evita duplicados de hostname entre IPs distintas).
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+- Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

@@ -65,6 +65,14 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
             let mut k = 1usize;
             while i >= k {
                 let candidate = lines[i - k].trim();
+
+                // Borde duro entre bloques: si al retroceder tocamos una linea que ya contiene otra IP,
+                // significa que hemos entrado en el dispositivo anterior. En ese caso, este dispositivo
+                // NO tiene nombre (o no se ha podido extraer) y no debemos reutilizar el nombre previo.
+                if re_ip_line.is_match(candidate) {
+                    break;
+                }
+
                 if candidate.is_empty()
                     || candidate.starts_with("Signal")
                     || candidate.contains("GHz")
@@ -230,5 +238,27 @@ MAC address: 48-E7-DA-F5-7D-0F
         assert_eq!(d.len(), 1);
         assert_eq!(d[0].ip, "192.168.1.40");
         assert_eq!(d[0].mac.as_deref(), Some("48:E7:DA:F5:7D:0F"));
+    }
+
+    #[test]
+    fn parse_router_text_no_reutiliza_nombre_si_el_bloque_siguiente_no_tiene_nombre() {
+        // Reproduce un caso real: el segundo bloque solo trae `IP:` (sin "Device name" arriba)
+        // y antes el parser tomaba el nombre del dispositivo anterior.
+        let sample = r#"
+M2004J19C
+IP: 192.168.1.139
+Signal strength: -53 dBm
+Signal rate: 6 Mbps
+IP: 192.168.1.140
+Signal strength: -29 dBm
+Signal rate: 6 Mbps
+"#;
+
+        let d = parse_router_text(sample);
+        assert_eq!(d.len(), 2);
+        assert_eq!(d[0].ip, "192.168.1.139");
+        assert_eq!(d[0].name.as_deref(), Some("M2004J19C"));
+        assert_eq!(d[1].ip, "192.168.1.140");
+        assert_eq!(d[1].name, None);
     }
 }
