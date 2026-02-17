@@ -6,6 +6,7 @@ use crate::application::snapshot::LatestSnapshotService;
 use crate::domain::entities::{Device, LatestSnapshot};
 
 // --- SNAPSHOT (arranque rapido) ---
+#[tauri::command]
 pub async fn save_latest_snapshot(
     service: State<'_, LatestSnapshotService>,
     devices: Vec<Device>,
@@ -13,6 +14,7 @@ pub async fn save_latest_snapshot(
     service.save_devices(devices).await
 }
 
+#[tauri::command]
 pub async fn load_latest_snapshot(
     service: State<'_, LatestSnapshotService>,
 ) -> Result<Option<LatestSnapshot>, String> {

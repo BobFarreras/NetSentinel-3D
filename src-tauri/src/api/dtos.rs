@@ -114,6 +114,32 @@ pub struct AttackLabRequestDTO {
     pub env: Option<Vec<AttackLabEnvVarDTO>>,
 }
 
+// 6. HTTP Fingerprint (headers via HEAD)
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HttpProbeResultDTO {
+    pub url: String,
+    pub status: Option<u16>,
+    pub server: Option<String>,
+    pub www_authenticate: Option<String>,
+    pub location: Option<String>,
+    pub set_cookie: Option<String>,
+    pub strict_transport_security: Option<String>,
+    pub x_frame_options: Option<String>,
+    pub content_security_policy: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HttpFingerprintResultDTO {
+    pub target_ip: String,
+    pub http: Option<HttpProbeResultDTO>,
+    pub https: Option<HttpProbeResultDTO>,
+    pub verdict: String,
+    pub why: Vec<String>,
+    pub next: Vec<String>,
+}
+
 #[derive(serde::Serialize)]
 pub struct MacSecurityStatusDTO {
     pub current_mac: String,

@@ -6,8 +6,8 @@ const escapePsSingleQuoted = (value: string) => value.replace(/'/g, "''");
 export const buildNetBaselinePs = (targetIpRaw: string): string => {
   const targetIp = escapePsSingleQuoted(targetIpRaw);
 
-  // Importante: se devuelve un script inline en una sola linea (se unira con '; ').
-  // Esto evita depender de ficheros externos y mantiene el escenario portable.
+  // Importante: se devuelve un script inline (multiline) para evitar depender de ficheros externos
+  // y mantener el escenario portable.
   return [
     "$ErrorActionPreference = 'Continue'",
     "$lang = $env:NETSENTINEL_UI_LANG",
@@ -73,7 +73,8 @@ export const buildNetBaselinePs = (targetIpRaw: string): string => {
     "Write-Output ('TARGET_IP: ' + $targetIp)",
     "Write-Output ('TIMESTAMP: ' + (Get-Date).ToString('s'))",
     "Write-Output ''",
-    "if (-not ([System.Net.IPAddress]::TryParse($targetIp, [ref]$null))) {",
+    "$ipParsed = $null",
+    "if (-not ([System.Net.IPAddress]::TryParse($targetIp, [ref]$ipParsed))) {",
     "  Write-Error ((_T 'invalidIp') + $targetIp)",
     "  exit 2",
     "}",

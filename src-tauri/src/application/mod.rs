@@ -6,6 +6,7 @@ pub mod audit;
 pub mod credentials;
 pub mod gateway_credential_presets;
 pub mod history;
+pub mod http_fingerprint;
 pub mod jammer;
 pub mod opsec;
 pub mod scan;

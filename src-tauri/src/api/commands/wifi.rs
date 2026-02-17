@@ -4,13 +4,13 @@ use crate::api::dtos::WifiNetworkDTO;
 use crate::application::wifi::WifiService;
 use tauri::State;
 
-// Función existente
+#[tauri::command]
 pub async fn scan_airwaves(service: State<'_, WifiService>) -> Result<Vec<WifiNetworkDTO>, String> {
     let networks = service.scan_airwaves().await?;
     Ok(networks.into_iter().map(WifiNetworkDTO::from).collect())
 }
 
-// NUEVA Función (Sin #[tauri::command] aquí, porque se pone en commands.rs)
+#[tauri::command]
 pub async fn wifi_connect(
     service: State<'_, WifiService>,
     ssid: String,

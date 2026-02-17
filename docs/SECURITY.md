@@ -24,16 +24,26 @@ Politica adicional para modulos educativos avanzados:
 Comandos actualmente registrados:
 - `scan_network`
 - `audit_target`
+- `run_iot_scan`
 - `audit_router`
 - `fetch_router_devices`
 - `save_scan`
 - `get_history`
 - `save_latest_snapshot`
 - `load_latest_snapshot`
+- `get_app_settings`
+- `save_app_settings`
+- `set_ui_language`
 - `save_gateway_credentials`
 - `get_gateway_credentials`
 - `delete_gateway_credentials`
+- `list_gateway_credential_presets`
+- `add_gateway_credential_preset`
+- `remove_gateway_credential_preset`
+- `update_gateway_credential_preset`
 - `scan_airwaves`
+- `wifi_connect`
+- `fingerprint_http_headers`
 - `get_identity`
 - `start_traffic_sniffing`
 - `stop_traffic_sniffing`
@@ -41,8 +51,12 @@ Comandos actualmente registrados:
 - `stop_jamming`
 - `start_attack_lab`
 - `cancel_attack_lab`
-- `start_attack_lab`
-- `cancel_attack_lab`
+- `get_dictionary`
+- `add_to_dictionary`
+- `remove_from_dictionary`
+- `update_in_dictionary`
+- `check_mac_security`
+- `randomize_mac`
 
 Riesgo:
 - Si la UI se compromete, un atacante puede intentar abusar de estos comandos.

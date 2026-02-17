@@ -15,6 +15,7 @@ use crate::application::audit::AuditService;
 use crate::application::credentials::CredentialService;
 use crate::application::gateway_credential_presets::GatewayCredentialPresetService;
 use crate::application::history::HistoryService;
+use crate::application::http_fingerprint::HttpFingerprintService;
 use crate::application::jammer::JammerService;
 use crate::application::opsec::{MacChangerService, OpSecService};
 use crate::application::scan::ScannerService;
@@ -110,6 +111,7 @@ pub fn run() {
             );
             let attack_lab_runner_infra = Arc::new(TokioProcessAttackLabRunner);
             let attack_lab_service = AttackLabService::new(attack_lab_runner_infra);
+            let http_fingerprint_service = HttpFingerprintService::new()?;
 
             // Traffic
             let traffic_service = TrafficService::new(scanner_infra.clone(), traffic_sniffer_infra);
@@ -138,6 +140,7 @@ pub fn run() {
             app.manage(credential_service);
             app.manage(wifi_service);
             app.manage(attack_lab_service);
+            app.manage(http_fingerprint_service);
 
             // Estados runtime: sniffer/jammer.
             app.manage(crate::api::state::TrafficState(Mutex::new(traffic_service)));
@@ -153,46 +156,51 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            // API (comandos) - facade en `src-tauri/src/api/commands.rs`
-            api::commands::scan_network,
-            api::commands::audit_target,
-            api::commands::audit_router,
-            api::commands::fetch_router_devices,
-            api::commands::save_scan,
-            api::commands::get_history,
-            api::commands::save_latest_snapshot,
-            api::commands::load_latest_snapshot,
+            // API (comandos) - facade en `src-tauri/src/api/commands/mod.rs`
+            api::commands::scanner::scan_network,
+            api::commands::scanner::audit_target,
+            
+            api::commands::router_audit::audit_router,
+            api::commands::router_audit::fetch_router_devices,
+            api::commands::history::save_scan,
+            api::commands::history::get_history,
+            api::commands::snapshot::save_latest_snapshot,
+            api::commands::snapshot::load_latest_snapshot,
             // Settings
-            api::commands::get_app_settings,
-            api::commands::save_app_settings,
-            api::commands::set_ui_language,
-            api::commands::save_gateway_credentials,
-            api::commands::get_gateway_credentials,
-            api::commands::delete_gateway_credentials,
-            api::commands::list_gateway_credential_presets,
-            api::commands::add_gateway_credential_preset,
-            api::commands::remove_gateway_credential_preset,
-            api::commands::update_gateway_credential_preset,
+            api::commands::settings::get_app_settings,
+            api::commands::settings::save_app_settings,
+            api::commands::settings::set_ui_language,
+            api::commands::credentials::save_gateway_credentials,
+            api::commands::credentials::get_gateway_credentials,
+            api::commands::credentials::delete_gateway_credentials,
+            api::commands::gateway_credential_presets::list_gateway_credential_presets,
+            api::commands::gateway_credential_presets::add_gateway_credential_preset,
+            api::commands::gateway_credential_presets::remove_gateway_credential_preset,
+            api::commands::gateway_credential_presets::update_gateway_credential_preset,
             // Wifi
-            api::commands::scan_airwaves,
-            api::commands::wifi_connect,
+            api::commands::wifi::scan_airwaves,
+            api::commands::wifi::wifi_connect,
+            // HTTP Fingerprint
+            api::commands::http_fingerprint::fingerprint_http_headers,
             // External audit
-            api::commands::start_attack_lab,
-            api::commands::cancel_attack_lab,
+            api::commands::attack_lab::start_attack_lab,
+            api::commands::attack_lab::cancel_attack_lab,
+
+            api::commands::scanner::run_iot_scan,
             // System / runtime
-            api::commands::get_identity,
-            api::commands::start_traffic_sniffing,
-            api::commands::stop_traffic_sniffing,
-            api::commands::start_jamming,
-            api::commands::stop_jamming,
+            api::commands::system::get_identity,
+            api::commands::system::start_traffic_sniffing,
+            api::commands::system::stop_traffic_sniffing,
+            api::commands::system::start_jamming,
+            api::commands::system::stop_jamming,
             // WORDLIST COMMANDS
-            api::commands::get_dictionary,
-            api::commands::add_to_dictionary,
-            api::commands::remove_from_dictionary,
-            api::commands::update_in_dictionary,
+            api::commands::wordlist::get_dictionary,
+            api::commands::wordlist::add_to_dictionary,
+            api::commands::wordlist::remove_from_dictionary,
+            api::commands::wordlist::update_in_dictionary,
             // OPSEC
-            api::commands::check_mac_security,
-            api::commands::randomize_mac,
+            api::commands::opsec::check_mac_security,
+            api::commands::opsec::randomize_mac,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

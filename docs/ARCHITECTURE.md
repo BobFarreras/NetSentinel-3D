@@ -118,10 +118,11 @@ Ubicacion: `src-tauri/src/infrastructure`
 
 Ubicacion: `src-tauri/src/api` y `src-tauri/src/lib.rs`
 
-- `api/commands.rs`: fachada de comandos (`#[tauri::command]`) y delegacion a
+- `api/commands/mod.rs`: fachada de comandos (modulo `api::commands`) y delegacion a
   `api/commands/*` por dominio.
-  - Importante: los atributos `#[tauri::command]` viven en `api/commands.rs`
-    para que `generate_handler!` encuentre los `__cmd__*`.
+  - Fuente actual:
+    - `src-tauri/src/api/commands/mod.rs`: facade (submodulos por feature bajo `api::commands::<feature>::...`).
+    - `src-tauri/src/api/commands/*.rs`: comandos reales con `#[tauri::command]` por feature.
 - `api/state.rs`: estados gestionados por Tauri (`TrafficState`, `JammerState`).
   - `TrafficState`: `Mutex<TrafficService>` (control directo start/stop).
   - `JammerState`: `Arc<JammerService>` (sin mutex global en ruta de comando).
@@ -323,7 +324,7 @@ Seleccion de nodo (onDeviceSelect)
 
 ## 5. Mapa de Comandos Actuales
 
-Fuente de verdad: `src-tauri/src/lib.rs` + `src-tauri/src/api/commands.rs`
+Fuente de verdad: `src-tauri/src/lib.rs` + `src-tauri/src/api/commands/mod.rs`
 
 Comandos de red y auditoria:
 
