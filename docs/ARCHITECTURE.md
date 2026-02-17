@@ -330,8 +330,10 @@ Comandos de red y auditoria:
 
 - `scan_network`
 - `audit_target`
+- `run_iot_scan`
 - `audit_router`
 - `fetch_router_devices`
+- `fingerprint_http_headers`
 
 Comandos de historial:
 
@@ -342,6 +344,13 @@ Comandos de historial:
 - `save_gateway_credentials`
 - `get_gateway_credentials`
 - `delete_gateway_credentials`
+- `list_gateway_credential_presets`
+- `add_gateway_credential_preset`
+- `remove_gateway_credential_preset`
+- `update_gateway_credential_preset`
+- `get_app_settings`
+- `save_app_settings`
+- `set_ui_language`
 
 Comandos de sistema/tiempo real:
 
@@ -354,11 +363,21 @@ Comandos de sistema/tiempo real:
 Comandos de WiFi (Radar View):
 
 - `scan_airwaves` (ver `docs/RADAR_VIEW.md`).
+- `wifi_connect`
 
 Comandos de auditoria externa (wrapper CLI):
 
 - `start_attack_lab`
 - `cancel_attack_lab`
+
+Comandos auxiliares (wordlist/opsec):
+
+- `get_dictionary`
+- `add_to_dictionary`
+- `remove_from_dictionary`
+- `update_in_dictionary`
+- `check_mac_security`
+- `randomize_mac`
 
 Regla de mantenimiento:
 

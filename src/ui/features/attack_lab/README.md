@@ -7,6 +7,7 @@ Feature de auditoria ofensiva controlada y simulaciones didacticas. Presenta un 
 
 - Modo `external`: invoca backend Rust via Tauri y consume eventos streaming.
 - Modo `simulated`: ejecuta una simulacion trazable en frontend (pasos `SimStep`).
+- Modo `native`: ejecucion local (sin procesos externos) con logica TypeScript y/o invocacion de comandos Tauri especificos (ej. HTTP fingerprint en Rust).
 
 ## Interconexiones
 
@@ -19,6 +20,9 @@ IPC:
 - Comandos Tauri: `start_attack_lab`, `cancel_attack_lab`
 - Eventos Tauri: `attack-lab-log`, `attack-lab-exit`
 - DTOs: `src/shared/dtos/NetworkDTOs.ts` (tipos `AttackLabLogEvent`, `AttackLabExitEvent`, `DeviceDTO`)
+
+Comandos extra usados por escenarios `native` (no pasan por `start_attack_lab`):
+- `fingerprint_http_headers` (HTTP headers via backend Rust)
 
 Dependencias internas:
 - Catalogo de escenarios (agregador): `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
