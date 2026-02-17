@@ -49,6 +49,13 @@ pub async fn audit_target(
     scanner::audit_target(service, ip).await
 }
 
+#[tauri::command]
+pub async fn run_iot_scan(
+    service: tauri::State<'_, crate::application::scan::ScannerService>,
+    target_ip: String,
+) -> Result<crate::api::dtos::SecurityReportDTO, String> {
+    scanner::run_iot_scan(service, target_ip).await
+}
 // --- ROUTER AUDIT ---
 
 #[tauri::command]

@@ -61,10 +61,14 @@ export const useRouterHacker = (
   setActiveTarget: (ip: string | null) => void
 ) => {
   const [routerRisk, setRouterRisk] = useState<RouterAuditResult | null>(null);
+  const [isGatewayAuditRunning, setIsGatewayAuditRunning] = useState(false);
+  const [activeGatewayAuditIp, setActiveGatewayAuditIp] = useState<string | null>(null);
 
   const checkRouterSecurity = async (gatewayIp: string) => {
     setActiveTarget(gatewayIp);
     addLog(gatewayIp, `> INITIATING GATEWAY AUDIT: ${gatewayIp}...`);
+    setIsGatewayAuditRunning(true);
+    setActiveGatewayAuditIp(gatewayIp);
 
     try {
       // Fast-path: si ya tenemos credenciales guardadas, intentamos sincronizar sin repetir audit_router.
@@ -142,8 +146,11 @@ export const useRouterHacker = (
       }
     } catch (error) {
       addLog(gatewayIp, `> ERROR: FATAL EXECUTION ERROR.`);
+    } finally {
+      setIsGatewayAuditRunning(false);
+      setActiveGatewayAuditIp(null);
     }
   };
 
-  return { routerRisk, setRouterRisk, checkRouterSecurity };
+  return { routerRisk, setRouterRisk, checkRouterSecurity, isGatewayAuditRunning, activeGatewayAuditIp };
 };

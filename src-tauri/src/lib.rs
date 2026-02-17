@@ -156,6 +156,7 @@ pub fn run() {
             // API (comandos) - facade en `src-tauri/src/api/commands.rs`
             api::commands::scan_network,
             api::commands::audit_target,
+            
             api::commands::audit_router,
             api::commands::fetch_router_devices,
             api::commands::save_scan,
@@ -179,6 +180,8 @@ pub fn run() {
             // External audit
             api::commands::start_attack_lab,
             api::commands::cancel_attack_lab,
+
+            api::commands::run_iot_scan,
             // System / runtime
             api::commands::get_identity,
             api::commands::start_traffic_sniffing,

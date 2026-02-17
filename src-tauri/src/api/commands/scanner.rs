@@ -36,3 +36,16 @@ pub async fn audit_target(
         risk_level: risk,
     })
 }
+
+pub async fn run_iot_scan(
+    service: State<'_, ScannerService>,
+    target_ip: String,
+) -> Result<SecurityReportDTO, String> {
+    validate_usable_host_ipv4(&target_ip, "target_ip")?;
+    let (ports, risk) = service.run_iot_profile(target_ip.clone()).await;
+    Ok(SecurityReportDTO {
+        target_ip,
+        open_ports: ports,
+        risk_level: risk,
+    })
+}

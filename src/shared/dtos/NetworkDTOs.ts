@@ -56,9 +56,11 @@ export interface DeviceDTO {
   deviceTypeConfidence?: number; // 0..100
 
 
-  // 👇 NOUS CAMPS (OPCIONALS) PER A AUDITORIA AVANÇADA
+  
   openPorts?: OpenPortDTO[]; 
-  os?: string;               
+  os?: string;     
+  
+  security?: string;
 }
 
 export type DeviceType = 'PHONE' | 'PC' | 'TV' | 'SPEAKER' | 'ROUTER' | 'IOT' | 'UNKNOWN';
