@@ -28,6 +28,18 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.71] - Frontend: bridge Tauri mantenible (split E2E mock) (2026-02-17)
+### IPC (frontend)
+- Refactor: `src/shared/tauri/bridge.ts` deja de ser un GOD module.
+  - `bridge.ts` queda como fachada minima (`invokeCommand`, `listenEvent`).
+  - E2E mock se mueve a `src/shared/tauri/e2e_mock/*` (bus de eventos + router de comandos).
+- Nuevo `README` de la capa IPC:
+  - `src/shared/tauri/README.md`
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.
