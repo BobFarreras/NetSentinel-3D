@@ -104,6 +104,16 @@ Nota:
 ### Validaciones
 - `npm test -- --run` (ok)
 
+## [v0.8.77] - Router sync: parser DOM mas robusto (MAC placeholder + nombre) (2026-02-17)
+### Backend (router_audit)
+- `parse_router_text` ahora:
+  - ignora MAC placeholder `00:00:00:00:00:00` si existe otra MAC real en el bloque,
+  - evita usar lineas `IP: ...` como nombre del dispositivo.
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+- Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

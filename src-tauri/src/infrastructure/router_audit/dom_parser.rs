@@ -35,6 +35,11 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
     let re_ip_line = Regex::new(r"(?i)\bip\b[^0-9]*((?:\d{1,3}\.){3}\d{1,3})").unwrap();
     let re_mac = Regex::new(r"(?i)([0-9a-f]{2}[:-]){5}[0-9a-f]{2}").unwrap();
 
+    let is_zero_mac = |mac: &str| -> bool {
+        mac.trim().eq_ignore_ascii_case("00:00:00:00:00:00")
+            || mac.trim().eq_ignore_ascii_case("00-00-00-00-00-00")
+    };
+
     let mut i = 0;
     while i < lines.len() {
         let line = lines[i].trim();
@@ -64,6 +69,7 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
                     || candidate.starts_with("Signal")
                     || candidate.contains("GHz")
                     || candidate.contains("connected devices")
+                    || candidate.to_lowercase().starts_with("ip:")
                     || re_ip.is_match(candidate)
                 {
                     k += 1;
@@ -90,7 +96,13 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
             let end = (i + 12).min(lines.len().saturating_sub(1));
             for txt in lines.iter().take(end + 1).skip(i) {
                 if let Some(m) = re_mac.find(txt) {
-                    mac_found = Some(m.as_str().replace('-', ":").to_uppercase());
+                    let normalized = m.as_str().replace('-', ":").to_uppercase();
+                    // Algunos firmwares pintan "00:00:00:00:00:00" como placeholder. Si existe una MAC real
+                    // en el bloque, no debemos quedarnos con el placeholder.
+                    if is_zero_mac(&normalized) {
+                        continue;
+                    }
+                    mac_found = Some(normalized);
                     break;
                 }
             }
@@ -100,7 +112,11 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
                 let start = i.saturating_sub(3);
                 for txt in lines.iter().take(i).skip(start) {
                     if let Some(m) = re_mac.find(txt) {
-                        mac_found = Some(m.as_str().replace('-', ":").to_uppercase());
+                        let normalized = m.as_str().replace('-', ":").to_uppercase();
+                        if is_zero_mac(&normalized) {
+                            continue;
+                        }
+                        mac_found = Some(normalized);
                         break;
                     }
                 }
@@ -200,5 +216,19 @@ Signal rate: 390 Mbps
         assert_eq!(d[1].ip, "192.168.1.10");
         assert_eq!(d[1].name.as_deref(), Some("Laptop-Office"));
         assert_eq!(d[1].mac, None);
+    }
+
+    #[test]
+    fn parse_router_text_ignora_mac_placeholder_ceros_si_hay_otra_mac_en_bloque() {
+        let sample = r#"
+MiRouter
+IP: 192.168.1.40
+MAC: 00:00:00:00:00:00
+MAC address: 48-E7-DA-F5-7D-0F
+"#;
+        let d = parse_router_text(sample);
+        assert_eq!(d.len(), 1);
+        assert_eq!(d[0].ip, "192.168.1.40");
+        assert_eq!(d[0].mac.as_deref(), Some("48:E7:DA:F5:7D:0F"));
     }
 }
