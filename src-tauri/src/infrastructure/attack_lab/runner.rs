@@ -12,6 +12,9 @@ use tokio::sync::oneshot;
 use crate::domain::entities::{AttackLabExitEvent, AttackLabLogEvent, AttackLabRequest};
 use crate::domain::ports::{AttackLabEventSinkPort, AttackLabRunnerPort};
 
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub struct TokioProcessAttackLabRunner;
 
 #[async_trait]
@@ -37,6 +40,20 @@ impl AttackLabRunnerPort for TokioProcessAttackLabRunner {
 
             for (k, v) in request.env.iter() {
                 cmd.env(k, v);
+            }
+
+            // Windows: los binarios CLI (powershell/netsh/nmap/etc.) pueden abrir una ventana de consola
+            // al ejecutarse desde una app GUI. Por defecto lo ocultamos para no spamear ventanas.
+            // Para debug local: `NETSENTINEL_ATTACKLAB_VISIBLE=1`.
+            #[cfg(windows)]
+            {
+                let visible = std::env::var("NETSENTINEL_ATTACKLAB_VISIBLE")
+                    .ok()
+                    .map(|v| v.trim() == "1")
+                    .unwrap_or(false);
+                if !visible {
+                    cmd.creation_flags(CREATE_NO_WINDOW);
+                }
             }
 
             cmd.stdout(std::process::Stdio::piped());

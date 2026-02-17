@@ -2,6 +2,12 @@
 
 use std::process::Command;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 async fn run_netsh(args: &[&str]) -> Result<String, String> {
     let args_vec: Vec<String> = args.iter().map(|s| s.to_string()).collect();
 
@@ -16,6 +22,8 @@ async fn run_netsh(args: &[&str]) -> Result<String, String> {
             let joined = args_vec.join(" ");
             Command::new("cmd")
                 .args(["/C", &format!("chcp 65001>nul & netsh {joined}")])
+                // Evita que Windows abra una consola visible al ejecutar `cmd/netsh` desde una app GUI.
+                .creation_flags(CREATE_NO_WINDOW)
                 .output()
         }
 

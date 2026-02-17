@@ -2,6 +2,12 @@
 
 // Heuristicas para detectar bloqueos de WiFi en Windows (ubicacion/elevacion).
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn is_windows_wifi_blocked(text: &str) -> bool {
     let lower = text.to_lowercase();
     let mentions_location = lower.contains("permiso de ubic")
@@ -27,6 +33,7 @@ pub fn diagnose_windows_wlan_block() -> Option<String> {
 
     let output = std::process::Command::new("netsh")
         .args(["wlan", "show", "networks", "mode=bssid"])
+        .creation_flags(CREATE_NO_WINDOW)
         .output()
         .ok()?;
 

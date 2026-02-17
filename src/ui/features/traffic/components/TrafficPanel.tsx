@@ -46,8 +46,8 @@ export const TrafficPanel: React.FC<TrafficPanelProps> = ({
         const name = (d.name ?? "").trim();
         const vendor = d.vendor?.trim();
         const label =
-          (hostname && hostname.toLowerCase() !== "unknown" && hostname) ||
           (name && name) ||
+          (hostname && hostname.toLowerCase() !== "unknown" && hostname) ||
           (vendor && vendor.toLowerCase() !== "unknown" && vendor) ||
           d.ip;
         return { ip: d.ip, label: `${label} (${d.ip})` };

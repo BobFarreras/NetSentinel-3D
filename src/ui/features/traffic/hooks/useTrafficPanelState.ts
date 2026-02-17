@@ -79,10 +79,10 @@ export const useTrafficPanelState = ({
   const resolveName = (ip: string) => {
     const device = devices.find((d) => d.ip === ip);
     if (device) {
-      const hostname = device.hostname?.trim();
-      if (hostname && hostname.toLowerCase() !== "unknown") return `💻 ${hostname}`;
       const name = (device.name ?? "").trim();
       if (name) return `📟 ${name}`;
+      const hostname = device.hostname?.trim();
+      if (hostname && hostname.toLowerCase() !== "unknown") return `💻 ${hostname}`;
       const vendor = (device.vendor ?? "").trim();
       if (vendor && vendor.toLowerCase() !== "unknown") return `📱 ${vendor}`;
       return ip;
@@ -157,10 +157,10 @@ export const useTrafficPanelState = ({
     if (!ip) return "🎯 TARGET";
     const d = devices.find((x) => x.ip === ip) ?? null;
     if (!d) return `🎯 ${ip}`;
-    const hostname = d.hostname?.trim();
-    if (hostname && hostname.toLowerCase() !== "unknown") return `🎯 ${hostname}`;
     const name = (d.name ?? "").trim();
     if (name) return `🎯 ${name}`;
+    const hostname = d.hostname?.trim();
+    if (hostname && hostname.toLowerCase() !== "unknown") return `🎯 ${hostname}`;
     const vendor = (d.vendor ?? "").trim();
     if (vendor && vendor.toLowerCase() !== "unknown") return `🎯 ${vendor}`;
     return `🎯 ${ip}`;

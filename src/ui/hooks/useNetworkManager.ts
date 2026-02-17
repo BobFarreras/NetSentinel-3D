@@ -141,6 +141,19 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
     return () => window.removeEventListener("netsentinel://aliases-updated", handler as EventListener);
   }, []);
 
+  // Multi-ventana: cuando el alias se edita en otra ventana, localStorage dispara `storage` en esta.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.storageArea !== localStorage) return;
+      if (!e.key) return;
+      if (e.key === "netsentinel.deviceAliases:v1" || e.key === "netsentinel.deviceAliases:v2") {
+        setAliasTick((t) => t + 1);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const devicesWithAliases = useMemo(() => deviceAliasRegistry.applyAliases(devices), [devices, aliasTick]);
 
   // 7. Estado local de UI (seleccion)

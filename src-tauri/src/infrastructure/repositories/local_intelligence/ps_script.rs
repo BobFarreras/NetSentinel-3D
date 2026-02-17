@@ -2,6 +2,12 @@
 
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn probe_identity(ip: &str) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
@@ -71,6 +77,8 @@ Write-Output ("DNS=" + $dns)
 fn run_powershell(script: &str) -> Result<String, String> {
     let output = Command::new("powershell")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
+        // En app GUI, PowerShell puede abrir una ventana visible si no lo ocultamos.
+        .creation_flags(CREATE_NO_WINDOW)
         .output()
         .map_err(|e| format!("No se pudo ejecutar PowerShell: {e}"))?;
 
