@@ -333,6 +333,8 @@ export const I18N_KEYS = [
   "deviceDetail.macLabel",
   "deviceDetail.nameLabel",
   "deviceDetail.vendorLabel",
+  "deviceDetail.tabs.console",
+  "deviceDetail.tabs.ports",
   "deviceDetail.actions.scanning",
   "deviceDetail.actions.deepAudit",
   "deviceDetail.actions.labAudit",

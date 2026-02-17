@@ -84,8 +84,9 @@ function App() {
               selectDeviceRef.current(payload.targetDevice);
             }
         }
-        if (payload.scenarioId) {
-            setAttackLabScenarioId(payload.scenarioId);
+        // `null` significa "limpiar escenario"; `undefined` significa "no tocarlo".
+        if (payload.scenarioId !== undefined) {
+            setAttackLabScenarioId(payload.scenarioId ?? null);
         }
         if (payload.autoRun) {
             setAttackLabAutoRunToken((t) => t + 1);
@@ -144,14 +145,13 @@ function App() {
 
   const openLabAuditForDevice = useCallback(
     (device: DeviceDTO) => {
-      const scenarioId = device.isGateway ? "router_recon_ping_tracert" : "device_http_headers";
       setAttackLabTarget(device);
-      setAttackLabScenarioId(scenarioId);
+      // Importante: desde DeviceDetail no auto-seleccionamos escenario (el operador decide).
+      setAttackLabScenarioId(null);
       setShowAttackLab(true);
-      setAttackLabAutoRunToken((t) => t + 1);
 
       if (docking.detachedPanels.attack_lab && docking.detachedModes.attack_lab === "tauri") {
-        void attackLabSync.emitAttackLabContext({ targetDevice: device, scenarioId, autoRun: true });
+        void attackLabSync.emitAttackLabContext({ targetDevice: device, scenarioId: null, autoRun: false });
       }
     },
     [attackLabSync, docking.detachedModes.attack_lab, docking.detachedPanels.attack_lab]

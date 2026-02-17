@@ -40,6 +40,41 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.72] - UX: DeviceDetail ports visibles + Attack Lab sin auto-escenario + delete creds robusto (2026-02-17)
+### UI (Device Detail)
+- Mejora: selector `CONSOLE/PORTS` para integrar `ConsoleDisplay` y `PortResults` sin que los puertos queden ocultos.
+- Fix: `PortResults` ya no depende de logs de consola para renderizar; muestra estados claros:
+  - sin audit aun, audit en progreso, stealth mode y lista real de puertos.
+
+### UI (Attack Lab)
+- Cambio de UX: el boton `LAB AUDIT` desde Device Detail abre Attack Lab con target, pero **sin auto-seleccionar escenario**.
+
+### UI (Settings / Password Vault)
+- Fix: borrado de credenciales del gateway evita condiciones de carrera (un auto-load antiguo ya no repinta credenciales tras `delete`).
+
+### Docs
+- `docs/SECURITY.md`: documentada ubicacion real de credenciales (Keyring del SO) y presets (archivo `gateway_cred_presets.json`).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.73] - Fix: Gateway presets sin bloat (multi-target) + borrado real persistente (2026-02-17)
+### Backend (gateway credential presets)
+- Cambio de arquitectura: `GatewayCredentialPresetService.list(gateway_ip)` ahora devuelve:
+  - presets especificos del gateway, y
+  - presets globales (`gatewayIp="*"`) en la misma lista.
+- Fix: eliminados los marcadores legacy `__seeded__` y la siembra de clones por gateway (causaba que `gateway_cred_presets.json` creciera sin control).
+- Auto-clean: al listar/modificar, se compacta storage eliminando duplicados redundantes (si un preset especifico duplica uno global, se elimina del disco).
+
+### Impacto UX
+- El operador puede borrar presets y ver el JSON limpiarse de verdad (incluyendo los clones historicos por IP).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

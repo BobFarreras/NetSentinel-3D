@@ -1,7 +1,7 @@
 // src/ui/features/attack_lab/panel/wordlist/hooks/useGatewayCredsVault.ts
 // Hook de estado para el tab Gateway Creds del Password Vault: carga candidatos, keyring creds y coordina presets por gateway.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GatewayCredentialsDTO, HostIdentity } from "../../../../../../shared/dtos/NetworkDTOs";
 import { networkAdapter } from "../../../../../../adapters/networkAdapter";
 import { getRouterCandidates } from "../../../../../utils/routerCandidates";
@@ -68,6 +68,9 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
   const gatewayIp = useMemo(() => gatewayIpInput.trim(), [gatewayIpInput]);
   const canManageCreds = useMemo(() => Boolean(gatewayIp && IPV4_RE.test(gatewayIp)), [gatewayIp]);
 
+  // Evita condiciones de carrera: un auto-load antiguo no debe pisar el estado despues de guardar/borrar.
+  const credsLoadSeq = useRef(0);
+
   const [loadingCreds, setLoadingCreds] = useState(false);
   const [creds, setCreds] = useState<GatewayCredentialsDTO | null>(null);
   const [user, setUserInternal] = useState("");
@@ -84,6 +87,7 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
   const presets = useGatewayCredentialPresets(isOpen, canManageCreds ? gatewayIp : null);
 
   const resetOnOpen = useCallback(() => {
+    credsLoadSeq.current += 1;
     setStatus({ kind: "idle" });
     setShowPass(false);
     const ip = identity?.gatewayIp ?? "";
@@ -158,6 +162,7 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
       return;
     }
     let cancelled = false;
+    const seq = (credsLoadSeq.current += 1);
     setLoadingCreds(true);
     void (async () => {
       try {
@@ -167,6 +172,7 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
           new Promise<GatewayCredentialsDTO | null>((_, rej) => setTimeout(() => rej(new Error("timeout")), 2500)),
         ]);
         if (cancelled) return;
+        if (seq !== credsLoadSeq.current) return;
         setCreds(current);
         if (!gatewayFormDirty) {
           setUserInternal(current?.user ?? "");
@@ -174,13 +180,14 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
         }
       } catch (e) {
         if (cancelled) return;
+        if (seq !== credsLoadSeq.current) return;
         if (e instanceof Error && e.message === "timeout") {
           setStatus({ kind: "load_timeout" });
         } else {
           setStatus({ kind: "load_error", error: String(e) });
         }
       } finally {
-        if (!cancelled) setLoadingCreds(false);
+        if (!cancelled && seq === credsLoadSeq.current) setLoadingCreds(false);
       }
     })();
     return () => {
@@ -220,6 +227,8 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
     if (!canManageCreds) return;
     setStatus({ kind: "idle" });
     try {
+      // Invalida cualquier auto-load in-flight para que no pise el resultado de esta operacion.
+      credsLoadSeq.current += 1;
       await networkAdapter.saveGatewayCredentials(gatewayIp, user.trim(), pass);
       const current = await networkAdapter.getGatewayCredentials(gatewayIp);
       setCreds(current);
@@ -241,6 +250,8 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
     if (!canManageCreds) return;
     setStatus({ kind: "idle" });
     try {
+      // Invalida cualquier auto-load in-flight para que no repinte credenciales despues del borrado.
+      credsLoadSeq.current += 1;
       await networkAdapter.deleteGatewayCredentials(gatewayIp);
       const after = await networkAdapter.getGatewayCredentials(gatewayIp);
       setCreds(after);
@@ -261,7 +272,8 @@ export const useGatewayCredsVault = (isOpen: boolean, identity: HostIdentity | n
     if (selectedGateways.size === 0) return;
     setStatus({ kind: "idle" });
     try {
-      const ips = Array.from(selectedGateways);
+      credsLoadSeq.current += 1;
+      const ips = Array.from(selectedGateways).map((ip) => ip.trim());
       await Promise.all(ips.map((ip) => networkAdapter.deleteGatewayCredentials(ip)));
       if (activeGateway && selectedGateways.has(activeGateway)) {
         setCreds(null);

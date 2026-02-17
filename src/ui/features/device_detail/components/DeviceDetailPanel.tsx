@@ -40,6 +40,10 @@ export const DeviceDetailPanel: React.FC<Props> = ({
 
   // ESTADO LOCAL DE LOGS
   const [localLogs, setLocalLogs] = useState<string[]>([]);
+
+  // Selector de detalle: consola vs puertos (evita que PortResults "desaparezca" debajo de la consola).
+  const [detailsView, setDetailsView] = useState<"console" | "ports">("console");
+  const [hasAuditRun, setHasAuditRun] = useState(false);
   
   // ESTADO DEL PROMPT INTERACTIVO
   const [activePrompt, setActivePrompt] = useState<ConsolePrompt | null>(null);
@@ -122,6 +126,12 @@ export const DeviceDetailPanel: React.FC<Props> = ({
   };
 
   const displayLogs = [...consoleLogs, ...localLogs];
+  
+  const handleDeepAudit = () => {
+    setHasAuditRun(true);
+    setDetailsView("ports");
+    onAudit();
+  };
 
   return (
     <>
@@ -167,7 +177,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
 
         {/* CONTROLS */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-          <button onClick={onAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? t("deviceDetail.actions.scanning") : t("deviceDetail.actions.deepAudit")}</button>
+          <button onClick={handleDeepAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? t("deviceDetail.actions.scanning") : t("deviceDetail.actions.deepAudit")}</button>
           <button onClick={state.handleOpenLabAudit} className="retro-button" style={{ flex: 1, borderColor: '#00e5ff', color: '#00e5ff', background: 'transparent' }}>🧪 {t("deviceDetail.actions.labAudit")}</button>
           <button onClick={onToggleJam} disabled={isJamPending} className="retro-button" style={{ flex: 1, borderColor: isJammed || isJamPending ? '#ff0000' : '#550000', color: isJammed || isJamPending ? '#fff' : '#ff5555', background: isJammed || isJamPending ? '#ff0000' : 'transparent', animation: isJammed ? 'blink 0.5s infinite' : 'none' }}>
             {isJamPending
@@ -187,16 +197,45 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           <button onClick={state.handleRouterAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ {t("deviceDetail.actions.auditGateway")}</button>
         )}
 
-        {/* CONSOLA INTERACTIVA */}
-        <div style={{ margin: '15px 0' }}>
-            <ConsoleDisplay 
-                logs={displayLogs} 
-                isBusy={isGhostRunning} 
-                prompt={activePrompt} // <--- Pasamos el prompt activo
-            />
+        {/* Selector de vista: consola vs puertos */}
+        <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
+          <button
+            type="button"
+            onClick={() => setDetailsView("console")}
+            className="retro-button"
+            style={{
+              flex: 1,
+              padding: 10,
+              borderColor: detailsView === "console" ? HUD_COLORS.accentGreen : "#003300",
+              color: detailsView === "console" ? HUD_COLORS.accentGreen : "#66aa66",
+              background: detailsView === "console" ? "rgba(0, 255, 0, 0.06)" : "transparent",
+            }}
+          >
+            {t("deviceDetail.tabs.console")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDetailsView("ports")}
+            className="retro-button"
+            style={{
+              flex: 1,
+              padding: 10,
+              borderColor: detailsView === "ports" ? HUD_COLORS.accentGreen : "#003300",
+              color: detailsView === "ports" ? HUD_COLORS.accentGreen : "#66aa66",
+              background: detailsView === "ports" ? "rgba(0, 255, 0, 0.06)" : "transparent",
+            }}
+          >
+            {t("deviceDetail.tabs.ports")}
+          </button>
         </div>
 
-        <PortResults results={auditResults} isAuditing={auditing} hasLogs={consoleLogs.length > 0} />
+        {detailsView === "console" ? (
+          <div style={{ margin: "15px 0" }}>
+            <ConsoleDisplay logs={displayLogs} isBusy={isGhostRunning} prompt={activePrompt} />
+          </div>
+        ) : (
+          <PortResults results={auditResults} isAuditing={auditing} hasAuditRun={hasAuditRun} />
+        )}
       </div>
     </>
   );

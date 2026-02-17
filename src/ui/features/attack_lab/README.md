@@ -15,6 +15,21 @@ Entradas:
 - Panel montado desde layout: `src/ui/components/layout/MainDockedLayout.tsx` y `src/ui/components/layout/DetachedPanelView.tsx`.
 - Contexto de objetivo: normalmente se abre desde Radar/Device Detail pasando `targetDevice` y `defaultScenarioId`.
 
+### Targets: Red vs Radar (explicacion simple)
+Attack Lab opera con un `DeviceDTO` como target, pero el origen del target puede ser distinto:
+
+- Red (Scene/Scanner): targets con IP real (IPv4). Se obtienen de `scan_network` y del snapshot.
+- Radar (WiFi Spectrum): targets "virtuales" construidos desde una red WiFi detectada (SSID/BSSID). No tienen IPv4 real.
+
+Regla de UX:
+- El selector de TARGET cambia segun `category` del escenario:
+  - `WIFI` => lista redes WiFi del Radar.
+  - `ROUTER` => candidatos a gateway/router.
+  - `DEVICE/IOT/EDU` => dispositivos de red (IPv4).
+
+Nota importante:
+- Abrir Attack Lab desde Device Detail no debe auto-seleccionar ningun escenario: el operador elige manualmente.
+
 IPC:
 - Adapter: `src/adapters/attackLabAdapter.ts`
 - Comandos Tauri: `start_attack_lab`, `cancel_attack_lab`
