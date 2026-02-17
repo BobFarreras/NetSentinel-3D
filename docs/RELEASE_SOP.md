@@ -78,6 +78,9 @@ Estado actual del workflow:
 - Plataforma: **Windows** (`windows-latest`).
 - `releaseDraft: true` (no se publica automaticamente, requiere revision humana).
 
+Limitacion actual:
+- Este repo solo fabrica binarios **Windows**. macOS/Linux no estan soportados ni validados todavia, asi que no se genera release multi-OS.
+
 ## 5. Verificacion post-despliegue (antes de publicar)
 1. En GitHub: ir a `Releases` y abrir el Release en borrador.
 2. Descargar el instalador/asset generado.
@@ -96,4 +99,3 @@ Estado actual del workflow:
   - Abre el log del job en GitHub Actions y copia el error en `docs/CHANGELOG.md`.
 - **Solo hay build de Windows**:
   - Es el estado actual. Para multi-OS, hay que extender el `matrix` del workflow.
-
