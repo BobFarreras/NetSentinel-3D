@@ -144,7 +144,12 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
   const devicesWithAliases = useMemo(() => deviceAliasRegistry.applyAliases(devices), [devices, aliasTick]);
 
   // 7. Estado local de UI (seleccion)
-  const [selectedDevice, setSelectedDevice] = useState<DeviceDTO | null>(null);
+  // Guardamos solo la IP para que el objeto seleccionado se refresque cuando cambian aliases/inventario.
+  const [selectedIp, setSelectedIp] = useState<string | null>(null);
+  const selectedDevice = useMemo(() => {
+    if (!selectedIp) return null;
+    return devicesWithAliases.find((d) => (d.ip ?? "").trim() === selectedIp) ?? null;
+  }, [devicesWithAliases, selectedIp]);
 
   // Ghost Mode: el backend devuelve el MAC generado pero la identidad real puede tardar en refrescarse.
   // Actualizamos el inventario del host de forma optimista para evitar duplicados visuales y mostrar el MAC nuevo.
@@ -180,8 +185,9 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
 
   // Helpers UI
   const selectDevice = (d: DeviceDTO | null) => {
-    setSelectedDevice(d);
-    if (d?.ip !== selectedDevice?.ip) clearResults();
+    const nextIp = d?.ip ?? null;
+    setSelectedIp(nextIp);
+    if (nextIp !== selectedIp) clearResults();
   };
 
   const dismissRisk = () => setRouterRisk(null);

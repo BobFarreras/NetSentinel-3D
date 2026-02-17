@@ -163,19 +163,34 @@ export const deviceAliasRegistry = {
     const store = deviceAliasRegistry.load();
 
     return devices.map((d) => {
-      const hasLabel = Boolean((d.name ?? "").trim() || (d.hostname ?? "").trim());
-      if (hasLabel) return d;
-
       const ip = (d.ip ?? "").trim();
       const mac = (d.mac ?? "").trim();
       const macKey = mac && isValidMac(mac) ? `mac:${normMac(mac)}` : null;
       const ipKey = ip ? `ip:${ip}` : null;
 
-      const rec = (macKey && store[macKey]) || (ipKey && store[ipKey]) || null;
-      if (!rec?.label) return d;
+      const macRec = macKey ? store[macKey] : null;
+      const ipRec = ipKey ? store[ipKey] : null;
+
+      // Regla: el alias MANUAL siempre tiene prioridad, aunque el dispositivo ya venga con nombre (porque
+      // el operador lo esta corrigiendo). Preferimos MAC->IP.
+      const manual = (macRec?.kind === "manual" ? macRec : null) || (ipRec?.kind === "manual" ? ipRec : null);
+      if (manual?.label) {
+        return { ...d, name: manual.label };
+      }
+
+      const hasLabel = Boolean((d.name ?? "").trim() || (d.hostname ?? "").trim());
+      if (hasLabel) return d;
+
+      // Regla anti-colision:
+      // - Si ya tenemos MAC valida, NO aplicamos aliases aprendidos por IP (pueden venir de un scan previo
+      //   cuando no se resolvio MAC, y pegarse al dispositivo equivocado).
+      // - Con MAC valida: solo aplicamos alias aprendido por MAC.
+      // - Sin MAC valida: permitimos alias aprendido por IP.
+      const learned = (macRec?.kind === "learned" ? macRec : null) || ((!macKey && ipRec?.kind === "learned") ? ipRec : null);
+      if (!learned?.label) return d;
 
       // Rellenamos `name` (no tocamos IP/MAC). Si el backend no detecta hostname, lo recuperamos.
-      return { ...d, name: rec.label };
+      return { ...d, name: learned.label };
     });
   },
 };
