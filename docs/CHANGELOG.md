@@ -73,6 +73,16 @@ Nota:
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
 
+## [v0.8.68] - UI: Password Vault GatewayCredsTab desacoplado por secciones (2026-02-17)
+### UI (attack_lab)
+- `GatewayCredsTab` se divide en subcomponentes puros para reducir responsabilidades sin cambiar UX:
+  - `src/ui/features/attack_lab/panel/wordlist/gateway_creds/*`
+- Objetivo: eliminar god-components en el Password Vault manteniendo estilos/aria-labels.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
 ### UI (attack_lab)
 - Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:
