@@ -18,8 +18,8 @@ export const useAttackLabDetachedSync = () => {
     if (bootstrap?.targetDevice) {
       setDetachedAttackLabTarget(bootstrap.targetDevice);
     }
-    if (bootstrap?.scenarioId) {
-      setDetachedAttackLabScenarioId(bootstrap.scenarioId);
+    if (bootstrap && bootstrap.scenarioId !== undefined) {
+      setDetachedAttackLabScenarioId(bootstrap.scenarioId ?? null);
     }
 
     let unlisten: (() => void) | null = null;
@@ -31,8 +31,8 @@ export const useAttackLabDetachedSync = () => {
         if (payload.targetDevice) {
             setDetachedAttackLabTarget(payload.targetDevice);
         }
-        if (payload.scenarioId) {
-            setDetachedAttackLabScenarioId(payload.scenarioId);
+        if (payload.scenarioId !== undefined) {
+            setDetachedAttackLabScenarioId(payload.scenarioId ?? null);
         }
         
         // Passem el token només si es demana autoRun
@@ -48,7 +48,7 @@ export const useAttackLabDetachedSync = () => {
 
   const emitAttackLabContext = (payload: {
     targetDevice: DeviceDTO | null;
-    scenarioId?: string;
+    scenarioId?: string | null;
     autoRun?: boolean;
   }) => windowingAdapter.emitAttackLabContext(payload);
 

@@ -1,5 +1,5 @@
 // src/ui/features/attack_lab/panel/wordlist/gateway_creds/GatewayCredsForm.tsx
-// Formulario de credenciales: user/pass + show/hide + acciones save/delete.
+// Formulario de credenciales: user/pass + show/hide + guardar en keyring.
 
 import React from "react";
 import { btnStyle, inputStyle } from "../wordlistManagerModalStyles";
@@ -53,17 +53,7 @@ export const GatewayCredsForm: React.FC<{
         >
           {t("settings.passwords.gateway.save")}
         </button>
-        <button
-          type="button"
-          style={btnStyle("danger")}
-          onClick={actions.deleteCreds}
-          disabled={!state.canManageCreds || state.loadingCreds}
-          aria-label="VAULT_GATEWAY_DELETE"
-        >
-          {t("settings.passwords.gateway.delete")}
-        </button>
       </div>
     </>
   );
 };
-

@@ -4,12 +4,14 @@
 import React from "react";
 import { btnStyle } from "../wordlistManagerModalStyles";
 import type { GatewayCredsVaultActions } from "../hooks/useGatewayCredsVault";
+import type { GatewayCredentialPresetDTO } from "../../../../../../shared/dtos/NetworkDTOs";
 
 export const GatewayPresetsSection: React.FC<{
   actions: GatewayCredsVaultActions;
   t: (k: any) => string;
-  onDeleteSelectedPresets: () => void | Promise<void>;
-}> = ({ actions, t, onDeleteSelectedPresets }) => {
+  onDeletePreset: (preset: GatewayCredentialPresetDTO) => void;
+  onDeleteSelectedPresets: () => void;
+}> = ({ actions, t, onDeletePreset, onDeleteSelectedPresets }) => {
   return (
     <>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
@@ -73,6 +75,34 @@ export const GatewayPresetsSection: React.FC<{
                   <span style={{ fontWeight: 900, color: selected ? "#000" : "#00ff88" }}>{p.user}</span>
                   <span style={{ opacity: 0.9 }}>/</span>
                   <span style={{ fontWeight: 700 }}>{p.pass}</span>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeletePreset(p);
+                    }}
+                    title="Borrar preset"
+                    aria-label={`GATEWAY_PRESET_DELETE_${p.gatewayIp}_${p.user}`}
+                    style={{
+                      marginLeft: 6,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 2,
+                      border: selected ? "1px solid rgba(0,0,0,0.45)" : "1px solid rgba(255,85,85,0.40)",
+                      background: selected ? "rgba(0,0,0,0.15)" : "rgba(255,85,85,0.06)",
+                      color: selected ? "rgba(0,0,0,0.75)" : "#ff6677",
+                      fontWeight: 900,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      lineHeight: 1,
+                      flex: "0 0 auto",
+                    }}
+                  >
+                    X
+                  </button>
                 </div>
               );
             })}

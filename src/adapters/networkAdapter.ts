@@ -32,8 +32,14 @@ export const networkAdapter = {
   },
 
   getGatewayCredentials: async (gatewayIp: string): Promise<GatewayCredentialsDTO | null> => {
-    const creds = await invokeCommand<GatewayCredentialsDTO | null>('get_gateway_credentials', { gatewayIp });
-    return creds ?? null;
+    // Best-effort multi-OS: en entornos sin keyring (Linux headless, etc.) el comando puede fallar.
+    // El flujo operativo debe seguir (fallback a presets / brute-force), asi que devolvemos null.
+    try {
+      const creds = await invokeCommand<GatewayCredentialsDTO | null>('get_gateway_credentials', { gatewayIp });
+      return creds ?? null;
+    } catch {
+      return null;
+    }
   },
 
   deleteGatewayCredentials: async (gatewayIp: string): Promise<void> => {

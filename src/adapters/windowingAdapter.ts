@@ -26,7 +26,8 @@ type DockPanelPayload = {
 
 type AttackLabContextPayload = {
   targetDevice: DeviceDTO | null;
-  scenarioId?: string;
+  // `null` significa "limpiar escenario" (no hay seleccion activa).
+  scenarioId?: string | null;
   autoRun?: boolean;
 };
 
@@ -281,7 +282,8 @@ export const windowingAdapter = {
       const record = {
         ts: Date.now(),
         targetDevice: payload.targetDevice,
-        scenarioId: payload.scenarioId ?? undefined,
+        // Importante: preservamos `null` para representar "sin escenario".
+        scenarioId: payload.scenarioId,
       };
       localStorage.setItem(ATTACK_LAB_BOOTSTRAP_KEY, JSON.stringify(record));
     } catch {
@@ -289,7 +291,7 @@ export const windowingAdapter = {
     }
   },
 
-  consumeAttackLabDetachedBootstrap: (): { targetDevice: DeviceDTO | null; scenarioId?: string } | null => {
+  consumeAttackLabDetachedBootstrap: (): { targetDevice: DeviceDTO | null; scenarioId?: string | null } | null => {
     try {
       const raw = localStorage.getItem(ATTACK_LAB_BOOTSTRAP_KEY);
       if (!raw) return null;
@@ -297,7 +299,7 @@ export const windowingAdapter = {
       // Consumimos siempre: si es stale, lo descartamos igualmente para evitar sorpresas.
       localStorage.removeItem(ATTACK_LAB_BOOTSTRAP_KEY);
 
-      const parsed = JSON.parse(raw) as { ts?: number; targetDevice: DeviceDTO | null; scenarioId?: string };
+      const parsed = JSON.parse(raw) as { ts?: number; targetDevice: DeviceDTO | null; scenarioId?: string | null };
       const ts = typeof parsed.ts === "number" ? parsed.ts : 0;
 
       // TTL corto: este bootstrap solo tiene sentido justo despues de abrir la ventana.

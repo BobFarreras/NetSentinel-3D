@@ -7,20 +7,20 @@ import { useRouterHacker } from '../network/useRouterHacker';
 import { auditAdapter } from '../../../../adapters/auditAdapter';
 import { DeviceDTO } from '../../../../shared/dtos/NetworkDTOs';
 
+const { invokeCommandMock } = vi.hoisted(() => ({
+  invokeCommandMock: vi.fn(),
+}));
+
+vi.mock('../../../../shared/tauri/bridge', () => ({
+  invokeCommand: invokeCommandMock,
+}));
+
 // 1. Mock del adaptador.
 vi.mock('../../../../adapters/auditAdapter', () => ({
   auditAdapter: {
     auditRouter: vi.fn(),
     fetchRouterDevices: vi.fn()
   }
-}));
-
-vi.mock('../../../../adapters/networkAdapter', () => ({
-  networkAdapter: {
-    saveGatewayCredentials: vi.fn(async () => undefined),
-    saveLatestSnapshot: vi.fn(async () => undefined),
-    getGatewayCredentials: vi.fn(async () => null),
-  },
 }));
 
 // Datos mock.
@@ -36,6 +36,11 @@ describe('💀 Integration: useRouterHacker Hook', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Por defecto no hay credenciales guardadas y las escrituras no fallan.
+    invokeCommandMock.mockImplementation(async (cmd: string) => {
+      if (cmd === 'get_gateway_credentials') return null;
+      return undefined;
+    });
   });
 
   it('🛡️ Debe gestionar un router seguro (no vulnerable)', async () => {
@@ -60,6 +65,32 @@ describe('💀 Integration: useRouterHacker Hook', () => {
     // No debe intentar fetch de dispositivos ni actualizar la lista.
     expect(auditAdapter.fetchRouterDevices).not.toHaveBeenCalled();
     expect(mockSetDevices).not.toHaveBeenCalled();
+  });
+
+  it('🐧 Debe hacer fallback a brute-force si el keyring no esta disponible (multi-OS)', async () => {
+    // ARRANGE: simula error de keyring (Linux headless / no Secret Service).
+    invokeCommandMock.mockImplementation(async (cmd: string) => {
+      if (cmd === 'get_gateway_credentials') {
+        throw new Error('KEYRING_UNAVAILABLE: No keyring backend available');
+      }
+      return undefined;
+    });
+
+    (auditAdapter.auditRouter as any).mockResolvedValue({
+      vulnerable: false,
+      message: 'Login Failed'
+    });
+
+    const { result } = renderHook(() => 
+      useRouterHacker(mockAddLog, mockSetDevices, mockSetActiveTarget)
+    );
+
+    // ACT/ASSERT: no debe lanzar y debe seguir con audit_router (brute-force/presets).
+    await act(async () => {
+      await result.current.checkRouterSecurity('192.168.1.1');
+    });
+
+    expect(auditAdapter.auditRouter).toHaveBeenCalledWith('192.168.1.1');
   });
 
   it('🔓 Debe fusionar datos cuando el router es vulnerable', async () => {

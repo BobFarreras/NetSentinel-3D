@@ -1,6 +1,7 @@
 // src-tauri/src/application/gateway_credential_presets/service.rs
 // Servicio de presets gateway: gestiona lista local de credenciales (user/pass) para sugerencia y batch-ops en UI.
 
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use crate::domain::entities::GatewayCredentialPreset;
@@ -24,103 +25,42 @@ impl GatewayCredentialPresetService {
 
     pub fn list(&self, gateway_ip: &str) -> Result<Vec<GatewayCredentialPreset>, String> {
         let _guard = self.io_guard.lock().unwrap();
-        let mut all = self.repo.load().unwrap_or_default();
-        // Normaliza: limpia entradas vacias para evitar ruido en UI.
-        all.retain(|p| {
-            !p.gateway_ip.trim().is_empty()
-                && !p.user.trim().is_empty()
-                && !p.pass.trim().is_empty()
-        });
+        let raw = self.repo.load().unwrap_or_default();
+        let (normalized, changed) = Self::normalize_and_prune(raw);
 
-        // Listado global: solo "*" (usado internamente como defaults base).
-        if gateway_ip == "*" {
-            let mut globals: Vec<GatewayCredentialPreset> = all
-                .into_iter()
-                .filter(|p| {
-                    p.gateway_ip == "*" && !(p.user == SEED_MARK_USER && p.pass == SEED_MARK_PASS)
-                })
-                .collect();
-            globals.sort_by(|a, b| a.user.cmp(&b.user).then(a.pass.cmp(&b.pass)));
-            globals.dedup();
-            return Ok(globals);
+        // Auto-limpieza: eliminamos marcadores legacy y duplicados redundantes en disco.
+        if changed {
+            self.repo.save(&normalized)?;
         }
 
-        // Listado por gateway: SOLO presets de ese gateway.
-        // Si el gateway no tiene presets aun, sembramos desde los defaults globales ("*") copiandolos a ese gateway.
-        //
-        // Importante: si el operador ha borrado TODOS los presets del gateway, no debemos re-sembrar
-        // en cada `list()`. Para eso usamos un marcador invisible persistido por gateway.
-        let marker_present = all.iter().any(|p| {
-            p.gateway_ip == gateway_ip && p.user == SEED_MARK_USER && p.pass == SEED_MARK_PASS
-        });
-        let mut specific: Vec<GatewayCredentialPreset> = all
-            .iter()
-            .filter(|p| {
-                p.gateway_ip == gateway_ip
-                    && !(p.user == SEED_MARK_USER && p.pass == SEED_MARK_PASS)
-            })
-            .cloned()
-            .collect();
-
-        // Migracion silenciosa: si ya existen presets del gateway pero falta el marcador, lo añadimos.
-        // Sin esto, si el operador borra TODOS los presets, el sistema podria re-sembrar desde globals.
-        if !specific.is_empty() && !marker_present {
-            all.push(GatewayCredentialPreset {
-                gateway_ip: gateway_ip.to_string(),
-                user: SEED_MARK_USER.to_string(),
-                pass: SEED_MARK_PASS.to_string(),
-            });
-            all.sort_by(|a, b| {
-                a.gateway_ip
-                    .cmp(&b.gateway_ip)
-                    .then(a.user.cmp(&b.user))
-                    .then(a.pass.cmp(&b.pass))
-            });
-            all.dedup();
-            self.repo.save(&all)?;
-        }
-
-        if specific.is_empty() && !marker_present {
-            let globals: Vec<GatewayCredentialPreset> = all
+        let mut view: Vec<GatewayCredentialPreset> = if gateway_ip == "*" {
+            normalized
                 .iter()
-                .filter(|p| {
-                    p.gateway_ip == "*" && !(p.user == SEED_MARK_USER && p.pass == SEED_MARK_PASS)
-                })
+                .filter(|p| p.gateway_ip == "*")
                 .cloned()
-                .collect();
+                .collect()
+        } else {
+            // Para un gateway concreto, devolvemos:
+            // - presets globales ("*") como base reutilizable
+            // - presets especificos (gateway_ip) como overrides/añadidos
+            normalized
+                .iter()
+                .filter(|p| p.gateway_ip == "*" || p.gateway_ip == gateway_ip)
+                .cloned()
+                .collect()
+        };
 
-            if !globals.is_empty() {
-                let clones: Vec<GatewayCredentialPreset> = globals
-                    .into_iter()
-                    .map(|p| GatewayCredentialPreset {
-                        gateway_ip: gateway_ip.to_string(),
-                        user: p.user,
-                        pass: p.pass,
-                    })
-                    .collect();
-
-                // Persistimos el sembrado para que el operador pueda borrar/editar sin afectar al global.
-                all.push(GatewayCredentialPreset {
-                    gateway_ip: gateway_ip.to_string(),
-                    user: SEED_MARK_USER.to_string(),
-                    pass: SEED_MARK_PASS.to_string(),
-                });
-                all.extend(clones.clone());
-                all.sort_by(|a, b| {
-                    a.gateway_ip
-                        .cmp(&b.gateway_ip)
-                        .then(a.user.cmp(&b.user))
-                        .then(a.pass.cmp(&b.pass))
-                });
-                all.dedup();
-                self.repo.save(&all)?;
-                specific = clones;
-            }
-        }
-
-        specific.sort_by(|a, b| a.user.cmp(&b.user).then(a.pass.cmp(&b.pass)));
-        specific.dedup();
-        Ok(specific)
+        // Orden: primero los especificos, luego los globales; dentro, por user/pass.
+        view.sort_by(|a, b| {
+            let a_is_global = a.gateway_ip == "*";
+            let b_is_global = b.gateway_ip == "*";
+            a_is_global
+                .cmp(&b_is_global)
+                .then(a.user.cmp(&b.user))
+                .then(a.pass.cmp(&b.pass))
+        });
+        view.dedup();
+        Ok(view)
     }
 
     pub fn add(
@@ -136,38 +76,13 @@ impl GatewayCredentialPresetService {
             return Err("user/pass vacios".to_string());
         }
         let mut list = self.repo.load().unwrap_or_default();
-
-        // Asegura marcador por gateway (para no re-sembrar si el operador borra todo).
-        if gateway_ip != "*"
-            && !list.iter().any(|x| {
-                x.gateway_ip == gateway_ip && x.user == SEED_MARK_USER && x.pass == SEED_MARK_PASS
-            })
-        {
-            list.push(GatewayCredentialPreset {
-                gateway_ip: gateway_ip.to_string(),
-                user: SEED_MARK_USER.to_string(),
-                pass: SEED_MARK_PASS.to_string(),
-            });
-        }
         list.push(GatewayCredentialPreset {
             gateway_ip: gateway_ip.to_string(),
             user: u,
             pass: p,
         });
-        // Normaliza
-        list.retain(|x| {
-            !x.gateway_ip.trim().is_empty()
-                && !x.user.trim().is_empty()
-                && !x.pass.trim().is_empty()
-        });
-        list.sort_by(|a, b| {
-            a.gateway_ip
-                .cmp(&b.gateway_ip)
-                .then(a.user.cmp(&b.user))
-                .then(a.pass.cmp(&b.pass))
-        });
-        list.dedup();
-        self.repo.save(&list)?;
+        let (normalized, _changed) = Self::normalize_and_prune(list);
+        self.repo.save(&normalized)?;
         // Retornamos la vista filtrada para ese gateway (incluye global).
         drop(_guard);
         self.list(gateway_ip)
@@ -182,9 +97,13 @@ impl GatewayCredentialPresetService {
         let _guard = self.io_guard.lock().unwrap();
         let u = user.trim();
         let p = pass.trim();
-        let mut list = self.repo.load().unwrap_or_default();
-        list.retain(|x| !(x.gateway_ip == gateway_ip && x.user == u && x.pass == p));
-        self.repo.save(&list)?;
+        let list = self.repo.load().unwrap_or_default();
+        let filtered: Vec<GatewayCredentialPreset> = list
+            .into_iter()
+            .filter(|x| !(x.gateway_ip == gateway_ip && x.user == u && x.pass == p))
+            .collect();
+        let (normalized, _changed) = Self::normalize_and_prune(filtered);
+        self.repo.save(&normalized)?;
         drop(_guard);
         self.list(gateway_ip)
     }
@@ -216,16 +135,68 @@ impl GatewayCredentialPresetService {
                 pass: np,
             };
         }
-        list.sort_by(|a, b| {
+        let (normalized, _changed) = Self::normalize_and_prune(list);
+        self.repo.save(&normalized)?;
+        drop(_guard);
+        self.list(gateway_ip)
+    }
+
+    // Normaliza y compacta presets para evitar bloat en disco.
+    //
+    // Reglas:
+    // - Trim de campos, eliminar vacios.
+    // - Eliminar marcadores legacy `__seeded__` (ya no se usan).
+    // - Eliminar duplicados exactos.
+    // - Eliminar entradas especificas redundantes que duplican un preset global ("*") con el mismo user/pass.
+    fn normalize_and_prune(
+        presets: Vec<GatewayCredentialPreset>,
+    ) -> (Vec<GatewayCredentialPreset>, bool) {
+        let before_len = presets.len();
+
+        let mut normalized: Vec<GatewayCredentialPreset> = presets
+            .into_iter()
+            .filter_map(|p| {
+                let gateway_ip = p.gateway_ip.trim().to_string();
+                let user = p.user.trim().to_string();
+                let pass = p.pass.trim().to_string();
+                if gateway_ip.is_empty() || user.is_empty() || pass.is_empty() {
+                    return None;
+                }
+                // Marker legacy: se elimina del almacenamiento.
+                if user == SEED_MARK_USER && pass == SEED_MARK_PASS {
+                    return None;
+                }
+                Some(GatewayCredentialPreset {
+                    gateway_ip,
+                    user,
+                    pass,
+                })
+            })
+            .collect();
+
+        // Dedupe exacto por (gateway_ip,user,pass)
+        normalized.sort_by(|a, b| {
             a.gateway_ip
                 .cmp(&b.gateway_ip)
                 .then(a.user.cmp(&b.user))
                 .then(a.pass.cmp(&b.pass))
         });
-        list.dedup();
-        self.repo.save(&list)?;
-        drop(_guard);
-        self.list(gateway_ip)
+        normalized.dedup();
+
+        // Prune: si un preset especifico es identico a un global ("*"), es redundante.
+        let global_set: HashSet<(String, String)> = normalized
+            .iter()
+            .filter(|p| p.gateway_ip == "*")
+            .map(|p| (p.user.clone(), p.pass.clone()))
+            .collect();
+
+        let pruned: Vec<GatewayCredentialPreset> = normalized
+            .into_iter()
+            .filter(|p| p.gateway_ip == "*" || !global_set.contains(&(p.user.clone(), p.pass.clone())))
+            .collect();
+
+        let changed = pruned.len() != before_len;
+        (pruned, changed)
     }
 }
 
@@ -256,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn list_no_mezcla_global_con_especificos() {
+    fn list_incluye_global_y_especificos_en_gateway() {
         let repo = Arc::new(MockRepo::new(vec![
             GatewayCredentialPreset {
                 gateway_ip: "*".into(),
@@ -276,38 +247,14 @@ mod tests {
         ]));
         let svc = GatewayCredentialPresetService::new(repo);
         let list = svc.list("192.168.1.1").unwrap();
-        assert_eq!(list.len(), 1);
-        assert_eq!(list[0].gateway_ip, "192.168.1.1");
-    }
-
-    #[test]
-    fn list_siembra_desde_global_si_no_hay_especificos() {
-        let repo = Arc::new(MockRepo::new(vec![
-            GatewayCredentialPreset {
-                gateway_ip: "*".into(),
-                user: "admin".into(),
-                pass: "1234".into(),
-            },
-            GatewayCredentialPreset {
-                gateway_ip: "*".into(),
-                user: "user".into(),
-                pass: "user".into(),
-            },
-        ]));
-        let svc = GatewayCredentialPresetService::new(repo.clone());
-        let list = svc.list("192.168.50.1").unwrap();
+        // Debe incluir 1 global (dedup) + 1 especifico.
         assert_eq!(list.len(), 2);
-        assert!(list.iter().all(|p| p.gateway_ip == "192.168.50.1"));
-        // Debe persistir clones en repo.
-        assert!(repo
-            .load()
-            .unwrap()
-            .iter()
-            .any(|p| p.gateway_ip == "192.168.50.1" && p.user == "admin"));
+        assert!(list.iter().any(|p| p.gateway_ip == "*" && p.user == "admin"));
+        assert!(list.iter().any(|p| p.gateway_ip == "192.168.1.1" && p.user == "a"));
     }
 
     #[test]
-    fn list_no_re_siembra_si_operador_borra_todo() {
+    fn list_global_solo_devuelve_globales() {
         let repo = Arc::new(MockRepo::new(vec![
             GatewayCredentialPreset {
                 gateway_ip: "*".into(),
@@ -319,21 +266,44 @@ mod tests {
                 user: "user".into(),
                 pass: "user".into(),
             },
+            GatewayCredentialPreset {
+                gateway_ip: "192.168.50.1".into(),
+                user: "x".into(),
+                pass: "y".into(),
+            },
+        ]));
+        let svc = GatewayCredentialPresetService::new(repo);
+        let list = svc.list("*").unwrap();
+        assert_eq!(list.len(), 2);
+        assert!(list.iter().all(|p| p.gateway_ip == "*"));
+    }
+
+    #[test]
+    fn list_prunea_especificos_redundantes_igual_a_global() {
+        let repo = Arc::new(MockRepo::new(vec![
+            GatewayCredentialPreset {
+                gateway_ip: "*".into(),
+                user: "admin".into(),
+                pass: "1234".into(),
+            },
+            GatewayCredentialPreset {
+                // Copia redundante del global para el mismo gateway: debe eliminarse del storage.
+                gateway_ip: "192.168.99.1".into(),
+                user: "admin".into(),
+                pass: "1234".into(),
+            },
         ]));
         let svc = GatewayCredentialPresetService::new(repo.clone());
 
-        // Primera vez: siembra y devuelve 2.
-        let first = svc.list("192.168.99.1").unwrap();
-        assert_eq!(first.len(), 2);
+        let list = svc.list("192.168.99.1").unwrap();
+        // Vista: solo un preset global (el especifico era redundante).
+        assert_eq!(list.len(), 1);
+        assert!(list.iter().all(|p| p.gateway_ip == "*"));
 
-        // Simula que el operador borra todos los presets del gateway (pero NO el marcador).
-        let mut stored = repo.load().unwrap();
-        stored.retain(|p| !(p.gateway_ip == "192.168.99.1" && p.user != SEED_MARK_USER));
-        repo.save(&stored).unwrap();
-
-        // Segunda vez: no debe re-sembrar, debe devolver lista vacia.
-        let second = svc.list("192.168.99.1").unwrap();
-        assert_eq!(second.len(), 0);
+        // Y en disco, el redundante debe haber sido eliminado por auto-clean.
+        let stored = repo.load().unwrap();
+        assert_eq!(stored.len(), 1);
+        assert!(stored.iter().all(|p| p.gateway_ip == "*"));
     }
 
     #[test]
@@ -343,13 +313,8 @@ mod tests {
         let list = svc.add("192.168.1.1", "u".into(), "p".into()).unwrap();
         assert_eq!(
             list,
-            vec![GatewayCredentialPreset {
-                gateway_ip: "192.168.1.1".into(),
-                user: "u".into(),
-                pass: "p".into()
-            }]
+            vec![GatewayCredentialPreset { gateway_ip: "192.168.1.1".into(), user: "u".into(), pass: "p".into() }]
         );
-        // Internamente persiste tambien el marcador invisible por gateway.
-        assert_eq!(repo.load().unwrap().len(), 2);
+        assert_eq!(repo.load().unwrap().len(), 1);
     }
 }

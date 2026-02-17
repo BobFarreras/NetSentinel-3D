@@ -86,12 +86,17 @@ export const mergeRouterInventory = (previous: DeviceDTO[], routerDevices: Devic
       ? existing.vendor
       : (!isBadVendor(routerDevice.vendor) ? routerDevice.vendor : existing.vendor);
 
+    const norm = (mac?: string) => (mac ?? "").trim().toUpperCase().replace("-", ":");
+    const oldMac = norm(existing.mac);
+    const newMac = norm(routerDevice.mac);
+    const sameValidMac = isValidMac(oldMac) && isValidMac(newMac) && oldMac === newMac;
+
     map.set(routerDevice.ip, {
       ...existing,
       mac: nextMac,
       vendor: nextVendor,
-      hostname: routerDevice.hostname ?? existing.hostname,
-      name: routerDevice.name ?? existing.name,
+      hostname: routerDevice.hostname ?? (sameValidMac ? existing.hostname : undefined),
+      name: routerDevice.name ?? (sameValidMac ? existing.name : undefined),
       signal_strength: routerDevice.signal_strength,
       signal_rate: routerDevice.signal_rate,
       wifi_band: routerDevice.wifi_band,
@@ -100,4 +105,3 @@ export const mergeRouterInventory = (previous: DeviceDTO[], routerDevices: Devic
 
   return Array.from(map.values());
 };
-

@@ -176,6 +176,27 @@ Implementacion:
 - Backend: `KeyringCredentialStore` (crate `keyring`) guarda un blob JSON en el keyring del sistema (Windows Credential Manager).
 - Comandos: `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials`.
 
+Multi-OS (comportamiento esperado):
+- Windows/macOS: el keyring suele estar disponible (Credential Manager / Keychain).
+- Linux: depende del entorno de escritorio (Secret Service, GNOME Keyring, KWallet). En entornos headless/minimal puede no estar disponible.
+
+Regla de robustez:
+- Si el keyring no esta disponible o falla, el producto debe seguir funcionando:
+  - `get_gateway_credentials` se trata como `null` (sin fast-path),
+  - el operador puede seguir con presets (`gateway_cred_presets.json`) y brute-force controlado.
+
+Ubicacion real (donde se guardan):
+- Credenciales del gateway (USER/PASS reales): se guardan en el **keyring del SO** (no hay "ruta" de fichero).
+  - Windows: aparecen en **Credential Manager** como credenciales genericas asociadas al servicio `netsentinel`.
+  - Clave usada por el backend: `service="netsentinel"` y `account="gateway:<GATEWAY_IP>"` (ej: `gateway:192.168.1.1`).
+- Presets de credenciales (lista de usuarios/contraseñas sugeridas por gateway):
+  - Se guardan en el directorio de configuracion de la app (Tauri `app_config_dir`) como JSON:
+    - Archivo: `gateway_cred_presets.json`
+    - Windows (tipico con `identifier: com.netsentinel.desktop`): `C:\\Users\\<user>\\AppData\\Roaming\\com.netsentinel.desktop\\gateway_cred_presets.json`
+
+Nota:
+- El "password de audit gateway" es el mismo concepto: `Gateway Credentials` (keyring) usado para autenticar auditorias/sync contra el router.
+
 ## 5. Cadena de Suministro (Dependencias)
 Controles recomendados en CI o rutina semanal:
 - `npm audit` para dependencias frontend.

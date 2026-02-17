@@ -44,6 +44,13 @@ describe('DeviceDetailPanel', () => {
     expect(screen.getByText('192.168.1.50')).toBeInTheDocument();
     expect(screen.getByText('AA:BB:CC:DD:EE:FF')).toBeInTheDocument();
     expect(screen.getByText('ACME')).toBeInTheDocument();
+
+    // Por defecto se muestra consola; los puertos se ven via selector.
+    expect(screen.getByTestId('console-display')).toBeInTheDocument();
+    expect(screen.queryByTestId('port-results')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /PORTS/ }));
+    expect(screen.getByTestId('port-results')).toBeInTheDocument();
   });
 
   it('debe ejecutar acciones de audit, jam y router audit', () => {

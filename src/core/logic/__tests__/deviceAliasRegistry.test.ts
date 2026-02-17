@@ -35,5 +35,23 @@ describe("deviceAliasRegistry", () => {
     const next = deviceAliasRegistry.applyAliases([{ ip: "192.168.1.2", mac: "aa:bb", name: "B" } as any]);
     expect(next[0]?.name).toBe("B");
   });
-});
 
+  it("debe permitir alias manual aunque el dispositivo ya tenga name (manual override)", () => {
+    deviceAliasRegistry.setManualAliasForDevice({ ip: "192.168.1.3", mac: "AA:BB:CC:DD:EE:FF" } as any, "Alexa", 10);
+    const next = deviceAliasRegistry.applyAliases([
+      { ip: "192.168.1.3", mac: "AA:BB:CC:DD:EE:FF", name: "WRONG" } as any,
+    ]);
+    expect(next[0]?.name).toBe("Alexa");
+  });
+
+  it("no debe aplicar alias aprendido por IP cuando ya hay MAC valida (evita colisiones)", () => {
+    // Primero se aprende por IP (simula scan sin MAC valida).
+    deviceAliasRegistry.rememberFromDevices([{ ip: "192.168.1.140", mac: "00:00:00:00:00:00", name: "M2004J19C" } as any], 1);
+
+    // Luego el device ya tiene MAC valida: no deberia heredar el nombre aprendido por IP.
+    const next = deviceAliasRegistry.applyAliases([
+      { ip: "192.168.1.140", mac: "50:D4:5C:68:28:5E" } as any,
+    ]);
+    expect(next[0]?.name).toBeUndefined();
+  });
+});

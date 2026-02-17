@@ -9,6 +9,7 @@ import { useDeviceDetailPanelState } from "../hooks/useDeviceDetailPanelState";
 import { ConsoleDisplay, ConsolePrompt } from "./details/ConsoleDisplay";
 import { PortResults } from "./details/PortResults";
 import { useI18n } from "../../../i18n";
+import { deviceAliasRegistry } from "../../../../core/logic/deviceAliasRegistry";
 
 interface Props {
   device: DeviceDTO;
@@ -40,6 +41,14 @@ export const DeviceDetailPanel: React.FC<Props> = ({
 
   // ESTADO LOCAL DE LOGS
   const [localLogs, setLocalLogs] = useState<string[]>([]);
+
+  // Alias manual (nombre amigable) para el operador.
+  const [isEditingAlias, setIsEditingAlias] = useState(false);
+  const [aliasDraft, setAliasDraft] = useState<string>(() => (device.name ?? device.hostname ?? "").trim());
+
+  // Selector de detalle: consola vs puertos (evita que PortResults "desaparezca" debajo de la consola).
+  const [detailsView, setDetailsView] = useState<"console" | "ports">("console");
+  const [hasAuditRun, setHasAuditRun] = useState(false);
   
   // ESTADO DEL PROMPT INTERACTIVO
   const [activePrompt, setActivePrompt] = useState<ConsolePrompt | null>(null);
@@ -122,6 +131,30 @@ export const DeviceDetailPanel: React.FC<Props> = ({
   };
 
   const displayLogs = [...consoleLogs, ...localLogs];
+  
+  const handleDeepAudit = () => {
+    setHasAuditRun(true);
+    setDetailsView("ports");
+    onAudit();
+  };
+
+  const openAliasEditor = () => {
+    setAliasDraft((device.name ?? device.hostname ?? "").trim());
+    setIsEditingAlias(true);
+  };
+
+  const saveAlias = () => {
+    deviceAliasRegistry.setManualAliasForDevice(device, aliasDraft);
+    window.dispatchEvent(new Event("netsentinel://aliases-updated"));
+    setIsEditingAlias(false);
+  };
+
+  const clearAlias = () => {
+    deviceAliasRegistry.clearManualAliasForDevice(device);
+    window.dispatchEvent(new Event("netsentinel://aliases-updated"));
+    setIsEditingAlias(false);
+    setAliasDraft("");
+  };
 
   return (
     <>
@@ -157,7 +190,75 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.nameLabel")}</span>
-            <span style={{ color: '#fff', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={state.resolvedName}>{state.resolvedName}</span>
+            {isEditingAlias ? (
+              <span style={{ display: "flex", gap: 6, alignItems: "center", maxWidth: 360 }}>
+                <input
+                  value={aliasDraft}
+                  onChange={(e) => setAliasDraft(e.target.value)}
+                  placeholder={t("deviceDetail.alias.placeholder")}
+                  style={{
+                    width: 190,
+                    background: "rgba(0,0,0,0.7)",
+                    border: `1px solid ${HUD_COLORS.accentGreen}`,
+                    color: "#fff",
+                    padding: "6px 8px",
+                    fontFamily: HUD_TYPO.mono,
+                    fontSize: 12,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={saveAlias}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1 }}
+                  disabled={!aliasDraft.trim()}
+                >
+                  {t("deviceDetail.alias.save")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingAlias(false)}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1, borderColor: "#444", color: "#aaa" }}
+                >
+                  {t("deviceDetail.alias.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAlias}
+                  className="retro-button"
+                  style={{ width: 80, padding: "6px 8px", borderWidth: 1, letterSpacing: 1, borderColor: "#aa0000", color: "#ff5555" }}
+                >
+                  {t("deviceDetail.alias.clear")}
+                </button>
+              </span>
+            ) : (
+              <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span
+                  style={{ color: '#fff', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  title={state.resolvedName}
+                >
+                  {state.resolvedName}
+                </span>
+                <button
+                  type="button"
+                  onClick={openAliasEditor}
+                  className="retro-button"
+                  style={{
+                    width: 84,
+                    padding: "6px 8px",
+                    borderWidth: 1,
+                    letterSpacing: 1,
+                    borderColor: "#00e5ff",
+                    color: "#00e5ff",
+                    background: "transparent",
+                  }}
+                >
+                  {t("deviceDetail.alias.edit")}
+                </button>
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ opacity: 0.7 }}>{">"} {t("deviceDetail.vendorLabel")}</span>
@@ -167,7 +268,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
 
         {/* CONTROLS */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-          <button onClick={onAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? t("deviceDetail.actions.scanning") : t("deviceDetail.actions.deepAudit")}</button>
+          <button onClick={handleDeepAudit} disabled={auditing} className="retro-button" style={{ flex: 1 }}>{auditing ? t("deviceDetail.actions.scanning") : t("deviceDetail.actions.deepAudit")}</button>
           <button onClick={state.handleOpenLabAudit} className="retro-button" style={{ flex: 1, borderColor: '#00e5ff', color: '#00e5ff', background: 'transparent' }}>🧪 {t("deviceDetail.actions.labAudit")}</button>
           <button onClick={onToggleJam} disabled={isJamPending} className="retro-button" style={{ flex: 1, borderColor: isJammed || isJamPending ? '#ff0000' : '#550000', color: isJammed || isJamPending ? '#fff' : '#ff5555', background: isJammed || isJamPending ? '#ff0000' : 'transparent', animation: isJammed ? 'blink 0.5s infinite' : 'none' }}>
             {isJamPending
@@ -187,16 +288,45 @@ export const DeviceDetailPanel: React.FC<Props> = ({
           <button onClick={state.handleRouterAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ {t("deviceDetail.actions.auditGateway")}</button>
         )}
 
-        {/* CONSOLA INTERACTIVA */}
-        <div style={{ margin: '15px 0' }}>
-            <ConsoleDisplay 
-                logs={displayLogs} 
-                isBusy={isGhostRunning} 
-                prompt={activePrompt} // <--- Pasamos el prompt activo
-            />
+        {/* Selector de vista: consola vs puertos */}
+        <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
+          <button
+            type="button"
+            onClick={() => setDetailsView("console")}
+            className="retro-button"
+            style={{
+              flex: 1,
+              padding: 10,
+              borderColor: detailsView === "console" ? HUD_COLORS.accentGreen : "#003300",
+              color: detailsView === "console" ? HUD_COLORS.accentGreen : "#66aa66",
+              background: detailsView === "console" ? "rgba(0, 255, 0, 0.06)" : "transparent",
+            }}
+          >
+            {t("deviceDetail.tabs.console")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDetailsView("ports")}
+            className="retro-button"
+            style={{
+              flex: 1,
+              padding: 10,
+              borderColor: detailsView === "ports" ? HUD_COLORS.accentGreen : "#003300",
+              color: detailsView === "ports" ? HUD_COLORS.accentGreen : "#66aa66",
+              background: detailsView === "ports" ? "rgba(0, 255, 0, 0.06)" : "transparent",
+            }}
+          >
+            {t("deviceDetail.tabs.ports")}
+          </button>
         </div>
 
-        <PortResults results={auditResults} isAuditing={auditing} hasLogs={consoleLogs.length > 0} />
+        {detailsView === "console" ? (
+          <div style={{ margin: "15px 0" }}>
+            <ConsoleDisplay logs={displayLogs} isBusy={isGhostRunning} prompt={activePrompt} />
+          </div>
+        ) : (
+          <PortResults results={auditResults} isAuditing={auditing} hasAuditRun={hasAuditRun} />
+        )}
       </div>
     </>
   );

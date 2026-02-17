@@ -28,6 +28,126 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.71] - Frontend: bridge Tauri mantenible (split E2E mock) (2026-02-17)
+### IPC (frontend)
+- Refactor: `src/shared/tauri/bridge.ts` deja de ser un GOD module.
+  - `bridge.ts` queda como fachada minima (`invokeCommand`, `listenEvent`).
+  - E2E mock se mueve a `src/shared/tauri/e2e_mock/*` (bus de eventos + router de comandos).
+- Nuevo `README` de la capa IPC:
+  - `src/shared/tauri/README.md`
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.72] - UX: DeviceDetail ports visibles + Attack Lab sin auto-escenario + delete creds robusto (2026-02-17)
+### UI (Device Detail)
+- Mejora: selector `CONSOLE/PORTS` para integrar `ConsoleDisplay` y `PortResults` sin que los puertos queden ocultos.
+- Fix: `PortResults` ya no depende de logs de consola para renderizar; muestra estados claros:
+  - sin audit aun, audit en progreso, stealth mode y lista real de puertos.
+
+### UI (Attack Lab)
+- Cambio de UX: el boton `LAB AUDIT` desde Device Detail abre Attack Lab con target, pero **sin auto-seleccionar escenario**.
+
+### UI (Settings / Password Vault)
+- Fix: borrado de credenciales del gateway evita condiciones de carrera (un auto-load antiguo ya no repinta credenciales tras `delete`).
+
+### Docs
+- `docs/SECURITY.md`: documentada ubicacion real de credenciales (Keyring del SO) y presets (archivo `gateway_cred_presets.json`).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.73] - Fix: Gateway presets sin bloat (multi-target) + borrado real persistente (2026-02-17)
+### Backend (gateway credential presets)
+- Cambio de arquitectura: `GatewayCredentialPresetService.list(gateway_ip)` ahora devuelve:
+  - presets especificos del gateway, y
+  - presets globales (`gatewayIp="*"`) en la misma lista.
+- Fix: eliminados los marcadores legacy `__seeded__` y la siembra de clones por gateway (causaba que `gateway_cred_presets.json` creciera sin control).
+- Auto-clean: al listar/modificar, se compacta storage eliminando duplicados redundantes (si un preset especifico duplica uno global, se elimina del disco).
+
+### Impacto UX
+- El operador puede borrar presets y ver el JSON limpiarse de verdad (incluyendo los clones historicos por IP).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.74] - Multi-OS: keyring best-effort (no bloquea flujos) (2026-02-17)
+### IPC (frontend)
+- `networkAdapter.getGatewayCredentials()` ahora es best-effort: si el keyring del SO no esta disponible (Linux headless, etc.), devuelve `null` para permitir fallback a presets/brute-force sin romper el flujo.
+
+### Docs
+- `docs/SECURITY.md`: aclarado comportamiento multi-OS del keyring y regla de robustez.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.75] - Backend: keyring best-effort (Linux/mac/headless no rompen comandos) (2026-02-17)
+### Backend (credenciales gateway)
+- `save_gateway_credentials`, `get_gateway_credentials`, `delete_gateway_credentials` pasan a ser best-effort si el keyring no esta disponible:
+  - `get_*` => `Ok(None)`
+  - `save/delete` => `Ok(())`
+- Motivo: en Linux depende de Secret Service (GNOME Keyring/KWallet). En entornos sin keyring, el flujo debe continuar (presets + brute-force).
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.76] - Tests: fallback cuando keyring no esta disponible (2026-02-17)
+### Tests (frontend)
+- `useRouterHacker`: test de regresion para asegurar que si falla `get_gateway_credentials` (keyring no disponible), el flujo no crashea y continua con `audit_router` (fallback a presets/brute-force).
+
+### Validaciones
+- `npm test -- --run` (ok)
+
+## [v0.8.77] - Router sync: parser DOM mas robusto (MAC placeholder + nombre) (2026-02-17)
+### Backend (router_audit)
+- `parse_router_text` ahora:
+  - ignora MAC placeholder `00:00:00:00:00:00` si existe otra MAC real en el bloque,
+  - evita usar lineas `IP: ...` como nombre del dispositivo.
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+- Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
+
+## [v0.8.78] - LIVE TRAFFIC: tabla legible (LEN + DATA ancho) + contador JAMMED con logs (2026-02-17)
+### UI (traffic)
+- Mejora: `DATA` ya no queda cortado por defecto (grid template con `minmax`).
+- Añadido: columna `LEN` (bytes) para entender el volumen del paquete.
+- UX: el filtro `JAMMED` muestra `targets | logs` en la etiqueta.
+- Destinos: etiqueta heuristica para algunos IPs publicos comunes (GOOGLE/META/AWS/CLOUDFLARE/etc.) para lectura rapida.
+
+### Validaciones
+- `npm test -- --run` (ok)
+
+## [v0.8.79] - Router sync: no reutilizar nombre entre IPs (2026-02-17)
+### Backend (router_audit)
+- Fix: el parser del DOM del router ya no copia el nombre del dispositivo anterior cuando un bloque no trae nombre (evita duplicados de hostname entre IPs distintas).
+
+### Validaciones
+- `cd src-tauri && cargo check` (ok)
+- Nota: `cargo test` del binario puede requerir elevacion en Windows (error 740). Los tests de libreria pasaron, pero el ejecutable no se pudo lanzar en este entorno.
+
+## [v0.8.80] - Inventario: labels consistentes + alias manual (2026-02-17)
+### Backend (router_audit)
+- Fix: soporta firmwares donde `IP ADDR:` y el valor (`192.168.x.x`) aparecen en lineas separadas, sin reutilizar el nombre del bloque anterior.
+
+### UI (inventario)
+- Router sync: no preserva `name/hostname` si cambia o se resuelve la MAC (evita mezclar labels con otra identidad).
+- DeviceDetail: editor de alias manual (p. ej. renombrar a "Alexa") persistido en localStorage.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
+## [v0.8.81] - Docs: SOP de release automatizado (2026-02-17)
+### Docs
+- Nuevo: `docs/RELEASE_SOP.md` (guia paso a paso para publicar releases via tags `v*` y GitHub Actions).
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

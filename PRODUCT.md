@@ -1,73 +1,72 @@
-<!-- PRODUCT.md -->
-<!-- Descripcion: especificacion funcional del producto (skills, comandos, flujos y reglas de uso). -->
+# PRODUCT.md - NetSentinel 3D: Red Team Operations Platform
 
-# PRODUCT.md - Especificacion Funcional de NetSentinel 3D
+## 1. Visión del Producto
+NetSentinel 3D ya no es una herramienta de auditoría pasiva. Es una **Plataforma de Mando y Control (C2)** y operaciones ofensivas locales, impulsada por un motor híbrido Rust/Tauri/Three.js.
 
-## 1. Vision del producto
-NetSentinel 3D es una aplicacion de auditoria de red defensiva para laboratorio educativo, con backend Rust (Tauri) y frontend React/Three.js.
+Objetivo del producto:
+- **Domini del Campo de Batalla:** Visualización táctica en 3D de la infraestructura de red.
+- **Weaponization Real:** Ejecución de exploits y escaneos nativos (Rust) sin intermediarios (PowerShell).
+- **Kill Chain Integration:** Flujo completo desde Reconocimiento hasta Explotación y Post-Explotación.
+- **Sin Filtros:** Capacidades ofensivas desbloqueadas para entornos de Cyber Range y Red Teaming profesional.
 
-Objetivo de producto:
-- visualizar infraestructura de red en 3D,
-- detectar riesgos de forma comprensible para juniors,
-- mantener operaciones locales, trazables y reproducibles.
+## 2. Público Objetivo
+- **Operadores Red Team & APT Simulators.**
+- **Pentesters** que requieren herramientas personalizadas (Rust Native).
+- **Investigadores de Seguridad** que analizan protocolos IoT/Wi-Fi.
 
-## 2. Publico objetivo
-- Estudiantes de ciberseguridad y redes.
-- Profesores/labs que necesitan una herramienta visual para explicar ataque/defensa.
-- Equipos tecnicos que quieren telemetria local sin cloud.
+## 3. Arsenal y Capacidades (Functionality)
 
-## 3. Funcionalidades actuales
-### 3.1 Descubrimiento de red (ScanSkill)
-- Comando: `scan_network`
-- Resultado: inventario de nodos (`DeviceDTO[]`) con IP, MAC, vendor y metadatos.
-- Soporte de auto-scan al arranque (configurable por `localStorage`).
+### 3.1 Reconocimiento Activo (Target Acquisition)
+- **Comando:** `scan_network`
+- **Capacidad:** Mapeo agresivo de la red (ARP/ICMP). Identificación de objetivos de alto valor (HVT) mediante fingerprints MAC y OUI.
+- **Salida:** `DeviceDTO[]` enriquecido con vectores de ataque potenciales.
 
-### 3.2 Auditoria de objetivo y gateway (AuditSkill)
-- Comandos: `audit_target`, `audit_router`, `fetch_router_devices`
-- Incluye auditoria de puertos y sincronizacion de dispositivos desde gateway cuando hay credenciales.
+### 3.2 Vectores de Ataque & Perfilado (Exploitation Profiles)
+- **Motor:** `Native Rust Engine` (Multithreaded Sockets).
+- **Módulos:**
+  - **IoT Kill Chain:** (`run_iot_scan`) Detección de vulnerabilidades críticas en dispositivos inteligentes (Telnet, MQTT, RTSP, UPnP).
+  - **Router Pwn:** (`audit_router`, `fetch_router_devices`) Extracción de topología y credenciales de gateways.
+  - **HTTP Recon:** (`fingerprint_http_headers`) Fingerprinting de cabeceras (HEAD en 80/443) via backend Rust (cross-platform).
 
-### 3.3 Persistencia y arranque rapido
-- Historial: `save_scan`, `get_history`
-- Snapshot rapido: `save_latest_snapshot`, `load_latest_snapshot`
-- Credenciales de gateway en keyring local:
-  - `save_gateway_credentials`
-  - `get_gateway_credentials`
-  - `delete_gateway_credentials`
+### 3.3 Persistencia de Campaña (Campaign State)
+- **Historial de Operaciones:** `save_scan`, `get_history`. Trazabilidad forense de las acciones realizadas.
+- **Snapshots Tácticos:** `save_latest_snapshot`. Congelación del estado de la red para reanudar ataques.
+- **Credential Harvesting:** Almacenamiento seguro (Keyring) de credenciales comprometidas (`save_gateway_credentials`).
 
-### 3.4 Radar WiFi (Radar View)
-- Comando: `scan_airwaves`
-- Vista de espectro con filtros por riesgo/banda/canal.
-- Riesgo inferido didactico (`HARDENED`, `STANDARD`, `LEGACY`, `OPEN`).
+### 3.4 SIGINT & Guerra Electrónica (Radar View)
+- **Comando:** `scan_airwaves`
+- **Capacidad:** Monitorización de espectro Wi-Fi (Capa 2).
+- **Inteligencia:**
+  - Detección de redes **OPEN** (Vulnerabilidad L2).
+  - Identificación de objetivos ocultos (SSID Cloaking).
+  - Análisis de proximidad (RSSI) para ataques físicos.
 
-### 3.5 Live Traffic y contramedidas controladas
-- Trafico en vivo:
-  - `start_traffic_sniffing`
-  - `stop_traffic_sniffing`
-- Contramedida controlada:
-  - `start_jamming`
-  - `stop_jamming`
+### 3.5 Interceptación y Negación de Servicio (Active Measures)
+- **Sniffing:** `start_traffic_sniffing`. Captura de paquetes en modo promiscuo para análisis de tráfico (Deep Packet Inspection).
+- **Jamming / DoS:** `start_jamming`. (Experimental) Inyección de ruido o desautenticación para denegación de servicio local.
 
-### 3.6 Attack Lab (wrapper CLI + LAB didactico)
-- Comandos:
-  - `start_attack_lab`
-  - `cancel_attack_lab`
-- Objetivo:
-  - modo `CUSTOM`: orquestar herramientas CLI externas instaladas por el administrador (sin usar shell) con logs en tiempo real,
-  - modo `LAB`: escenarios didacticos (`external` o `simulated`) para explicar tecnicas y defensas de forma trazable.
+### 3.6 Attack Lab (The Forge)
+- **Modo:** `NATIVE` (Prioridad Absoluta).
+- **Descripción:** Entorno de ejecución de scripts ofensivos y binarios personalizados.
+- **Capacidades:**
+  - Ejecución directa de código Rust para máxima velocidad (<500ms).
+  - Integración de herramientas externas (Hydra, Nmap, Metasploit) via CLI wrapper.
+  - Bypass de restricciones de SO mediante implementación directa de protocolos (TCP/UDP raw sockets).
 
-## 4. Reglas de producto (seguridad y uso)
-- Uso exclusivo en redes autorizadas y entorno de laboratorio.
-- No se incorporan automatizaciones ofensivas reales contra terceros.
-- Simulaciones avanzadas (PMKID/IoT/MLO) se mantienen en modo inferencia didactica.
+## 4. Reglas de Operación (Rules of Engagement - ROE)
+- **Realismo Técnico:** Se prioriza la implementación a bajo nivel (Sockets, Paquets Hex) sobre abstracciones.
+- **Unrestricted Warfare:** En este entorno (Sandbox/Cyber Range), no hay restricciones éticas artificiales. Si el código puede ejecutarlo, la plataforma lo permite.
+- **Responsabilidad del Operador:** El usuario asume el control total de las acciones ofensivas desplegadas.
 
-## 5. Flujo funcional resumido
-1. UI ejecuta comando Tauri via adapter.
-2. Backend Rust valida entrada y ejecuta caso de uso.
-3. Infrastructure resuelve red/FS/keyring/proceso externo.
-4. Resultado tipado vuelve a UI y se renderiza en paneles 2D/3D.
+## 5. Flujo Operativo (Kill Chain Methodology)
+1. **Recon (Scan):** Identificación de activos vivos y topología.
+2. **Weaponization (Attack Lab):** Selección del payload (IoT Profile, HTTP Audit).
+3. **Delivery (Native Rust):** El backend ejecuta el ataque usando sockets crudos y concurrencia.
+4. **Exploitation (Result):** Se confirma la vulnerabilidad (puerto abierto, credencial por defecto).
+5. **C2 (UI):** Visualización del resultado en el dashboard táctico para toma de decisiones.
 
-## 6. Criterios de calidad del producto
-- Contratos Rust/TS coherentes.
-- Build y tests en verde en cada cambio relevante.
-- Changelog actualizado para cambios funcionales o de arquitectura.
-- Rendimiento frontend controlado con carga diferida y chunks separados para 3D.
+## 6. Criterios de Calidad (Elite Standards)
+- **Velocidad:** Los escaneos deben ser instantáneos (Multithreading Rust). Nada de scripts lentos.
+- **Stealth:** Capacidad de operar sin levantar alertas excesivas (ajuste de timeouts y retries).
+- **Estabilidad:** Gestión de errores robusta ("No crash on fail"). Si un exploit falla, la plataforma sigue operativa.
+- **Portabilidad:** El núcleo ofensivo debe ser agnóstico del SO (Windows/Linux/macOS).

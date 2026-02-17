@@ -14,6 +14,7 @@ Documentos de referencia:
 - `AGENTS.md` (reglas del repo, validaciones, onboarding).
 - `docs/ARCHITECTURE.md` (arquitectura real y mapa de comandos).
 - `docs/SECURITY.md` (políticas y hardening).
+- `docs/RELEASE_SOP.md` (protocolo de release via GitHub Actions: tags `v*`).
 - `docs/CHANGELOG.md` (registro de cambios relevantes).
 - `docs/FEATURE_README_TEMPLATE.md` (plantilla de README por feature, incluyendo interconexiones).
 - `skills/README.md` (skills del repo: guias on-demand para tareas recurrentes).

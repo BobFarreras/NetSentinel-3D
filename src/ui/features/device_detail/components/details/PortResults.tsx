@@ -8,13 +8,49 @@ import { HUD_COLORS } from "../../../../styles/hudTokens";
 interface ResultProps {
     results: OpenPortDTO[];
     isAuditing: boolean;
-    hasLogs: boolean;
+    hasAuditRun: boolean;
 }
 
-export const PortResults: React.FC<ResultProps> = ({ results, isAuditing, hasLogs }) => {
-    
-    // Si estem auditant, no mostrem res encara
-    if (isAuditing || !hasLogs) return null;
+export const PortResults: React.FC<ResultProps> = ({ results, isAuditing, hasAuditRun }) => {
+    // Estado: audit en progreso (cuando el usuario ya lanzo el audit).
+    if (isAuditing) {
+        return (
+            <div
+                style={{
+                    textAlign: 'center',
+                    padding: '15px',
+                    border: `1px solid ${HUD_COLORS.accentGreen}`,
+                    background: 'rgba(0, 255, 0, 0.06)',
+                    marginTop: '10px',
+                }}
+            >
+                <div style={{ color: HUD_COLORS.accentGreen, fontWeight: 'bold' }}>DEEP AUDIT EN PROGRESO</div>
+                <div style={{ color: '#9f9', fontSize: '0.8rem', marginTop: 6 }}>
+                    Escaneando puertos y servicios. Esto puede tardar unos segundos.
+                </div>
+            </div>
+        );
+    }
+
+    // Estado: aun no se ha ejecutado (evita "STEALTH" engañoso antes del primer audit).
+    if (!hasAuditRun) {
+        return (
+            <div
+                style={{
+                    textAlign: 'center',
+                    padding: '15px',
+                    border: '1px solid #003300',
+                    background: 'rgba(0, 20, 0, 0.35)',
+                    marginTop: '10px',
+                }}
+            >
+                <div style={{ color: HUD_COLORS.accentGreen, fontWeight: 'bold' }}>SIN DATOS TODAVIA</div>
+                <div style={{ color: '#aaa', fontSize: '0.8rem', marginTop: 6 }}>
+                    Ejecuta <b>DEEP AUDIT</b> para obtener resultados de puertos.
+                </div>
+            </div>
+        );
+    }
 
     // STEALTH MODE (Tot verd)
     if (results.length === 0) {
@@ -26,7 +62,7 @@ export const PortResults: React.FC<ResultProps> = ({ results, isAuditing, hasLog
             }}>
                 <div style={{fontSize: '2rem', marginBottom: '5px'}}>🛡️</div>
                 <div style={{color: HUD_COLORS.accentGreen, fontWeight: 'bold'}}>STEALTH MODE ACTIVE</div>
-                <div style={{color: '#8f8', fontSize: '0.8rem'}}>Device firewall is effective.</div>
+                <div style={{color: '#8f8', fontSize: '0.8rem'}}>Firewall efectivo o puertos filtrados.</div>
             </div>
         );
     }

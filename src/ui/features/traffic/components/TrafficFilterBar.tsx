@@ -85,11 +85,11 @@ export const TrafficFilterBar: React.FC<TrafficFilterBarProps> = ({
           title={t("traffic.filters.allTitle")}
         />
         <FilterBtn
-          label={`💀 ${t("traffic.filters.jammed")} (${jammedTargetsCount})`}
+          label={`💀 ${t("traffic.filters.jammed")} (${jammedTargetsCount} | ${jammedPacketsCount})`}
           active={filterMode === "JAMMED"}
           onClick={() => onFilterChange("JAMMED")}
           color="#ff5555"
-          title={`${t("traffic.filters.jammedTitle")} (${jammedTargetsCount}/${jammedPacketsCount})`}
+          title={`${t("traffic.filters.jammedTitle")} | targets=${jammedTargetsCount} | logs=${jammedPacketsCount}`}
         />
         <FilterBtn
           label={targetLabel}
