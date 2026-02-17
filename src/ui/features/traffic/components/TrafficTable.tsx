@@ -111,7 +111,6 @@ export const TrafficTable: React.FC<TrafficTableProps> = ({
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
-                    textDecoration: isBlocked ? "line-through" : "none",
                     opacity: isBlocked ? 0.6 : 1,
                   }}
                 >
