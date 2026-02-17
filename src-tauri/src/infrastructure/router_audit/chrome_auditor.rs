@@ -17,6 +17,8 @@ use super::dom_parser::parse_router_text;
 use super::enrichment::enrich_router_devices;
 use super::scripts::ScriptArsenal;
 
+type CredentialProvider = Arc<dyn Fn(&str) -> Vec<(String, String)> + Send + Sync>;
+
 // Auditor de router basado en automatizacion de Chrome.
 //
 // Nota:
@@ -28,15 +30,18 @@ pub struct ChromeAuditor {
     // Se inyecta desde `lib.rs` para:
     // - usar presets persistidos (no hardcodeados)
     // - permitir que el operador borre/edite el diccionario desde UI
-    credential_provider: Arc<dyn Fn(&str) -> Vec<(String, String)> + Send + Sync>,
+    credential_provider: CredentialProvider,
 }
 
 impl ChromeAuditor {
     pub fn new(
         logger: Arc<dyn Fn(String) + Send + Sync>,
-        credential_provider: Arc<dyn Fn(&str) -> Vec<(String, String)> + Send + Sync>,
+        credential_provider: CredentialProvider,
     ) -> Self {
-        Self { log_callback: logger, credential_provider }
+        Self {
+            log_callback: logger,
+            credential_provider,
+        }
     }
 
     fn log(&self, msg: &str) {
@@ -46,14 +51,14 @@ impl ChromeAuditor {
     fn should_run_chrome_headless() -> bool {
         // Por defecto: headless (sin ventana). Para debug local:
         // `NETSENTINEL_CHROME_VISIBLE=1` => headless = false
-        match env::var("NETSENTINEL_CHROME_VISIBLE") {
-            Ok(v) if v.trim() == "1" => false,
-            _ => true,
-        }
+        !matches!(env::var("NETSENTINEL_CHROME_VISIBLE"), Ok(v) if v.trim() == "1")
     }
 
     fn audit_gateway_blocking(&self, ip: &str) -> RouterAuditResult {
-        self.log(&format!("⚔️ ROUTER AUDIT: Iniciando brute-force a {}...", ip));
+        self.log(&format!(
+            "⚔️ ROUTER AUDIT: Iniciando brute-force a {}...",
+            ip
+        ));
 
         let headless = Self::should_run_chrome_headless();
         match BrowserDriver::launch(headless) {
@@ -63,7 +68,9 @@ impl ChromeAuditor {
 
                     let candidates = (self.credential_provider)(ip);
                     if candidates.is_empty() {
-                        self.log("⚠️ Sin presets de credenciales para este gateway. Aborta brute-force.");
+                        self.log(
+                            "⚠️ Sin presets de credenciales para este gateway. Aborta brute-force.",
+                        );
                         return RouterAuditResult {
                             target_ip: ip.to_string(),
                             vulnerable: false,
@@ -75,7 +82,9 @@ impl ChromeAuditor {
                     for (user, pass) in candidates.iter() {
                         if self.try_credentials(&tab, &url, user, pass) {
                             self.log(&format!("🔓 ACCESO CONFIRMADO: {}/{}", user, pass));
-                            self.log("🚀 Credenciales validas. Cerrando auditoria para iniciar sync...");
+                            self.log(
+                                "🚀 Credenciales validas. Cerrando auditoria para iniciar sync...",
+                            );
                             return RouterAuditResult {
                                 target_ip: ip.to_string(),
                                 vulnerable: true,
@@ -98,7 +107,13 @@ impl ChromeAuditor {
         }
     }
 
-    fn fetch_connected_devices_blocking(&self, ip: &str, user: &str, pass: &str, headless: bool) -> Vec<Device> {
+    fn fetch_connected_devices_blocking(
+        &self,
+        ip: &str,
+        user: &str,
+        pass: &str,
+        headless: bool,
+    ) -> Vec<Device> {
         self.log(&format!(
             "📡 SYNC: Abriendo Chrome ({}) a {}...",
             if headless { "headless" } else { "visible" },
@@ -181,11 +196,7 @@ impl ChromeAuditor {
         let js_fill = ScriptArsenal::injection_login(user, pass);
         match tab.evaluate(&js_fill, false) {
             Ok(res) => {
-                let val = res
-                    .value
-                    .as_ref()
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("ERR");
+                let val = res.value.as_ref().and_then(|v| v.as_str()).unwrap_or("ERR");
                 if val == "NO_USER" {
                     // Check rapido: si no estamos en login, puede que ya haya sesion.
                     let current = tab.get_url();
@@ -225,7 +236,10 @@ impl RouterAuditorPort for ChromeAuditor {
         let credential_provider = self.credential_provider.clone();
 
         tauri::async_runtime::spawn_blocking(move || {
-            let auditor = ChromeAuditor { log_callback, credential_provider };
+            let auditor = ChromeAuditor {
+                log_callback,
+                credential_provider,
+            };
             auditor.audit_gateway_blocking(&ip_for_task)
         })
         .await
@@ -256,7 +270,10 @@ impl RouterAuditorPort for ChromeAuditor {
         let headless = ChromeAuditor::should_run_chrome_headless();
 
         tauri::async_runtime::spawn_blocking(move || {
-            let auditor = ChromeAuditor { log_callback, credential_provider };
+            let auditor = ChromeAuditor {
+                log_callback,
+                credential_provider,
+            };
             auditor.fetch_connected_devices_blocking(&ip, &user, &pass, headless)
         })
         .await

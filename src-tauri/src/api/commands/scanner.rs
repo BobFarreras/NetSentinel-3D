@@ -22,7 +22,10 @@ pub async fn scan_network(
     Ok(devices.into_iter().map(DeviceDTO::from).collect())
 }
 
-pub async fn audit_target(service: State<'_, ScannerService>, ip: String) -> Result<SecurityReportDTO, String> {
+pub async fn audit_target(
+    service: State<'_, ScannerService>,
+    ip: String,
+) -> Result<SecurityReportDTO, String> {
     validate_usable_host_ipv4(&ip, "ip")?;
 
     let (ports, risk) = service.audit_ip(ip.clone()).await;

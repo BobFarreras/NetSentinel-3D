@@ -128,7 +128,7 @@ Entregable:
 - click en nodo -> LAB -> run nativo sin `binaryPath`.
 
 ## Fase 3 - Sustitucion progresiva de escenarios
-1. mover escenarios de `externalAuditScenarios.ts` a un mapeo de `templateId`.
+1. mover escenarios de `externalAuditScenarios.ts` a `src/ui/features/attack_lab/catalog/attackLabScenarios.ts` (mapeo por `scenarioId`).
 2. retirar `simulated` en flujos principales.
 3. dejar `CUSTOM external` solo como modo experto temporal.
 

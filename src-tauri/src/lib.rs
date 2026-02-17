@@ -25,24 +25,24 @@ use crate::application::wifi::WifiService;
 use crate::application::wordlist::WordlistService;
 
 // 2. Imports propios (Infraestructura)
-use crate::infrastructure::persistence::credential_store::KeyringCredentialStore;
-use crate::infrastructure::persistence::gateway_credential_preset_repository::FileGatewayCredentialPresetRepository;
-use crate::infrastructure::persistence::latest_snapshot_repository::FileLatestSnapshotRepository;
+use crate::infrastructure::attack_lab::runner::TokioProcessAttackLabRunner;
+use crate::infrastructure::network::jammer_engine::PnetJammerEngine;
+use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
 use crate::infrastructure::network::vendor_lookup::SystemVendorLookup;
 use crate::infrastructure::network::vendor_resolver::VendorResolver;
-use crate::infrastructure::network::traffic_sniffer::TrafficSniffer;
-use crate::infrastructure::network::jammer_engine::PnetJammerEngine;
-use crate::infrastructure::attack_lab::runner::TokioProcessAttackLabRunner;
-use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
-use crate::infrastructure::wifi::wifi_connector::WifiConnector;
+use crate::infrastructure::persistence::credential_store::KeyringCredentialStore;
+use crate::infrastructure::persistence::gateway_credential_preset_repository::FileGatewayCredentialPresetRepository;
 use crate::infrastructure::persistence::history_repository::FileHistoryRepository;
+use crate::infrastructure::persistence::latest_snapshot_repository::FileLatestSnapshotRepository;
 use crate::infrastructure::router_audit::chrome_auditor::ChromeAuditor;
 use crate::infrastructure::system_scanner::SystemScanner;
+use crate::infrastructure::wifi::wifi_connector::WifiConnector;
+use crate::infrastructure::wifi::wifi_scanner::SystemWifiScanner;
 
-use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
 use crate::infrastructure::persistence::settings_store::FileSettingsStore;
+use crate::infrastructure::persistence::wordlist_repository::FileWordlistRepository; // Ajusta la ruta si la cambiaste
 use crate::infrastructure::repositories::host_identity_provider::LocalIntelligenceHostIdentityProvider;
-                                                                                     // 3. Imports propios (Aplicacion)
+// 3. Imports propios (Aplicacion)
 
 // --- PUNTO DE ENTRADA PRINCIPAL ---
 
@@ -63,8 +63,10 @@ pub fn run() {
 
             // Presets de credenciales (user/pass) para gateways: JSON local en app_config_dir
             // Nota: se construye temprano porque el auditor infra lo consume via callback (no hardcode).
-            let gateway_preset_repo = Arc::new(FileGatewayCredentialPresetRepository::new(app.handle()));
-            let gateway_preset_service = GatewayCredentialPresetService::new(gateway_preset_repo.clone());
+            let gateway_preset_repo =
+                Arc::new(FileGatewayCredentialPresetRepository::new(app.handle()));
+            let gateway_preset_service =
+                GatewayCredentialPresetService::new(gateway_preset_repo.clone());
 
             // Auditor con logger conectado a eventos Tauri.
             let handle = app.handle().clone();
@@ -74,7 +76,8 @@ pub fn run() {
 
             // Inyectamos el diccionario de presets en el auditor (configurable por UI).
             // Usamos una instancia dedicada del servicio para evitar acoplar Tauri State al callback.
-            let preset_service_for_auditor = Arc::new(GatewayCredentialPresetService::new(gateway_preset_repo));
+            let preset_service_for_auditor =
+                Arc::new(GatewayCredentialPresetService::new(gateway_preset_repo));
             let credential_provider = Arc::new(move |gateway_ip: &str| {
                 preset_service_for_auditor
                     .list(gateway_ip)
@@ -100,7 +103,11 @@ pub fn run() {
             let latest_snapshot_service = LatestSnapshotService::new(latest_snapshot_infra);
             let credential_service = CredentialService::new(credential_store_infra);
             let vendor_lookup_infra = Arc::new(SystemVendorLookup);
-            let wifi_service = WifiService::new(wifi_scanner_infra, vendor_lookup_infra, wifi_connector_infra);
+            let wifi_service = WifiService::new(
+                wifi_scanner_infra,
+                vendor_lookup_infra,
+                wifi_connector_infra,
+            );
             let attack_lab_runner_infra = Arc::new(TokioProcessAttackLabRunner);
             let attack_lab_service = AttackLabService::new(attack_lab_runner_infra);
 
@@ -181,7 +188,7 @@ pub fn run() {
             // WORDLIST COMMANDS
             api::commands::get_dictionary,
             api::commands::add_to_dictionary,
-            api::commands::remove_from_dictionary, 
+            api::commands::remove_from_dictionary,
             api::commands::update_in_dictionary,
             // OPSEC
             api::commands::check_mac_security,

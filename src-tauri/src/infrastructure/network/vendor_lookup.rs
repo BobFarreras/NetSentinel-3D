@@ -12,4 +12,3 @@ impl VendorLookupPort for SystemVendorLookup {
         VendorResolver::resolve(mac_or_bssid)
     }
 }
-

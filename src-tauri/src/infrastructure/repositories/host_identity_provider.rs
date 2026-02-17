@@ -12,4 +12,3 @@ impl HostIdentityPort for LocalIntelligenceHostIdentityProvider {
         local_intelligence::get_host_identity()
     }
 }
-

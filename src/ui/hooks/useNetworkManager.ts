@@ -183,6 +183,7 @@ export const useNetworkManager = (options?: UseNetworkManagerOptions) => {
     devices: devicesWithAliases, selectedDevice, history, intruders,
     auditResults, routerRisk, jammedDevices, jamPendingDevices,
     consoleLogs: selectedDevice ? (deviceLogs[selectedDevice.ip] || []) : [],
+    deviceLogsByIp: deviceLogs,
     systemLogs,
     identity,
 

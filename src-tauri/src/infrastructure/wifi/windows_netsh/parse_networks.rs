@@ -154,4 +154,3 @@ mod tests {
         assert!(!parsed[0].is_connected);
     }
 }
-

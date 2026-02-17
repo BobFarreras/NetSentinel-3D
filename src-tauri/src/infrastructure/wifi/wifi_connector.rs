@@ -1,8 +1,8 @@
 // src-tauri/src/infrastructure/wifi/wifi_connector.rs
 // Descripcion: conector WiFi (Windows/netsh). Implementa `WifiConnectorPort` para conectar a un SSID con password.
 
-use std::process::Command;
 use std::fs;
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
@@ -71,17 +71,25 @@ impl WifiConnector {
         // Nombre de archivo seguro
         let safe_ssid = ssid.replace(|c: char| !c.is_alphanumeric(), "_");
         let profile_path = format!("temp_wifi_{}.xml", safe_ssid);
-        
+
         // 4. Guardar y añadir perfil
         if fs::write(&profile_path, &profile_xml).is_err() {
-            eprintln!("[wifi_connector] profile write failed path={}", profile_path);
+            eprintln!(
+                "[wifi_connector] profile write failed path={}",
+                profile_path
+            );
             return false;
         }
-        
+
         let _ = Command::new("netsh")
-            .args(["wlan", "add", "profile", &format!("filename={profile_path}")])
+            .args([
+                "wlan",
+                "add",
+                "profile",
+                &format!("filename={profile_path}"),
+            ])
             .output();
-        
+
         let _ = fs::remove_file(&profile_path); // Borrar fichero inmediatamente
 
         // 5. Conectar
@@ -130,7 +138,10 @@ impl WifiConnector {
     }
 
     fn is_connected(target_ssid: &str) -> bool {
-        if let Ok(output) = Command::new("netsh").args(["wlan", "show", "interfaces"]).output() {
+        if let Ok(output) = Command::new("netsh")
+            .args(["wlan", "show", "interfaces"])
+            .output()
+        {
             let stdout = String::from_utf8_lossy(&output.stdout);
             if let Some(interface) = parse_netsh_interfaces(&stdout) {
                 let same_ssid = interface.ssid.eq_ignore_ascii_case(target_ssid);

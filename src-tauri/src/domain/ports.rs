@@ -1,13 +1,14 @@
 // src-tauri/src/domain/ports.rs
 // Descripcion: definicion de puertos (traits) que `application/` consume y `infrastructure/` implementa (arquitectura hexagonal).
 
-use async_trait::async_trait;
-use crate::domain::entities::{
-    Device, RouterAuditResult, ScanSession, OpenPort, LatestSnapshot, GatewayCredentials, HostIdentity, GatewayCredentialPreset
-}; 
-use crate::domain::entities::{AttackLabRequest, AttackLabLogEvent, AttackLabExitEvent};
-use crate::domain::entities::TrafficPacket;
 use crate::domain::entities::AppSettings;
+use crate::domain::entities::TrafficPacket;
+use crate::domain::entities::{AttackLabExitEvent, AttackLabLogEvent, AttackLabRequest};
+use crate::domain::entities::{
+    Device, GatewayCredentialPreset, GatewayCredentials, HostIdentity, LatestSnapshot, OpenPort,
+    RouterAuditResult, ScanSession,
+};
+use async_trait::async_trait;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tokio::sync::oneshot;
@@ -53,7 +54,10 @@ pub trait LatestSnapshotRepositoryPort: Send + Sync {
 #[async_trait]
 pub trait CredentialStorePort: Send + Sync {
     async fn save_gateway_credentials(&self, creds: GatewayCredentials) -> Result<(), String>;
-    async fn get_gateway_credentials(&self, gateway_ip: &str) -> Result<Option<GatewayCredentials>, String>;
+    async fn get_gateway_credentials(
+        &self,
+        gateway_ip: &str,
+    ) -> Result<Option<GatewayCredentials>, String>;
     async fn delete_gateway_credentials(&self, gateway_ip: &str) -> Result<(), String>;
 }
 

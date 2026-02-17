@@ -1,6 +1,6 @@
 // src-tauri/src/domain/entities.rs
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 // 1. DISPOSITIU
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,7 +12,7 @@ pub struct Device {
     pub hostname: Option<String>,
     pub name: Option<String>,
     pub is_gateway: bool,
-    pub ping: Option<u16>, 
+    pub ping: Option<u16>,
     // Compat: el frontend historico usa snake_case en algunos campos.
     #[serde(alias = "signal_strength")]
     pub signal_strength: Option<String>,
@@ -59,10 +59,10 @@ pub struct RouterAuditResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanSession {
-    pub id: String,       
-    pub timestamp: u64,   
-    pub devices: Vec<Device>, 
-    pub label: String,    
+    pub id: String,
+    pub timestamp: u64,
+    pub devices: Vec<Device>,
+    pub label: String,
 }
 
 // 5b. ULTIMA FOTO (snapshot) - Persistencia rapida para arranque
@@ -121,7 +121,7 @@ pub struct TrafficPacket {
     pub destination_ip: String,
     pub protocol: String, // TCP, UDP, ICMP
     pub length: usize,
-    pub info: String,     // Ex: "HTTPS Traffic" o "DNS Query"
+    pub info: String, // Ex: "HTTPS Traffic" o "DNS Query"
     pub is_intercepted: bool,
 }
 
@@ -191,7 +191,7 @@ pub struct WifiEntity {
     pub security_type: String,
     pub vendor: String,
     pub distance_mock: f32,
-    pub risk_level: String,     // HARDENED | STANDARD | LEGACY | OPEN
-    pub is_targetable: bool,    // true si la configuracion es debil (legacy/open) en modo educativo
-    pub is_connected: bool,     // true si es el AP actual del host
+    pub risk_level: String,  // HARDENED | STANDARD | LEGACY | OPEN
+    pub is_targetable: bool, // true si la configuracion es debil (legacy/open) en modo educativo
+    pub is_connected: bool,  // true si es el AP actual del host
 }

@@ -1,5 +1,5 @@
 use std::fs::{self, OpenOptions};
-use std::io::{self, Write, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Write};
 use std::path::PathBuf;
 use tauri::Manager;
 
@@ -11,7 +11,11 @@ pub struct FileWordlistRepository {
 
 impl FileWordlistRepository {
     pub fn new(app_handle: &tauri::AppHandle) -> Self {
-        let path = app_handle.path().app_config_dir().unwrap().join("wordlist.txt");
+        let path = app_handle
+            .path()
+            .app_config_dir()
+            .unwrap()
+            .join("wordlist.txt");
         if let Some(parent) = path.parent() {
             let _ = fs::create_dir_all(parent);
         }
@@ -27,8 +31,9 @@ impl FileWordlistRepository {
 
         if let Ok(file) = fs::File::open(&self.file_path) {
             let reader = BufReader::new(file);
-            return reader.lines()
-                .filter_map(Result::ok)
+            return reader
+                .lines()
+                .map_while(Result::ok)
                 .map(|line| line.trim().to_string())
                 .filter(|line| !line.is_empty())
                 .collect();
@@ -56,10 +61,18 @@ impl FileWordlistRepository {
 
     fn get_defaults(&self) -> Vec<String> {
         vec![
-            "12345678".to_string(), "123456789".to_string(), "1234567890".to_string(),
-            "password".to_string(), "contraseña".to_string(), "admin1234".to_string(),
-            "vodafone1234".to_string(), "movistar1234".to_string(), "orange1234".to_string(),
-            "fibra1234".to_string(), "internet".to_string(), "qwertyuiop".to_string(),
+            "12345678".to_string(),
+            "123456789".to_string(),
+            "1234567890".to_string(),
+            "password".to_string(),
+            "contraseña".to_string(),
+            "admin1234".to_string(),
+            "vodafone1234".to_string(),
+            "movistar1234".to_string(),
+            "orange1234".to_string(),
+            "fibra1234".to_string(),
+            "internet".to_string(),
+            "qwertyuiop".to_string(),
             "admin".to_string(),
         ]
     }

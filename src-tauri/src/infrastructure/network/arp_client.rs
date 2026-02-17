@@ -6,7 +6,6 @@ use std::process::Command;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
@@ -17,7 +16,7 @@ impl ArpClient {
         let mut map = HashMap::new();
         let mut cmd = Command::new("arp");
         cmd.arg("-a");
-        
+
         #[cfg(target_os = "windows")]
         cmd.creation_flags(CREATE_NO_WINDOW);
 

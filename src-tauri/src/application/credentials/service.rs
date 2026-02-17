@@ -18,7 +18,10 @@ impl CredentialService {
         self.store.save_gateway_credentials(creds).await
     }
 
-    pub async fn get_gateway_credentials(&self, gateway_ip: &str) -> Result<Option<GatewayCredentials>, String> {
+    pub async fn get_gateway_credentials(
+        &self,
+        gateway_ip: &str,
+    ) -> Result<Option<GatewayCredentials>, String> {
         self.store.get_gateway_credentials(gateway_ip).await
     }
 

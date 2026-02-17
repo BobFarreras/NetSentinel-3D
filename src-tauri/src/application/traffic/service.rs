@@ -37,7 +37,10 @@ impl TrafficService {
         // Preflight: valida que podemos abrir el canal antes de marcar como "running".
         self.sniffer.preflight("auto", &target_ip)?;
 
-        println!("🚀 [APP] Iniciando monitor de trafico sobre IP: {}...", target_ip);
+        println!(
+            "🚀 [APP] Iniciando monitor de trafico sobre IP: {}...",
+            target_ip
+        );
 
         self.is_running.store(true, Ordering::Relaxed);
         let running_clone = self.is_running.clone();

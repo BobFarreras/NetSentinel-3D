@@ -1,11 +1,11 @@
 // src-tauri/src/infrastructure/persistence/history_repository.rs
 // Descripcion: implementacion file-backed de `HistoryRepositoryPort` (historial de sesiones) en JSON.
 
-use crate::domain::{ports::HistoryRepositoryPort, entities::ScanSession};
+use crate::domain::{entities::ScanSession, ports::HistoryRepositoryPort};
 use async_trait::async_trait;
+use directories::ProjectDirs;
 use std::fs;
 use std::path::PathBuf;
-use directories::ProjectDirs;
 
 pub struct FileHistoryRepository;
 
@@ -14,7 +14,7 @@ impl FileHistoryRepository {
     fn get_history_path() -> PathBuf {
         if let Some(proj_dirs) = ProjectDirs::from("com", "netsentinel", "app") {
             let data_dir = proj_dirs.data_dir();
-            
+
             // Creem directori si no existeix
             if !data_dir.exists() {
                 let _ = fs::create_dir_all(data_dir);
@@ -30,25 +30,25 @@ impl FileHistoryRepository {
 impl HistoryRepositoryPort for FileHistoryRepository {
     async fn save_session(&self, session: ScanSession) -> Result<(), String> {
         println!("💾 INFRA: Guardant sessió al disc...");
-        
+
         // 1) Recuperamos el historial actual para no sobreescribirlo.
         let mut history = self.get_all_sessions().await?;
-        
+
         // 2. Afegim la nova sessió al principi
         history.insert(0, session);
-        
+
         // 3. Guardem el fitxer actualitzat
         let path = Self::get_history_path();
         let json = serde_json::to_string_pretty(&history).map_err(|e| e.to_string())?;
-        
+
         fs::write(&path, json).map_err(|e| e.to_string())?;
-        
+
         Ok(())
     }
 
     async fn get_all_sessions(&self) -> Result<Vec<ScanSession>, String> {
         let path = Self::get_history_path();
-        
+
         if path.exists() {
             let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
             // Deserialitzem JSON -> Entitats de Domini

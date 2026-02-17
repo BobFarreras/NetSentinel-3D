@@ -1,6 +1,6 @@
 // src-tauri/src/api/dtos.rs
-use serde::{Serialize, Deserialize};
 use crate::domain::entities::{Device, RouterAuditResult, WifiEntity};
+use serde::{Deserialize, Serialize};
 
 // 1) DISPOSITIVO DTO (queremos `camelCase` para React).
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -12,10 +12,10 @@ pub struct DeviceDTO {
     pub hostname: Option<String>,
     pub name: Option<String>,
     pub is_gateway: bool,
-    pub ping: Option<u16>, 
-    pub signal_strength: Option<String>, 
-    pub signal_rate: Option<String>,     
-    pub wifi_band: Option<String>,       
+    pub ping: Option<u16>,
+    pub signal_strength: Option<String>,
+    pub signal_rate: Option<String>,
+    pub wifi_band: Option<String>,
 }
 
 impl From<Device> for DeviceDTO {
@@ -40,7 +40,7 @@ impl From<Device> for DeviceDTO {
 #[serde(rename_all = "camelCase")]
 pub struct SecurityReportDTO {
     pub target_ip: String,
-    pub open_ports: Vec<crate::domain::entities::OpenPort>, 
+    pub open_ports: Vec<crate::domain::entities::OpenPort>,
     pub risk_level: String,
 }
 

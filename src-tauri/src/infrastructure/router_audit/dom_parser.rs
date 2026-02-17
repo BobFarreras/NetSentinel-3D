@@ -88,8 +88,7 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
             // Buscamos primero hacia delante para evitar capturar la MAC del dispositivo anterior.
             // Muchos firmwares colocan la MAC debajo del bloque (despues de "IP:").
             let end = (i + 12).min(lines.len().saturating_sub(1));
-            for idx in i..=end {
-                let txt = lines[idx];
+            for txt in lines.iter().take(end + 1).skip(i) {
                 if let Some(m) = re_mac.find(txt) {
                     mac_found = Some(m.as_str().replace('-', ":").to_uppercase());
                     break;
@@ -99,8 +98,7 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
             // Fallback defensivo: algunos firmwares muestran la MAC inmediatamente antes del "IP:".
             if mac_found.is_none() {
                 let start = i.saturating_sub(3);
-                for idx in start..i {
-                    let txt = lines[idx];
+                for txt in lines.iter().take(i).skip(start) {
                     if let Some(m) = re_mac.find(txt) {
                         mac_found = Some(m.as_str().replace('-', ":").to_uppercase());
                         break;
@@ -114,10 +112,7 @@ pub fn parse_router_text(text: &str) -> Vec<ParsedRouterDevice> {
                 if i + j < lines.len() {
                     let next = lines[i + j].trim();
                     if next.starts_with("Signal strength:") {
-                        signal = next
-                            .replace("Signal strength:", "")
-                            .trim()
-                            .to_string();
+                        signal = next.replace("Signal strength:", "").trim().to_string();
                     }
                     if next.starts_with("Signal rate:") {
                         rate = next.replace("Signal rate:", "").trim().to_string();

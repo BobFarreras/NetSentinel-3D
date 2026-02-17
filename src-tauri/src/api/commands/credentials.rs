@@ -42,7 +42,10 @@ pub async fn get_gateway_credentials(
     service.get_gateway_credentials(&gateway_ip).await
 }
 
-pub async fn delete_gateway_credentials(service: State<'_, CredentialService>, gateway_ip: String) -> Result<(), String> {
+pub async fn delete_gateway_credentials(
+    service: State<'_, CredentialService>,
+    gateway_ip: String,
+) -> Result<(), String> {
     validate_usable_host_ipv4(&gateway_ip, "gateway_ip")?;
     service.delete_gateway_credentials(&gateway_ip).await
 }

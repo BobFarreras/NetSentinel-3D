@@ -3,9 +3,9 @@
 
 use tauri::State;
 
+use crate::api::validators::validate_usable_host_ipv4;
 use crate::application::gateway_credential_presets::GatewayCredentialPresetService;
 use crate::domain::entities::GatewayCredentialPreset;
-use crate::api::validators::validate_usable_host_ipv4;
 
 // Nota: SIN #[tauri::command] aqui. Se pone en el padre (commands.rs).
 
@@ -18,7 +18,10 @@ fn validate_gateway_ip_or_global(gateway_ip: &str, field: &str) -> Result<(), St
     validate_usable_host_ipv4(gateway_ip, field)
 }
 
-pub fn list_presets(service: State<'_, GatewayCredentialPresetService>, gateway_ip: String) -> Result<Vec<GatewayCredentialPreset>, String> {
+pub fn list_presets(
+    service: State<'_, GatewayCredentialPresetService>,
+    gateway_ip: String,
+) -> Result<Vec<GatewayCredentialPreset>, String> {
     validate_gateway_ip_or_global(&gateway_ip, "gateway_ip")?;
     service.list(&gateway_ip)
 }

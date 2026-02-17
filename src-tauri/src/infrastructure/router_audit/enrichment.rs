@@ -49,4 +49,3 @@ fn enrich_router_devices_with_arp(
         })
         .collect()
 }
-

@@ -40,7 +40,9 @@ pub fn validate_request(req: &AttackLabRequest) -> Result<(), String> {
             return Err(format!("argumento #{i} contiene un byte nulo"));
         }
         if a.len() > MAX_ARG_LEN {
-            return Err(format!("argumento #{i} demasiado largo (max {MAX_ARG_LEN})"));
+            return Err(format!(
+                "argumento #{i} demasiado largo (max {MAX_ARG_LEN})"
+            ));
         }
     }
 

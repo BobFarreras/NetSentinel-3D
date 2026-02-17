@@ -31,4 +31,3 @@ impl WifiScannerPort for SystemWifiScanner {
         wifiscanner_fallback::scan_via_wifiscanner().await
     }
 }
-

@@ -46,11 +46,15 @@ impl CredentialStorePort for KeyringCredentialStore {
         Ok(())
     }
 
-    async fn get_gateway_credentials(&self, gateway_ip: &str) -> Result<Option<GatewayCredentials>, String> {
+    async fn get_gateway_credentials(
+        &self,
+        gateway_ip: &str,
+    ) -> Result<Option<GatewayCredentials>, String> {
         let entry = self.entry(gateway_ip)?;
         match entry.get_password() {
             Ok(json) => {
-                let parsed: GatewayCredentials = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+                let parsed: GatewayCredentials =
+                    serde_json::from_str(&json).map_err(|e| e.to_string())?;
                 Ok(Some(parsed))
             }
             Err(keyring::Error::NoEntry) => Ok(None),

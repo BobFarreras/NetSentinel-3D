@@ -32,4 +32,3 @@ mod tests {
         assert!(!is_locally_administered("001122334455"));
     }
 }
-

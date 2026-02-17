@@ -1,7 +1,7 @@
 // src-tauri/src/application/history/service.rs
 // Servicio de historial: crea/guarda sesiones de scan y expone lectura de historial desde el repositorio.
 
-use crate::domain::{ports::HistoryRepositoryPort, entities::ScanSession};
+use crate::domain::{entities::ScanSession, ports::HistoryRepositoryPort};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -14,7 +14,10 @@ impl HistoryService {
         Self { repo }
     }
 
-    pub async fn save_session(&self, devices: Vec<crate::domain::entities::Device>) -> Result<String, String> {
+    pub async fn save_session(
+        &self,
+        devices: Vec<crate::domain::entities::Device>,
+    ) -> Result<String, String> {
         // Logica de negocio: crear el objeto sesion.
         let start = SystemTime::now();
         let timestamp = start.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
@@ -33,18 +36,15 @@ impl HistoryService {
     }
 
     pub async fn get_history(&self) -> Vec<ScanSession> {
-        match self.repo.get_all_sessions().await {
-            Ok(sessions) => sessions,
-            Err(_) => Vec::new(),
-        }
+        self.repo.get_all_sessions().await.unwrap_or_default()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
     use crate::domain::entities::Device;
+    use async_trait::async_trait;
     use std::sync::{Arc, Mutex};
 
     struct MockHistoryRepo {
@@ -92,7 +92,9 @@ mod tests {
             fail_get: false,
         }));
 
-        let result = service.save_session(vec![build_device("192.168.1.10")]).await;
+        let result = service
+            .save_session(vec![build_device("192.168.1.10")])
+            .await;
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "Session saved successfully");

@@ -4,12 +4,12 @@
 // agrupados por dominio. Esto evita un archivo monolitico sin romper el wiring de `generate_handler!`
 
 // Submodulos (separacion por responsabilidades / SOLID)
+#[path = "commands/attack_lab.rs"]
+mod attack_lab;
 #[path = "commands/credentials.rs"]
 mod credentials;
 #[path = "commands/gateway_credential_presets.rs"]
 mod gateway_credential_presets;
-#[path = "commands/attack_lab.rs"]
-mod attack_lab;
 #[path = "commands/history.rs"]
 mod history;
 #[path = "commands/internal_validation.rs"]
@@ -20,10 +20,10 @@ mod opsec;
 mod router_audit;
 #[path = "commands/scanner.rs"]
 mod scanner;
-#[path = "commands/snapshot.rs"]
-mod snapshot;
 #[path = "commands/settings.rs"]
 mod settings;
+#[path = "commands/snapshot.rs"]
+mod snapshot;
 #[path = "commands/system.rs"]
 mod system;
 #[path = "commands/wifi.rs"]
@@ -160,7 +160,10 @@ pub async fn delete_gateway_credentials(
 
 #[tauri::command]
 pub async fn list_gateway_credential_presets(
-    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    service: tauri::State<
+        '_,
+        crate::application::gateway_credential_presets::GatewayCredentialPresetService,
+    >,
     gateway_ip: String,
 ) -> Result<Vec<crate::domain::entities::GatewayCredentialPreset>, String> {
     gateway_credential_presets::list_presets(service, gateway_ip)
@@ -168,7 +171,10 @@ pub async fn list_gateway_credential_presets(
 
 #[tauri::command]
 pub async fn add_gateway_credential_preset(
-    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    service: tauri::State<
+        '_,
+        crate::application::gateway_credential_presets::GatewayCredentialPresetService,
+    >,
     gateway_ip: String,
     user: String,
     pass: String,
@@ -178,7 +184,10 @@ pub async fn add_gateway_credential_preset(
 
 #[tauri::command]
 pub async fn remove_gateway_credential_preset(
-    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    service: tauri::State<
+        '_,
+        crate::application::gateway_credential_presets::GatewayCredentialPresetService,
+    >,
     gateway_ip: String,
     user: String,
     pass: String,
@@ -188,14 +197,19 @@ pub async fn remove_gateway_credential_preset(
 
 #[tauri::command]
 pub async fn update_gateway_credential_preset(
-    service: tauri::State<'_, crate::application::gateway_credential_presets::GatewayCredentialPresetService>,
+    service: tauri::State<
+        '_,
+        crate::application::gateway_credential_presets::GatewayCredentialPresetService,
+    >,
     gateway_ip: String,
     old_user: String,
     old_pass: String,
     new_user: String,
     new_pass: String,
 ) -> Result<Vec<crate::domain::entities::GatewayCredentialPreset>, String> {
-    gateway_credential_presets::update_preset(service, gateway_ip, old_user, old_pass, new_user, new_pass)
+    gateway_credential_presets::update_preset(
+        service, gateway_ip, old_user, old_pass, new_user, new_pass,
+    )
 }
 
 // --- WIFI RADAR VIEW ---

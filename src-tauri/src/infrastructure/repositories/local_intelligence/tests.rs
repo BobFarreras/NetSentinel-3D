@@ -18,4 +18,3 @@ fn prefix_to_netmask_more_cases() {
     assert_eq!(prefix_to_netmask(16), "255.255.0.0");
     assert_eq!(prefix_to_netmask(8), "255.0.0.0");
 }
-

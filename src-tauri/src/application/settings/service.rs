@@ -53,13 +53,16 @@ impl SettingsService {
     pub fn get_or_init_real_mac(&self, current_mac: String) -> String {
         let _guard = self.io_guard.lock().unwrap();
         let mut settings = self.load();
-        
+
         if let Some(real) = &settings.real_mac_address {
             return real.clone();
         }
 
         // Primera vez que se ejecuta: Guardamos la actual como la "Original"
-        println!("💾 [SETTINGS] Guardando MAC original por primera vez: {}", current_mac);
+        println!(
+            "💾 [SETTINGS] Guardando MAC original por primera vez: {}",
+            current_mac
+        );
         settings.real_mac_address = Some(current_mac.clone());
         let _ = self.save(&settings);
         current_mac

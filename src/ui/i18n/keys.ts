@@ -309,6 +309,10 @@ export const I18N_KEYS = [
   "attackLab.lab.evidenceClear",
   "attackLab.lab.evidenceEmpty",
   "attackLab.lab.evidenceLoaded",
+  "attackLab.lab.evidenceKind",
+  "attackLab.lab.evidenceSsid",
+  "attackLab.lab.evidenceAp",
+  "attackLab.lab.evidenceSta",
 
   // Confirm modal (OPSEC / acciones peligrosas)
   "confirmModal.header.criticalAlert",

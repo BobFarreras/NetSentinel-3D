@@ -25,6 +25,89 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.64] - UI: Attack Lab runtime desacoplado (store + runners) (2026-02-17)
+### UI (attack_lab)
+- Refactor del runtime persistente `useAttackLabRuntime`:
+  - store singleton (estado + persistencia + listeners de eventos)
+  - acciones/runners (external/simulated/native + cancel/clear)
+  - hook wrapper fino (solo `useSyncExternalStore`)
+- Objetivo: reducir deuda tecnica y hacer el runtime mas testeable sin tocar la UX.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.65] - UI: Scene3D NodeLabel desacoplado (view + icon + estilos) (2026-02-17)
+### UI (scene3d)
+- Refactor de `NodeLabel`: se separa en:
+  - `node_label/NodeLabelView.tsx` (presentacion pura)
+  - `node_label/NodeLabelIcon.tsx` (iconografia)
+  - `node_label/nodeLabelStyles.ts` (CSS/animaciones)
+- Objetivo: evitar god-components en 3D manteniendo exactamente el mismo look & behavior.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.66] - UI: Scene3D NetworkNode desacoplado (Kill Net FX a subcomponente) (2026-02-17)
+### UI (scene3d)
+- `NetworkNode` deja de contener el FX inline de Kill Net; ahora usa:
+  - `src/ui/features/scene3d/components/network_node/JammerSwarmFx.tsx`
+- Objetivo: reducir responsabilidades del componente 3D sin cambiar UX.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.67] - UI: TopBar desacoplado (brand/identidad/controles) + README de layout (2026-02-17)
+### UI (layout)
+- `TopBar` se divide en subcomponentes reutilizables para reducir responsabilidades sin cambiar UX:
+  - `src/ui/components/layout/topbar/TopBarBrand.tsx`
+  - `src/ui/components/layout/topbar/TopBarIdentity.tsx`
+  - `src/ui/components/layout/topbar/TopBarPanelControls.tsx`
+  - `src/ui/components/layout/topbar/TopBarStatusControls.tsx`
+- Nuevo `README` de la capa layout:
+  - `src/ui/components/layout/README.md`
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.68] - UI: Password Vault GatewayCredsTab desacoplado por secciones (2026-02-17)
+### UI (attack_lab)
+- `GatewayCredsTab` se divide en subcomponentes puros para reducir responsabilidades sin cambiar UX:
+  - `src/ui/features/attack_lab/panel/wordlist/gateway_creds/*`
+- Objetivo: eliminar god-components en el Password Vault manteniendo estilos/aria-labels.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.69] - UI: RadarIntelFilters desacoplado (side/bottom views) (2026-02-17)
+### UI (radar)
+- `RadarIntelFilters` deja de ser un fichero monolitico; ahora compone vistas:
+  - `src/ui/features/radar/components/radar/intel/filters/*`
+- Objetivo: reducir responsabilidades y mantener el layout responsive sin cambios visuales.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
+## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
+### UI (attack_lab)
+- Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:
+  - targets + sync (Radar/WiFi + ventanas desacopladas)
+  - ejecucion + autorun + next-steps + OPSEC confirm
+  - persistencia local (UI state + evidencia WiFi)
+- Objetivo: reducir responsabilidades por archivo y facilitar mantenimiento/tests sin tocar la UI/UX.
+
+### Tests/Build
+- Nuevos tests unitarios para los hooks extraidos (targets/ejecucion).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.49] - UI: Settings + i18n (CA/ES/EN) (2026-02-13)
 ### UI (settings)
 - Nuevo panel `Settings` con:
@@ -257,6 +340,11 @@ Nota:
   - `src/ui/i18n/locales/ca.ts`
   - `src/ui/i18n/locales/en.ts`
 
+### Refactor
+- `src/ui/components/layout/TopBar.tsx`:
+  - extraido estado a `src/ui/components/layout/topbar/useTopBarState.ts`.
+  - iconos/estilos extraidos a `src/ui/components/layout/topbar/topbarIcons.tsx` y `src/ui/components/layout/topbar/topbarStyles.ts` (sin cambios de UI).
+
 ### Testing
 - `src/ui/features/settings/__tests__/SettingsPanel.test.tsx`:
   - se mockea `FieldManualView` para validar cambio de tab sin depender del render 3D interno y evitar timeout espurio.
@@ -286,6 +374,13 @@ Nota:
   - acceso al gestor de wordlists WiFi (AMMO BOX)
   - gestion de credenciales del gateway (Keyring del SO) para login directo en auditorias/sync
 - Settings recibe `identity` para conocer `gatewayIp` (docked y detached).
+- Refactor interno del modal para separar responsabilidades (sin cambios visuales):
+  - `WordlistManagerModal` queda como orquestador + portal.
+  - `GatewayCredsTab` + hook `useGatewayCredsVault` encapsulan la logica de gateway creds/presets.
+  - estilos extraidos a `wordlistManagerModalStyles.ts`.
+
+### Testing
+- Nuevo test de `useGatewayCredsVault` (carga de candidatos + init por `identity`).
 
 ### i18n
 - Nuevas claves `settings.passwords.*` (CA/ES/EN).
@@ -335,6 +430,10 @@ Nota:
 ### Validaciones
 - `npm test -- --run` (ok)
 - `npm run build` (ok)
+
+### Refactor
+- `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`:
+  - extraida la logica a `src/ui/features/attack_lab/panel/hooks/useAttackLabPanelState.ts` para evitar componente GOD (sin cambios de UI).
 
 
 ## [v0.8.47] - Frontend: Attack Lab desacoplado (bootstrap de contexto) (2026-02-13)
@@ -644,7 +743,7 @@ Nota:
 - `src-tauri/src/infrastructure/wifi/windows_netsh/parse_interfaces.rs` ahora parsea correctamente multiples bloques de interfaz y prioriza el bloque realmente conectado.
 - `src-tauri/src/infrastructure/wifi/wifi_connector.rs` deja de exigir IPv4 para declarar enlace WiFi exitoso (evita falsos negativos por latencia DHCP).
 - Añadidas trazas de diagnostico en el flujo nativo WiFi:
-  - `src/core/logic/externalAuditScenarios.ts` ahora loguea tiempo por intento y snapshot `scan_airwaves` tras cada fallo.
+- El catalogo de escenarios vive en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts` (antes `src/core/logic/externalAuditScenarios.ts`).
   - `src-tauri/src/infrastructure/wifi/wifi_connector.rs` ahora loguea estado de `netsh connect` y snapshots de interfaz durante el polling.
 - UX/logging en `ExternalAudit`:
   - nuevas trazas `🧪 TRACE` redirigidas a `SYSTEM LOGS` por bus local (`src/ui/utils/systemLogBus.ts`) para limpiar el `Console Output` del panel.
