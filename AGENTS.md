@@ -77,6 +77,7 @@ Regla de integracion:
 - `get_gateway_credentials`
 - `delete_gateway_credentials`
 - `scan_airwaves`
+- `wifi_connect`
 - `get_identity`
 - `start_traffic_sniffing`
 - `stop_traffic_sniffing`
@@ -84,6 +85,7 @@ Regla de integracion:
 - `stop_jamming`
 - `start_attack_lab`
 - `cancel_attack_lab`
+- `fingerprint_http_headers`
 - `check_mac_security`
 - `randomize_mac`
 

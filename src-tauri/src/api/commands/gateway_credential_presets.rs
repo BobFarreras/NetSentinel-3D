@@ -7,8 +7,6 @@ use crate::api::validators::validate_usable_host_ipv4;
 use crate::application::gateway_credential_presets::GatewayCredentialPresetService;
 use crate::domain::entities::GatewayCredentialPreset;
 
-// Nota: SIN #[tauri::command] aqui. Se pone en el padre (commands.rs).
-
 fn validate_gateway_ip_or_global(gateway_ip: &str, field: &str) -> Result<(), String> {
     // Los presets incluyen entradas globales ("*") como base reutilizable.
     // La UI puede querer eliminarlos/actualizarlos, por lo que debemos aceptarlo aqui.
@@ -18,7 +16,8 @@ fn validate_gateway_ip_or_global(gateway_ip: &str, field: &str) -> Result<(), St
     validate_usable_host_ipv4(gateway_ip, field)
 }
 
-pub fn list_presets(
+#[tauri::command]
+pub fn list_gateway_credential_presets(
     service: State<'_, GatewayCredentialPresetService>,
     gateway_ip: String,
 ) -> Result<Vec<GatewayCredentialPreset>, String> {
@@ -26,7 +25,8 @@ pub fn list_presets(
     service.list(&gateway_ip)
 }
 
-pub fn add_preset(
+#[tauri::command]
+pub fn add_gateway_credential_preset(
     service: State<'_, GatewayCredentialPresetService>,
     gateway_ip: String,
     user: String,
@@ -36,7 +36,8 @@ pub fn add_preset(
     service.add(&gateway_ip, user, pass)
 }
 
-pub fn remove_preset(
+#[tauri::command]
+pub fn remove_gateway_credential_preset(
     service: State<'_, GatewayCredentialPresetService>,
     gateway_ip: String,
     user: String,
@@ -46,7 +47,8 @@ pub fn remove_preset(
     service.remove(&gateway_ip, user, pass)
 }
 
-pub fn update_preset(
+#[tauri::command]
+pub fn update_gateway_credential_preset(
     service: State<'_, GatewayCredentialPresetService>,
     gateway_ip: String,
     old_user: String,

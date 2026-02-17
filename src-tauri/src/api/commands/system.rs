@@ -7,10 +7,14 @@ use crate::api::state::{JammerState, TrafficState};
 use crate::application::opsec::OpSecService;
 use crate::domain::entities::HostIdentity;
 
+use super::internal_validation;
+
+#[tauri::command]
 pub fn get_identity(service: State<'_, OpSecService>) -> Result<HostIdentity, String> {
     service.get_identity()
 }
 
+#[tauri::command]
 pub fn start_traffic_sniffing(
     state: State<'_, TrafficState>,
     app: AppHandle,
@@ -25,6 +29,7 @@ pub fn start_traffic_sniffing(
     })
 }
 
+#[tauri::command]
 pub fn stop_traffic_sniffing(state: State<'_, TrafficState>) -> Result<(), String> {
     let service = state
         .0
@@ -34,24 +39,32 @@ pub fn stop_traffic_sniffing(state: State<'_, TrafficState>) -> Result<(), Strin
     Ok(())
 }
 
+#[tauri::command]
 pub fn start_jamming(
     state: State<'_, JammerState>,
     ip: String,
     mac: String,
     gateway_ip: String,
 ) -> Result<(), String> {
-    println!(
-        "[system][jammer] start_jamming dispatch ip={} mac={} gateway_ip={}",
-        ip, mac, gateway_ip
-    );
+    println!("[api][jammer] start_jamming request ip={} mac={} gateway_ip={}", ip, mac, gateway_ip);
+    if let Err(err) = internal_validation::validate_start_jamming_input(&ip, &mac, &gateway_ip) {
+        eprintln!("[api][jammer] start_jamming validation error err={}", err);
+        return Err(err);
+    }
     state.0.start_jamming(ip, mac, gateway_ip);
-    println!("[system][jammer] start_jamming accepted");
+    println!("[api][jammer] start_jamming accepted");
     Ok(())
 }
 
+#[tauri::command]
 pub fn stop_jamming(state: State<'_, JammerState>, ip: String) -> Result<(), String> {
-    println!("[system][jammer] stop_jamming dispatch ip={}", ip);
-    println!("[system][jammer] stop_jamming accepted ip={}", ip);
+    println!("[api][jammer] stop_jamming request ip={}", ip);
+    if let Err(err) = internal_validation::validate_stop_jamming_input(&ip) {
+        eprintln!("[api][jammer] stop_jamming validation error err={}", err);
+        return Err(err);
+    }
+    // El servicio consume `String`; si queremos reusarlo en logs, logueamos antes.
     state.0.stop_jamming(ip);
+    println!("[api][jammer] stop_jamming accepted");
     Ok(())
 }

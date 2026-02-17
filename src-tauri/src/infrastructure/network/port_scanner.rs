@@ -10,8 +10,8 @@ impl PortScanner {
     pub fn scan_service(ip: &str, port: u16) -> Option<String> {
         let target = format!("{}:{}", ip, port);
         // Timeout ajustat per ser ràpid però fiable
-        let connect_timeout = Duration::from_millis(1500);
-        let io_timeout = Duration::from_millis(1500);
+        let connect_timeout = Duration::from_millis(4000);
+        let io_timeout = Duration::from_millis(4000);
 
         if let Ok(mut addrs) = target.to_socket_addrs() {
             if let Some(addr) = addrs.next() {

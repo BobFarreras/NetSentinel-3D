@@ -12,7 +12,7 @@ Reglas del juego:
 
 ## Fase 0: Baseline y mapa (sin mover codigo)
 1. Confirmar comandos Tauri actuales (fuente de verdad).
-   - Archivo: `src-tauri/src/api/commands.rs`
+   - Archivo: `src-tauri/src/api/commands/mod.rs`
    - Lista en doc: `AGENTS.md` (mantener sincronizado).
 2. Confirmar contratos DTO.
    - Rust: `src-tauri/src/api/dtos.rs`

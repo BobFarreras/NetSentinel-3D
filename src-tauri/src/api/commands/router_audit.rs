@@ -9,6 +9,7 @@ use crate::application::audit::AuditService;
 use super::internal_validation::validate_router_credentials_input;
 
 // --- ROUTER AUDIT ---
+#[tauri::command]
 pub async fn audit_router(
     service: State<'_, AuditService>,
     gateway_ip: String,
@@ -20,6 +21,7 @@ pub async fn audit_router(
     Ok(RouterAuditResultDTO::from(result))
 }
 
+#[tauri::command]
 pub async fn fetch_router_devices(
     service: State<'_, AuditService>,
     gateway_ip: String,

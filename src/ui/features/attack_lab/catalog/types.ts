@@ -21,6 +21,7 @@ export type NativeExecutionContext = {
   target: string;
   onLog: (stream: "stdout" | "stderr", line: string) => void;
   signal?: AbortSignal;
+  device?: DeviceDTO;
 };
 
 export type AttackLabScenario = {

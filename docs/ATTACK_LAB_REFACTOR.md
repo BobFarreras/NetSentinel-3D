@@ -148,7 +148,7 @@ Entregable:
 ## 6) Cambios por archivo (checklist)
 
 Backend:
-- `src-tauri/src/api/commands.rs`
+- `src-tauri/src/api/commands/mod.rs`
 - `src-tauri/src/api/dtos.rs`
 - `src-tauri/src/api/commands/native_audit.rs` (nuevo)
 - `src-tauri/src/application/native_audit/*` (nuevo)
