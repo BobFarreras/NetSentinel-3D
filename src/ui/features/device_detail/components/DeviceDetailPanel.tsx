@@ -138,6 +138,13 @@ export const DeviceDetailPanel: React.FC<Props> = ({
     onAudit();
   };
 
+  const handleGatewayAudit = () => {
+    // Gateway audit es una operacion "log-heavy": en modo detached suele ser lo unico visible,
+    // asi que forzamos consola para que el operador vea el streaming.
+    setDetailsView("console");
+    state.handleRouterAudit();
+  };
+
   const openAliasEditor = () => {
     setAliasDraft((device.name ?? device.hostname ?? "").trim());
     setIsEditingAlias(true);
@@ -285,7 +292,7 @@ export const DeviceDetailPanel: React.FC<Props> = ({
         )}
 
         {device.isGateway && (
-          <button onClick={state.handleRouterAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ {t("deviceDetail.actions.auditGateway")}</button>
+          <button onClick={handleGatewayAudit} style={{ width: '100%', background: '#aa0000', color: 'white', border: '2px solid red', padding: '10px', marginTop: '10px', fontFamily: HUD_TYPO.mono, fontWeight: 'bold', cursor: 'pointer' }}>☠️ {t("deviceDetail.actions.auditGateway")}</button>
         )}
 
         {/* Selector de vista: consola vs puertos */}
