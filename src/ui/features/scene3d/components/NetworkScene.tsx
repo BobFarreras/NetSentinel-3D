@@ -1,16 +1,18 @@
 // src/ui/features/scene3d/components/NetworkScene.tsx
 // Escena 3D principal: renderiza dispositivos como nodos, labels HTML y controles de camara con estado aislado en hooks.
 
-import React, { useRef, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React from "react";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stars } from '@react-three/drei';
 import { NetworkNode } from './NetworkNode';
 import type { DeviceDTO, HostIdentity } from '../../../../shared/dtos/NetworkDTOs';
-import * as THREE from 'three';
 import { NodeLabel } from './NodeLabel';
 import { SCENE_TOKENS } from "./sceneTokens";
 import { useNetworkSceneState } from "../hooks/useNetworkSceneState";
 import { useI18n } from "../../../i18n";
+import { SceneOverlayControls } from "./SceneOverlayControls";
+import { AutoFitCamera } from "./AutoFitCamera";
+import { AlarmRing } from "./AlarmRing";
 
 interface NetworkSceneProps {
   devices?: DeviceDTO[];
@@ -21,50 +23,6 @@ interface NetworkSceneProps {
   identity?: HostIdentity | null;
   onUndockScene?: (() => void) | null;
 }
-
-// --- COMPONENTE: CAMARA AUTO-AJUSTABLE ---
-const AutoFitCamera = ({ devices }: { devices: DeviceDTO[] }) => {
-  // Fix: quitamos propiedades no usadas para evitar warnings.
-  const { camera } = useThree();
-  
-  useEffect(() => {
-    if (devices.length === 0) return;
-
-    // Logica simple: si hay dispositivos, nos alejamos para ver el anillo.
-    const TARGET_RADIUS = 12; 
-    const VIEW_ANGLE = 45 * (Math.PI / 180);
-    const requiredDistance = TARGET_RADIUS / Math.tan(VIEW_ANGLE / 2);
-    
-    // Posicion objetivo.
-    const newY = requiredDistance * 0.8; 
-    const newZ = requiredDistance * 0.8;
-
-    camera.position.set(0, newY, newZ);
-    camera.lookAt(0, 0, 0);
-
-  }, [devices.length, camera]);
-
-  return null;
-};
-
-const AlarmRing = () => {
-  const ringRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (ringRef.current) {
-      const t = state.clock.getElapsedTime();
-      const scale = 1 + Math.sin(t * 5) * 0.2;
-      ringRef.current.scale.set(scale, scale, 1);
-      if (Array.isArray(ringRef.current.material)) return;
-      (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.5 + Math.sin(t * 5) * 0.5;
-    }
-  });
-  return (
-    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[0.8, 1.2, 32]} />
-      <meshBasicMaterial color="#ff0000" transparent opacity={0.8} side={THREE.DoubleSide} />
-    </mesh>
-  );
-};
 
 export const NetworkScene: React.FC<NetworkSceneProps> = ({ 
   devices = [], 
@@ -91,86 +49,14 @@ export const NetworkScene: React.FC<NetworkSceneProps> = ({
         overflow: "hidden",
       }}
     >
-      {/* Controles superpuestos: se adaptan al ancho (wrap) para no salirse del contenedor. */}
-      <div
-        style={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          zIndex: 80,
-          display: "flex",
-          gap: 6,
-          flexWrap: "wrap",
-          justifyContent: "flex-end",
-          maxWidth: "calc(100% - 24px)",
-          pointerEvents: "auto",
-        }}
-        aria-label="SCENE_OVERLAY_CONTROLS"
-      >
-        {onUndockScene && (
-          <button
-            onClick={onUndockScene}
-            title={t("scene.controls.undock")}
-            aria-label="UNLOCK_SCENE3D"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 2,
-              background: "linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))",
-              border: "1px solid rgba(0,255,136,0.35)",
-              boxShadow: "0 0 16px rgba(0,255,136,0.18)",
-              color: SCENE_TOKENS.accentGreen,
-              cursor: "pointer",
-              display: "grid",
-              placeItems: "center",
-              fontFamily: SCENE_TOKENS.fontMono,
-              userSelect: "none",
-              fontSize: 16,
-              lineHeight: "16px",
-              padding: 0,
-              flex: "0 0 auto",
-            }}
-          >
-            ↗
-          </button>
-        )}
+      <SceneOverlayControls
+        onUndockScene={onUndockScene}
+        showLabels={state.showLabels}
+        onToggleLabels={state.toggleLabels}
+        t={t}
+      />
 
-        {/* Toggle UI: oculta/muestra labels sin afectar a los nodos 3D */}
-        <button
-          onClick={state.toggleLabels}
-          title={state.showLabels ? t("scene.controls.hideCards") : t("scene.controls.showCards")}
-          aria-label="TOGGLE_NODE_LABELS"
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 2,
-            background: "linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35))",
-            border: `1px solid ${state.showLabels ? "rgba(0,229,255,0.55)" : "rgba(0,255,136,0.35)"}`,
-            boxShadow: state.showLabels ? "0 0 16px rgba(0,229,255,0.25)" : "0 0 16px rgba(0,255,136,0.18)",
-            color: state.showLabels ? SCENE_TOKENS.accentCyan : SCENE_TOKENS.accentGreen,
-            cursor: "pointer",
-            display: "grid",
-            placeItems: "center",
-            fontFamily: SCENE_TOKENS.fontMono,
-            userSelect: "none",
-            flex: "0 0 auto",
-          }}
-        >
-          {state.showLabels ? (
-            // "ojo tachado" minimal
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-              <path d="M4 4l16 16" />
-            </svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          )}
-        </button>
-      </div>
-        <Canvas 
+      <Canvas 
         camera={{ position: [0, 20, 25], fov: 50 }} 
         resize={{ scroll: false, debounce: 0 }} 
         style={{ background: SCENE_TOKENS.bgCanvas }}

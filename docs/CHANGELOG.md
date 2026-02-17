@@ -25,6 +25,18 @@ Nota:
 - `npm run build` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.64] - UI: Attack Lab runtime desacoplado (store + runners) (2026-02-17)
+### UI (attack_lab)
+- Refactor del runtime persistente `useAttackLabRuntime`:
+  - store singleton (estado + persistencia + listeners de eventos)
+  - acciones/runners (external/simulated/native + cancel/clear)
+  - hook wrapper fino (solo `useSyncExternalStore`)
+- Objetivo: reducir deuda tecnica y hacer el runtime mas testeable sin tocar la UX.
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `npm run build` (ok)
+
 ## [v0.8.63] - UI: Attack Lab (LAB) refactor de estado (2026-02-16)
 ### UI (attack_lab)
 - Desacople del hook `useAttackLabPanelState` en sub-modulos/hooks:

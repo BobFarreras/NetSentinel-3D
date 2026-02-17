@@ -25,6 +25,7 @@ Dependencias internas:
 - Tipos del catalogo: `src/ui/features/attack_lab/catalog/types.ts`
 - Escenarios por dominio: `src/ui/features/attack_lab/catalog/scenarios/`
 - Estado/ejecucion: `src/ui/features/attack_lab/hooks/useAttackLab.ts`
+- Runtime persistente (shared): `src/ui/hooks/modules/attack_lab/useAttackLabRuntime.ts`
 - Sincronizacion en panel detached: `src/ui/features/attack_lab/hooks/useAttackLabDetachedSync.ts`
 - UI principal: `src/ui/features/attack_lab/panel/AttackLabPanel.tsx`
 - Reutiliza wordlists: `src/ui/features/wordlist/hooks/useWordlistManager.ts`
