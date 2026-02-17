@@ -144,6 +144,10 @@ Nota:
 - `npm test -- --run` (ok)
 - `cd src-tauri && cargo check` (ok)
 
+## [v0.8.81] - Docs: SOP de release automatizado (2026-02-17)
+### Docs
+- Nuevo: `docs/RELEASE_SOP.md` (guia paso a paso para publicar releases via tags `v*` y GitHub Actions).
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

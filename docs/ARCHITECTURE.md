@@ -18,6 +18,9 @@ Principio base:
 - El frontend no ejecuta operaciones de red de bajo nivel.
 - El backend expone comandos explicitos y controlados.
 
+Documentacion operativa relacionada:
+- Releases/CI-CD: `docs/RELEASE_SOP.md` (tags `v*` -> GitHub Actions).
+
 ## 2. Estructura Real del Repositorio
 
 ```text
