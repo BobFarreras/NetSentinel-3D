@@ -54,8 +54,37 @@ jobs:
           # Para MSVC, el linker resuelve libs via la variable de entorno LIB.
           "LIB=$($libDir.FullName);$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      - name: Windows deps (Npcap installer asset for Packet.dll at runtime)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPCAP_DEPS_TAG: deps-npcap
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path "src-tauri/resources" | Out-Null
+
+          # Descarga un asset llamado "npcap-installer.exe" desde una Release interna (tag deps-npcap).
+          # Debes crear esa release una vez y subir el exe como asset.
+          gh release download "$env:NPCAP_DEPS_TAG" --pattern "npcap-installer.exe" --dir "src-tauri/resources"
+
+          if (-not (Test-Path "src-tauri/resources/npcap-installer.exe")) {
+            throw "No se encontro src-tauri/resources/npcap-installer.exe tras descargar el asset."
+          }
+
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Check version sync (tag vs manifests)
+        shell: pwsh
+        run: |
+          npm run release:check-versions -- --tag "${{ github.ref_name }}"
+
+      - name: Generate Tauri config (with Npcap bundling)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          node scripts/release/make_tauri_config_with_npcap.mjs
 
       - name: Build and Upload NetSentinel
         uses: tauri-apps/tauri-action@v0
@@ -63,8 +92,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'NetSentinel Operation v__VERSION__'
+          releaseName: NetSentinel Operation ${{ github.ref_name }}
           releaseBody: 'See the assets to download this version and run.'
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.args }}
+          # Nota: usamos config alterna para incluir el instalador de Npcap dentro del setup.
+          args: --config src-tauri/tauri.conf.with_npcap.json ${{ matrix.args }}

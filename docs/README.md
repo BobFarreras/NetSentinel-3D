@@ -1,31 +1,32 @@
 <!-- docs/README.md -->
-<!-- Descripcion: indice de documentacion. Punto de entrada para juniors y para mantenimiento continuo sin "big bang". -->
+<!-- Descripcion: indice simple de documentacion. Punto de entrada para entender el flujo sin perderse. -->
 
 # Docs (Indice)
 
-Si estas perdido, empieza aqui. Esta carpeta contiene la documentacion tecnica del repo, organizada para que puedas encontrar rapido:
-- que hace cada modulo,
-- donde vive el codigo,
-- como viajan los datos (UI -> backend -> UI),
-- y como validar cambios sin romper nada.
+Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
-## 1) Ruta rapida (15 minutos)
+## 1) Empieza aqui (si eres nuevo)
+1. Manual simple: `docs/USER_MANUAL.md`
+2. Setup y ejecucion: `README.md` (raiz)
+3. Enlaces del proyecto: `docs/PROJECT_LINKS.md`
 
-1. `README.md` (raiz): setup + validaciones minimas.
-2. `AGENTS.md`: reglas del repo (contratos, comandos, Definition of Done).
-3. `docs/ARCHITECTURE.md`: mapa real de capas y comandos.
-4. `docs/ATTACK_LAB.md`: flujo end-to-end de Attack Lab (external/simulated/native).
-5. `docs/SECURITY.md`: superficie IPC y hardening.
+## 2) Referencia (cuando necesites “la verdad”)
+- Arquitectura (resumen): `docs/01_reference/ARCHITECTURE.md`
+- Seguridad: `docs/01_reference/SECURITY.md`
+- Testing: `docs/01_reference/TESTING.md`
+- Changelog (reciente): `docs/01_reference/CHANGELOG.md`
 
-## 2) Guias por modulo
+## 3) Guias (paso a paso)
+- Release: `docs/02_guides/RELEASE_SOP.md`
+- Windows (drivers): `docs/02_guides/WINDOWS_DRIVERS.md`
+- Radar WiFi: `docs/02_guides/RADAR_VIEW.md`
+- Attack Lab: `docs/02_guides/ATTACK_LAB.md`
+- Settings (UI): `docs/02_guides/UI_SETTINGS.md`
+- OpSec: `docs/02_guides/OPSEC_GHOST_MODE.md`
 
-- Radar (WiFi Spectrum): `docs/RADAR_VIEW.md`
-- Attack Lab: `docs/ATTACK_LAB.md`
-- Testing: `docs/TESTING.md`
-- Backend refactor por fases: `docs/BACKEND_REFACTOR_GUIDE.md`
+## 4) Archivado (cosas viejas o demasiado largas)
+- `docs/99_archive/`
 
-## 3) Como mantener docs sin volverte loco
-
-Guia incremental (sin hacerlo todo de golpe):
-- `docs/DOCS_GAMEPLAN.md`
-
+## 5) Plantillas (para escribir docs consistentes)
+- Frontend (features/paneles): `docs/00_onboarding/FEATURE_README_TEMPLATE.md`
+- Backend (modulos Rust): `docs/00_onboarding/BACKEND_README_TEMPLATE.md`

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "NetSentinel 3D",
-  "version": "0.1.0",
+  "version": "0.9.1",
   "identifier": "com.netsentinel.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -15,7 +15,7 @@
         "title": "NetSentinel 3D // Tactical Interface",
         "width": 1000,
         "height": 700,
-        "minWidth": 900,   
+        "minWidth": 900,
         "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
@@ -61,7 +61,6 @@
       "icons/icon.ico"
     ],
     "windows": {
-   
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
@@ -75,8 +74,8 @@
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
         "headerImage": "installer/header.bmp",
-        "sidebarImage": "installer/sidebar.bmp"
-       
+        "sidebarImage": "installer/sidebar.bmp",
+        "installerHooks": "installer/npcap_hooks_interactive.nsh"
       }
     }
   }

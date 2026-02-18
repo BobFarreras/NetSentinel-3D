@@ -1,4 +1,4 @@
-<!-- docs/CHANGELOG.md -->
+<!-- docs/01_reference/CHANGELOG.md -->
 <!-- Descripcion: registro cronologico de cambios (arquitectura, features, refactors) y validaciones ejecutadas. -->
 
 # Diario de desarrollo (CHANGELOG)
@@ -7,7 +7,11 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 
 Nota:
 - Este archivo mantiene el changelog **reciente** y accionable.
-- El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
+- El historico vive en el propio historial de Git (tags/commits).
+- Algunas entradas antiguas pueden referenciar rutas antiguas (antes de la reorganizacion de `docs/`). Si dudas, usa `docs/README.md` como indice.
+
+Nota:
+- Algunos documentos antiguos (refactor roadmaps) se eliminaron para mantener la documentacion limpia.
 
 ## [v0.8.70] - Attack Lab: catalogo profesional + backend commands navegable (2026-02-17)
 ### Backend (api/commands)
@@ -147,6 +151,27 @@ Nota:
 ## [v0.8.81] - Docs: SOP de release automatizado (2026-02-17)
 ### Docs
 - Nuevo: `docs/RELEASE_SOP.md` (guia paso a paso para publicar releases via tags `v*` y GitHub Actions).
+
+## [v0.9.2] - Release: sincronizacion de version (CI + workflow) (2026-02-18)
+### Release/CI
+- Nuevo: scripts release para evitar desincronizaciones:
+  - `scripts/release/check_versions.mjs` (falla si `package.json`, `src-tauri/Cargo.toml` y `src-tauri/tauri.conf.json` no coinciden).
+  - `scripts/release/set_version.mjs` (actualiza los 3 en un paso).
+- CI: `frontend-e2e` valida version sincronizada antes de tests/build (`npm run release:check-versions`).
+- Release: `release.yml` valida que el tag `vX.Y.Z` coincide con los manifests antes de compilar.
+
+## [v0.9.3] - Windows UX: arranque sin Npcap + error claro en Live Traffic / Kill Net (2026-02-18)
+### Windows (runtime)
+- Fix UX: el binario usa delay-load para `Packet.dll`/`wpcap.dll` (Npcap) para que la app **arranque** en entornos limpios (VM) aunque falte el driver.
+- Live Traffic: si falta Npcap, el preflight corta con un error claro (sin crashear).
+- Kill Net: si falta Npcap, el comando devuelve error claro (sin iniciar el engine).
+
+### Docs
+- Nueva guia: `docs/02_guides/WINDOWS_DRIVERS.md` (Npcap requerido para captura/inyeccion).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
 
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
@@ -754,12 +779,11 @@ Nota:
 ## [v0.8.42] - Docs: paths backend actualizados (2026-02-13)
 ### 📝 Documentacion
 - Actualizados paths y estructura backend por dominios/legacy:
-  - `docs/ARCHITECTURE.md`
-  - `docs/BACKEND_REFACTOR_GUIDE.md`
-  - `docs/RADAR_VIEW.md`
-  - `docs/ATTACK_LAB.md`
-  - `docs/TESTING.md`
-  - `docs/REFACTOR_AUDIT.md`
+  - (estado actual) ver indice: `docs/README.md`
+  - `docs/01_reference/ARCHITECTURE.md`
+  - `docs/02_guides/RADAR_VIEW.md`
+  - `docs/02_guides/ATTACK_LAB.md`
+  - `docs/01_reference/TESTING.md`
 - Nota operativa de shims:
   - `src-tauri/src/application/legacy/README.md`
 
@@ -870,7 +894,7 @@ Nota:
   - alias legacy mantenido: `external-audit-log`, `external-audit-exit`
 
 ### 📚 Documentacion
-- Renombrados docs: `docs/ATTACK_LAB.md`, `docs/ATTACK_LAB_REFACTOR.md`.
+- Renombrados/movidos docs (estado actual): ver `docs/README.md` y `docs/02_guides/ATTACK_LAB.md`.
 - `AGENTS.md` actualizado con la nueva regla de cabecera por archivo (ruta + descripcion).
 
 ## [v0.8.25] - Hardening de conexion WiFi real (2026-02-12)

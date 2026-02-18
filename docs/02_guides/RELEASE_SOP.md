@@ -40,7 +40,13 @@ cargo check
 ```
 
 Nota Windows:
-- `cargo test` puede requerir elevacion o fallar por dependencias del driver. Si pasa, deja evidencia en `docs/CHANGELOG.md` y continua con `cargo check` como minimo.
+- `cargo test` puede requerir elevacion o fallar por dependencias del driver. Si pasa, deja evidencia en `docs/01_reference/CHANGELOG.md` y continua con `cargo check` como minimo.
+
+3. Version sincronizada (obligatorio):
+- Tag Git: `vX.Y.Z`
+- `src-tauri/tauri.conf.json` -> `"version": "X.Y.Z"`
+- `src-tauri/Cargo.toml` -> `version = "X.Y.Z"`
+- `package.json` -> `"version": "X.Y.Z"` (para consistencia de tooling)
 
 ## 3. Procedimiento (paso a paso)
 ### Paso 1: elegir la version
@@ -96,6 +102,6 @@ Limitacion actual:
 - **El workflow no se ejecuta**:
   - Revisa que el tag empiece por `v` y que hiciste `git push origin <tag>`.
 - **Falla en build**:
-  - Abre el log del job en GitHub Actions y copia el error en `docs/CHANGELOG.md`.
+  - Abre el log del job en GitHub Actions y copia el error en `docs/01_reference/CHANGELOG.md`.
 - **Solo hay build de Windows**:
   - Es el estado actual. Para multi-OS, hay que extender el `matrix` del workflow.

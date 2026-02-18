@@ -15,7 +15,7 @@ Usalo cuando:
 
 ## Plantilla
 
-- Fuente de verdad: `docs/FEATURE_README_TEMPLATE.md`
+- Fuente de verdad: `docs/00_onboarding/FEATURE_README_TEMPLATE.md`
 
 ## Pasos (UI)
 
@@ -50,4 +50,3 @@ Usalo cuando:
   - Por donde entra (entrypoint)
   - Por donde sale (comandos/eventos/DTOs)
   - Que tests existen
-

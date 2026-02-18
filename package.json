@@ -1,7 +1,7 @@
 {
   "name": "netsentinel-rust",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.9.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,10 @@
     "tauri": "tauri",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "release:check-versions": "node scripts/release/check_versions.mjs",
+    "release:set-version": "node scripts/release/set_version.mjs",
+    "tauri:build:with-npcap": "node scripts/release/tauri_build_with_npcap.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

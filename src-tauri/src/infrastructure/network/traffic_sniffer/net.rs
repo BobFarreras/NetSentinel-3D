@@ -8,6 +8,12 @@ pub fn select_interface(
     interface_hint: &str,
     target_ip: &str,
 ) -> Result<(NetworkInterface, String), String> {
+    // Importante (Windows):
+    // - Sin Npcap, cualquier llamada a `pnet::datalink::*` puede fallar.
+    // - Con delay-load activado, evitamos que la app crashee al arrancar,
+    //   pero aqui debemos cortar antes de invocar a pnet si el driver no existe.
+    crate::infrastructure::dependencies::npcap::require_npcap("Live Traffic")?;
+
     let interfaces = datalink::interfaces();
 
     // 1) Si hay hint explicito (no "auto"), intentamos por nombre.
@@ -52,6 +58,8 @@ fn get_first_ipv4(interface: &NetworkInterface) -> Option<String> {
 }
 
 pub fn open_ethernet_rx(interface: &NetworkInterface) -> Result<Box<dyn DataLinkReceiver>, String> {
+    crate::infrastructure::dependencies::npcap::require_npcap("Live Traffic")?;
+
     // Intentamos evitar bloqueos largos al parar el sniffer.
     let config = datalink::Config {
         read_timeout: Some(Duration::from_millis(250)),
