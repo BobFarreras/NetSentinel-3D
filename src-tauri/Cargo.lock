@@ -2736,7 +2736,7 @@ dependencies = [
 
 [[package]]
 name = "netsentinel-rust"
-version = "0.9.1"
+version = "0.9.3"
 dependencies = [
  "anyhow",
  "async-trait",
