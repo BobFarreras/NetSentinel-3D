@@ -1,11 +1,11 @@
 <!-- docs/01_reference/ARCHITECTURE.md -->
-<!-- Descripcion: mapa corto de arquitectura. Si quieres detalle, mira docs/99_archive/ARCHITECTURE_DEEPDIVE.md -->
+<!-- Descripcion: mapa corto de arquitectura. Si quieres detalle por departamentos, mira docs/01_reference/architecture/README.md -->
 
 # Arquitectura (resumen)
 
 Objetivo de este documento: que entiendas el flujo en 5 minutos.
 
-Si quieres el detalle completo (largo): `docs/99_archive/ARCHITECTURE_DEEPDIVE.md`.
+Si quieres el detalle por departamentos: `docs/01_reference/architecture/README.md`.
 
 ## 1) Idea principal
 NetSentinel 3D es una app desktop con dos mitades:
@@ -52,4 +52,3 @@ Backend:
 - Live Traffic: `src-tauri/src/application/traffic/*` + evento `traffic-event`
 - Attack Lab: `docs/02_guides/ATTACK_LAB.md`
 - Seguridad/privilegios: `docs/01_reference/SECURITY.md`
-

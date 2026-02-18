@@ -6,7 +6,7 @@
 Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
 ## 1) Empieza aqui (si eres nuevo)
-1. Manual simple: `docs/MANUAL.md`
+1. Manual simple: `docs/USER_MANUAL.md`
 2. Setup y ejecucion: `README.md` (raiz)
 3. Enlaces del proyecto: `docs/PROJECT_LINKS.md`
 

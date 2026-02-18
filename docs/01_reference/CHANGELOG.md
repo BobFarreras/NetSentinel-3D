@@ -10,6 +10,9 @@ Nota:
 - El historico vive en el propio historial de Git (tags/commits).
 - Algunas entradas antiguas pueden referenciar rutas antiguas (antes de la reorganizacion de `docs/`). Si dudas, usa `docs/README.md` como indice.
 
+Nota:
+- Algunos documentos antiguos (refactor roadmaps) se eliminaron para mantener la documentacion limpia.
+
 ## [v0.8.70] - Attack Lab: catalogo profesional + backend commands navegable (2026-02-17)
 ### Backend (api/commands)
 - Refactor: eliminado `src-tauri/src/api/commands.rs` (monolito). Ahora los comandos viven en:
@@ -763,12 +766,11 @@ Nota:
 ## [v0.8.42] - Docs: paths backend actualizados (2026-02-13)
 ### 📝 Documentacion
 - Actualizados paths y estructura backend por dominios/legacy:
-  - `docs/ARCHITECTURE.md`
-  - `docs/BACKEND_REFACTOR_GUIDE.md`
-  - `docs/RADAR_VIEW.md`
-  - `docs/ATTACK_LAB.md`
-  - `docs/TESTING.md`
-  - `docs/REFACTOR_AUDIT.md`
+  - (estado actual) ver indice: `docs/README.md`
+  - `docs/01_reference/ARCHITECTURE.md`
+  - `docs/02_guides/RADAR_VIEW.md`
+  - `docs/02_guides/ATTACK_LAB.md`
+  - `docs/01_reference/TESTING.md`
 - Nota operativa de shims:
   - `src-tauri/src/application/legacy/README.md`
 
@@ -879,7 +881,7 @@ Nota:
   - alias legacy mantenido: `external-audit-log`, `external-audit-exit`
 
 ### 📚 Documentacion
-- Renombrados docs: `docs/ATTACK_LAB.md`, `docs/ATTACK_LAB_REFACTOR.md`.
+- Renombrados/movidos docs (estado actual): ver `docs/README.md` y `docs/02_guides/ATTACK_LAB.md`.
 - `AGENTS.md` actualizado con la nueva regla de cabecera por archivo (ruta + descripcion).
 
 ## [v0.8.25] - Hardening de conexion WiFi real (2026-02-12)
