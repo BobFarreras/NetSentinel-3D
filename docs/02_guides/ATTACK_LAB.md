@@ -343,7 +343,7 @@ Que es "ROUTER" aqui:
 Si quieres eliminar friccion de herramientas externas para alumnos:
 - El camino es migrar de `Attack Lab` (antes: `ExternalAudit`, wrapper de CLI) a un motor **Native Audit** en Rust.
 - El frontend seguiria parecido (selector de plantilla + logs), pero en backend ya no habria `binaryPath/args`.
-- Ver guia de migracion: `docs/ATTACK_LAB_REFACTOR.md`.
+- Nota: existia una guia de migracion historica, pero ya no aplica en el estado actual del repo.
 
 ---
 

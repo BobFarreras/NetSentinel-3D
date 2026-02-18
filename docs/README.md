@@ -6,7 +6,7 @@
 Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
 ## 1) Empieza aqui (si eres nuevo)
-1. Manual simple: `docs/MANUAL.md`
+1. Manual simple: `docs/USER_MANUAL.md`
 2. Setup y ejecucion: `README.md` (raiz)
 3. Enlaces del proyecto: `docs/PROJECT_LINKS.md`
 
@@ -18,6 +18,7 @@ Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
 ## 3) Guias (paso a paso)
 - Release: `docs/02_guides/RELEASE_SOP.md`
+- Windows (drivers): `docs/02_guides/WINDOWS_DRIVERS.md`
 - Radar WiFi: `docs/02_guides/RADAR_VIEW.md`
 - Attack Lab: `docs/02_guides/ATTACK_LAB.md`
 - Settings (UI): `docs/02_guides/UI_SETTINGS.md`
@@ -25,3 +26,7 @@ Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
 ## 4) Archivado (cosas viejas o demasiado largas)
 - `docs/99_archive/`
+
+## 5) Plantillas (para escribir docs consistentes)
+- Frontend (features/paneles): `docs/00_onboarding/FEATURE_README_TEMPLATE.md`
+- Backend (modulos Rust): `docs/00_onboarding/BACKEND_README_TEMPLATE.md`

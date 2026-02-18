@@ -1,4 +1,4 @@
-<!-- docs/MANUAL.md -->
+<!-- docs/USER_MANUAL.md -->
 <!-- Descripcion: manual simple (estilo "lavadora") para entender el proyecto y trabajar sin romperlo. -->
 
 # Manual de NetSentinel 3D
@@ -7,7 +7,7 @@ Este manual esta escrito para que alguien nuevo entienda el proyecto rapido.
 
 ## 1) Index (por donde empiezo)
 1. Para correr la app: `README.md` (raiz)
-2. Para entender el mapa: `docs/README.md`
+2. Para saber "donde esta cada cosa": `docs/README.md`
 3. Para enlaces (repo/releases/presentacion): `docs/PROJECT_LINKS.md`
 
 ## 2) Features (que hace la app)
@@ -117,10 +117,5 @@ cargo check
 ```
 
 ## 5) Release / deploy (profesional)
-Como se publica:
-- Se crea un tag `vX.Y.Z`.
-- GitHub Actions ejecuta `.github/workflows/release.yml` y genera un Release (draft).
-
 Paso a paso:
 - `docs/02_guides/RELEASE_SOP.md`
-

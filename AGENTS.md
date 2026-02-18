@@ -160,7 +160,9 @@ Regla:
    - Toda feature/carpeta relevante debe incluir un `README.md` explicando:
      - que hace esa feature/capa
      - y con que se interconecta (comandos Tauri, eventos, DTOs, entrypoints y dependencias internas)
-  - Plantilla: `docs/00_onboarding/FEATURE_README_TEMPLATE.md`
+  - Plantillas:
+    - Frontend: `docs/00_onboarding/FEATURE_README_TEMPLATE.md`
+    - Backend: `docs/00_onboarding/BACKEND_README_TEMPLATE.md`
 
 ### Patron frontend obligatorio (paneles)
 - Evitar "god components" en `src/ui/components`.

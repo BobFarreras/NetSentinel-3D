@@ -49,7 +49,10 @@ assertSemver(version);
 const repoRoot = process.cwd();
 replaceJsonVersion(path.join(repoRoot, 'package.json'), version);
 replaceJsonVersion(path.join(repoRoot, 'src-tauri', 'tauri.conf.json'), version);
+const tauriNpcap = path.join(repoRoot, 'src-tauri', 'tauri.conf.with_npcap.json');
+if (fs.existsSync(tauriNpcap)) {
+  replaceJsonVersion(tauriNpcap, version);
+}
 replaceCargoTomlVersion(path.join(repoRoot, 'src-tauri', 'Cargo.toml'), version);
 
 console.log(`OK: version actualizada a ${version}`);
-
