@@ -32,6 +32,28 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      - name: Windows deps (Npcap SDK for Packet.lib)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sdkUrl = 'https://npcap.com/dist/npcap-sdk-1.13.zip'
+          $zipPath = Join-Path $env:RUNNER_TEMP 'npcap-sdk.zip'
+          $outDir = Join-Path $env:RUNNER_TEMP 'npcap-sdk'
+
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $zipPath
+          if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
+          Expand-Archive -Path $zipPath -DestinationPath $outDir
+
+          $libDir = Get-ChildItem -Path $outDir -Recurse -Directory | Where-Object { $_.FullName -match '\\Lib\\x64$' } | Select-Object -First 1
+          if (-not $libDir) { throw "No se encontro Lib\\x64 dentro del Npcap SDK" }
+
+          $packetLib = Join-Path $libDir.FullName 'Packet.lib'
+          if (-not (Test-Path $packetLib)) { throw "No se encontro Packet.lib en $($libDir.FullName)" }
+
+          # Para MSVC, el linker resuelve libs via la variable de entorno LIB.
+          "LIB=$($libDir.FullName);$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Install frontend dependencies
         run: npm ci
 
