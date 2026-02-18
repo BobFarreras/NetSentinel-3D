@@ -37,9 +37,9 @@ Usalo cuando vayas a:
 
 5. Documentacion
    - `AGENTS.md` (lista de comandos fuente de verdad)
-   - `docs/ARCHITECTURE.md` (mapa de capas/flujo)
+   - `docs/01_reference/ARCHITECTURE.md` (mapa de capas/flujo)
    - `src-tauri/src/api/commands/README.md` (si aplica por agrupacion)
-   - `docs/SECURITY.md` si hay impacto de hardening/politicas
+   - `docs/01_reference/SECURITY.md` si hay impacto de hardening/politicas
 
 ## Eventos (streaming)
 
@@ -59,4 +59,3 @@ Si el comando emite eventos:
 - El comando funciona end-to-end (UI -> invoke -> backend -> respuesta/eventos).
 - No hay referencias al nombre antiguo (si fue rename): `rg -n "<old_command>"`.
 - Docs y contratos actualizados en el mismo cambio.
-

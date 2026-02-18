@@ -23,7 +23,7 @@ Reglas del juego:
    - `infrastructure/*` (implementaciones tecnicas)
 
 Deliverable:
-- Un diagrama simple en `docs/ARCHITECTURE.md` (si hace falta) con el flujo UI -> command -> application -> infra -> domain.
+- Un diagrama simple en `docs/01_reference/ARCHITECTURE.md` (si hace falta) con el flujo UI -> command -> application -> infra -> domain.
 
 ## Fase 1: Estructura de `application/` por dominios (sin cambiar APIs)
 Problema actual: `src-tauri/src/application` esta plano y cuesta navegar.
@@ -61,13 +61,16 @@ Regla practica:
 - Cuando todo el codigo consumidor ya use el nuevo path, eliminar wrappers.
 
 Nota (estado actual del repo):
-- No se mantienen wrappers legacy en `application/legacy/*` (el repo ya esta migrado por completo).
+- El repo mantiene shims/wrappers legacy en algunas rutas para compatibilidad y transicion:
+  - `src-tauri/src/application/legacy/*`
+  - `src-tauri/src/application/*_service.rs`
+  Si se eliminan, hacerlo de forma planificada y actualizando imports + docs en el mismo cambio.
 
 Checklist por cada servicio migrado:
 - [ ] `src-tauri/src/lib.rs` compila sin cambios funcionales.
 - [ ] `src-tauri/src/api/commands/*.rs` sigue invocando el mismo caso de uso (aunque cambie el modulo interno).
 - [ ] Tests existentes siguen pasando.
-- [ ] `docs/CHANGELOG.md` actualizado (entrada corta).
+- [ ] `docs/01_reference/CHANGELOG.md` actualizado (entrada corta).
 
 ## Fase 2: Consolidar Attack Lab y compatibilidad legacy (external_audit)
 Estado actual (repo):
@@ -106,7 +109,7 @@ Orden recomendado (por riesgo):
 1. Añadir tests unitarios de puertos (domain) y casos de uso (application) con dobles (mocks/fakes).
 2. Congelar contratos:
    - si cambian DTOs, actualizar Rust + TS en el mismo PR.
-3. Añadir una seccion en `docs/TESTING.md` para backend:
+3. Añadir una seccion en `docs/01_reference/TESTING.md` para backend:
    - `cargo check`
    - `cargo test` (cuando sea posible en Windows)
 
@@ -115,4 +118,4 @@ Orden recomendado (por riesgo):
 - [ ] `npm test -- --run` verde
 - [ ] `npm run build` verde
 - [ ] No hay comandos Tauri rotos / sin documentar
-- [ ] `docs/ARCHITECTURE.md` + `docs/CHANGELOG.md` actualizados
+- [ ] `docs/01_reference/ARCHITECTURE.md` + `docs/01_reference/CHANGELOG.md` actualizados

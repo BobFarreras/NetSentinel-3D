@@ -7,7 +7,7 @@ Esta guia documenta el modulo **ATTACK LAB** (antes: **EXTERNAL AUDIT**) y su mo
 
 Objetivo: permitir a un administrador (o un laboratorio) **orquestar herramientas CLI existentes** y/o ejecutar **simulaciones didacticas** sin bloquear la UI y manteniendo una arquitectura hexagonal pragmatica.
 
-Regla del proyecto (ver `docs/SECURITY.md`):
+Regla del proyecto (ver `docs/01_reference/SECURITY.md`):
 - NetSentinel no busca reimplementar herramientas ofensivas ni empaquetarlas.
 - El modo `LAB` puede incluir **simulaciones** educativas y presets no intrusivos.
 - El modo `CUSTOM` ejecuta lo que el administrador configure (ruta + args), con validaciones defensivas.
@@ -258,13 +258,15 @@ Porque la docencia no depende de ejecutar herramientas reales siempre:
 
 ---
 
-## 12) Vinculo con `DOC-ATTACK.md` (catalogo tactico -> runtime)
+## 12) Catalogo ejecutable (fuente de verdad)
 
-`DOC-ATTACK.md` funciona como catalogo de tecnicas/familias.  
-`ATTACK LAB` es el motor de ejecucion real.
+Fuente de verdad del catalogo ejecutable:
+- `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
+
+`ATTACK LAB` es el motor de ejecucion (LAB/CUSTOM) y el catalogo vive en el frontend.
 
 Regla de traduccion a codigo:
-1. Tecnica del catalogo -> escenario en `attackLabScenarios.ts` (catalogo).
+1. Idea/plantilla -> escenario en `attackLabScenarios.ts` (catalogo).
 2. Escenario:
    - `mode: "external"` si ejecuta herramienta instalada.
    - `mode: "simulated"` si es flujo educativo/inferencia.
@@ -301,10 +303,10 @@ Puntos exactos de codigo:
 - `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`
 - `src/ui/features/attack_lab/hooks/useAttackLab.ts`
 
-Si quieres "plantillas de ataques por router" mas amplias:
+Si quieres ampliar plantillas por router:
 - Anade escenarios categoria `ROUTER` en `src/ui/features/attack_lab/catalog/attackLabScenarios.ts`.
 - Define `isSupported` + `buildRequest` (o `simulate`) por cada plantilla.
-- Mantiene `DOC-ATTACK.md` como referencia funcional y actualiza `docs/CHANGELOG.md`.
+- Actualiza `docs/01_reference/CHANGELOG.md` si el cambio es funcional/arquitectural.
 
 ---
 

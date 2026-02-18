@@ -23,8 +23,8 @@ Entregable:
 Checklist:
 1. Asegurar que estos archivos estan correctos:
    - `AGENTS.md` (lista de comandos Tauri)
-   - `docs/SECURITY.md` (superficie IPC)
-   - `docs/ARCHITECTURE.md` (mapa de comandos y capas)
+   - `docs/01_reference/SECURITY.md` (superficie IPC)
+   - `docs/01_reference/ARCHITECTURE.md` (mapa de comandos y capas)
 2. Crear/actualizar `docs/README.md` como indice (1 pagina).
 
 Regla:
@@ -94,7 +94,7 @@ Entregable:
 - Un doc que haga de "tabla de contenidos" para comandos.
 
 Acciones:
-1. En `docs/ARCHITECTURE.md` mantener la lista completa de comandos.
+1. En `docs/01_reference/ARCHITECTURE.md` mantener la lista completa de comandos.
 2. En `src-tauri/src/api/commands/README.md` mantener el mapa por archivo:
    - `http_fingerprint.rs` -> `fingerprint_http_headers`
    - `attack_lab.rs` -> `start_attack_lab`, `cancel_attack_lab`
@@ -114,8 +114,8 @@ Reglas operativas:
 1. Si cambias un comando:
    - actualiza `src/adapters/*`
    - actualiza `AGENTS.md`
-   - actualiza `docs/SECURITY.md`
-   - actualiza `docs/ARCHITECTURE.md`
+   - actualiza `docs/01_reference/SECURITY.md`
+   - actualiza `docs/01_reference/ARCHITECTURE.md`
 2. Si cambias un DTO:
    - actualiza Rust + TS en el mismo cambio
    - anade 1 test (aunque sea minimo)
@@ -128,9 +128,8 @@ Reglas operativas:
 
 - [ ] Existe `docs/README.md` como indice.
 - [ ] Cada feature importante tiene `README.md`.
-- [ ] `AGENTS.md`, `docs/SECURITY.md` y `docs/ARCHITECTURE.md` coinciden con `src-tauri/src/lib.rs`.
+- [ ] `AGENTS.md`, `docs/01_reference/SECURITY.md` y `docs/01_reference/ARCHITECTURE.md` coinciden con `src-tauri/src/lib.rs`.
 - [ ] Tests/build/check verdes:
   - `npm test -- --run`
   - `npm run build`
   - `cd src-tauri && cargo check`
-

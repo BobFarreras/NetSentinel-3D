@@ -1,4 +1,4 @@
-<!-- docs/TESTING.md -->
+<!-- docs/01_reference/TESTING.md -->
 <!-- Descripcion: guia de tests, comandos de validacion y ubicacion recomendada de suites por feature/modulo. -->
 
 # Guia de Testing de NetSentinel 3D

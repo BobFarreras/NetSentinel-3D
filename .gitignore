@@ -26,3 +26,9 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+
+# Documentacion privada / apuntes personales (no forman parte del proyecto entregable)
+DOC-ATTACK.md
+ARSENAL TÉCNICO AVANZADO.md
+BOOTCAMP_DE_CIBERSEGURETAT0_01.md
+GUIA-IA.md

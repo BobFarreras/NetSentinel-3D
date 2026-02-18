@@ -1,4 +1,4 @@
-<!-- docs/CHANGELOG.md -->
+<!-- docs/01_reference/CHANGELOG.md -->
 <!-- Descripcion: registro cronologico de cambios (arquitectura, features, refactors) y validaciones ejecutadas. -->
 
 # Diario de desarrollo (CHANGELOG)
@@ -7,7 +7,8 @@ Todos los cambios notables en NetSentinel deben documentarse aqui.
 
 Nota:
 - Este archivo mantiene el changelog **reciente** y accionable.
-- El historico (entradas antiguas) vive en `docs/CHANGELOG_LEGACY.md`.
+- El historico vive en el propio historial de Git (tags/commits).
+- Algunas entradas antiguas pueden referenciar rutas antiguas (antes de la reorganizacion de `docs/`). Si dudas, usa `docs/README.md` como indice.
 
 ## [v0.8.70] - Attack Lab: catalogo profesional + backend commands navegable (2026-02-17)
 ### Backend (api/commands)

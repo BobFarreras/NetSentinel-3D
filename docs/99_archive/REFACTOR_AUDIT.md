@@ -84,7 +84,7 @@ Crear un modulo dedicado a auditoria web del router:
 **Criterios de aceptacion**
 - `cargo check` OK.
 - Tests: parseo DOM cubierto con al menos 2 fixtures.
-- Logs y DTOs no cambian (o se documentan en `docs/CHANGELOG.md`).
+- Logs y DTOs no cambian (o se documentan en `docs/01_reference/CHANGELOG.md`).
 
 ---
 

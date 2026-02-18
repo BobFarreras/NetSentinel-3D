@@ -1,4 +1,4 @@
-<!-- docs/SECURITY.md -->
+<!-- docs/01_reference/SECURITY.md -->
 <!-- Descripcion: politica de seguridad del proyecto (alcance, reglas, comandos sensibles, hardening y decision records). -->
 
 # Politica de Seguridad de NetSentinel 3D
@@ -108,7 +108,7 @@ El modulo `Attack Lab` esta disenado como **orquestador** (wrapper) para herrami
 
 Fuente de verdad:
 - `src-tauri/src/application/attack_lab/*`
-- `docs/ATTACK_LAB.md`
+- `docs/02_guides/ATTACK_LAB.md`
 
 ## 4. Riesgos por Modulo
 ### 4.1 Escaneo y auditoria (`scan_network`, `audit_target`, `audit_router`)
@@ -237,7 +237,7 @@ Si se detecta comportamiento inseguro:
 1. Desactivar temporalmente el comando o modulo afectado.
 2. Registrar fecha, entorno y evidencia minima del fallo.
 3. Crear fix con test o validacion reproducible.
-4. Actualizar `docs/SECURITY.md`, `AGENTS.md` y docs afectadas en el mismo cambio.
+4. Actualizar `docs/01_reference/SECURITY.md`, `AGENTS.md` y docs afectadas en el mismo cambio.
 
 ## 9. Radar View (WiFi Spectrum) - Reglas de seguridad
 - Toda visualizacion de SSID/BSSID debe tratarse como entrada no confiable.

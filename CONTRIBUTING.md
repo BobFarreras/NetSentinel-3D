@@ -22,7 +22,7 @@ Motivo:
 - `npm test -- --run`
 - `npm run build`
 - `cargo check --tests` (si hubo cambios en Rust)
-- `docs/CHANGELOG.md` actualizado (si aplica)
+- `docs/01_reference/CHANGELOG.md` actualizado (si aplica)
 
 ## Reglas de frontend (rendimiento y trazas)
 - Componentes pesados (3D, paneles de auditoria) deben cargarse con `React.lazy` + `Suspense`.

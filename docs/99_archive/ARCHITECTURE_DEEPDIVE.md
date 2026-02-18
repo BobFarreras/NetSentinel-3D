@@ -1,4 +1,4 @@
-<!-- docs/ARCHITECTURE.md -->
+<!-- docs/01_reference/ARCHITECTURE.md -->
 <!-- Descripcion: mapa de capas, flujo de datos y convenciones estructurales del repo (frontend + backend). -->
 
 # Arquitectura Tecnica de NetSentinel 3D
@@ -19,7 +19,7 @@ Principio base:
 - El backend expone comandos explicitos y controlados.
 
 Documentacion operativa relacionada:
-- Releases/CI-CD: `docs/RELEASE_SOP.md` (tags `v*` -> GitHub Actions).
+- Releases/CI-CD: `docs/02_guides/RELEASE_SOP.md` (tags `v*` -> GitHub Actions).
 
 ## 2. Estructura Real del Repositorio
 
@@ -58,7 +58,7 @@ Convencion de documentacion:
 
 - Cada feature-folder principal debe tener `README.md` propio con un resumen y
   una seccion de interconexiones (comandos, eventos, DTOs y entrypoints). Ver
-  `docs/FEATURE_README_TEMPLATE.md`.
+  `docs/00_onboarding/FEATURE_README_TEMPLATE.md`.
 - Para tareas recurrentes, el repo versiona *skills* en `skills/` con guias
   accionables (SKILL.md) que se cargan on-demand (discovery/activacion).
 
@@ -365,7 +365,7 @@ Comandos de sistema/tiempo real:
 
 Comandos de WiFi (Radar View):
 
-- `scan_airwaves` (ver `docs/RADAR_VIEW.md`).
+- `scan_airwaves` (ver `docs/02_guides/RADAR_VIEW.md`).
 - `wifi_connect`
 
 Comandos de auditoria externa (wrapper CLI):
