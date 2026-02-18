@@ -36,6 +36,10 @@ function normalizeTagToVersion(tag) {
   return t.startsWith('v') ? t.slice(1) : t;
 }
 
+function isSemver(v) {
+  return /^\d+\.\d+\.\d+$/.test(String(v || '').trim());
+}
+
 function parseArgs(argv) {
   const out = { tag: null };
   for (let i = 0; i < argv.length; i++) {
@@ -77,10 +81,21 @@ if (unique.size !== 1) {
 }
 
 const unified = [...unique][0];
-const expected = normalizeTagToVersion(args.tag ?? process.env.GITHUB_REF_NAME);
-if (expected && unified !== expected) {
+// Importante:
+// - En CI (push a branch), GITHUB_REF_NAME suele ser "main"/"develops", no un tag.
+// - Solo comparamos contra tag si:
+//   - nos lo pasan explicitamente via --tag, o
+//   - el ref name tiene forma de version/tag (vX.Y.Z o X.Y.Z).
+const refName = process.env.GITHUB_REF_NAME;
+const rawExpected = args.tag ?? refName;
+const expected = normalizeTagToVersion(rawExpected);
+const shouldCompareTag = Boolean(args.tag) || isSemver(expected);
+
+if (shouldCompareTag && expected && unified !== expected) {
   console.error(`Version sincronizada (${unified}) pero no coincide con el tag esperado (${expected}).`);
   process.exit(3);
 }
 
-console.log(`OK: version sincronizada = ${unified}${expected ? ` (tag=${expected})` : ''}`);
+console.log(
+  `OK: version sincronizada = ${unified}${shouldCompareTag && expected ? ` (tag=${expected})` : ''}`,
+);
