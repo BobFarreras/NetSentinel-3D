@@ -35,3 +35,4 @@ GUIA-IA.md
 
 # Dependencias Windows (no commitear binarios)
 src-tauri/installer/deps/
+src-tauri/resources/npcap-installer.exe

@@ -6,22 +6,27 @@ import path from 'node:path';
 
 const repoRoot = process.cwd();
 
-const gen = spawnSync('node', ['scripts/release/make_tauri_config_with_npcap.mjs'], {
+const gen = spawnSync(process.execPath, ['scripts/release/make_tauri_config_with_npcap.mjs'], {
   cwd: repoRoot,
   stdio: 'inherit',
-  shell: process.platform === 'win32',
 });
 if (gen.status !== 0) process.exit(gen.status ?? 1);
 
-const env = { ...process.env };
-env.TAURI_CONFIG = path.join(repoRoot, 'src-tauri', 'tauri.conf.with_npcap.json');
+// Importante:
+// - En Tauri v2, `TAURI_CONFIG` es JSON inline para merge, NO una ruta.
+// - Para usar un config alternativo usamos `tauri build --config <path>`.
+const configPath = path.join(repoRoot, 'src-tauri', 'tauri.conf.with_npcap.json');
 
-const build = spawnSync('npx', ['tauri', 'build'], {
+// Ejecutamos el CLI via Node (entrypoint JS) para evitar problemas de `.cmd` y espacios en rutas.
+const tauriCliJs = path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
+const build = spawnSync(process.execPath, [tauriCliJs, 'build', '--config', configPath], {
   cwd: repoRoot,
   stdio: 'inherit',
-  env,
-  shell: process.platform === 'win32',
 });
 
-process.exit(build.status ?? 1);
+// Si el proceso no pudo spawnearse, mostramos el motivo.
+if (build.error) {
+  console.error(`[tauri_build_with_npcap] No se pudo ejecutar Tauri CLI: ${build.error.message}`);
+}
 
+process.exit(build.status ?? 1);
