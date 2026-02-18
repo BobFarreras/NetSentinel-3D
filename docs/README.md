@@ -25,3 +25,7 @@ Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
 ## 4) Archivado (cosas viejas o demasiado largas)
 - `docs/99_archive/`
+
+## 5) Plantillas (para escribir docs consistentes)
+- Frontend (features/paneles): `docs/00_onboarding/FEATURE_README_TEMPLATE.md`
+- Backend (modulos Rust): `docs/00_onboarding/BACKEND_README_TEMPLATE.md`
