@@ -1,6 +1,7 @@
 // src-tauri/src/infrastructure/mod.rs
 
 pub mod attack_lab;
+pub mod dependencies;
 pub mod network;
 pub mod persistence;
 pub mod repositories;

@@ -160,6 +160,19 @@ Nota:
 - CI: `frontend-e2e` valida version sincronizada antes de tests/build (`npm run release:check-versions`).
 - Release: `release.yml` valida que el tag `vX.Y.Z` coincide con los manifests antes de compilar.
 
+## [v0.9.3] - Windows UX: arranque sin Npcap + error claro en Live Traffic / Kill Net (2026-02-18)
+### Windows (runtime)
+- Fix UX: el binario usa delay-load para `Packet.dll`/`wpcap.dll` (Npcap) para que la app **arranque** en entornos limpios (VM) aunque falte el driver.
+- Live Traffic: si falta Npcap, el preflight corta con un error claro (sin crashear).
+- Kill Net: si falta Npcap, el comando devuelve error claro (sin iniciar el engine).
+
+### Docs
+- Nueva guia: `docs/02_guides/WINDOWS_DRIVERS.md` (Npcap requerido para captura/inyeccion).
+
+### Validaciones
+- `npm test -- --run` (ok)
+- `cd src-tauri && cargo check` (ok)
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

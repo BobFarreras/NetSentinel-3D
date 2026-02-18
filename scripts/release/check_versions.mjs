@@ -50,6 +50,7 @@ const args = parseArgs(process.argv.slice(2));
 
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const tauriConfPath = path.join(repoRoot, 'src-tauri', 'tauri.conf.json');
+const tauriConfNpcapPath = path.join(repoRoot, 'src-tauri', 'tauri.conf.with_npcap.json');
 const cargoTomlPath = path.join(repoRoot, 'src-tauri', 'Cargo.toml');
 
 const versions = {
@@ -58,11 +59,19 @@ const versions = {
   cargoToml: parseCargoTomlVersion(cargoTomlPath),
 };
 
+// Si existe config alternativa (con Npcap), tambien debe estar sincronizada.
+if (fs.existsSync(tauriConfNpcapPath)) {
+  versions.tauriConfWithNpcap = parseJsonVersion(tauriConfNpcapPath);
+}
+
 const unique = new Set(Object.values(versions));
 if (unique.size !== 1) {
   console.error('Versiones desincronizadas:');
   console.error(`- package.json: ${versions.packageJson}`);
   console.error(`- src-tauri/tauri.conf.json: ${versions.tauriConf}`);
+  if (versions.tauriConfWithNpcap) {
+    console.error(`- src-tauri/tauri.conf.with_npcap.json: ${versions.tauriConfWithNpcap}`);
+  }
   console.error(`- src-tauri/Cargo.toml: ${versions.cargoToml}`);
   process.exit(2);
 }
@@ -75,4 +84,3 @@ if (expected && unified !== expected) {
 }
 
 console.log(`OK: version sincronizada = ${unified}${expected ? ` (tag=${expected})` : ''}`);
-

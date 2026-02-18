@@ -18,6 +18,7 @@ Objetivo: encontrar rapido lo que buscas, sin leer un libro.
 
 ## 3) Guias (paso a paso)
 - Release: `docs/02_guides/RELEASE_SOP.md`
+- Windows (drivers): `docs/02_guides/WINDOWS_DRIVERS.md`
 - Radar WiFi: `docs/02_guides/RADAR_VIEW.md`
 - Attack Lab: `docs/02_guides/ATTACK_LAB.md`
 - Settings (UI): `docs/02_guides/UI_SETTINGS.md`

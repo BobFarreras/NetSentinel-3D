@@ -32,3 +32,6 @@ DOC-ATTACK.md
 ARSENAL TÉCNICO AVANZADO.md
 BOOTCAMP_DE_CIBERSEGURETAT0_01.md
 GUIA-IA.md
+
+# Dependencias Windows (no commitear binarios)
+src-tauri/installer/deps/

@@ -51,6 +51,11 @@ pub fn start_jamming(
         eprintln!("[api][jammer] start_jamming validation error err={}", err);
         return Err(err);
     }
+
+    // Dependencia Windows: Npcap (Packet.dll/wpcap.dll) para inyeccion (pnet).
+    // Si falta, devolvemos un error claro en vez de reventar al intentar abrir datalink.
+    crate::infrastructure::dependencies::npcap::require_npcap("Kill Net")?;
+
     state.0.start_jamming(ip, mac, gateway_ip);
     println!("[api][jammer] start_jamming accepted");
     Ok(())
