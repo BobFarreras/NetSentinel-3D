@@ -148,6 +148,14 @@ Nota:
 ### Docs
 - Nuevo: `docs/RELEASE_SOP.md` (guia paso a paso para publicar releases via tags `v*` y GitHub Actions).
 
+## [v0.9.2] - Release: sincronizacion de version (CI + workflow) (2026-02-18)
+### Release/CI
+- Nuevo: scripts release para evitar desincronizaciones:
+  - `scripts/release/check_versions.mjs` (falla si `package.json`, `src-tauri/Cargo.toml` y `src-tauri/tauri.conf.json` no coinciden).
+  - `scripts/release/set_version.mjs` (actualiza los 3 en un paso).
+- CI: `frontend-e2e` valida version sincronizada antes de tests/build (`npm run release:check-versions`).
+- Release: `release.yml` valida que el tag `vX.Y.Z` coincide con los manifests antes de compilar.
+
 ## [v0.8.48] - Frontend/Backend: inventario autoritativo + Ghost Mode robusto (2026-02-13)
 ### UI (inventario)
 - Gateway audit: si hay credenciales guardadas, sincroniza dispositivos via `fetch_router_devices` sin repetir `audit_router`.

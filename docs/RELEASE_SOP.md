@@ -42,6 +42,12 @@ cargo check
 Nota Windows:
 - `cargo test` puede requerir elevacion o fallar por dependencias del driver. Si pasa, deja evidencia en `docs/CHANGELOG.md` y continua con `cargo check` como minimo.
 
+3. Version sincronizada (obligatorio):
+- Tag Git: `vX.Y.Z`
+- `src-tauri/tauri.conf.json` -> `"version": "X.Y.Z"`
+- `src-tauri/Cargo.toml` -> `version = "X.Y.Z"`
+- `package.json` -> `"version": "X.Y.Z"` (para consistencia de tooling)
+
 ## 3. Procedimiento (paso a paso)
 ### Paso 1: elegir la version
 Decide el numero. Ejemplo: `v0.8.81`.
